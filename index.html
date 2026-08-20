@@ -45,35 +45,67 @@
             max-width: 100%;
         }
 
-        /* iOS Safari / WebKit 與 Android 日期時間輸入框防撐破 */
+        /* iOS Safari / WebKit 與 Android 日期時間輸入框防撐破與自適應外框 */
         input[type="date"],
         input[type="time"],
         input[type="datetime-local"] {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            display: block;
             min-width: 0 !important;
             width: 100% !important;
             max-width: 100% !important;
             box-sizing: border-box !important;
             font-size: 14px;
             min-height: 42px;
-            line-height: normal;
+            line-height: 1.5;
+            background-color: #ffffff;
+            color: #374151;
+            padding: 8px 12px;
+            overflow: hidden;
         }
 
-        /* 聚會日期與時間響應式網格 (寬螢幕並排，<=430px 上下堆疊) */
+        /* 解決 WebKit / iOS Safari 日期時間內部文字撐破與靠左對齊 */
+        input[type="date"]::-webkit-date-and-time-value,
+        input[type="time"]::-webkit-date-and-time-value {
+            text-align: left;
+            min-height: 1.4em;
+            width: 100%;
+        }
+
+        /* 日曆與時鐘小圖示微調，確保不被右側邊界擠壓或超出外框 */
+        input[type="date"]::-webkit-calendar-picker-indicator,
+        input[type="time"]::-webkit-calendar-picker-indicator {
+            cursor: pointer;
+            margin: 0;
+            padding: 2px;
+            opacity: 0.7;
+            transition: opacity 0.2s ease;
+        }
+        input[type="date"]::-webkit-calendar-picker-indicator:hover,
+        input[type="time"]::-webkit-calendar-picker-indicator:hover {
+            opacity: 1;
+        }
+
+        /* 聚會日期與時間響應式網格 (手機版單欄垂直排列，空間充裕時雙欄並排，保證絕不超出外框) */
         .party-datetime-grid {
             display: grid;
-            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+            grid-template-columns: 1fr;
             gap: 12px;
             width: 100%;
+            min-width: 0;
+        }
+        @media (min-width: 480px) {
+            .party-datetime-grid {
+                grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+            }
         }
         .party-datetime-grid > div {
             min-width: 0;
             width: 100%;
-        }
-        @media (max-width: 430px) {
-            .party-datetime-grid {
-                grid-template-columns: 1fr !important;
-                gap: 10px !important;
-            }
+            max-width: 100%;
+            overflow: hidden;
         }
 
         /* Modal 彈跳視窗內容容器高度與滑動支援 */
@@ -510,13 +542,13 @@
                     <input type="text" id="party-title" required class="w-full px-3 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:border-orange-400 text-sm" placeholder="例如：期中考後狂歡！">
                 </div>
                 <div class="party-datetime-grid">
-                    <div class="min-w-0">
+                    <div class="min-w-0 w-full">
                         <label class="block text-xs font-bold text-gray-600 mb-1">日期 *</label>
-                        <input type="date" id="party-date" required class="w-full px-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-orange-400 text-sm">
+                        <input type="date" id="party-date" required class="w-full min-w-0 block px-3 py-2 bg-white border border-gray-200 rounded-xl focus:outline-none focus:border-orange-400 text-sm">
                     </div>
-                    <div class="min-w-0">
+                    <div class="min-w-0 w-full">
                         <label class="block text-xs font-bold text-gray-600 mb-1">時間 *</label>
-                        <input type="time" id="party-time" required class="w-full px-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-orange-400 text-sm">
+                        <input type="time" id="party-time" required class="w-full min-w-0 block px-3 py-2 bg-white border border-gray-200 rounded-xl focus:outline-none focus:border-orange-400 text-sm">
                     </div>
                 </div>
                 <div>
@@ -529,12 +561,12 @@
                 </div>
                 <div class="bg-blue-50 p-3 rounded-xl border border-blue-100">
                     <label class="block text-xs font-bold text-blue-600 mb-1"><i class="fa-solid fa-calculator mr-1"></i>分帳計算方式 *</label>
-                    <div class="grid grid-cols-2 gap-2">
-                        <select id="party-cost-mode" class="px-2 py-1.5 border border-blue-200 rounded-lg text-xs focus:outline-none min-h-[38px]">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <select id="party-cost-mode" class="w-full min-w-0 px-2 py-1.5 bg-white border border-blue-200 rounded-lg text-xs focus:outline-none min-h-[38px]">
                             <option value="split">總費用均攤 (AA)</option>
                             <option value="fixed">每人固定收費</option>
                         </select>
-                        <input type="number" id="party-cost-amount" required class="px-2 py-1.5 border border-blue-200 rounded-lg text-xs focus:outline-none min-h-[38px]" placeholder="輸入總費用">
+                        <input type="number" id="party-cost-amount" required class="w-full min-w-0 px-2 py-1.5 bg-white border border-blue-200 rounded-lg text-xs focus:outline-none min-h-[38px]" placeholder="輸入總費用">
                     </div>
                 </div>
                 <button type="submit" id="btn-submit-party" class="w-full bg-orange-500 text-white font-bold py-3.5 rounded-xl shadow-md hover:bg-orange-600 transition mt-2 min-h-[44px]">正式發布邀請</button>
