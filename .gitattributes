@@ -1,0 +1,9 @@
+# 自動處理文字檔案的換行符號
+* text=auto
+
+# 常用檔案格式設定
+*.html text
+*.css text
+*.js text
+*.json text
+*.md text
