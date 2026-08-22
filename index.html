@@ -1392,7 +1392,8 @@
                         if (data && data.status === 'success') {
                             resolve(data);
                         } else {
-                            reject(new Error(data?.message || '伺服器上傳失敗'));
+                            const detail = data?.message || '伺服器上傳失敗';
+                            reject(new Error(detail));
                         }
                     })
                     .catch(err => {
@@ -2487,7 +2488,8 @@
                     } catch (uploadErr) {
                         console.error("照片上傳 Drive 失敗:", uploadErr);
                         if (btn) { btn.innerHTML = originalBtnHtml; btn.disabled = false; }
-                        return window.showCustomMsg("⚠️ 照片上傳失敗，請重新選擇照片或稍後再試。");
+                        const detail = uploadErr && uploadErr.message ? `\n\n原因：${uploadErr.message}` : '';
+                        return window.showCustomMsg(`⚠️ 照片上傳失敗，請稍後再試。${detail}`);
                     }
                 } else if (safePhoto && !safePhoto.startsWith('http://') && !safePhoto.startsWith('https://')) {
                     safePhoto = window.resolveReviewImage(safePhoto);
