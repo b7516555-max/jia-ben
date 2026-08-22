@@ -85,23 +85,32 @@ apps_script:
   deployment_url_changed: false
 ```
 
-## 5. 尚待完成的人工授權
+## 5. Google Drive 授權與後端驗證
 
 ```yaml
-blocking_step:
-  status: pending_user_authorization
-  action: 在 Apps Script 編輯器執行 getOrCreatePhotoFolder，審查並允許 Google Drive 與 Google 試算表權限
-  reason: 新增 OAuth scope 後，Google 要求部署帳號重新同意權限
-  verification_after_authorization: 以 upload_photo POST API 上傳測試圖片，回應必須為 status=success
+upload_verification:
+  status: passed
+  verified_at: 2026-08-22
+  authorization: Google Drive 寫入與 Google 試算表權限已完成
+  endpoint: Apps Script deployment version 50
+  api_action: upload_photo
+  response_status: success
+  test_file_id: 1qXBWUPe7Kq9awZmDIRJU77vJp_jmDtV9
+  public_image_url: https://lh3.googleusercontent.com/d/1qXBWUPe7Kq9awZmDIRJU77vJp_jmDtV9
+  public_read_check:
+    http_status: 200
+    content_type: image/png
+    decoded_file: PNG 1x1
 ```
 
-在使用者完成 Google OAuth 同意之前，不得宣稱照片上傳已完成端到端驗證。Apps Script 版本 50 已部署，但目前實際 API 測試仍會回傳 Drive 權限錯誤。
+Apps Script 後端照片寫入與公開圖片讀取已驗證成功。這項結果證明 Drive 儲存層已修復，但尚未等同 iPhone 使用者介面的完整端到端測試。
 
 ## 6. 後續驗證清單
 
-- [ ] 完成 Apps Script 的 Drive 與試算表 OAuth 授權。
-- [ ] 執行 `getOrCreatePhotoFolder` 成功且沒有權限錯誤。
-- [ ] 呼叫既有 Web App 的 `upload_photo` API，確認回傳 `status: success`、`fileId` 與 `imageUrl`。
+- [x] 完成 Apps Script 的 Drive 與試算表 OAuth 授權。
+- [x] 執行照片資料夾建立流程且沒有權限錯誤。
+- [x] 呼叫既有 Web App 的 `upload_photo` API，確認回傳 `status: success`、`fileId` 與 `imageUrl`。
+- [x] 直接讀取回傳的 `imageUrl`，確認 HTTP 200 且內容為 PNG 圖片。
 - [ ] 在 iPhone 實際選取照片、發布評價，確認動態牆能顯示照片。
 - [ ] 確認 GitHub Pages 正式網址仍為 `https://b7516555-max.github.io/jia-ben/`。
 - [ ] 確認版本庫沒有任何 Netlify 設定或相依性。
