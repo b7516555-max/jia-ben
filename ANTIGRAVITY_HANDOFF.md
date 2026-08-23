@@ -81,7 +81,7 @@ issue:
 apps_script:
   project_id: 1Hhe556jkdAPexGThjWiiCoZ1vdJKkBKVr446Z0fGu-Ov6uLe3VxzGI1V
   deployment_id: AKfycbwTg7lmireS-npCAzvDZVPVmI7u5jAFpslg7SNL59Ab3ulLOUr7cPB5wzIaTSyTUJpl
-  deployed_version: 50
+  deployed_version: 51
   deployment_url_changed: false
 ```
 
@@ -111,9 +111,9 @@ Apps Script 後端照片寫入與公開圖片讀取已驗證成功。這項結�
 - [x] 執行照片資料夾建立流程且沒有權限錯誤。
 - [x] 呼叫既有 Web App 的 `upload_photo` API，確認回傳 `status: success`、`fileId` 與 `imageUrl`。
 - [x] 直接讀取回傳的 `imageUrl`，確認 HTTP 200 且內容為 PNG 圖片。
-- [ ] 在 iPhone 實際選取照片、發布評價，確認動態牆能顯示照片。
-- [ ] 確認 GitHub Pages 正式網址仍為 `https://b7516555-max.github.io/jia-ben/`。
-- [ ] 確認版本庫沒有任何 Netlify 設定或相依性。
+- [x] 使用者已在 iPhone 實際選取照片並成功發布。
+- [x] 確認 GitHub Pages 正式網址仍為 `https://b7516555-max.github.io/jia-ben/`。
+- [x] 確認版本庫沒有任何 Netlify 設定或相依性。
 
 ## 7. 修改守則
 
@@ -128,6 +128,10 @@ Apps Script 後端照片寫入與公開圖片讀取已驗證成功。這項結�
 ```yaml
 install_experience:
   updated_at: 2026-08-24
+  deployment:
+    github_pages_commit: 33250a8017808cbec44644ea2f24656737d328b7
+    apps_script_version: 51
+    original_urls_preserved: true
   android_chrome:
     behavior: 點安裝後優先直接開啟瀏覽器原生安裝確認視窗
     implementation: beforeinstallprompt
