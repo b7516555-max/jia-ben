@@ -1,0 +1,18 @@
+{
+  "name": "一起吃飯吧！",
+  "short_name": "吃飯吧",
+  "description": "美食探索、口袋名單與揪團工具",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#f97316",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/1046/1046747.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -10,7 +10,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="一起吃飯吧">
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/1046/1046747.png">
-    <link rel="manifest" href='data:application/manifest+json;utf-8,%7B%22name%22%3A%22%E4%B8%80%E8%B5%B7%E5%90%83%E9%A3%AF%E5%90%A7%EF%BC%81%22%2C%22short_name%22%3A%22%E5%90%83%E9%A3%AF%E5%90%A7%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23ffffff%22%2C%22theme_color%22%3A%22%23f97316%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22https%3A%2F%2Fcdn-icons-png.flaticon.com%2F512%2F1046%2F1046747.png%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fpng%22%7D%5D%7D'>
+    <link rel="manifest" href="./manifest.webmanifest">
 
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -247,20 +247,18 @@
         </div>
     </div>
 
-    <!-- 🌟 新增：專屬安裝教學彈窗 -->
+    <!-- 依瀏覽器顯示的精簡安裝提示 -->
     <div id="install-guide-modal" class="hidden fixed inset-0 z-[140] flex items-center justify-center bg-black/60 modal-backdrop fade-in">
-        <div class="bg-white rounded-3xl p-6 w-11/12 max-w-sm shadow-2xl relative flex flex-col max-h-[90vh] overflow-y-auto no-scrollbar">
+        <div class="bg-white rounded-3xl p-6 w-11/12 max-w-xs shadow-2xl relative">
             <button onclick="window.closeModal('install-guide-modal')" class="absolute top-4 right-5 text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark text-xl"></i></button>
-            <div class="text-center mb-5 mt-2">
-                <h2 class="text-xl font-bold text-gray-800">裝進手機教學 📱</h2>
-                <p class="text-xs text-gray-500 mt-2">免下載！直接加到主畫面，像 App 一樣秒開</p>
+            <div class="text-center mt-2">
+                <div id="install-guide-icon" class="w-16 h-16 bg-orange-50 rounded-full flex items-center justify-center mx-auto mb-4 text-orange-500 text-2xl">
+                    <i class="fa-solid fa-mobile-screen-button"></i>
+                </div>
+                <h2 id="install-guide-title" class="text-xl font-bold text-gray-800">加入主畫面</h2>
+                <div id="install-guide-content" class="mt-4"></div>
             </div>
-            <div class="space-y-4">
-                <div class="bg-red-50 border border-red-200 p-4 rounded-2xl flex items-start gap-3 shadow-sm"><i class="fa-brands fa-chrome text-3xl text-blue-500 mt-1"></i><div><h3 class="text-sm font-bold text-gray-800 mb-1.5">⚠️ 請務必使用 Chrome/Safari</h3><p class="text-[11px] text-gray-600 leading-relaxed font-medium">若您從 Line 點開，<span class="font-bold text-red-600">請務必先用預設瀏覽器開啟本網頁</span>，再照下方步驟操作喔！</p></div></div>
-                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 relative overflow-hidden"><i class="fa-brands fa-apple text-6xl text-gray-50 absolute -right-3 -bottom-3 transform -rotate-12"></i><h3 class="text-sm font-bold text-gray-800 mb-3 flex items-center relative z-10"><i class="fa-brands fa-apple text-gray-800 mr-2 text-lg"></i>iPhone (Safari)</h3><div class="text-[12px] text-gray-700 space-y-3 relative z-10"><div class="flex items-start gap-2"><div class="w-5 h-5 rounded-full bg-blue-50 text-blue-500 font-bold flex items-center justify-center shrink-0 text-[10px] border border-blue-100">1</div><p>點擊正下方的「分享」圖示 <i class="fa-solid fa-arrow-up-from-bracket mx-1 text-gray-400"></i></p></div><div class="flex items-start gap-2"><div class="w-5 h-5 rounded-full bg-blue-50 text-blue-500 font-bold flex items-center justify-center shrink-0 text-[10px] border border-blue-100">2</div><p>下滑點擊「<span class="font-bold">加入主畫面</span>」 <i class="fa-regular fa-square-plus mx-1 text-gray-400"></i></p></div><div class="flex items-start gap-2"><div class="w-5 h-5 rounded-full bg-blue-50 text-blue-500 font-bold flex items-center justify-center shrink-0 text-[10px] border border-blue-100">3</div><p>點選右上角「新增」即完成</p></div></div></div>
-                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 relative overflow-hidden"><i class="fa-brands fa-android text-6xl text-gray-50 absolute -right-3 -bottom-3 transform rotate-12"></i><h3 class="text-sm font-bold text-gray-800 mb-3 flex items-center relative z-10"><i class="fa-brands fa-android text-emerald-500 mr-2 text-lg"></i>Android (Chrome)</h3><div class="text-[12px] text-gray-700 space-y-3 relative z-10"><div class="flex items-start gap-2"><div class="w-5 h-5 rounded-full bg-emerald-50 text-emerald-500 font-bold flex items-center justify-center shrink-0 text-[10px] border border-emerald-100">1</div><p>點擊右上角的「三個點」選單 <i class="fa-solid fa-ellipsis-vertical mx-1 text-gray-400"></i></p></div><div class="flex items-start gap-2"><div class="w-5 h-5 rounded-full bg-emerald-50 text-emerald-500 font-bold flex items-center justify-center shrink-0 text-[10px] border border-emerald-100">2</div><p>點擊「<span class="font-bold">加到主畫面 / 安裝應用程式</span>」</p></div><div class="flex items-start gap-2"><div class="w-5 h-5 rounded-full bg-emerald-50 text-emerald-500 font-bold flex items-center justify-center shrink-0 text-[10px] border border-emerald-100">3</div><p>點選「新增」即完成</p></div></div></div>
-            </div>
-            <button onclick="window.closeModal('install-guide-modal')" class="w-full bg-gray-900 text-white font-bold py-3.5 rounded-xl shadow-md hover:bg-black active:scale-95 transition tracking-widest mt-5">我學會了</button>
+            <button onclick="window.closeModal('install-guide-modal')" class="w-full bg-gray-900 text-white font-bold py-3.5 rounded-xl shadow-md hover:bg-black active:scale-95 transition mt-5">我知道了</button>
         </div>
     </div>
 
@@ -1146,9 +1144,25 @@
         import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp, doc, setDoc, getDoc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         let deferredPrompt;
+        const isInstalledApp = () => window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+        const isIOSDevice = () => /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        const isLineBrowser = () => /Line\//i.test(navigator.userAgent) || /LIFF/i.test(navigator.userAgent);
+
+        window.updateInstallButtonVisibility = function() {
+            const btnInstall = document.getElementById('btn-install-app');
+            if (btnInstall) btnInstall.classList.toggle('hidden', isInstalledApp());
+        };
+
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPrompt = e;
+            window.updateInstallButtonVisibility();
+        });
+
+        window.addEventListener('appinstalled', () => {
+            deferredPrompt = null;
+            document.getElementById('btn-install-app')?.classList.add('hidden');
+            window.closeModal('install-guide-modal');
         });
 
         window.addEventListener('DOMContentLoaded', () => {
@@ -1161,7 +1175,8 @@
                     window.openRestaurantDetailByName(window.escapeForBtn(restaurantLink.textContent.trim()));
                 });
             }
-            if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
+            window.updateInstallButtonVisibility();
+            if (isInstalledApp()) {
                 const btnInstall = document.getElementById('btn-install-app');
                 const btnEnter = document.getElementById('btn-enter-web');
                 if(btnInstall) btnInstall.classList.add('hidden');
@@ -1178,15 +1193,49 @@
             if (typeof window.handleListCountryChange === 'function') {
                 window.handleListCountryChange();
             }
+            if ('serviceWorker' in navigator && location.protocol === 'https:' && location.hostname.endsWith('github.io')) {
+                navigator.serviceWorker.register('./sw.js').catch((err) => console.warn('Service Worker 註冊失敗:', err));
+            }
         });
 
+        window.openInstallGuide = function(mode) {
+            const title = document.getElementById('install-guide-title');
+            const content = document.getElementById('install-guide-content');
+            const icon = document.getElementById('install-guide-icon');
+            if (!title || !content || !icon) return;
+
+            if (mode === 'line') {
+                title.textContent = '請用瀏覽器開啟';
+                icon.innerHTML = '<i class="fa-brands fa-line text-emerald-500"></i>';
+                content.innerHTML = '<p class="text-sm text-gray-600 leading-relaxed">請點 LINE 右上角選單，選擇<br><strong class="text-gray-900">「以 Safari 開啟」或「以 Chrome 開啟」</strong><br>再按一次安裝。</p>';
+            } else if (mode === 'ios') {
+                title.textContent = '加入 iPhone 主畫面';
+                icon.innerHTML = '<i class="fa-brands fa-apple text-gray-800"></i>';
+                content.innerHTML = '<div class="space-y-3 text-left text-sm text-gray-700"><p class="bg-gray-50 rounded-xl p-3"><strong class="text-blue-600 mr-2">1</strong>點 Safari 的分享圖示 <i class="fa-solid fa-arrow-up-from-bracket ml-1"></i></p><p class="bg-gray-50 rounded-xl p-3"><strong class="text-blue-600 mr-2">2</strong>選「加入主畫面」 <i class="fa-regular fa-square-plus ml-1"></i></p></div>';
+            } else {
+                title.textContent = '加入 Android 主畫面';
+                icon.innerHTML = '<i class="fa-brands fa-android text-emerald-500"></i>';
+                content.innerHTML = '<div class="space-y-3 text-left text-sm text-gray-700"><p class="bg-gray-50 rounded-xl p-3"><strong class="text-emerald-600 mr-2">1</strong>點 Chrome 右上角選單 <i class="fa-solid fa-ellipsis-vertical ml-1"></i></p><p class="bg-gray-50 rounded-xl p-3"><strong class="text-emerald-600 mr-2">2</strong>選「安裝應用程式」或「加到主畫面」</p></div>';
+            }
+            document.getElementById('install-guide-modal').classList.remove('hidden');
+        };
+
         window.handleInstallClick = async function() {
+            if (isInstalledApp()) {
+                window.updateInstallButtonVisibility();
+                return;
+            }
+            if (isLineBrowser()) {
+                window.openInstallGuide('line');
+                return;
+            }
             if (deferredPrompt) {
                 deferredPrompt.prompt();
                 const { outcome } = await deferredPrompt.userChoice;
-                if (outcome === 'accepted') { deferredPrompt = null; }
+                deferredPrompt = null;
+                if (outcome === 'accepted') window.updateInstallButtonVisibility();
             } else {
-                document.getElementById('install-guide-modal').classList.remove('hidden');
+                window.openInstallGuide(isIOSDevice() ? 'ios' : 'android');
             }
         };
 

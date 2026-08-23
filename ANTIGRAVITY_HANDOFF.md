@@ -6,7 +6,7 @@ repository: https://github.com/b7516555-max/jia-ben
 production_url: https://b7516555-max.github.io/jia-ben/
 deployment_platform: github_pages
 deployment_branch: gh-pages
-last_updated: 2026-08-22
+last_updated: 2026-08-24
 language: zh-TW
 ---
 
@@ -122,3 +122,27 @@ Apps Script 後端照片寫入與公開圖片讀取已驗證成功。這項結�
 3. 正式前端只從 `gh-pages` 分支發布到原 GitHub Pages 網址。
 4. 不得新增 Netlify 設定、Netlify CLI、Netlify Functions 或 Netlify 部署文件。
 5. 測試、程式同步、版本部署與手機端端到端驗證必須分開陳述，不得混稱已完成。
+
+## 8. 安裝流程簡化
+
+```yaml
+install_experience:
+  updated_at: 2026-08-24
+  android_chrome:
+    behavior: 點安裝後優先直接開啟瀏覽器原生安裝確認視窗
+    implementation: beforeinstallprompt
+  ios_safari:
+    behavior: 顯示兩步驟提示
+    steps:
+      - 點分享圖示
+      - 選加入主畫面
+  line_in_app_browser:
+    behavior: 只提示改用 Safari 或 Chrome 開啟
+  installed_mode:
+    behavior: 隱藏安裝按鈕
+  pwa_files:
+    - manifest.webmanifest
+    - sw.js
+```
+
+Android 的直接安裝依賴瀏覽器觸發 `beforeinstallprompt`。iOS Safari 不允許網頁直接叫出系統安裝確認，因此保留最短的兩步驟提示。
