@@ -428,6 +428,25 @@
         </div>
     </div>
 
+    <!-- 動態牆：不需先加入名單即可搜尋並評價店家 -->
+    <div id="quick-review-modal" class="hidden fixed inset-0 z-[70] flex items-center justify-center bg-black/60 modal-backdrop fade-in">
+        <div class="bg-white rounded-3xl p-6 w-11/12 max-w-sm shadow-2xl relative modal-dialog">
+            <button onclick="window.closeModal('quick-review-modal')" class="absolute top-4 right-5 text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark text-xl"></i></button>
+            <div class="text-center mb-5">
+                <div class="w-12 h-12 bg-orange-100 text-orange-500 rounded-full flex items-center justify-center mx-auto mb-2"><i class="fa-solid fa-pen-to-square text-xl"></i></div>
+                <h2 class="text-lg font-bold text-gray-800">評價任何一家店</h2>
+                <p class="text-xs text-gray-400 mt-1">不用先加入口袋名單，吃過就能分享</p>
+            </div>
+            <div id="quick-review-search-wrap" class="relative">
+                <label class="block text-xs font-bold text-gray-600 mb-1.5">搜尋店家名稱</label>
+                <input id="quick-review-name" type="text" autocomplete="off" oninput="window.quickReviewPlaceData=null; window.searchQuickReviewPlace(this.value)" placeholder="例如：煦咖啡、附近拉麵店" class="w-full px-4 py-3 bg-orange-50/50 border border-orange-100 rounded-xl focus:outline-none focus:border-orange-400 text-sm font-bold text-gray-800">
+                <div id="quick-review-suggestions" class="hidden absolute z-20 left-0 right-0 top-full mt-1 max-h-52 overflow-y-auto bg-white border border-gray-100 rounded-2xl shadow-2xl"></div>
+            </div>
+            <p id="quick-review-status" class="text-[11px] text-gray-400 mt-2 min-h-[1rem]">找不到時也可以直接輸入店名發布評價。</p>
+            <button onclick="window.continueQuickReview()" class="w-full mt-5 bg-orange-500 hover:bg-orange-600 text-white font-bold py-3.5 rounded-xl shadow-md transition"><i class="fa-solid fa-arrow-right mr-1.5"></i>選擇正評或負評</button>
+        </div>
+    </div>
+
     <!-- 4. 社群互動模態框 (評價/收藏) -->
     <div id="interaction-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 modal-backdrop fade-in">
         <div class="bg-white rounded-3xl p-6 w-11/12 max-w-sm shadow-2xl relative max-h-[90vh] overflow-y-auto no-scrollbar modal-dialog">
@@ -1047,10 +1066,12 @@
                                 </h2>
                                 <p class="text-xs text-gray-400">跨群朋友的美食足跡、留言點讚與交流互動</p>
                             </div>
-                            <button onclick="window.openFriendDirectoryModal()" class="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white text-xs font-bold px-3.5 py-2.5 rounded-2xl shadow-sm transition flex items-center gap-1.5 shrink-0" title="開啟跨群好友大廳加 LINE">
-                                <i class="fa-solid fa-users text-sm"></i>
-                                <span>跨群好友大廳</span>
-                            </button>
+                            <div class="flex items-center gap-2 shrink-0">
+                                <button onclick="window.openQuickReviewModal()" class="bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold px-3.5 py-2.5 rounded-2xl shadow-sm transition flex items-center gap-1.5" title="不用先加入名單，直接評價任何店家"><i class="fa-solid fa-pen-to-square text-sm"></i><span>我要評價</span></button>
+                                <button onclick="window.openFriendDirectoryModal()" class="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white text-xs font-bold px-3.5 py-2.5 rounded-2xl shadow-sm transition flex items-center gap-1.5" title="開啟跨群好友大廳加 LINE">
+                                    <i class="fa-solid fa-users text-sm"></i><span class="hidden sm:inline">跨群好友大廳</span>
+                                </button>
+                            </div>
                         </div>
                     </div>
                     <div id="feed-container" class="flex-1 overflow-y-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 p-4 md:p-6 pb-6 items-stretch content-start"></div>
@@ -2643,6 +2664,53 @@
 
         window.resetRandom = function() { document.getElementById('random-btn').classList.remove('hidden'); document.getElementById('random-intro').classList.remove('hidden'); document.getElementById('random-result').classList.add('hidden'); };
 
+        window.quickReviewPlaceData = null;
+        window.openQuickReviewModal = function() {
+            window.quickReviewPlaceData = null;
+            document.getElementById('quick-review-name').value = '';
+            document.getElementById('quick-review-suggestions').classList.add('hidden');
+            document.getElementById('quick-review-status').textContent = '找不到時也可以直接輸入店名發布評價。';
+            document.getElementById('quick-review-modal').classList.remove('hidden');
+            setTimeout(() => document.getElementById('quick-review-name')?.focus(), 100);
+        };
+        window.searchQuickReviewPlace = function(keyword) {
+            const list = document.getElementById('quick-review-suggestions');
+            const statusEl = document.getElementById('quick-review-status');
+            if (!keyword.trim()) { list.classList.add('hidden'); statusEl.textContent = '找不到時也可以直接輸入店名發布評價。'; return; }
+            if (typeof google === 'undefined' || !google.maps?.places) { statusEl.textContent = '智慧搜尋目前無法使用，可直接以輸入的店名繼續。'; return; }
+            new google.maps.places.AutocompleteService().getPlacePredictions({ input: keyword }, (predictions, status) => {
+                if (status === 'OK' && predictions?.length) {
+                    list.innerHTML = predictions.map(place => `<button type="button" onclick="window.selectQuickReviewPlace('${place.place_id}')" class="w-full text-left p-3 border-b border-gray-50 hover:bg-orange-50 transition"><span class="block text-sm font-bold text-gray-800">${window.escapeHtml(place.structured_formatting.main_text)}</span><span class="block text-[10px] text-gray-400 mt-0.5">${window.escapeHtml(place.structured_formatting.secondary_text || '')}</span></button>`).join('');
+                    list.classList.remove('hidden'); statusEl.textContent = '請從建議中選擇正確店家。';
+                } else {
+                    list.classList.add('hidden'); statusEl.textContent = 'Google 找不到這間店，仍可直接使用目前輸入的店名。';
+                }
+            });
+        };
+        window.selectQuickReviewPlace = function(placeId) {
+            document.getElementById('quick-review-suggestions').classList.add('hidden');
+            const statusEl = document.getElementById('quick-review-status');
+            statusEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i>正在讀取店家資料…';
+            new google.maps.places.PlacesService(document.createElement('div')).getDetails({ placeId, fields: ['name','place_id','url','geometry','formatted_address','address_components','types'] }, (place, status) => {
+                if (status !== 'OK' || !place) { window.quickReviewPlaceData = null; statusEl.textContent = '讀不到完整資料，仍可直接以店名繼續評價。'; return; }
+                const region = window.getPlaceRegion(place);
+                window.quickReviewPlaceData = {
+                    name: place.name || document.getElementById('quick-review-name').value.trim(), placeId: place.place_id || placeId,
+                    mapLink: place.url || '', formatted_address: place.formatted_address || '', country: region.country || '', city: region.city || '',
+                    lat: place.geometry?.location?.lat(), lng: place.geometry?.location?.lng()
+                };
+                document.getElementById('quick-review-name').value = window.quickReviewPlaceData.name;
+                statusEl.innerHTML = `<span class="text-emerald-600"><i class="fa-solid fa-circle-check mr-1"></i>已選擇 ${window.escapeHtml(window.quickReviewPlaceData.name)}${region.city ? `・${window.escapeHtml(region.city)}` : ''}</span>`;
+            });
+        };
+        window.continueQuickReview = function() {
+            const typedName = document.getElementById('quick-review-name').value.trim();
+            if (!typedName) return window.showCustomMsg('請先輸入想評價的店家名稱。');
+            const placeData = window.quickReviewPlaceData || { name: typedName, mapLink: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(typedName)}`, city: '未分類', country: '' };
+            window.closeModal('quick-review-modal');
+            window.initInteraction('review', placeData);
+        };
+
         window.initInteraction = function(type, pDStr) { 
             const pD = typeof pDStr === 'string' ? JSON.parse(pDStr) : pDStr;
             pendingInteraction = { type: type, placeData: pD }; 
@@ -2721,7 +2789,7 @@
                     if(pType === 'review') {
                         const cityVal = pData.city || extractCity(pData.name + " " + (pData.formatted_address || ""));
                         const countryVal = pData.country || window.getCountryFromCity(cityVal);
-                        const reviewItem = { restaurantName: pData.name, group: g, creator: c, rating: rV, content: n, city: cityVal, country: countryVal, photoUrl: safePhoto };
+                        const reviewItem = { restaurantName: pData.name, group: g, creator: c, rating: rV, content: n, city: cityVal, country: countryVal, placeId: pData.placeId || '', mapLink: pData.mapLink || '', lat: pData.lat || null, lng: pData.lng || null, photoUrl: safePhoto };
                         syncToGoogleSheets('Feed', reviewItem);
                         if(db && currentUser) {
                             await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'feed'), { ...reviewItem, timestamp: serverTimestamp() });
