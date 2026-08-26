@@ -685,11 +685,18 @@
             <form id="add-form" onsubmit="window.submitForm(event)">
                 <div class="relative w-full mb-4" id="admin-search-wrapper">
                     <label class="block text-xs font-bold text-orange-500 mb-1.5"><i class="fa-solid fa-wand-magic-sparkles mr-1"></i>智慧搜尋店名</label>
-                    <input type="text" id="input-name" required autocomplete="off" class="w-full px-4 py-3 bg-orange-50/50 border border-orange-100 rounded-xl focus:ring-2 focus:ring-orange-300 text-gray-800 font-bold text-sm" placeholder="輸入店名搜尋..." oninput="window.adminSearchPlace(this.value)" onfocus="window.adminSearchPlace(this.value)">
+                    <input type="text" id="input-name" required autocomplete="off" class="w-full px-4 py-3 bg-orange-50/50 border border-orange-100 rounded-xl focus:ring-2 focus:ring-orange-300 text-gray-800 font-bold text-sm" placeholder="輸入店名搜尋..." oninput="window.smartPlaceSelected=false; window.adminSearchPlace(this.value)" onfocus="window.adminSearchPlace(this.value)">
                     <div id="admin-autocomplete-list" class="hidden absolute z-50 w-full bg-white border border-gray-100 shadow-2xl rounded-2xl mt-1 max-h-48 overflow-y-auto top-full left-0"></div>
+                    <p id="smart-place-match-status" class="hidden text-[10px] font-bold mt-1.5 px-1"></p>
                 </div>
                 
-                <div class="grid grid-cols-2 gap-3 mb-4">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 mb-1">國家</label>
+                        <select id="input-country" onchange="window.handleAddCountryChange()" class="w-full px-3 py-2.5 bg-gray-50 border border-gray-100 rounded-xl text-sm">
+                            <option value="台灣" selected>🇹🇼 台灣</option><option value="日本">🇯🇵 日本</option><option value="韓國">🇰🇷 韓國</option><option value="美國">🇺🇸 美國</option>
+                        </select>
+                    </div>
                     <div>
                         <label class="block text-xs font-bold text-gray-500 mb-1">縣市</label>
                         <select id="input-city" class="w-full px-3 py-2.5 bg-gray-50 border border-gray-100 rounded-xl text-sm">
@@ -704,7 +711,7 @@
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-gray-500 mb-1">分類</label>
-                        <select id="input-category" class="w-full px-3 py-2.5 bg-gray-50 border border-gray-100 rounded-xl text-sm"><option value="麵食">麵食</option><option value="小吃">小吃</option><option value="飯食">飯食</option><option value="鍋物">鍋物</option><option value="甜點/飲料">甜點/飲料</option><option value="異國料理">異國料理</option><option value="未分類" selected>未分類</option></select>
+                        <select id="input-category" class="w-full px-3 py-2.5 bg-gray-50 border border-gray-100 rounded-xl text-sm"><option value="麵食">麵食</option><option value="小吃">小吃</option><option value="飯食">飯食</option><option value="鍋物">鍋物</option><option value="甜點/飲料">甜點/飲料</option><option value="異國料理">異國料理</option><option value="其他餐廳">其他餐廳</option><option value="未分類" selected>未分類</option></select>
                     </div>
                     <div class="col-span-2"><label class="block text-xs font-bold text-gray-500 mb-1">地圖連結 (可空白，系統會自動產生)</label><input type="text" id="input-map" class="w-full px-3 py-2.5 bg-gray-50 border border-gray-100 rounded-xl text-sm" placeholder="https://maps.google.com/... (可留空)"></div>
                 </div>
@@ -2302,6 +2309,45 @@
             '美國': ['不限地區', '紐約', '洛杉磯', '舊金山', '西雅圖', '芝加哥', '拉斯維加斯', '夏威夷']
         };
 
+        window.setSelectValueWithFallback = function(selectEl, value) {
+            if (!selectEl || !value) return false;
+            if (!Array.from(selectEl.options).some(option => option.value === value)) selectEl.add(new Option(value, value));
+            selectEl.value = value;
+            return true;
+        };
+        window.handleAddCountryChange = function(selectedCity = '') {
+            const country = document.getElementById('input-country')?.value || '台灣';
+            const cityEl = document.getElementById('input-city');
+            if (!cityEl) return;
+            const cities = (CITIES_BY_COUNTRY[country] || []).filter(city => !city.startsWith('不限'));
+            cityEl.innerHTML = cities.map(city => `<option value="${window.escapeHtml(city)}">${window.escapeHtml(city)}</option>`).join('');
+            if (selectedCity) window.setSelectValueWithFallback(cityEl, selectedCity);
+        };
+        window.inferPlaceCategory = function(place) {
+            const types = (place.types || []).join(' ').toLowerCase();
+            const text = `${place.name || ''} ${types}`.toLowerCase();
+            if (/(cafe|bakery|coffee|dessert|ice_cream|咖啡|甜點|蛋糕|烘焙|飲料|茶飲|冰品)/i.test(text)) return '甜點/飲料';
+            if (/(hot_pot|火鍋|鍋物|涮涮鍋|麻辣鍋|壽喜燒)/i.test(text)) return '鍋物';
+            if (/(ramen|noodle|麵|拉麵|烏龍|蕎麥|義大利麵)/i.test(text)) return '麵食';
+            if (/(rice|飯|丼|咖哩|便當|粥)/i.test(text)) return '飯食';
+            if (/(meal_takeaway|street_food|小吃|鹽酥|滷味|雞排|蚵仔|臭豆腐)/i.test(text)) return '小吃';
+            if (/(japanese|korean|italian|french|thai|vietnamese|indian|mexican|american|日式|韓式|義式|泰式|越式|印度|墨西哥|美式)/i.test(text)) return '異國料理';
+            if (/(restaurant|food|bar|meal_delivery)/i.test(types)) return '其他餐廳';
+            return '未分類';
+        };
+        window.getPlaceRegion = function(place) {
+            const parts = place.address_components || [];
+            const findPart = (...types) => parts.find(part => types.some(type => (part.types || []).includes(type)));
+            const countryPart = findPart('country');
+            const countryMap = { TW: '台灣', JP: '日本', KR: '韓國', US: '美國' };
+            const country = countryMap[countryPart?.short_name] || countryPart?.long_name || '';
+            const regionPart = country === '美國' ? findPart('locality', 'administrative_area_level_2', 'administrative_area_level_1') : findPart('administrative_area_level_1', 'administrative_area_level_2', 'locality');
+            let city = regionPart?.long_name || '';
+            const cityMap = { '서울특별시':'首爾特別市', '부산광역시':'釜山廣域市', '인천광역시':'仁川廣域市', '대구광역시':'大邱廣域市', '제주특별자치도':'濟州特別自治道', 'New York':'紐約', 'Los Angeles':'洛杉磯', 'San Francisco':'舊金山', 'Seattle':'西雅圖', 'Chicago':'芝加哥', 'Las Vegas':'拉斯維加斯', 'Honolulu':'夏威夷' };
+            city = cityMap[city] || city;
+            return { country, city };
+        };
+
         window.handleExploreCountryChange = function() {
             const countryEl = document.getElementById('explore-country');
             const cityEl = document.getElementById('explore-city');
@@ -3555,6 +3601,9 @@
 
         window.openAddModal = function() {
             document.getElementById('add-form')?.reset();
+            window.smartPlaceSelected = false;
+            document.getElementById('smart-place-match-status')?.classList.add('hidden');
+            window.handleAddCountryChange('台北市');
             window.setPhotoUploaderValue('admin-add', '');
             updateConfigDropdowns();
             if (window.myIdentity && window.myIdentity.group) {
@@ -3587,6 +3636,7 @@
                     return window.showCustomMsg("請輸入餐廳店名喔！");
                 }
 
+                const countryVal = document.getElementById('input-country')?.value || window.getCountryFromCity(document.getElementById('input-city').value) || '台灣';
                 let cityVal = document.getElementById('input-city').value;
                 if (!cityVal) cityVal = "台北市";
 
@@ -3614,7 +3664,8 @@
                 const placeIdVal = document.getElementById('input-place-id').value || "";
 
                 const newDoc = {
-                    name: nameVal, 
+                    name: nameVal,
+                    country: countryVal,
                     city: cityVal, 
                     hours: "", 
                     mapLink: mapLink, 
@@ -3667,11 +3718,15 @@
             const list = document.getElementById('admin-autocomplete-list'); if(!k.trim()) return list.classList.add('hidden');
             if (typeof google !== 'undefined' && google.maps && google.maps.places) {
                 try {
-                    new google.maps.places.AutocompleteService().getPlacePredictions({ input: k, componentRestrictions: {country: 'tw'} }, (p, s) => {
+                    new google.maps.places.AutocompleteService().getPlacePredictions({ input: k }, (p, s) => {
                         if (s === 'OK' && p) { 
-                            list.innerHTML = p.map(x => `<div onclick="window.selectAdminPlace('${x.place_id}')" class="p-4 border-b border-gray-50 text-sm font-bold text-gray-700 cursor-pointer hover:bg-orange-50 transition">${x.structured_formatting.main_text} <span class="text-[10px] text-gray-400 font-normal ml-2">${x.structured_formatting.secondary_text}</span></div>`).join(''); list.classList.remove('hidden'); 
+                            list.innerHTML = p.map(x => `<div onclick="window.selectAdminPlace('${x.place_id}')" class="p-4 border-b border-gray-50 text-sm font-bold text-gray-700 cursor-pointer hover:bg-orange-50 transition">${window.escapeHtml(x.structured_formatting.main_text)} <span class="text-[10px] text-gray-400 font-normal ml-2">${window.escapeHtml(x.structured_formatting.secondary_text)}</span></div>`).join(''); list.classList.remove('hidden');
                         } else if (s === 'REQUEST_DENIED') {
                             window.showCustomMsg("⚠️ 智慧建檔功能受限！\n請確認 Google Cloud 中是否啟用了經典版的「Places API」，而非「Places API (New)」。");
+                        } else {
+                            list.classList.add('hidden');
+                            const matchStatus = document.getElementById('smart-place-match-status');
+                            if (matchStatus) { matchStatus.className = 'text-[10px] font-bold mt-1.5 px-1 text-amber-600'; matchStatus.textContent = '智慧搜尋目前找不到這間店，請手動填寫國家、縣市與分類。'; }
                         }
                     });
                 } catch(e) { console.error(e); }
@@ -3682,16 +3737,32 @@
             document.getElementById('admin-autocomplete-list').classList.add('hidden');
             if (typeof google !== 'undefined' && google.maps && google.maps.places) {
                 try {
-                    new google.maps.places.PlacesService(document.createElement('div')).getDetails({ placeId: id }, (p, s) => {
+                    new google.maps.places.PlacesService(document.createElement('div')).getDetails({ placeId: id, fields: ['name','url','geometry','rating','place_id','photos','address_components','formatted_address','types'] }, (p, s) => {
                         if (s === 'OK') {
                             document.getElementById('input-name').value = p.name || ''; document.getElementById('input-map').value = p.url || '';
                             if(p.geometry) { document.getElementById('input-lat').value = p.geometry.location.lat(); document.getElementById('input-lng').value = p.geometry.location.lng(); }
                             document.getElementById('input-rating').value = p.rating || '';
                             document.getElementById('input-place-id').value = p.place_id || id;
+                            const region = window.getPlaceRegion(p);
+                            const countryEl = document.getElementById('input-country');
+                            if (region.country) window.setSelectValueWithFallback(countryEl, region.country);
+                            window.handleAddCountryChange(region.city);
+                            const category = window.inferPlaceCategory(p);
+                            document.getElementById('input-category').value = category;
+                            window.smartPlaceSelected = true;
+                            const matchStatus = document.getElementById('smart-place-match-status');
+                            if (matchStatus) {
+                                matchStatus.className = `text-[10px] font-bold mt-1.5 px-1 ${category === '未分類' ? 'text-amber-600' : 'text-emerald-600'}`;
+                                matchStatus.textContent = category === '未分類' ? '已找到店家並帶入國家、縣市；Google 未提供明確類型，請手動確認分類。' : `已自動配對：${region.country || '國家未提供'}・${region.city || '縣市未提供'}・${category}`;
+                            }
                             if (p.photos && p.photos.length > 0) {
                                 // Google 照片 URL 是臨時值，保留 placeId 以便每次即時取圖。
                                 document.getElementById('input-photo').value = '';
                             }
+                        } else {
+                            window.smartPlaceSelected = false;
+                            const matchStatus = document.getElementById('smart-place-match-status');
+                            if (matchStatus) { matchStatus.className = 'text-[10px] font-bold mt-1.5 px-1 text-amber-600'; matchStatus.textContent = '智慧搜尋找不到完整店家資料，請手動填寫國家、縣市與分類。'; }
                         }
                     });
                 } catch(e) {}
