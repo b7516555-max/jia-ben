@@ -272,3 +272,37 @@ smart_place_autofill:
   cache:
     service_worker: together-eat-shell-v5
 ```
+
+## 13. 動態牆獨立店家評價入口
+
+```yaml
+direct_feed_review:
+  updated_at: 2026-08-26
+  status: implemented
+  deployment:
+    github_pages_commit: 56a507cde0aceaf11e5014786cb72fd8dad45e8c
+    main_commit: 7aedc5000c5cfb58550d93e0c95ce7793c56ac37
+    apps_script_version: 56
+    original_urls_preserved: true
+  entry_point: 動態牆頁首的「我要評價」按鈕
+  restaurant_requirement: 不必先存在口袋名單或餐廳資料庫
+  place_selection:
+    preferred: 使用 Google Places 智慧搜尋選擇店家
+    fallback: Google 找不到時可直接輸入店名繼續
+  review_options:
+    positive: 推爆
+    negative: 避雷
+    optional_fields:
+      - 心得文字
+      - 現場照片
+  shared_flow: 沿用既有 interaction-modal、Google Drive 照片上傳、Firestore 動態牆與 Google 試算表同步
+  stored_place_metadata:
+    - placeId
+    - mapLink
+    - country
+    - city
+    - lat
+    - lng
+  cache:
+    service_worker: together-eat-shell-v6
+```
