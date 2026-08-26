@@ -171,6 +171,10 @@
         .foodie-avatar-night { background-position: 50% 100%; }
         .foodie-avatar-camera { background-position: 100% 100%; }
         .avatar-choice.is-selected { border-color: #f97316; box-shadow: 0 0 0 3px rgba(249,115,22,.18); transform: translateY(-2px); }
+        .wheel-stage { width: min(76vw, 390px); aspect-ratio: 1; }
+        .wheel-disc { transition: transform 4.6s cubic-bezier(.12,.72,.05,1); will-change: transform; }
+        .wheel-pointer { filter: drop-shadow(0 4px 4px rgba(15,23,42,.2)); }
+        @media (prefers-reduced-motion: reduce) { .wheel-disc { transition-duration: .01ms; } }
         .vote-bar { background-color: rgba(249, 115, 22, 0.12); position: absolute; left: 0; top: 0; height: 100%; z-index: 0; transition: width 0.4s ease; border-radius: 0.5rem; }
         .intro-exit { opacity: 0; transform: scale(1.05); pointer-events: none; transition: all 0.8s cubic-bezier(0.65, 0, 0.35, 1); }
         
@@ -300,7 +304,7 @@
                 </div>
             </div>
             <h1 class="text-5xl font-black tracking-widest text-gray-800 mb-4 drop-shadow-sm text-center w-full">一起吃飯吧！</h1>
-            <p class="text-base text-gray-500 font-bold tracking-widest mb-12 text-center leading-loose">找尋隱藏好店<br>發起聚會的專屬雷達</p>
+            <p class="text-base text-gray-500 font-bold tracking-widest mb-12 text-center leading-loose">找尋隱藏好店<br>轉出聚餐驚喜的美食輪盤</p>
             
             <div class="w-full flex flex-col items-center space-y-4 relative z-10">
                 <button id="btn-install-app" onclick="window.handleInstallClick()" class="w-full group relative px-8 py-4 text-base bg-orange-500 text-white rounded-full font-bold tracking-widest shadow-[0_10px_30px_rgba(249,115,22,0.3)] hover:bg-orange-600 transition-all duration-300 hover:scale-105 active:scale-95 flex items-center justify-center gap-3 overflow-hidden">
@@ -825,7 +829,7 @@
                 <i class="fa-solid fa-utensils drop-shadow-sm"></i>
             </div>
             <button onclick="window.switchTab('explore')" id="tab-explore" class="tab-btn active flex-1 md:flex-none py-2 md:py-3 flex flex-col items-center gap-1 transition md:w-[84px] md:mx-auto md:hover:bg-orange-50 md:hover:text-orange-400"><i class="fa-solid fa-compass text-[18px] md:text-[20px] mb-0.5"></i><span>找餐廳</span></button>
-            <button onclick="window.switchTab('nearby')" id="tab-nearby" class="tab-btn flex-1 md:flex-none py-2 md:py-3 flex flex-col items-center gap-1 transition md:w-[84px] md:mx-auto md:hover:bg-orange-50 md:hover:text-orange-400"><i class="fa-solid fa-satellite-dish text-[18px] md:text-[20px] mb-0.5"></i><span>雷達</span></button>
+            <button onclick="window.switchTab('nearby')" id="tab-nearby" class="tab-btn flex-1 md:flex-none py-2 md:py-3 flex flex-col items-center gap-1 transition md:w-[84px] md:mx-auto md:hover:bg-orange-50 md:hover:text-orange-400"><i class="fa-solid fa-dharmachakra text-[18px] md:text-[20px] mb-0.5"></i><span>輪盤</span></button>
             <button onclick="window.switchTab('random')" id="tab-random" class="tab-btn flex-1 md:flex-none py-2 md:py-3 flex flex-col items-center gap-1 transition md:w-[84px] md:mx-auto md:hover:bg-orange-50 md:hover:text-orange-400"><i class="fa-solid fa-wand-magic-sparkles text-[18px] md:text-[20px] mb-0.5"></i><span>隨機抽</span></button>
             <button onclick="window.switchTab('party')" id="tab-party" class="tab-btn flex-1 md:flex-none py-2 md:py-3 flex flex-col items-center gap-1 transition md:w-[84px] md:mx-auto md:hover:bg-orange-50 md:hover:text-orange-400 relative"><i class="fa-solid fa-fire text-[18px] md:text-[20px] mb-0.5"></i><span>揪團</span></button>
             <button onclick="window.switchTab('feed')" id="tab-feed" class="tab-btn flex-1 md:flex-none py-2 md:py-3 flex flex-col items-center gap-1 transition md:w-[84px] md:mx-auto md:hover:bg-orange-50 md:hover:text-orange-400"><i class="fa-solid fa-comments text-[18px] md:text-[20px] mb-0.5"></i><span>動態牆</span></button>
@@ -982,14 +986,14 @@
                     </div>
                 </div>
 
-                <!-- 視圖 1.5: 雷達掃描 (Radar) -->
+                <!-- 視圖 1.5: 美食旋轉輪盤（內部代號仍保留 radar 以相容既有搜尋流程） -->
                 <div id="view-nearby" class="hidden fade-in h-full flex flex-col relative w-full">
                     <div class="bg-white p-3.5 sm:p-5 shadow-sm z-10 border-b border-gray-100 flex flex-col items-center">
                         <div class="w-full max-w-3xl">
-                            <h2 class="text-base sm:text-lg font-bold text-gray-800 mb-2 leading-none"><i class="fa-solid fa-satellite-dish text-orange-500 mr-1.5"></i>美食雷達 (掃描附近 15 間)</h2>
+                            <h2 class="text-base sm:text-lg font-bold text-gray-800 mb-2 leading-none"><i class="fa-solid fa-dharmachakra text-orange-500 mr-1.5"></i>附近美食旋轉輪盤</h2>
                             <div class="flex gap-1.5">
                                 <input type="text" id="radar-keyword" placeholder="想找什麼？(可空白)" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none text-gray-800 text-xs sm:text-sm font-medium" onkeypress="if(event.key === 'Enter') window.searchGooglePlaces('radar')">
-                                <button onclick="window.searchGooglePlaces('radar')" class="bg-orange-500 text-white px-4 rounded-xl shadow-xs font-bold text-xs sm:text-sm hover:bg-orange-600 transition whitespace-nowrap">雷達掃描</button>
+                                <button id="radar-spin-btn" onclick="window.searchGooglePlaces('radar')" class="bg-orange-500 text-white px-4 rounded-xl shadow-xs font-bold text-xs sm:text-sm hover:bg-orange-600 transition whitespace-nowrap"><i class="fa-solid fa-play mr-1"></i>轉動輪盤</button>
                             </div>
                             <div class="flex items-center gap-1 mt-2 text-xs text-gray-500 justify-end">
                                 <i class="fa-solid fa-coins text-orange-400 text-[10px]"></i><span class="font-bold text-[10px] shrink-0">價位</span>
@@ -999,8 +1003,15 @@
                             </div>
                         </div>
                     </div>
-                    <div id="nearby-container" class="flex-1 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 p-4 md:p-6 pb-6 items-stretch content-start">
-                        <div class="text-center text-gray-300 py-10 mt-10 col-span-full"><i class="fa-solid fa-map-location-dot text-6xl mb-4 opacity-30"></i><p class="text-sm font-medium text-gray-400">點擊上方掃描最近好店</p></div>
+                    <div id="nearby-container" class="flex-1 overflow-y-auto p-4 md:p-6 pb-10 flex flex-col items-center">
+                        <div class="text-center mb-3"><p class="text-sm font-bold text-gray-700">按下按鈕，讓今天吃什麼交給手氣！</p><p class="text-[11px] text-gray-400 mt-1">會從符合關鍵字、位置與價位的附近餐廳中抽選</p></div>
+                        <div class="wheel-stage relative shrink-0">
+                            <div class="wheel-pointer absolute z-20 left-1/2 -top-1 -translate-x-1/2 text-orange-600 text-4xl"><i class="fa-solid fa-caret-down"></i></div>
+                            <canvas id="restaurant-wheel" width="720" height="720" class="wheel-disc w-full h-full rounded-full border-[10px] border-white shadow-[0_18px_45px_rgba(249,115,22,.24)] bg-orange-50"></canvas>
+                            <div class="absolute inset-[39%] rounded-full bg-white shadow-lg border-4 border-orange-100 flex items-center justify-center pointer-events-none"><i class="fa-solid fa-utensils text-orange-500 text-2xl"></i></div>
+                        </div>
+                        <div id="wheel-status" class="mt-5 text-center text-sm font-bold text-gray-500">輪盤正在等你召集附近好店</div>
+                        <div id="wheel-result" class="hidden w-full max-w-md mt-4"></div>
                     </div>
                 </div>
 
@@ -1206,7 +1217,7 @@
                 const btnEnter = document.getElementById('btn-enter-web');
                 if(btnInstall) btnInstall.classList.add('hidden');
                 if(btnEnter) {
-                    btnEnter.innerHTML = '啟動雷達 <i class="fa-solid fa-rocket ml-1.5"></i>';
+                    btnEnter.innerHTML = '啟動輪盤 <i class="fa-solid fa-rocket ml-1.5"></i>';
                     btnEnter.classList.replace('text-gray-500', 'text-white');
                     btnEnter.classList.replace('hover:text-gray-800', 'hover:bg-gray-800');
                     btnEnter.classList.add('bg-gray-900', 'rounded-full', 'py-4', 'shadow-lg', 'hover:scale-105', 'text-base');
@@ -1221,6 +1232,7 @@
             if ('serviceWorker' in navigator && location.protocol === 'https:' && location.hostname.endsWith('github.io')) {
                 navigator.serviceWorker.register('./sw.js').catch((err) => console.warn('Service Worker 註冊失敗:', err));
             }
+            if (typeof window.drawRadarWheel === 'function') window.drawRadarWheel([]);
         });
 
         window.openInstallGuide = function(mode) {
@@ -2349,7 +2361,10 @@
                 document.getElementById(cId).innerHTML = `<div class="text-center text-orange-400 py-10 col-span-full"><i class="fa-brands fa-google fa-bounce text-4xl mb-3"></i><p class="font-bold tracking-widest text-sm mt-2">為您搜尋 ${k} ...</p></div>`; 
             } else {
                 k = document.getElementById('radar-keyword').value; if(!k.trim()) k = "餐廳"; cId = 'nearby-container';
-                document.getElementById(cId).innerHTML = `<div class="text-center text-orange-400 py-10 col-span-full"><i class="fa-brands fa-google fa-bounce text-4xl mb-3"></i><p class="font-bold tracking-widest text-sm mt-2">為您掃描最近的 15 間好店...</p></div>`; 
+                const spinBtn = document.getElementById('radar-spin-btn');
+                if (spinBtn) { spinBtn.disabled = true; spinBtn.classList.add('opacity-60'); spinBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i>召集附近好店'; }
+                document.getElementById('wheel-status').innerHTML = '<i class="fa-solid fa-location-crosshairs fa-beat mr-1 text-orange-500"></i>正在尋找符合條件的附近餐廳…';
+                document.getElementById('wheel-result').classList.add('hidden');
             }
             if (navigator.geolocation) { 
                 navigator.geolocation.getCurrentPosition( 
@@ -2461,16 +2476,68 @@
             
             if(vT === 'random') { 
                 renderRandomResult(res[Math.floor(Math.random() * res.length)]); 
+            } else if (vT === 'radar') {
+                window.spinRadarWheel(res);
             } else { 
-                const cId = vT === 'explore' ? 'explore-results-container' : 'nearby-container'; 
+                const cId = 'explore-results-container';
                 document.getElementById(cId).innerHTML = res.map(p => generatePlaceCardHtml(p)).join(''); 
             } 
         }
+
+        const WHEEL_COLORS = ['#fb923c','#fbbf24','#34d399','#60a5fa','#a78bfa','#fb7185','#2dd4bf','#f97316','#84cc16','#38bdf8','#c084fc','#f472b6','#facc15','#4ade80','#818cf8'];
+        window.drawRadarWheel = function(places = []) {
+            const canvas = document.getElementById('restaurant-wheel');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const entries = places.length ? places : Array.from({length: 10}, (_, i) => ({ name: i % 2 ? '今天吃什麼' : '附近好店' }));
+            const center = canvas.width / 2;
+            const radius = center - 12;
+            const slice = Math.PI * 2 / entries.length;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            entries.forEach((place, index) => {
+                const start = -Math.PI / 2 + index * slice;
+                ctx.beginPath(); ctx.moveTo(center, center); ctx.arc(center, center, radius, start, start + slice); ctx.closePath();
+                ctx.fillStyle = WHEEL_COLORS[index % WHEEL_COLORS.length]; ctx.fill();
+                ctx.strokeStyle = 'rgba(255,255,255,.85)'; ctx.lineWidth = 4; ctx.stroke();
+                ctx.save(); ctx.translate(center, center); ctx.rotate(start + slice / 2);
+                ctx.textAlign = 'right'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#fff';
+                ctx.font = `700 ${entries.length > 12 ? 20 : 23}px system-ui, sans-serif`;
+                const maxChars = entries.length > 12 ? 5 : 7;
+                const label = String(place.name || '好店').length > maxChars ? String(place.name).slice(0, maxChars) + '…' : String(place.name || '好店');
+                ctx.fillText(label, radius - 30, 0); ctx.restore();
+            });
+        };
+        window.spinRadarWheel = function(places) {
+            const canvas = document.getElementById('restaurant-wheel');
+            const statusEl = document.getElementById('wheel-status');
+            const resultEl = document.getElementById('wheel-result');
+            const btn = document.getElementById('radar-spin-btn');
+            if (!canvas || !places.length) return;
+            window.drawRadarWheel(places);
+            const selectedIndex = Math.floor(Math.random() * places.length);
+            const segmentDegrees = 360 / places.length;
+            const finalRotation = 360 * (6 + Math.floor(Math.random() * 3)) - (selectedIndex * segmentDegrees + segmentDegrees / 2);
+            canvas.style.transition = 'none'; canvas.style.transform = 'rotate(0deg)'; void canvas.offsetWidth;
+            canvas.style.transition = ''; canvas.style.transform = `rotate(${finalRotation}deg)`;
+            statusEl.innerHTML = '<i class="fa-solid fa-dice fa-bounce mr-1 text-orange-500"></i>輪盤轉動中，看看今天的緣分是哪一家…';
+            setTimeout(() => {
+                const winner = places[selectedIndex];
+                statusEl.innerHTML = `🎉 今天就吃 <span class="text-orange-600">${window.escapeHtml(winner.name)}</span>！`;
+                resultEl.innerHTML = `<div class="text-center text-xs font-bold text-amber-600 mb-2">命運選中的附近好店</div>${generatePlaceCardHtml(winner)}`;
+                resultEl.classList.remove('hidden');
+                if (btn) { btn.disabled = false; btn.classList.remove('opacity-60'); btn.innerHTML = '<i class="fa-solid fa-rotate mr-1"></i>再轉一次'; }
+                resultEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }, window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 50 : 4700);
+        };
         
         function displayNoResults(vT) { 
             const msg = `<div class="text-center text-gray-500 py-10 col-span-full">附近找不到相關餐廳喔！<br>換個關鍵字試試？</div>`; 
             if(vT === 'explore') document.getElementById('explore-results-container').innerHTML = msg; 
-            if(vT === 'radar') document.getElementById('nearby-container').innerHTML = msg; 
+            if(vT === 'radar') {
+                document.getElementById('wheel-status').innerHTML = '附近找不到符合條件的餐廳，換個關鍵字或價位再轉一次吧！';
+                const btn = document.getElementById('radar-spin-btn');
+                if (btn) { btn.disabled = false; btn.classList.remove('opacity-60'); btn.innerHTML = '<i class="fa-solid fa-rotate mr-1"></i>重新轉動'; }
+            }
             if(vT === 'random') { document.getElementById('random-btn').classList.remove('animate-pulse'); window.showCustomMsg("附近找不到喔！"); } 
         }
         
