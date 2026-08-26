@@ -169,3 +169,37 @@ mobile_welcome_card_fix:
     - Service Worker 快取版本升為 together-eat-shell-v2
   desktop_layout_preserved: true
 ```
+
+## 10. 電腦版美食人偶與空白區改善
+
+```yaml
+desktop_foodie_avatar:
+  updated_at: 2026-08-26
+  status: implemented
+  deployment:
+    github_pages_commit: ff688f1759b02496b6f96faeeee8f72522709fb9
+    main_commit: d9bdd7609d387775c5c514e3a0988d29386bd520
+    apps_script_version: 53
+    original_urls_preserved: true
+  purpose: 使用新朋友加入卡片在電腦版被同列高卡片撐出的空間，提供可辨識的個人角色
+  choices:
+    - host
+    - explorer
+    - cook
+    - dessert
+    - night
+    - camera
+  behavior:
+    desktop: 卡片下半部顯示大型美食人偶，填補原本過多空白
+    mobile: 只顯示小型圓形人偶，不增加卡片高度
+    identity_form: 老朋友與新朋友皆可從六款人偶中選擇
+    persistence: avatarId 儲存在個人 profile；新朋友同步寫入 system_welcome 動態
+    legacy_data: 舊 welcome 動態依姓名穩定配置預設人偶，使用者重新儲存身分後會更新本人舊動態
+  asset:
+    file: assets/foodie-avatar-sprite.png
+    layout: 3x2 CSS sprite
+    source_type: AI generated raster image
+    prompt_summary: 六款可愛 Q 版美食朋友角色，三欄兩列、淡藍純色背景、無文字與邊框
+  cache:
+    service_worker: together-eat-shell-v3
+```
