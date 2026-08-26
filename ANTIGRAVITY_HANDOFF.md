@@ -233,3 +233,42 @@ nearby_food_wheel:
   cache:
     service_worker: together-eat-shell-v4
 ```
+
+## 12. 智慧店家欄位自動配對
+
+```yaml
+smart_place_autofill:
+  updated_at: 2026-08-26
+  status: implemented
+  deployment:
+    github_pages_commit: 98641c04b6db1801388a3438cc6cf936ff7d70d9
+    main_commit: 32031bfe0110f0892324d4084434da8a7664d380
+    apps_script_version: 55
+    original_urls_preserved: true
+  trigger: 使用者從智慧搜尋建議中選取 Google 店家
+  automatic_fields:
+    country: 依 Google address_components 的 country 配對
+    city: 依國家選用行政區或城市，並自動更新縣市選單
+    category: 依 Google Places types 與店名關鍵字配對
+  supported_country_presets:
+    - 台灣
+    - 日本
+    - 韓國
+    - 美國
+  category_values:
+    - 麵食
+    - 小吃
+    - 飯食
+    - 鍋物
+    - 甜點/飲料
+    - 異國料理
+    - 其他餐廳
+    - 未分類
+  fallback:
+    place_not_found: 顯示提示並保留國家、縣市、分類供使用者手動選擇
+    category_unknown: 國家與縣市照常帶入，分類保留未分類並提示手動確認
+  data_change:
+    restaurant_document: 新增 country 欄位
+  cache:
+    service_worker: together-eat-shell-v5
+```
