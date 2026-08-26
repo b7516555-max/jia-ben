@@ -81,7 +81,7 @@ issue:
 apps_script:
   project_id: 1Hhe556jkdAPexGThjWiiCoZ1vdJKkBKVr446Z0fGu-Ov6uLe3VxzGI1V
   deployment_id: AKfycbwTg7lmireS-npCAzvDZVPVmI7u5jAFpslg7SNL59Ab3ulLOUr7cPB5wzIaTSyTUJpl
-  deployed_version: 51
+  deployed_version: 52
   deployment_url_changed: false
 ```
 
@@ -156,6 +156,10 @@ Android 的直接安裝依賴瀏覽器觸發 `beforeinstallprompt`。iOS Safari 
 ```yaml
 mobile_welcome_card_fix:
   updated_at: 2026-08-26
+  deployment:
+    github_pages_commit: 76eb59f50e95c99a7c8984428aeafe29fba63f79
+    apps_script_version: 52
+    original_urls_preserved: true
   symptom: 動態牆的新朋友加入卡片高度遭壓縮，頭像與文字被裁切並呈現重疊
   root_cause: 行動瀏覽器將動態牆 CSS Grid 自動列高拉伸或壓縮，卡片的 overflow-hidden 讓內容遭裁切
   changes:
