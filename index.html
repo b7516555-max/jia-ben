@@ -175,6 +175,23 @@
         .wheel-disc { transition: transform 4.6s cubic-bezier(.12,.72,.05,1); will-change: transform; }
         .wheel-pointer { filter: drop-shadow(0 4px 4px rgba(15,23,42,.2)); }
         @media (prefers-reduced-motion: reduce) { .wheel-disc { transition-duration: .01ms; } }
+        @media (min-width: 768px) {
+            .desktop-filter-row, .desktop-budget-row, .desktop-price-row, .party-recap-action { white-space: nowrap !important; }
+            .desktop-filter-row { overflow-x: auto; gap: 1rem !important; padding-block: .45rem !important; }
+            .desktop-filter-row .pill-chip { font-size: .9rem !important; padding: .38rem .8rem !important; }
+            .desktop-filter-row select, .desktop-price-row select { font-size: .9rem !important; min-width: 7.5rem; padding: .4rem .7rem !important; }
+            .desktop-filter-row > div, .desktop-price-row { font-size: .9rem !important; flex-wrap: nowrap !important; }
+            .tab-btn span { font-size: .9rem !important; white-space: nowrap; }
+            #random-intro { max-width: 48rem !important; }
+            #view-random h2 { font-size: 1.65rem !important; white-space: nowrap; }
+            #random-keyword { font-size: 1rem !important; }
+            .desktop-budget-row { font-size: .95rem !important; padding: .8rem 1rem !important; overflow-x: auto !important; }
+            .desktop-budget-row span, .desktop-budget-row select { font-size: .95rem !important; }
+            .desktop-budget-row select { min-width: 9.5rem; padding: .55rem .75rem !important; }
+            .desktop-price-row { font-size: .9rem !important; }
+            .party-recap-action { font-size: .9rem !important; line-height: 1.25rem !important; }
+            #view-nearby h2, #view-feed h2, #view-party h2 { white-space: nowrap; }
+        }
         .vote-bar { background-color: rgba(249, 115, 22, 0.12); position: absolute; left: 0; top: 0; height: 100%; z-index: 0; transition: width 0.4s ease; border-radius: 0.5rem; }
         .intro-exit { opacity: 0; transform: scale(1.05); pointer-events: none; transition: all 0.8s cubic-bezier(0.65, 0, 0.35, 1); }
         
@@ -921,7 +938,7 @@
                             </div>
 
                             <!-- 快捷標籤與價位列 (緊湊單行化) -->
-                            <div class="flex items-center justify-between gap-2 mt-2 pt-1 border-t border-gray-100/60">
+                            <div class="desktop-filter-row flex items-center justify-between gap-2 mt-2 pt-1 border-t border-gray-100/60">
                                 <div class="flex items-center gap-1 overflow-x-auto no-scrollbar py-0.5">
                                     <button onclick="window.runQuickSearch('午餐')" class="pill-chip shrink-0 rounded-full border border-orange-100 bg-white px-2 py-0.5 text-[10px] font-bold text-orange-600 shadow-2xs">🍽️午餐</button>
                                     <button onclick="window.runQuickSearch('晚餐')" class="pill-chip shrink-0 rounded-full border border-orange-100 bg-white px-2 py-0.5 text-[10px] font-bold text-orange-600 shadow-2xs">🌙晚餐</button>
@@ -970,7 +987,7 @@
                             <input type="text" id="random-keyword" placeholder="想吃哪類或哪區？(例如：燒肉、大安區)" class="w-full text-center px-3 py-2.5 bg-white border border-gray-200 rounded-xl shadow-2xs focus:outline-none focus:border-orange-400 font-medium text-gray-700 text-xs sm:text-sm">
                             
                             <!-- 金額 / 價位區間設定 (RWD 極簡緊湊版) -->
-                            <div class="bg-white p-2.5 rounded-xl border border-gray-200/80 shadow-2xs flex items-center justify-between gap-1.5 text-xs text-gray-600 w-full overflow-hidden">
+                            <div class="desktop-budget-row bg-white p-2.5 rounded-xl border border-gray-200/80 shadow-2xs flex items-center justify-between gap-1.5 text-xs text-gray-600 w-full overflow-hidden">
                                 <span class="font-bold shrink-0 flex items-center gap-1 text-orange-500 text-[11px]"><i class="fa-solid fa-coins"></i>預算</span>
                                 <div class="flex items-center gap-1 flex-1 min-w-0 w-full">
                                     <select id="random-price-min" class="flex-1 min-w-0 px-2 py-1 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none text-[11px] font-bold text-gray-700 truncate">
@@ -1021,7 +1038,7 @@
                                 <input type="text" id="radar-keyword" placeholder="想找什麼？(可空白)" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none text-gray-800 text-xs sm:text-sm font-medium" onkeypress="if(event.key === 'Enter') window.searchGooglePlaces('radar')">
                                 <button id="radar-spin-btn" onclick="window.searchGooglePlaces('radar')" class="bg-orange-500 text-white px-4 rounded-xl shadow-xs font-bold text-xs sm:text-sm hover:bg-orange-600 transition whitespace-nowrap"><i class="fa-solid fa-play mr-1"></i>轉動輪盤</button>
                             </div>
-                            <div class="flex items-center gap-1 mt-2 text-xs text-gray-500 justify-end">
+                            <div class="desktop-price-row flex items-center gap-1 mt-2 text-xs text-gray-500 justify-end overflow-x-auto no-scrollbar">
                                 <i class="fa-solid fa-coins text-orange-400 text-[10px]"></i><span class="font-bold text-[10px] shrink-0">價位</span>
                                 <select id="radar-price-min" class="px-1.5 py-0.5 bg-gray-50 border border-gray-200 rounded-lg text-[10px] focus:outline-none"><option value="">最低</option><option value="0">免費</option><option value="1">$ 平價</option><option value="2">$$ 中等</option><option value="3">$$$ 偏高</option><option value="4">$$$$ 高價</option></select>
                                 <span class="text-gray-300">~</span>
@@ -2306,9 +2323,9 @@
                             <div class="flex-1 px-2 border-l border-gray-100"><p class="text-[10px] font-bold text-gray-400 mb-0.5"><i class="fa-solid fa-users mr-1"></i>已參加 (${joinCount})</p><p class="text-xs font-bold text-gray-700 line-clamp-1 leading-relaxed">${joinCount > 0 ? p.joined.join('、') : '還沒有人報名喔'}</p></div>
                             <button onclick="window.toggleJoinParty('${p.id}')" class="px-5 py-2.5 rounded-xl font-bold text-sm shadow-sm transition whitespace-nowrap flex-shrink-0 ${isJoined ? 'bg-gray-100 text-gray-600 border border-gray-200 hover:bg-red-50 hover:text-red-500' : 'bg-orange-500 text-white hover:bg-orange-600'}">${isJoined ? '取消參加' : '算我一個！'}</button>
                         </div>
-                        <button onclick="window.openPartyRecapModal('${p.id}')" class="w-full bg-amber-50 hover:bg-amber-100 text-amber-700 font-bold py-2 px-3 rounded-xl text-xs border border-amber-200 transition flex items-center justify-center gap-1.5 shadow-xs" title="聚會結束時貼出側拍花絮讓全站朋友看">
+                        <button onclick="window.openPartyRecapModal('${p.id}')" class="party-recap-action w-full bg-amber-50 hover:bg-amber-100 text-amber-700 font-bold py-2 px-3 rounded-xl text-xs border border-amber-200 transition flex items-center justify-center gap-1.5 shadow-xs" title="聚會結束紀錄／分享現場照片至動態牆">
                             <i class="fa-solid fa-camera-retro"></i>
-                            <span>📸 聚會結束紀錄 / 分享現場照片至動態牆</span>
+                            <span>📸 分享聚會照片至動態牆</span>
                         </button>
                     </div>
                 </div>`;
