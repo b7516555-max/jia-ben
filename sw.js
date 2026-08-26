@@ -1,4 +1,4 @@
-const CACHE_NAME = 'together-eat-shell-v1';
+const CACHE_NAME = 'together-eat-shell-v2';
 const APP_SHELL = ['./', './index.html', './manifest.webmanifest'];
 
 self.addEventListener('install', (event) => {

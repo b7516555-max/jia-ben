@@ -6,7 +6,7 @@ repository: https://github.com/b7516555-max/jia-ben
 production_url: https://b7516555-max.github.io/jia-ben/
 deployment_platform: github_pages
 deployment_branch: gh-pages
-last_updated: 2026-08-24
+last_updated: 2026-08-26
 language: zh-TW
 ---
 
@@ -150,3 +150,18 @@ install_experience:
 ```
 
 Android 的直接安裝依賴瀏覽器觸發 `beforeinstallprompt`。iOS Safari 不允許網頁直接叫出系統安裝確認，因此保留最短的兩步驟提示。
+
+## 9. 手機版新朋友加入卡片修正
+
+```yaml
+mobile_welcome_card_fix:
+  updated_at: 2026-08-26
+  symptom: 動態牆的新朋友加入卡片高度遭壓縮，頭像與文字被裁切並呈現重疊
+  root_cause: 行動瀏覽器將動態牆 CSS Grid 自動列高拉伸或壓縮，卡片的 overflow-hidden 讓內容遭裁切
+  changes:
+    - feed-container 手機版使用 grid-auto-rows max-content
+    - feed-container 手機版改為 align-items start 與 align-content start
+    - feed-welcome-card 使用自動高度與 5.5rem 安全最小高度
+    - Service Worker 快取版本升為 together-eat-shell-v2
+  desktop_layout_preserved: true
+```
