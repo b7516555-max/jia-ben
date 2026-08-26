@@ -203,3 +203,33 @@ desktop_foodie_avatar:
   cache:
     service_worker: together-eat-shell-v3
 ```
+
+## 11. 附近美食旋轉輪盤
+
+```yaml
+nearby_food_wheel:
+  updated_at: 2026-08-26
+  status: implemented
+  deployment:
+    github_pages_commit: 1a96e7c804cf2de3542e7024b41f28751ce3cc53
+    main_commit: addc5d39fde9d970adf35af078881536f3cf6e58
+    apps_script_version: 54
+    original_urls_preserved: true
+  replaces: 原本的附近美食雷達結果清單
+  compatibility:
+    internal_view_id: nearby
+    internal_search_type: radar
+    note: 內部代號保留，避免破壞既有 Google Places 搜尋與價位篩選
+  behavior:
+    - 依使用者位置、關鍵字及價位搜尋附近餐廳
+    - 最多取距離最近的 15 間作為輪盤選項
+    - 使用 Canvas 畫出彩色餐廳輪盤
+    - 以減速旋轉動畫隨機抽選一家餐廳
+    - 揭曉後顯示店家卡片，可繼續查看店家資訊
+    - 支援偏好減少動態效果的系統設定
+  labels:
+    navigation: 輪盤
+    primary_action: 轉動輪盤
+  cache:
+    service_worker: together-eat-shell-v4
+```
