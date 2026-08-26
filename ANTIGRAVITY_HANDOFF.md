@@ -306,3 +306,26 @@ direct_feed_review:
   cache:
     service_worker: together-eat-shell-v6
 ```
+
+## 14. 電腦版操作文字放大與單行化
+
+```yaml
+desktop_control_typography:
+  updated_at: 2026-08-26
+  status: implemented
+  deployment:
+    github_pages_commit: 5affcbb35cca63fce9ea012f02e6b43cbb8e8f41
+    main_commit: 6f89e3ff979806dc18a065448491d68d49611253
+    apps_script_version: 57
+    original_urls_preserved: true
+  scope: 僅調整電腦版操作控制項，不限制心得文章與一般內容換行
+  changed_areas:
+    explore_filters: 快捷標籤與價位選單放大並維持單行
+    random_view: 標題、搜尋欄與預算控制列放大並維持單行
+    nearby_wheel: 價位控制列放大並維持單行
+    party_card: 聚會照片分享按鈕縮短標籤並維持單行
+  overflow_strategy: 控制列寬度不足時允許橫向捲動，不把文字折到第二行
+  mobile_layout_changed: false
+  cache:
+    service_worker: together-eat-shell-v7
+```
