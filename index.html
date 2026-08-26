@@ -163,6 +163,14 @@
         .modal-backdrop { backdrop-filter: blur(10px); }
         .img-overlay { background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 100%); }
         .host-highlight { background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%); border: 1px solid #fdba74; }
+        .foodie-avatar { background-image: url('https://b7516555-max.github.io/jia-ben/assets/foodie-avatar-sprite.png'); background-size: 300% 200%; background-repeat: no-repeat; background-color: #eef4ff; }
+        .foodie-avatar-host { background-position: 0% 0%; }
+        .foodie-avatar-explorer { background-position: 50% 0%; }
+        .foodie-avatar-cook { background-position: 100% 0%; }
+        .foodie-avatar-dessert { background-position: 0% 100%; }
+        .foodie-avatar-night { background-position: 50% 100%; }
+        .foodie-avatar-camera { background-position: 100% 100%; }
+        .avatar-choice.is-selected { border-color: #f97316; box-shadow: 0 0 0 3px rgba(249,115,22,.18); transform: translateY(-2px); }
         .vote-bar { background-color: rgba(249, 115, 22, 0.12); position: absolute; left: 0; top: 0; height: 100%; z-index: 0; transition: width 0.4s ease; border-radius: 0.5rem; }
         .intro-exit { opacity: 0; transform: scale(1.05); pointer-events: none; transition: all 0.8s cubic-bezier(0.65, 0, 0.35, 1); }
         
@@ -328,7 +336,7 @@
 
     <!-- 1.5 獲取邀請碼猜題模態框 -->
     <div id="quiz-modal" class="hidden fixed inset-0 z-[60] flex items-center justify-center bg-black/60 modal-backdrop fade-in">
-        <div class="bg-white rounded-3xl p-6 w-11/12 max-w-sm shadow-2xl relative">
+        <div class="bg-white rounded-3xl p-6 w-11/12 max-w-sm shadow-2xl relative modal-dialog">
             <button onclick="window.closeModal('quiz-modal')" class="absolute top-4 right-5 text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark text-xl"></i></button>
             <div class="text-center mb-5">
                 <div class="w-14 h-14 bg-yellow-50 rounded-full flex items-center justify-center mx-auto mb-3"><i class="fa-solid fa-lightbulb text-yellow-500 text-2xl"></i></div>
@@ -376,7 +384,7 @@
 
     <!-- 3. 身分記憶與註冊模態框 -->
     <div id="identity-modal" class="hidden fixed inset-0 z-[60] flex items-center justify-center bg-black/60 modal-backdrop fade-in">
-        <div class="bg-white rounded-3xl p-6 w-11/12 max-w-sm shadow-2xl relative">
+        <div class="bg-white rounded-3xl p-6 w-11/12 max-w-sm shadow-2xl relative modal-dialog">
             <button onclick="window.closeModal('identity-modal')" class="absolute top-4 right-5 text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark text-xl"></i></button>
             <div class="text-center mb-4">
                 <h2 class="text-lg font-bold text-gray-800">確認你的身分卡</h2>
@@ -397,6 +405,11 @@
                 <div><label class="block text-xs font-bold text-gray-500 mb-1">是誰帶你來的？(引薦人) *</label><select id="new-id-inviter" class="w-full px-3 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none text-sm"></select></div>
             </div>
             
+            <div class="mt-3 border-t border-gray-100 pt-3">
+                <label class="block text-xs font-bold text-gray-500 mb-2"><i class="fa-solid fa-people-group text-blue-500 mr-1"></i>選擇你的美食人偶</label>
+                <input type="hidden" id="id-avatar" value="host">
+                <div id="avatar-picker" class="grid grid-cols-6 gap-1.5" aria-label="美食人偶選擇"></div>
+            </div>
             <div class="mt-3 border-t border-gray-100 pt-3 space-y-3">
                 <div>
                     <label class="block text-xs font-bold text-gray-500 mb-1"><i class="fa-brands fa-line text-emerald-500 mr-1"></i>你的 LINE ID (交流加好友用，可空白)</label>
@@ -1920,12 +1933,35 @@
         };
 
         window.requireIdentity = function(callback) {
-            if (window.myIdentity.name !== '') { callback(); } else { pendingPartyAction = callback; document.getElementById('identity-modal').classList.remove('hidden'); updateConfigDropdowns(); }
+            if (window.myIdentity.name !== '') { callback(); } else { pendingPartyAction = callback; updateConfigDropdowns(); window.renderAvatarPicker('host'); document.getElementById('identity-modal').classList.remove('hidden'); }
         };
         window.openIdentityModal = function() {
             updateConfigDropdowns();
+            window.renderAvatarPicker(window.myIdentity.avatarId || window.getDefaultAvatarId(window.myIdentity.name));
             document.getElementById('identity-modal').classList.remove('hidden');
         };
+        const FOODIE_AVATARS = [
+            { id: 'host', label: '活力主揪' }, { id: 'explorer', label: '藍衣探險家' },
+            { id: 'cook', label: '料理高手' }, { id: 'dessert', label: '甜點控' },
+            { id: 'night', label: '夜市達人' }, { id: 'camera', label: '美食攝影師' }
+        ];
+        window.getDefaultAvatarId = function(name = '') {
+            const total = [...String(name)].reduce((sum, char) => sum + char.codePointAt(0), 0);
+            return FOODIE_AVATARS[total % FOODIE_AVATARS.length].id;
+        };
+        window.getAvatarId = function(item = {}) {
+            if (item.avatarId && FOODIE_AVATARS.some(a => a.id === item.avatarId)) return item.avatarId;
+            if (window.myIdentity?.name === item.creator && window.myIdentity.avatarId) return window.myIdentity.avatarId;
+            return window.getDefaultAvatarId(item.creator || item.name || '');
+        };
+        window.renderAvatarPicker = function(selectedId = 'host') {
+            const picker = document.getElementById('avatar-picker');
+            if (!picker) return;
+            const safeId = FOODIE_AVATARS.some(a => a.id === selectedId) ? selectedId : 'host';
+            document.getElementById('id-avatar').value = safeId;
+            picker.innerHTML = FOODIE_AVATARS.map(a => `<button type="button" class="avatar-choice foodie-avatar foodie-avatar-${a.id} aspect-square rounded-xl border-2 border-transparent transition ${a.id === safeId ? 'is-selected' : ''}" onclick="window.selectAvatar('${a.id}')" aria-label="${a.label}" title="${a.label}"></button>`).join('');
+        };
+        window.selectAvatar = function(id) { window.renderAvatarPicker(id); };
         window.toggleIdTab = function(mode) {
             const btnOld = document.getElementById('tab-id-old'); const btnNew = document.getElementById('tab-id-new');
             const formOld = document.getElementById('form-id-old'); const formNew = document.getElementById('form-id-new');
@@ -1965,8 +2001,9 @@
 
             const lineId = document.getElementById('id-line-id') ? document.getElementById('id-line-id').value.trim() : '';
             const bio = document.getElementById('id-bio') ? document.getElementById('id-bio').value.trim() : '';
+            const avatarId = document.getElementById('id-avatar')?.value || window.getDefaultAvatarId(nName);
 
-            window.myIdentity = { name: nName, group: nGroup, lineId: lineId, bio: bio };
+            window.myIdentity = { name: nName, group: nGroup, lineId: lineId, bio: bio, avatarId: avatarId };
             
             if(db && currentUser) {
                 setDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'settings', 'profile'), window.myIdentity, { merge: true }).catch(e=>{});
@@ -1985,10 +2022,17 @@
                 
                 try {
                     await window.saveConfigToCloud();
-                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'feed'), { type: 'system_welcome', creator: nName, group: nGroup, inviter: nInviter, timestamp: serverTimestamp() });
+                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'feed'), { type: 'system_welcome', creator: nName, group: nGroup, inviter: nInviter, avatarId: avatarId, timestamp: serverTimestamp() });
                 } catch(e) {
-                    updateConfigDropdowns(); window.feedData.unshift({ id: Date.now(), type: 'system_welcome', creator: nName, group: nGroup, inviter: nInviter, timestamp: new Date() });
+                    updateConfigDropdowns(); window.feedData.unshift({ id: Date.now(), type: 'system_welcome', creator: nName, group: nGroup, inviter: nInviter, avatarId: avatarId, timestamp: new Date() });
                 }
+            } else {
+                const welcomeItems = window.feedData.filter(item => item.type === 'system_welcome' && item.creator === nName);
+                welcomeItems.forEach(item => {
+                    item.avatarId = avatarId;
+                    if (db && currentUser && typeof item.id === 'string') updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'feed', item.id), { avatarId }).catch(()=>{});
+                });
+                window.renderFeed();
             }
             window.closeModal('identity-modal'); if(pendingPartyAction) { pendingPartyAction(); pendingPartyAction = null; } window.showCustomMsg(`設定完成！系統已記住你的身分：${window.myIdentity.group}的${window.myIdentity.name}。`);
         };
@@ -2757,6 +2801,12 @@
             
             const matchedFeed = window.feedData.find(f => f.creator === userName && f.type === 'system_welcome');
             if (matchedFeed) inviter = matchedFeed.inviter || '';
+            const avatarId = window.getAvatarId(matchedFeed || { creator: userName });
+            const profileAvatar = document.getElementById('profile-avatar');
+            if (profileAvatar) {
+                profileAvatar.className = `foodie-avatar foodie-avatar-${avatarId} w-16 h-16 rounded-full mx-auto mb-2 shadow-md border-2 border-white`;
+                profileAvatar.innerHTML = '';
+            }
             
             document.getElementById('profile-inviter').textContent = inviter ? `(由 ${inviter} 引薦)` : '';
             document.getElementById('profile-bio').textContent = bio ? `「${bio}」` : '「無辣不歡，熱愛尋找高 C/P 值隱藏版美食！」';
@@ -2940,12 +2990,11 @@
                 
                 // 1. 歡迎廣播卡片
                 if (item.type === 'system_welcome') {
+                    const avatarId = window.getAvatarId(item);
                     return `
-                    <div class="feed-welcome-card w-full h-auto min-h-[5.5rem] bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-2xl border border-blue-100 shadow-sm relative overflow-hidden self-start">
+                    <div class="feed-welcome-card w-full h-auto md:h-full min-h-[5.5rem] bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-2xl border border-blue-100 shadow-sm relative overflow-hidden self-start flex flex-col">
                         <div class="flex items-start gap-3 min-h-[3.5rem]">
-                            <div class="w-10 h-10 bg-blue-500 text-white rounded-full flex items-center justify-center shadow shrink-0">
-                                <i class="fa-solid fa-hand-wave text-base"></i>
-                            </div>
+                            <div class="foodie-avatar foodie-avatar-${avatarId} w-10 h-10 rounded-full shadow shrink-0 border-2 border-white"></div>
                             <div class="min-w-0 flex-1">
                                 <p class="text-[11px] text-blue-600 font-bold mb-0.5">🎉 新朋友加入 · ${dateStr}</p>
                                 <p class="text-xs sm:text-sm text-gray-800 font-bold leading-snug">
@@ -2953,6 +3002,9 @@
                                 </p>
                                 <p class="text-[11px] text-gray-500 mt-0.5">(由 ${item.inviter} 引薦進來 🙌)</p>
                             </div>
+                        </div>
+                        <div class="hidden md:flex flex-1 min-h-[13rem] items-center justify-center pt-4" aria-hidden="true">
+                            <div class="foodie-avatar foodie-avatar-${avatarId} w-full max-w-[16rem] aspect-square rounded-[2rem] drop-shadow-sm"></div>
                         </div>
                     </div>`;
                 }
