@@ -2,3 +2,12 @@ node_modules/
 .DS_Store
 .clasp.json
 .claspignore
+.env
+.env.*
+*.env
+*.pem
+*.key
+credentials.json
+token.json
+jia-ben/
+
