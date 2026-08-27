@@ -3822,10 +3822,9 @@
                     photosGalleryHtml = `
                     <div class="relative rounded-xl overflow-hidden shadow-sm max-h-64 border border-gray-100 my-1 group">
                         <img src="${window.resolveReviewImage(allPhotos[0], item.restaurantName)}" onerror="this.onerror=null; this.src=window.getFallbackImage('${window.escapeForBtn(item.restaurantName)}');" class="w-full h-full max-h-64 object-cover">
-                        ${(window.myIdentity?.name === item.creator || window.myIdentity?.name === '黃政誥') ? `
                         <button onclick="window.openFeedPhotoEditModal('${item.id}')" class="absolute bottom-2 right-2 bg-black/60 hover:bg-black/80 text-white text-[10px] font-bold px-2 py-1 rounded-lg backdrop-blur-xs shadow transition flex items-center gap-1">
                             <i class="fa-solid fa-camera"></i> 補/換照片
-                        </button>` : ''}
+                        </button>
                     </div>`;
                 } else if (allPhotos.length > 1) {
                     const gridCols = allPhotos.length === 2 ? 'grid-cols-2' : (allPhotos.length === 3 ? 'grid-cols-3' : (allPhotos.length === 4 ? 'grid-cols-2' : 'grid-cols-3'));
@@ -3841,10 +3840,9 @@
                         </div>
                         <div class="flex justify-between items-center mt-1 px-0.5">
                             <span class="text-[10px] text-gray-400 font-bold"><i class="fa-solid fa-images text-orange-400 mr-1"></i>共 ${allPhotos.length} 張照片</span>
-                            ${(window.myIdentity?.name === item.creator || window.myIdentity?.name === '黃政誥') ? `
                             <button onclick="window.openFeedPhotoEditModal('${item.id}')" class="text-orange-500 hover:text-orange-600 text-[10px] font-bold flex items-center gap-0.5">
                                 <i class="fa-solid fa-pen-to-square"></i> 管理照片
-                            </button>` : ''}
+                            </button>
                         </div>
                     </div>`;
                 }
@@ -3896,11 +3894,10 @@
                             </button>
                         </div>
                         <div class="flex items-center gap-1">
-                            ${(window.myIdentity?.name === item.creator || window.myIdentity?.name === '黃政誥') ? `
-                            <button onclick="window.openFeedPhotoEditModal('${item.id}')" class="flex items-center gap-1 px-2 py-1 rounded-xl hover:bg-amber-50 text-amber-600 transition text-[11px]" title="為這則留言/動態事後補充或更換最多5張照片">
+                            <button onclick="window.openFeedPhotoEditModal('${item.id}')" class="flex items-center gap-1 px-2.5 py-1 rounded-xl hover:bg-amber-50 text-amber-600 transition text-[11px] font-bold" title="為這則留言/動態事後補充或更換最多5張照片">
                                 <i class="fa-solid fa-camera"></i>
-                                <span>${allPhotos.length > 0 ? `照片(${allPhotos.length})` : '補照片'}</span>
-                            </button>` : ''}
+                                <span>${allPhotos.length > 0 ? `照片 (${allPhotos.length})` : '補照片'}</span>
+                            </button>
                             <button onclick="window.openUserProfile('${window.escapeForBtn(item.creator)}', '${window.escapeForBtn(item.group)}')" class="flex items-center gap-1 px-2 py-1 rounded-xl hover:bg-orange-50 text-orange-600 transition text-[11px]">
                                 <i class="fa-solid fa-address-card"></i>
                                 <span>看名片</span>
