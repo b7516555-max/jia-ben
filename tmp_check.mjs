@@ -4,9 +4,25 @@
         import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp, doc, setDoc, getDoc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         let deferredPrompt;
+        const isInstalledApp = () => window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+        const isIOSDevice = () => /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        const isLineBrowser = () => /Line\//i.test(navigator.userAgent) || /LIFF/i.test(navigator.userAgent);
+
+        window.updateInstallButtonVisibility = function() {
+            const btnInstall = document.getElementById('btn-install-app');
+            if (btnInstall) btnInstall.classList.toggle('hidden', isInstalledApp());
+        };
+
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPrompt = e;
+            window.updateInstallButtonVisibility();
+        });
+
+        window.addEventListener('appinstalled', () => {
+            deferredPrompt = null;
+            document.getElementById('btn-install-app')?.classList.add('hidden');
+            window.closeModal('install-guide-modal');
         });
 
         window.addEventListener('DOMContentLoaded', () => {
@@ -19,12 +35,13 @@
                     window.openRestaurantDetailByName(window.escapeForBtn(restaurantLink.textContent.trim()));
                 });
             }
-            if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
+            window.updateInstallButtonVisibility();
+            if (isInstalledApp()) {
                 const btnInstall = document.getElementById('btn-install-app');
                 const btnEnter = document.getElementById('btn-enter-web');
                 if(btnInstall) btnInstall.classList.add('hidden');
                 if(btnEnter) {
-                    btnEnter.innerHTML = '啟動雷達 <i class="fa-solid fa-rocket ml-1.5"></i>';
+                    btnEnter.innerHTML = '啟動輪盤 <i class="fa-solid fa-rocket ml-1.5"></i>';
                     btnEnter.classList.replace('text-gray-500', 'text-white');
                     btnEnter.classList.replace('hover:text-gray-800', 'hover:bg-gray-800');
                     btnEnter.classList.add('bg-gray-900', 'rounded-full', 'py-4', 'shadow-lg', 'hover:scale-105', 'text-base');
@@ -36,15 +53,50 @@
             if (typeof window.handleListCountryChange === 'function') {
                 window.handleListCountryChange();
             }
+            if ('serviceWorker' in navigator && location.protocol === 'https:' && location.hostname.endsWith('github.io')) {
+                navigator.serviceWorker.register('./sw.js').catch((err) => console.warn('Service Worker 註冊失敗:', err));
+            }
+            if (typeof window.drawRadarWheel === 'function') window.drawRadarWheel([]);
         });
 
+        window.openInstallGuide = function(mode) {
+            const title = document.getElementById('install-guide-title');
+            const content = document.getElementById('install-guide-content');
+            const icon = document.getElementById('install-guide-icon');
+            if (!title || !content || !icon) return;
+
+            if (mode === 'line') {
+                title.textContent = '請用瀏覽器開啟';
+                icon.innerHTML = '<i class="fa-brands fa-line text-emerald-500"></i>';
+                content.innerHTML = '<p class="text-sm text-gray-600 leading-relaxed">請點 LINE 右上角選單，選擇<br><strong class="text-gray-900">「以 Safari 開啟」或「以 Chrome 開啟」</strong><br>再按一次安裝。</p>';
+            } else if (mode === 'ios') {
+                title.textContent = '加入 iPhone 主畫面';
+                icon.innerHTML = '<i class="fa-brands fa-apple text-gray-800"></i>';
+                content.innerHTML = '<div class="space-y-3 text-left text-sm text-gray-700"><p class="bg-gray-50 rounded-xl p-3"><strong class="text-blue-600 mr-2">1</strong>點 Safari 的分享圖示 <i class="fa-solid fa-arrow-up-from-bracket ml-1"></i></p><p class="bg-gray-50 rounded-xl p-3"><strong class="text-blue-600 mr-2">2</strong>選「加入主畫面」 <i class="fa-regular fa-square-plus ml-1"></i></p></div>';
+            } else {
+                title.textContent = '加入 Android 主畫面';
+                icon.innerHTML = '<i class="fa-brands fa-android text-emerald-500"></i>';
+                content.innerHTML = '<div class="space-y-3 text-left text-sm text-gray-700"><p class="bg-gray-50 rounded-xl p-3"><strong class="text-emerald-600 mr-2">1</strong>點 Chrome 右上角選單 <i class="fa-solid fa-ellipsis-vertical ml-1"></i></p><p class="bg-gray-50 rounded-xl p-3"><strong class="text-emerald-600 mr-2">2</strong>選「安裝應用程式」或「加到主畫面」</p></div>';
+            }
+            document.getElementById('install-guide-modal').classList.remove('hidden');
+        };
+
         window.handleInstallClick = async function() {
+            if (isInstalledApp()) {
+                window.updateInstallButtonVisibility();
+                return;
+            }
+            if (isLineBrowser()) {
+                window.openInstallGuide('line');
+                return;
+            }
             if (deferredPrompt) {
                 deferredPrompt.prompt();
                 const { outcome } = await deferredPrompt.userChoice;
-                if (outcome === 'accepted') { deferredPrompt = null; }
+                deferredPrompt = null;
+                if (outcome === 'accepted') window.updateInstallButtonVisibility();
             } else {
-                document.getElementById('install-guide-modal').classList.remove('hidden');
+                window.openInstallGuide(isIOSDevice() ? 'ios' : 'android');
             }
         };
 
@@ -250,7 +302,8 @@
                         if (data && data.status === 'success') {
                             resolve(data);
                         } else {
-                            reject(new Error(data?.message || '伺服器上傳失敗'));
+                            const detail = data?.message || '伺服器上傳失敗';
+                            reject(new Error(detail));
                         }
                     })
                     .catch(err => {
@@ -265,12 +318,36 @@
         };
 
         window.setPhotoUploaderValue = function(prefix, url) {
-            const hiddenInput = document.getElementById(prefix === 'edit-res' ? 'edit-res-photo' : (prefix === 'int-photo' ? 'int-photo-url' : (prefix === 'party-recap' ? 'party-recap-photo' : 'input-photo')));
-            const imgEl = document.getElementById(prefix === 'edit-res' ? 'edit-res-photo-img' : (prefix === 'int-photo' ? 'int-photo-img' : (prefix === 'party-recap' ? 'party-recap-img' : 'admin-add-img')));
-            const placeholderEl = document.getElementById(prefix === 'edit-res' ? 'edit-res-photo-placeholder' : (prefix === 'int-photo' ? 'int-photo-placeholder' : (prefix === 'party-recap' ? 'party-recap-placeholder' : null)));
-            const actionsEl = document.getElementById(prefix === 'edit-res' ? 'edit-res-photo-actions' : (prefix === 'int-photo' ? 'int-photo-actions' : (prefix === 'party-recap' ? 'party-recap-actions' : null)));
+            const hiddenInput = document.getElementById(
+                prefix === 'edit-res' ? 'edit-res-photo' : 
+                (prefix === 'int-photo' ? 'int-photo-url' : 
+                (prefix === 'party-recap' ? 'party-recap-photo' : 
+                (prefix === 'feed-photo-edit' ? 'feed-photo-edit-url' : 'input-photo')))
+            );
+            const imgEl = document.getElementById(
+                prefix === 'edit-res' ? 'edit-res-photo-img' : 
+                (prefix === 'int-photo' ? 'int-photo-img' : 
+                (prefix === 'party-recap' ? 'party-recap-img' : 
+                (prefix === 'feed-photo-edit' ? 'feed-photo-edit-img' : 'admin-add-img')))
+            );
+            const placeholderEl = document.getElementById(
+                prefix === 'edit-res' ? 'edit-res-photo-placeholder' : 
+                (prefix === 'int-photo' ? 'int-photo-placeholder' : 
+                (prefix === 'party-recap' ? 'party-recap-placeholder' : 
+                (prefix === 'feed-photo-edit' ? 'feed-photo-edit-placeholder' : null)))
+            );
+            const actionsEl = document.getElementById(
+                prefix === 'edit-res' ? 'edit-res-photo-actions' : 
+                (prefix === 'int-photo' ? 'int-photo-actions' : 
+                (prefix === 'party-recap' ? 'party-recap-actions' : null))
+            );
             const thumbEl = document.getElementById('admin-add-photo-thumb');
-            const urlInputEl = document.getElementById(prefix === 'edit-res' ? 'edit-res-photo-url-input' : (prefix === 'int-photo' ? 'int-photo-url-input' : (prefix === 'party-recap' ? 'party-recap-photo-url-input' : 'admin-add-url-input')));
+            const urlInputEl = document.getElementById(
+                prefix === 'edit-res' ? 'edit-res-photo-url-input' : 
+                (prefix === 'int-photo' ? 'int-photo-url-input' : 
+                (prefix === 'party-recap' ? 'party-recap-photo-url-input' : 
+                (prefix === 'feed-photo-edit' ? 'feed-photo-edit-url-input' : 'admin-add-url-input')))
+            );
 
             if (hiddenInput) hiddenInput.value = url || '';
             if (urlInputEl && (!url || url.startsWith('http'))) urlInputEl.value = url || '';
@@ -290,7 +367,12 @@
 
         window.clearPhoto = function(prefix) {
             window.setPhotoUploaderValue(prefix, '');
-            const fileInput = document.getElementById(prefix === 'edit-res' ? 'edit-res-file' : (prefix === 'int-photo' ? 'int-photo-file' : (prefix === 'party-recap' ? 'party-recap-file' : 'input-photo-file')));
+            const fileInput = document.getElementById(
+                prefix === 'edit-res' ? 'edit-res-file' : 
+                (prefix === 'int-photo' ? 'int-photo-file' : 
+                (prefix === 'party-recap' ? 'party-recap-file' : 
+                (prefix === 'feed-photo-edit' ? 'feed-photo-edit-file' : 'input-photo-file')))
+            );
             if (fileInput) fileInput.value = '';
         };
 
@@ -432,7 +514,10 @@
             }).catch(e => {});
 
             getDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'settings', 'profile')).then(docSnap => {
-                if (docSnap.exists() && docSnap.data().name) { window.myIdentity = docSnap.data(); }
+                if (docSnap.exists() && docSnap.data().name) { 
+                    window.myIdentity = docSnap.data(); 
+                    if (typeof window.updateHeaderAvatarBadge === 'function') window.updateHeaderAvatarBadge();
+                }
             }).catch(e => {});
 
             onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'restaurants'), (snap) => { 
@@ -716,11 +801,101 @@
         };
 
         window.requireIdentity = function(callback) {
-            if (window.myIdentity.name !== '') { callback(); } else { pendingPartyAction = callback; document.getElementById('identity-modal').classList.remove('hidden'); updateConfigDropdowns(); }
+            if (window.myIdentity.name !== '') { callback(); } else { pendingPartyAction = callback; updateConfigDropdowns(); window.renderAvatarPicker('host'); document.getElementById('identity-modal').classList.remove('hidden'); }
         };
         window.openIdentityModal = function() {
             updateConfigDropdowns();
+            const avatarId = window.myIdentity?.avatarId || window.getDefaultAvatarId(window.myIdentity?.name || '');
+            const customAvatarUrl = window.myIdentity?.customAvatarUrl || '';
+            window.renderAvatarPicker(avatarId, customAvatarUrl);
             document.getElementById('identity-modal').classList.remove('hidden');
+        };
+        const FOODIE_AVATARS = [
+            { id: 'host', label: '活力主揪' }, { id: 'explorer', label: '藍衣探險家' },
+            { id: 'cook', label: '料理高手' }, { id: 'dessert', label: '甜點控' },
+            { id: 'night', label: '夜市達人' }, { id: 'camera', label: '美食攝影師' }
+        ];
+        window.getDefaultAvatarId = function(name = '') {
+            const total = [...String(name)].reduce((sum, char) => sum + char.codePointAt(0), 0);
+            return FOODIE_AVATARS[total % FOODIE_AVATARS.length].id;
+        };
+        window.getAvatarInfo = function(item = {}) {
+            // 回傳 { isCustom: boolean, customUrl: string, avatarId: string }
+            if (item.customAvatarUrl) {
+                return { isCustom: true, customUrl: item.customAvatarUrl, avatarId: 'custom' };
+            }
+            if (window.myIdentity?.name === item.creator && window.myIdentity.customAvatarUrl) {
+                return { isCustom: true, customUrl: window.myIdentity.customAvatarUrl, avatarId: 'custom' };
+            }
+            let avatarId = 'host';
+            if (item.avatarId && FOODIE_AVATARS.some(a => a.id === item.avatarId)) {
+                avatarId = item.avatarId;
+            } else if (window.myIdentity?.name === item.creator && window.myIdentity.avatarId) {
+                avatarId = window.myIdentity.avatarId;
+            } else {
+                avatarId = window.getDefaultAvatarId(item.creator || item.name || '');
+            }
+            return { isCustom: false, customUrl: '', avatarId: avatarId };
+        };
+        window.getAvatarId = function(item = {}) {
+            return window.getAvatarInfo(item).avatarId;
+        };
+        window.renderAvatarPicker = function(selectedId = 'host', customUrl = '') {
+            const picker = document.getElementById('avatar-picker');
+            const hiddenAvatar = document.getElementById('id-avatar');
+            const hiddenCustom = document.getElementById('id-custom-avatar');
+            const statusLabel = document.getElementById('id-avatar-status-label');
+            const previewInner = document.getElementById('id-avatar-preview-inner');
+            const clearBtn = document.getElementById('id-clear-custom-avatar-btn');
+            
+            if (hiddenCustom) hiddenCustom.value = customUrl || '';
+            
+            if (customUrl) {
+                if (hiddenAvatar) hiddenAvatar.value = 'custom';
+                if (statusLabel) statusLabel.innerHTML = '<span class="text-emerald-600">已使用自訂大頭照 ✨</span>';
+                if (previewInner) {
+                    previewInner.className = 'w-full h-full rounded-full object-cover';
+                    previewInner.innerHTML = `<img src="${window.resolveReviewImage(customUrl)}" class="w-full h-full object-cover rounded-full">`;
+                }
+                if (clearBtn) clearBtn.classList.remove('hidden');
+            } else {
+                const safeId = FOODIE_AVATARS.some(a => a.id === selectedId) ? selectedId : 'host';
+                if (hiddenAvatar) hiddenAvatar.value = safeId;
+                const found = FOODIE_AVATARS.find(a => a.id === safeId);
+                if (statusLabel) statusLabel.textContent = `目前頭像：${found?.label || '活力主揪'}`;
+                if (previewInner) {
+                    previewInner.innerHTML = '';
+                    previewInner.className = `foodie-avatar foodie-avatar-${safeId} w-full h-full rounded-full`;
+                }
+                if (clearBtn) clearBtn.classList.add('hidden');
+            }
+
+            if (picker) {
+                const currentSafeId = FOODIE_AVATARS.some(a => a.id === selectedId) ? selectedId : 'host';
+                picker.innerHTML = FOODIE_AVATARS.map(a => `<button type="button" class="avatar-choice foodie-avatar foodie-avatar-${a.id} aspect-square rounded-xl border-2 border-transparent transition ${(!customUrl && a.id === currentSafeId) ? 'is-selected' : ''}" onclick="window.selectAvatar('${a.id}')" aria-label="${a.label}" title="${a.label}"></button>`).join('');
+            }
+        };
+        window.selectAvatar = function(id) { 
+            window.renderAvatarPicker(id, ''); 
+        };
+        window.handleCustomAvatarSelected = async function(input) {
+            if (!input.files || input.files.length === 0) return;
+            const file = input.files[0];
+            try {
+                window.showCustomMsg("📸 正在優化您的大頭照...");
+                const compressedDataUrl = await window.compressImageFile(file, 600, 600, 0.85);
+                window.closeModal('custom-alert-modal');
+                window.renderAvatarPicker('custom', compressedDataUrl);
+            } catch (err) {
+                console.error("大頭照壓縮失敗:", err);
+                window.showCustomMsg("⚠️ 圖片處理失敗，請換一張照片試試。");
+            }
+        };
+        window.clearCustomAvatar = function() {
+            const fileInput = document.getElementById('id-custom-avatar-file');
+            if (fileInput) fileInput.value = '';
+            const defaultId = window.getDefaultAvatarId(window.myIdentity?.name || '');
+            window.renderAvatarPicker(defaultId, '');
         };
         window.toggleIdTab = function(mode) {
             const btnOld = document.getElementById('tab-id-old'); const btnNew = document.getElementById('tab-id-new');
@@ -761,8 +936,29 @@
 
             const lineId = document.getElementById('id-line-id') ? document.getElementById('id-line-id').value.trim() : '';
             const bio = document.getElementById('id-bio') ? document.getElementById('id-bio').value.trim() : '';
+            const avatarId = document.getElementById('id-avatar')?.value || window.getDefaultAvatarId(nName);
+            let customAvatarUrl = document.getElementById('id-custom-avatar') ? document.getElementById('id-custom-avatar').value.trim() : '';
 
-            window.myIdentity = { name: nName, group: nGroup, lineId: lineId, bio: bio };
+            // 如果有自訂頭像且是 Base64 圖片，自動上傳至 Google Drive 備份儲存
+            if (customAvatarUrl && customAvatarUrl.startsWith('data:image')) {
+                try {
+                    const uploadRes = await window.uploadImageToDrive(customAvatarUrl, `avatar_${nName}_${Date.now()}.jpg`);
+                    if (uploadRes && (uploadRes.imageUrl || uploadRes.fileId)) {
+                        customAvatarUrl = uploadRes.imageUrl || window.getDriveImageUrl(uploadRes.fileId);
+                    }
+                } catch (e) {
+                    console.warn("頭像上傳 Google Drive 失敗，改用壓縮 base64 本地快取:", e);
+                }
+            }
+
+            window.myIdentity = { 
+                name: nName, 
+                group: nGroup, 
+                lineId: lineId, 
+                bio: bio, 
+                avatarId: avatarId,
+                customAvatarUrl: customAvatarUrl 
+            };
             
             if(db && currentUser) {
                 setDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'settings', 'profile'), window.myIdentity, { merge: true }).catch(e=>{});
@@ -781,11 +977,20 @@
                 
                 try {
                     await window.saveConfigToCloud();
-                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'feed'), { type: 'system_welcome', creator: nName, group: nGroup, inviter: nInviter, timestamp: serverTimestamp() });
+                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'feed'), { type: 'system_welcome', creator: nName, group: nGroup, inviter: nInviter, avatarId: avatarId, customAvatarUrl: customAvatarUrl, timestamp: serverTimestamp() });
                 } catch(e) {
-                    updateConfigDropdowns(); window.feedData.unshift({ id: Date.now(), type: 'system_welcome', creator: nName, group: nGroup, inviter: nInviter, timestamp: new Date() });
+                    updateConfigDropdowns(); window.feedData.unshift({ id: Date.now(), type: 'system_welcome', creator: nName, group: nGroup, inviter: nInviter, avatarId: avatarId, customAvatarUrl: customAvatarUrl, timestamp: new Date() });
                 }
+            } else {
+                const welcomeItems = window.feedData.filter(item => item.type === 'system_welcome' && item.creator === nName);
+                welcomeItems.forEach(item => {
+                    item.avatarId = avatarId;
+                    item.customAvatarUrl = customAvatarUrl;
+                    if (db && currentUser && typeof item.id === 'string') updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'feed', item.id), { avatarId, customAvatarUrl }).catch(()=>{});
+                });
+                window.renderFeed();
             }
+            if (typeof window.updateHeaderAvatarBadge === 'function') window.updateHeaderAvatarBadge();
             window.closeModal('identity-modal'); if(pendingPartyAction) { pendingPartyAction(); pendingPartyAction = null; } window.showCustomMsg(`設定完成！系統已記住你的身分：${window.myIdentity.group}的${window.myIdentity.name}。`);
         };
 
@@ -1018,9 +1223,9 @@
                             <div class="flex-1 px-2 border-l border-gray-100"><p class="text-[10px] font-bold text-gray-400 mb-0.5"><i class="fa-solid fa-users mr-1"></i>已參加 (${joinCount})</p><p class="text-xs font-bold text-gray-700 line-clamp-1 leading-relaxed">${joinCount > 0 ? p.joined.join('、') : '還沒有人報名喔'}</p></div>
                             <button onclick="window.toggleJoinParty('${p.id}')" class="px-5 py-2.5 rounded-xl font-bold text-sm shadow-sm transition whitespace-nowrap flex-shrink-0 ${isJoined ? 'bg-gray-100 text-gray-600 border border-gray-200 hover:bg-red-50 hover:text-red-500' : 'bg-orange-500 text-white hover:bg-orange-600'}">${isJoined ? '取消參加' : '算我一個！'}</button>
                         </div>
-                        <button onclick="window.openPartyRecapModal('${p.id}')" class="w-full bg-amber-50 hover:bg-amber-100 text-amber-700 font-bold py-2 px-3 rounded-xl text-xs border border-amber-200 transition flex items-center justify-center gap-1.5 shadow-xs" title="聚會結束時貼出側拍花絮讓全站朋友看">
+                        <button onclick="window.openPartyRecapModal('${p.id}')" class="party-recap-action w-full bg-amber-50 hover:bg-amber-100 text-amber-700 font-bold py-2 px-3 rounded-xl text-xs border border-amber-200 transition flex items-center justify-center gap-1.5 shadow-xs" title="聚會結束紀錄／分享現場照片至動態牆">
                             <i class="fa-solid fa-camera-retro"></i>
-                            <span>📸 聚會結束紀錄 / 分享現場照片至動態牆</span>
+                            <span>📸 分享聚會照片至動態牆</span>
                         </button>
                     </div>
                 </div>`;
@@ -1040,6 +1245,45 @@
             '日本': ['不限都道府縣', '東京都', '大阪府', '京都府', '北海道', '沖繩縣', '福岡縣', '愛知縣', '神奈川縣', '埼玉縣', '千葉縣', '兵庫縣', '廣島縣', '宮城縣', '熊本縣', '靜岡縣', '長野縣', '岐阜縣', '三重縣', '滋賀縣', '奈良縣', '和歌山縣', '岡山縣', '山口縣', '香川縣', '愛媛縣', '高知縣', '德島縣', '大分縣', '宮崎縣', '鹿兒島縣', '佐賀縣', '長崎縣', '青森縣', '岩手縣', '秋田縣', '山形縣', '福島縣', '茨城縣', '栃木縣', '群馬縣', '新潟縣', '富山縣', '石川縣', '福井縣', '山梨縣', '鳥取縣', '島根縣'],
             '韓國': ['不限地區', '首爾特別市', '釜山廣域市', '仁川廣域市', '大邱廣域市', '濟州特別自治道'],
             '美國': ['不限地區', '紐約', '洛杉磯', '舊金山', '西雅圖', '芝加哥', '拉斯維加斯', '夏威夷']
+        };
+
+        window.setSelectValueWithFallback = function(selectEl, value) {
+            if (!selectEl || !value) return false;
+            if (!Array.from(selectEl.options).some(option => option.value === value)) selectEl.add(new Option(value, value));
+            selectEl.value = value;
+            return true;
+        };
+        window.handleAddCountryChange = function(selectedCity = '') {
+            const country = document.getElementById('input-country')?.value || '台灣';
+            const cityEl = document.getElementById('input-city');
+            if (!cityEl) return;
+            const cities = (CITIES_BY_COUNTRY[country] || []).filter(city => !city.startsWith('不限'));
+            cityEl.innerHTML = cities.map(city => `<option value="${window.escapeHtml(city)}">${window.escapeHtml(city)}</option>`).join('');
+            if (selectedCity) window.setSelectValueWithFallback(cityEl, selectedCity);
+        };
+        window.inferPlaceCategory = function(place) {
+            const types = (place.types || []).join(' ').toLowerCase();
+            const text = `${place.name || ''} ${types}`.toLowerCase();
+            if (/(cafe|bakery|coffee|dessert|ice_cream|咖啡|甜點|蛋糕|烘焙|飲料|茶飲|冰品)/i.test(text)) return '甜點/飲料';
+            if (/(hot_pot|火鍋|鍋物|涮涮鍋|麻辣鍋|壽喜燒)/i.test(text)) return '鍋物';
+            if (/(ramen|noodle|麵|拉麵|烏龍|蕎麥|義大利麵)/i.test(text)) return '麵食';
+            if (/(rice|飯|丼|咖哩|便當|粥)/i.test(text)) return '飯食';
+            if (/(meal_takeaway|street_food|小吃|鹽酥|滷味|雞排|蚵仔|臭豆腐)/i.test(text)) return '小吃';
+            if (/(japanese|korean|italian|french|thai|vietnamese|indian|mexican|american|日式|韓式|義式|泰式|越式|印度|墨西哥|美式)/i.test(text)) return '異國料理';
+            if (/(restaurant|food|bar|meal_delivery)/i.test(types)) return '其他餐廳';
+            return '未分類';
+        };
+        window.getPlaceRegion = function(place) {
+            const parts = place.address_components || [];
+            const findPart = (...types) => parts.find(part => types.some(type => (part.types || []).includes(type)));
+            const countryPart = findPart('country');
+            const countryMap = { TW: '台灣', JP: '日本', KR: '韓國', US: '美國' };
+            const country = countryMap[countryPart?.short_name] || countryPart?.long_name || '';
+            const regionPart = country === '美國' ? findPart('locality', 'administrative_area_level_2', 'administrative_area_level_1') : findPart('administrative_area_level_1', 'administrative_area_level_2', 'locality');
+            let city = regionPart?.long_name || '';
+            const cityMap = { '서울특별시':'首爾特別市', '부산광역시':'釜山廣域市', '인천광역시':'仁川廣域市', '대구광역시':'大邱廣域市', '제주특별자치도':'濟州特別自治道', 'New York':'紐約', 'Los Angeles':'洛杉磯', 'San Francisco':'舊金山', 'Seattle':'西雅圖', 'Chicago':'芝加哥', 'Las Vegas':'拉斯維加斯', 'Honolulu':'夏威夷' };
+            city = cityMap[city] || city;
+            return { country, city };
         };
 
         window.handleExploreCountryChange = function() {
@@ -1101,7 +1345,12 @@
                 document.getElementById(cId).innerHTML = `<div class="text-center text-orange-400 py-10 col-span-full"><i class="fa-brands fa-google fa-bounce text-4xl mb-3"></i><p class="font-bold tracking-widest text-sm mt-2">為您搜尋 ${k} ...</p></div>`; 
             } else {
                 k = document.getElementById('radar-keyword').value; if(!k.trim()) k = "餐廳"; cId = 'nearby-container';
-                document.getElementById(cId).innerHTML = `<div class="text-center text-orange-400 py-10 col-span-full"><i class="fa-brands fa-google fa-bounce text-4xl mb-3"></i><p class="font-bold tracking-widest text-sm mt-2">為您掃描最近的 15 間好店...</p></div>`; 
+                const spinBtn = document.getElementById('radar-spin-btn');
+                const centerBtn = document.getElementById('wheel-center-spin-btn');
+                if (spinBtn) { spinBtn.disabled = true; spinBtn.classList.add('opacity-60'); spinBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i>召集附近好店'; }
+                if (centerBtn) { centerBtn.disabled = true; centerBtn.classList.remove('jelly-pulse'); centerBtn.classList.add('scale-95', 'opacity-80'); }
+                document.getElementById('wheel-status').innerHTML = '<i class="fa-solid fa-location-crosshairs fa-beat mr-1 text-orange-500"></i>正在尋找符合條件的附近餐廳…';
+                document.getElementById('wheel-result').classList.add('hidden');
             }
             if (navigator.geolocation) { 
                 navigator.geolocation.getCurrentPosition( 
@@ -1213,16 +1462,139 @@
             
             if(vT === 'random') { 
                 renderRandomResult(res[Math.floor(Math.random() * res.length)]); 
+            } else if (vT === 'radar') {
+                window.spinRadarWheel(res);
             } else { 
-                const cId = vT === 'explore' ? 'explore-results-container' : 'nearby-container'; 
+                const cId = 'explore-results-container';
                 document.getElementById(cId).innerHTML = res.map(p => generatePlaceCardHtml(p)).join(''); 
             } 
         }
+
+        const WHEEL_COLORS = [
+            'rgba(251, 146, 60, 0.82)',  // 蜜桃橘
+            'rgba(251, 191, 36, 0.82)',  // 檸檬黃
+            'rgba(52, 211, 153, 0.82)',  // 薄荷綠
+            'rgba(96, 165, 250, 0.82)',  // 晴空藍
+            'rgba(167, 139, 250, 0.82)', // 薰衣紫
+            'rgba(251, 113, 133, 0.82)', // 草莓粉
+            'rgba(45, 212, 191, 0.82)',  // 水藍果凍
+            'rgba(249, 115, 22, 0.85)',  // 甜橙
+            'rgba(132, 204, 22, 0.82)',  // 青蘋綠
+            'rgba(56, 189, 248, 0.82)',  // 汽水藍
+            'rgba(192, 132, 252, 0.82)', // 葡萄紫
+            'rgba(244, 114, 182, 0.82)'  // 櫻花粉
+        ];
+        window.drawRadarWheel = function(places = []) {
+            const canvas = document.getElementById('restaurant-wheel');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const entries = places.length ? places : Array.from({length: 10}, (_, i) => ({ name: i % 2 ? '今天吃什麼' : '附近好店' }));
+            const center = canvas.width / 2;
+            const radius = center - 8;
+            const slice = Math.PI * 2 / entries.length;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 繪製微光半透明底層
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(center, center, radius, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+            ctx.fill();
+            ctx.restore();
+
+            entries.forEach((place, index) => {
+                const start = -Math.PI / 2 + index * slice;
+                ctx.beginPath();
+                ctx.moveTo(center, center);
+                ctx.arc(center, center, radius, start, start + slice);
+                ctx.closePath();
+
+                // 可愛果凍漸層
+                const midAngle = start + slice / 2;
+                const gradX = center + Math.cos(midAngle) * radius;
+                const gradY = center + Math.sin(midAngle) * radius;
+                const grad = ctx.createLinearGradient(center, center, gradX, gradY);
+                const baseCol = WHEEL_COLORS[index % WHEEL_COLORS.length];
+                grad.addColorStop(0, 'rgba(255, 255, 255, 0.85)');
+                grad.addColorStop(0.35, baseCol);
+                grad.addColorStop(1, baseCol);
+
+                ctx.fillStyle = grad;
+                ctx.fill();
+
+                // 晶瑩剔透高光線條
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+                ctx.lineWidth = 3.5;
+                ctx.stroke();
+
+                // 文字標籤與陰影
+                ctx.save();
+                ctx.translate(center, center);
+                ctx.rotate(start + slice / 2);
+                ctx.textAlign = 'right';
+                ctx.textBaseline = 'middle';
+                
+                // 柔和陰影增加立體感
+                ctx.shadowColor = 'rgba(0, 0, 0, 0.25)';
+                ctx.shadowBlur = 4;
+                ctx.shadowOffsetX = 1;
+                ctx.shadowOffsetY = 1;
+                ctx.fillStyle = '#ffffff';
+                ctx.font = `800 ${entries.length > 12 ? 20 : 23}px system-ui, -apple-system, sans-serif`;
+                const maxChars = entries.length > 12 ? 5 : 7;
+                const label = String(place.name || '好店').length > maxChars ? String(place.name).slice(0, maxChars) + '…' : String(place.name || '好店');
+                ctx.fillText(label, radius - 26, 0);
+                ctx.restore();
+            });
+        };
+        window.spinRadarWheel = function(places) {
+            const canvas = document.getElementById('restaurant-wheel');
+            const statusEl = document.getElementById('wheel-status');
+            const resultEl = document.getElementById('wheel-result');
+            const btn = document.getElementById('radar-spin-btn');
+            const centerBtn = document.getElementById('wheel-center-spin-btn');
+            if (!canvas || !places.length) return;
+            window.drawRadarWheel(places);
+            const selectedIndex = Math.floor(Math.random() * places.length);
+            const segmentDegrees = 360 / places.length;
+            const finalRotation = 360 * (6 + Math.floor(Math.random() * 3)) - (selectedIndex * segmentDegrees + segmentDegrees / 2);
+            canvas.style.transition = 'none'; canvas.style.transform = 'rotate(0deg)'; void canvas.offsetWidth;
+            canvas.style.transition = ''; canvas.style.transform = `rotate(${finalRotation}deg)`;
+            if (centerBtn) {
+                centerBtn.disabled = true;
+                centerBtn.classList.remove('jelly-pulse');
+                centerBtn.classList.add('scale-95', 'opacity-80');
+            }
+            statusEl.innerHTML = '<i class="fa-solid fa-dice fa-bounce mr-1 text-orange-500"></i>輪盤飛速旋轉中，看看今天的緣分是哪一家…';
+            setTimeout(() => {
+                const winner = places[selectedIndex];
+                statusEl.innerHTML = `🎉 今天就吃 <span class="text-orange-600 font-extrabold">${window.escapeHtml(winner.name)}</span>！`;
+                resultEl.innerHTML = `<div class="text-center text-xs font-bold text-amber-600 mb-2">命運選中的附近好店</div>${generatePlaceCardHtml(winner)}`;
+                resultEl.classList.remove('hidden');
+                if (btn) { btn.disabled = false; btn.classList.remove('opacity-60'); btn.innerHTML = '<i class="fa-solid fa-rotate mr-1"></i>再轉一次'; }
+                if (centerBtn) {
+                    centerBtn.disabled = false;
+                    centerBtn.classList.add('jelly-pulse');
+                    centerBtn.classList.remove('scale-95', 'opacity-80');
+                }
+                resultEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }, window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 50 : 4850);
+        };
         
         function displayNoResults(vT) { 
             const msg = `<div class="text-center text-gray-500 py-10 col-span-full">附近找不到相關餐廳喔！<br>換個關鍵字試試？</div>`; 
             if(vT === 'explore') document.getElementById('explore-results-container').innerHTML = msg; 
-            if(vT === 'radar') document.getElementById('nearby-container').innerHTML = msg; 
+            if(vT === 'radar') {
+                document.getElementById('wheel-status').innerHTML = '附近找不到符合條件的餐廳，換個關鍵字或價位再轉一次吧！';
+                const btn = document.getElementById('radar-spin-btn');
+                const centerBtn = document.getElementById('wheel-center-spin-btn');
+                if (btn) { btn.disabled = false; btn.classList.remove('opacity-60'); btn.innerHTML = '<i class="fa-solid fa-rotate mr-1"></i>重新轉動'; }
+                if (centerBtn) {
+                    centerBtn.disabled = false;
+                    centerBtn.classList.add('jelly-pulse');
+                    centerBtn.classList.remove('scale-95', 'opacity-80');
+                }
+            }
             if(vT === 'random') { document.getElementById('random-btn').classList.remove('animate-pulse'); window.showCustomMsg("附近找不到喔！"); } 
         }
         
@@ -1281,6 +1653,53 @@
         }
 
         window.resetRandom = function() { document.getElementById('random-btn').classList.remove('hidden'); document.getElementById('random-intro').classList.remove('hidden'); document.getElementById('random-result').classList.add('hidden'); };
+
+        window.quickReviewPlaceData = null;
+        window.openQuickReviewModal = function() {
+            window.quickReviewPlaceData = null;
+            document.getElementById('quick-review-name').value = '';
+            document.getElementById('quick-review-suggestions').classList.add('hidden');
+            document.getElementById('quick-review-status').textContent = '找不到時也可以直接輸入店名發布評價。';
+            document.getElementById('quick-review-modal').classList.remove('hidden');
+            setTimeout(() => document.getElementById('quick-review-name')?.focus(), 100);
+        };
+        window.searchQuickReviewPlace = function(keyword) {
+            const list = document.getElementById('quick-review-suggestions');
+            const statusEl = document.getElementById('quick-review-status');
+            if (!keyword.trim()) { list.classList.add('hidden'); statusEl.textContent = '找不到時也可以直接輸入店名發布評價。'; return; }
+            if (typeof google === 'undefined' || !google.maps?.places) { statusEl.textContent = '智慧搜尋目前無法使用，可直接以輸入的店名繼續。'; return; }
+            new google.maps.places.AutocompleteService().getPlacePredictions({ input: keyword }, (predictions, status) => {
+                if (status === 'OK' && predictions?.length) {
+                    list.innerHTML = predictions.map(place => `<button type="button" onclick="window.selectQuickReviewPlace('${place.place_id}')" class="w-full text-left p-3 border-b border-gray-50 hover:bg-orange-50 transition"><span class="block text-sm font-bold text-gray-800">${window.escapeHtml(place.structured_formatting.main_text)}</span><span class="block text-[10px] text-gray-400 mt-0.5">${window.escapeHtml(place.structured_formatting.secondary_text || '')}</span></button>`).join('');
+                    list.classList.remove('hidden'); statusEl.textContent = '請從建議中選擇正確店家。';
+                } else {
+                    list.classList.add('hidden'); statusEl.textContent = 'Google 找不到這間店，仍可直接使用目前輸入的店名。';
+                }
+            });
+        };
+        window.selectQuickReviewPlace = function(placeId) {
+            document.getElementById('quick-review-suggestions').classList.add('hidden');
+            const statusEl = document.getElementById('quick-review-status');
+            statusEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i>正在讀取店家資料…';
+            new google.maps.places.PlacesService(document.createElement('div')).getDetails({ placeId, fields: ['name','place_id','url','geometry','formatted_address','address_components','types'] }, (place, status) => {
+                if (status !== 'OK' || !place) { window.quickReviewPlaceData = null; statusEl.textContent = '讀不到完整資料，仍可直接以店名繼續評價。'; return; }
+                const region = window.getPlaceRegion(place);
+                window.quickReviewPlaceData = {
+                    name: place.name || document.getElementById('quick-review-name').value.trim(), placeId: place.place_id || placeId,
+                    mapLink: place.url || '', formatted_address: place.formatted_address || '', country: region.country || '', city: region.city || '',
+                    lat: place.geometry?.location?.lat(), lng: place.geometry?.location?.lng()
+                };
+                document.getElementById('quick-review-name').value = window.quickReviewPlaceData.name;
+                statusEl.innerHTML = `<span class="text-emerald-600"><i class="fa-solid fa-circle-check mr-1"></i>已選擇 ${window.escapeHtml(window.quickReviewPlaceData.name)}${region.city ? `・${window.escapeHtml(region.city)}` : ''}</span>`;
+            });
+        };
+        window.continueQuickReview = function() {
+            const typedName = document.getElementById('quick-review-name').value.trim();
+            if (!typedName) return window.showCustomMsg('請先輸入想評價的店家名稱。');
+            const placeData = window.quickReviewPlaceData || { name: typedName, mapLink: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(typedName)}`, city: '未分類', country: '' };
+            window.closeModal('quick-review-modal');
+            window.initInteraction('review', placeData);
+        };
 
         window.initInteraction = function(type, pDStr) { 
             const pD = typeof pDStr === 'string' ? JSON.parse(pDStr) : pDStr;
@@ -1345,7 +1764,8 @@
                     } catch (uploadErr) {
                         console.error("照片上傳 Drive 失敗:", uploadErr);
                         if (btn) { btn.innerHTML = originalBtnHtml; btn.disabled = false; }
-                        return window.showCustomMsg("⚠️ 照片上傳失敗，請重新選擇照片或稍後再試。");
+                        const detail = uploadErr && uploadErr.message ? `\n\n原因：${uploadErr.message}` : '';
+                        return window.showCustomMsg(`⚠️ 照片上傳失敗，請稍後再試。${detail}`);
                     }
                 } else if (safePhoto && !safePhoto.startsWith('http://') && !safePhoto.startsWith('https://')) {
                     safePhoto = window.resolveReviewImage(safePhoto);
@@ -1359,7 +1779,8 @@
                     if(pType === 'review') {
                         const cityVal = pData.city || extractCity(pData.name + " " + (pData.formatted_address || ""));
                         const countryVal = pData.country || window.getCountryFromCity(cityVal);
-                        const reviewItem = { restaurantName: pData.name, group: g, creator: c, rating: rV, content: n, city: cityVal, country: countryVal, photoUrl: safePhoto };
+                        const reviewPhotos = safePhoto ? [safePhoto] : [];
+                        const reviewItem = { restaurantName: pData.name, group: g, creator: c, rating: rV, content: n, city: cityVal, country: countryVal, placeId: pData.placeId || '', mapLink: pData.mapLink || '', lat: pData.lat || null, lng: pData.lng || null, photoUrl: safePhoto, photos: reviewPhotos };
                         syncToGoogleSheets('Feed', reviewItem);
                         if(db && currentUser) {
                             await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'feed'), { ...reviewItem, timestamp: serverTimestamp() });
@@ -1540,7 +1961,7 @@
             document.getElementById('profile-name').textContent = userName;
             document.getElementById('profile-group').textContent = `${groupName || '好朋友'} 團`;
             
-            // 尋找此用戶的 Line ID 及 Bio
+            // 尋找此用戶的 Line ID 及 Bio 及 頭像
             let lineId = '';
             let bio = '';
             let inviter = '';
@@ -1552,6 +1973,17 @@
             
             const matchedFeed = window.feedData.find(f => f.creator === userName && f.type === 'system_welcome');
             if (matchedFeed) inviter = matchedFeed.inviter || '';
+            const avatarInfo = window.getAvatarInfo(matchedFeed || { creator: userName });
+            const profileAvatar = document.getElementById('profile-avatar');
+            if (profileAvatar) {
+                if (avatarInfo.isCustom && avatarInfo.customUrl) {
+                    profileAvatar.className = `w-16 h-16 rounded-full mx-auto mb-2 shadow-md border-2 border-white overflow-hidden bg-white`;
+                    profileAvatar.innerHTML = `<img src="${window.resolveReviewImage(avatarInfo.customUrl)}" class="w-full h-full object-cover rounded-full">`;
+                } else {
+                    profileAvatar.className = `foodie-avatar foodie-avatar-${avatarInfo.avatarId} w-16 h-16 rounded-full mx-auto mb-2 shadow-md border-2 border-white`;
+                    profileAvatar.innerHTML = '';
+                }
+            }
             
             document.getElementById('profile-inviter').textContent = inviter ? `(由 ${inviter} 引薦)` : '';
             document.getElementById('profile-bio').textContent = bio ? `「${bio}」` : '「無辣不歡，熱愛尋找高 C/P 值隱藏版美食！」';
@@ -1578,6 +2010,203 @@
             }
 
             modal.classList.remove('hidden');
+        };
+
+        window.quickChangeAvatarFromProfile = function() {
+            const userName = currentProfileUser?.name || window.myIdentity?.name;
+            const groupName = currentProfileUser?.group || window.myIdentity?.group;
+            window.closeModal('user-profile-modal');
+            
+            // 開啟身分設定 Modal，並預先選擇目前人偶與自訂頭像
+            window.openIdentityModal();
+            const tabOld = document.getElementById('tab-id-old');
+            if (tabOld) window.toggleIdTab('old');
+            
+            const groupSelect = document.getElementById('id-group');
+            const creatorSelect = document.getElementById('id-creator');
+            if (groupSelect && groupName) {
+                groupSelect.value = groupName;
+                window.handleDropdownSync(groupSelect, 'group');
+            }
+            if (creatorSelect && userName) {
+                creatorSelect.value = userName;
+            }
+            const avatarInfo = window.getAvatarInfo({ creator: userName, name: userName });
+            window.renderAvatarPicker(avatarInfo.avatarId, avatarInfo.customUrl);
+        };
+
+        window.updateHeaderAvatarBadge = function() {
+            const icon = document.getElementById('header-avatar-icon');
+            if (!icon) return;
+            const avatarInfo = window.getAvatarInfo(window.myIdentity || { creator: '黃政誥' });
+            if (avatarInfo.isCustom && avatarInfo.customUrl) {
+                icon.className = 'w-full h-full rounded-full overflow-hidden object-cover';
+                icon.innerHTML = `<img src="${window.resolveReviewImage(avatarInfo.customUrl)}" class="w-full h-full object-cover rounded-full">`;
+            } else {
+                icon.innerHTML = '';
+                icon.className = `foodie-avatar foodie-avatar-${avatarInfo.avatarId} w-full h-full rounded-full`;
+            }
+        };
+
+        // 🌟 美食動態牆多圖管理 (最多 5 張照片)
+        let currentFeedEditPhotos = []; // array of strings (urls or base64 data)
+
+        window.renderFeedEditPhotosGrid = function() {
+            const grid = document.getElementById('feed-edit-photos-grid');
+            const countBadge = document.getElementById('feed-photo-count-badge');
+            const addBtn = document.getElementById('feed-photo-add-btn');
+            if (countBadge) countBadge.textContent = currentFeedEditPhotos.length;
+            if (addBtn) {
+                addBtn.disabled = currentFeedEditPhotos.length >= 5;
+                if (currentFeedEditPhotos.length >= 5) {
+                    addBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                } else {
+                    addBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                }
+            }
+            if (!grid) return;
+
+            if (currentFeedEditPhotos.length === 0) {
+                grid.innerHTML = `
+                    <div class="col-span-3 py-6 flex flex-col items-center justify-center text-gray-400">
+                        <i class="fa-solid fa-images text-2xl mb-1 text-gray-300"></i>
+                        <p class="text-xs">尚未加入照片，點擊下方「拍照 / 加照片」上傳 (最多 5 張)</p>
+                    </div>`;
+                return;
+            }
+
+            grid.innerHTML = currentFeedEditPhotos.map((url, idx) => `
+                <div class="relative aspect-square rounded-xl overflow-hidden border border-gray-200 shadow-2xs group bg-gray-100">
+                    <img src="${window.resolveReviewImage(url)}" class="w-full h-full object-cover">
+                    <button type="button" onclick="window.removeFeedEditPhoto(${idx})" class="absolute top-1 right-1 bg-black/60 hover:bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs shadow transition" title="移除此照片">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                    <span class="absolute bottom-1 left-1 bg-black/50 text-white text-[9px] px-1.5 py-0.2 rounded font-bold backdrop-blur-2xs">${idx + 1}</span>
+                </div>
+            `).join('');
+        };
+
+        window.handleFeedPhotosSelected = async function(input) {
+            if (!input.files || input.files.length === 0) return;
+            const remaining = 5 - currentFeedEditPhotos.length;
+            if (remaining <= 0) return window.showCustomMsg("⚠️ 最多只能上傳 5 張照片喔！");
+
+            const files = Array.from(input.files).slice(0, remaining);
+            window.showCustomMsg(`📸 正在為您優化 ${files.length} 張照片中...`);
+
+            try {
+                for (const file of files) {
+                    if (currentFeedEditPhotos.length >= 5) break;
+                    const compressed = await window.compressImageFile(file, 1600, 1600, 0.8);
+                    currentFeedEditPhotos.push(compressed);
+                }
+                window.closeModal('custom-alert-modal');
+                window.renderFeedEditPhotosGrid();
+            } catch (err) {
+                console.error("多圖壓縮處理失敗:", err);
+                window.showCustomMsg("⚠️ 照片處理失敗，請重試。");
+            } finally {
+                input.value = '';
+            }
+        };
+
+        window.addFeedPhotoByUrl = function() {
+            const input = document.getElementById('feed-photo-edit-url-input');
+            const url = input ? input.value.trim() : '';
+            if (!url) return;
+            if (currentFeedEditPhotos.length >= 5) return window.showCustomMsg("⚠️ 最多只能上傳 5 張照片喔！");
+            currentFeedEditPhotos.push(url);
+            if (input) input.value = '';
+            window.renderFeedEditPhotosGrid();
+        };
+
+        window.removeFeedEditPhoto = function(index) {
+            if (index >= 0 && index < currentFeedEditPhotos.length) {
+                currentFeedEditPhotos.splice(index, 1);
+                window.renderFeedEditPhotosGrid();
+            }
+        };
+
+        window.clearAllFeedEditPhotos = function() {
+            currentFeedEditPhotos = [];
+            const urlInput = document.getElementById('feed-photo-edit-url-input');
+            if (urlInput) urlInput.value = '';
+            window.renderFeedEditPhotosGrid();
+        };
+
+        window.openFeedPhotoEditModal = function(feedId) {
+            const item = window.feedData.find(f => f.id === feedId);
+            if (!item) return;
+
+            window.requireIdentity(() => {
+                // 檢查是否為本人（主揪黃政誥有管理者權限，發文者本人可隨時補充照片）
+                const isAuthor = window.myIdentity?.name === item.creator || window.myIdentity?.name === '黃政誥';
+                if (!isAuthor) {
+                    return window.showCustomMsg("⚠️ 只有動態的發布者本人（或主揪）可以為此留言新增/更換照片喔！");
+                }
+
+                document.getElementById('feed-photo-edit-id').value = feedId;
+                document.getElementById('feed-photo-edit-sub').textContent = `正在為「${item.restaurantName || item.partyTitle || '動態'}」補充照片 (最多 5 張)`;
+                
+                // 解析既有照片（支援 single photoUrl 或 photos 陣列）
+                if (Array.isArray(item.photos) && item.photos.length > 0) {
+                    currentFeedEditPhotos = [...item.photos].slice(0, 5);
+                } else if (item.photoUrl) {
+                    currentFeedEditPhotos = [item.photoUrl];
+                } else {
+                    currentFeedEditPhotos = [];
+                }
+
+                window.renderFeedEditPhotosGrid();
+                document.getElementById('feed-photo-edit-modal').classList.remove('hidden');
+            });
+        };
+
+        window.saveFeedPhotoEdit = async function() {
+            const feedId = document.getElementById('feed-photo-edit-id').value;
+            const btn = document.getElementById('feed-photo-save-btn');
+            const item = window.feedData.find(f => f.id === feedId);
+            if (!item) return window.closeModal('feed-photo-edit-modal');
+
+            const origText = btn ? btn.innerHTML : '';
+            if (btn) { btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i>儲存上傳中...'; btn.disabled = true; }
+
+            try {
+                const finalPhotos = [];
+                for (let i = 0; i < currentFeedEditPhotos.length; i++) {
+                    let p = currentFeedEditPhotos[i];
+                    if (p.startsWith('data:image')) {
+                        try {
+                            const uploadRes = await window.uploadImageToDrive(p, `${item.restaurantName || 'feed'}_${Date.now()}_${i}.jpg`);
+                            if (uploadRes && (uploadRes.imageUrl || uploadRes.fileId)) {
+                                p = uploadRes.imageUrl || window.getDriveImageUrl(uploadRes.fileId);
+                            }
+                        } catch (uploadErr) {
+                            console.warn("上傳 Google Drive 失敗，改用壓縮後的圖片儲存:", uploadErr);
+                        }
+                    }
+                    finalPhotos.push(p);
+                }
+
+                item.photos = finalPhotos;
+                item.photoUrl = finalPhotos.length > 0 ? finalPhotos[0] : '';
+
+                if (db && currentUser && typeof feedId === 'string') {
+                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'feed', feedId), { 
+                        photos: finalPhotos, 
+                        photoUrl: item.photoUrl 
+                    });
+                }
+
+                window.closeModal('feed-photo-edit-modal');
+                window.renderFeed();
+                window.showCustomMsg(`✅ 已成功更新 ${finalPhotos.length} 張照片至動態牆！`);
+            } catch (err) {
+                console.error("更新動態照片失敗:", err);
+                window.showCustomMsg("⚠️ 更新失敗，請稍後再試！");
+            } finally {
+                if (btn) { btn.innerHTML = origText; btn.disabled = false; }
+            }
         };
 
         window.copyProfileLineId = function() {
@@ -1735,12 +2364,19 @@
                 
                 // 1. 歡迎廣播卡片
                 if (item.type === 'system_welcome') {
+                    const avatarInfo = window.getAvatarInfo(item);
+                    const avatarHtml = (avatarInfo.isCustom && avatarInfo.customUrl) 
+                        ? `<div class="w-10 h-10 rounded-full shadow shrink-0 border-2 border-white overflow-hidden bg-white"><img src="${window.resolveReviewImage(avatarInfo.customUrl)}" class="w-full h-full object-cover rounded-full"></div>`
+                        : `<div class="foodie-avatar foodie-avatar-${avatarInfo.avatarId} w-10 h-10 rounded-full shadow shrink-0 border-2 border-white"></div>`;
+                    
+                    const bigAvatarHtml = (avatarInfo.isCustom && avatarInfo.customUrl)
+                        ? `<div class="w-full max-w-[16rem] aspect-square rounded-[2rem] drop-shadow-sm overflow-hidden bg-white border-4 border-white shadow-md"><img src="${window.resolveReviewImage(avatarInfo.customUrl)}" class="w-full h-full object-cover"></div>`
+                        : `<div class="foodie-avatar foodie-avatar-${avatarInfo.avatarId} w-full max-w-[16rem] aspect-square rounded-[2rem] drop-shadow-sm"></div>`;
+
                     return `
-                    <div class="bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-2xl border border-blue-100 shadow-sm relative overflow-hidden">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 bg-blue-500 text-white rounded-full flex items-center justify-center shadow shrink-0">
-                                <i class="fa-solid fa-hand-wave text-base"></i>
-                            </div>
+                    <div class="feed-welcome-card w-full h-auto md:h-full min-h-[5.5rem] bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-2xl border border-blue-100 shadow-sm relative overflow-hidden self-start flex flex-col">
+                        <div class="flex items-start gap-3 min-h-[3.5rem]">
+                            ${avatarHtml}
                             <div class="min-w-0 flex-1">
                                 <p class="text-[11px] text-blue-600 font-bold mb-0.5">🎉 新朋友加入 · ${dateStr}</p>
                                 <p class="text-xs sm:text-sm text-gray-800 font-bold leading-snug">
@@ -1748,6 +2384,9 @@
                                 </p>
                                 <p class="text-[11px] text-gray-500 mt-0.5">(由 ${item.inviter} 引薦進來 🙌)</p>
                             </div>
+                        </div>
+                        <div class="hidden md:flex flex-1 min-h-[13rem] items-center justify-center pt-4" aria-hidden="true">
+                            ${bigAvatarHtml}
                         </div>
                     </div>`;
                 }
@@ -1825,9 +2464,10 @@
                     : `<span class="inline-flex items-center gap-1 bg-rose-500 text-white px-2.5 py-1 rounded-full font-bold text-[11px] shadow-sm shrink-0"><i class="fa-solid fa-thumbs-down text-[10px]"></i> 避雷</span>`;
 
                 const cardStyle = `${theme.border} ${theme.bg}`;
-                const avatarStyle = isHost 
-                    ? 'bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-md' 
-                    : `${theme.avatar} border border-white/60`;
+                const avatarInfo = window.getAvatarInfo(item);
+                const userAvatarHtml = (avatarInfo.isCustom && avatarInfo.customUrl)
+                    ? `<div class="w-10 h-10 rounded-full flex items-center justify-center shrink-0 border border-white/80 shadow-xs overflow-hidden bg-white"><img src="${window.resolveReviewImage(avatarInfo.customUrl)}" class="w-full h-full object-cover rounded-full"></div>`
+                    : `<div class="w-10 h-10 rounded-full flex items-center justify-center text-sm shrink-0 ${isHost ? 'bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-md' : `${theme.avatar} border border-white/60`}"><i class="fa-solid ${isHost ? 'fa-crown' : 'fa-user'}"></i></div>`;
 
                 const matchedRes = window.restaurantData.find(r => r.name === item.restaurantName);
                 const feedCity = item.city || (matchedRes ? matchedRes.city : extractCity(item.restaurantName)) || '';
@@ -1841,14 +2481,49 @@
                     feedLocTag = feedCountry;
                 }
 
+                // 🌟 照片多圖展示邏輯 (1~5 張照片相簿呈現)
+                const allPhotos = Array.isArray(item.photos) && item.photos.length > 0 
+                    ? item.photos.filter(p => !!p).slice(0, 5) 
+                    : (item.photoUrl ? [item.photoUrl] : []);
+
+                let photosGalleryHtml = '';
+                if (allPhotos.length === 1) {
+                    photosGalleryHtml = `
+                    <div class="relative rounded-xl overflow-hidden shadow-sm max-h-64 border border-gray-100 my-1 group">
+                        <img src="${window.resolveReviewImage(allPhotos[0], item.restaurantName)}" onerror="this.onerror=null; this.src=window.getFallbackImage('${window.escapeForBtn(item.restaurantName)}');" class="w-full h-full max-h-64 object-cover">
+                        ${(window.myIdentity?.name === item.creator || window.myIdentity?.name === '黃政誥') ? `
+                        <button onclick="window.openFeedPhotoEditModal('${item.id}')" class="absolute bottom-2 right-2 bg-black/60 hover:bg-black/80 text-white text-[10px] font-bold px-2 py-1 rounded-lg backdrop-blur-xs shadow transition flex items-center gap-1">
+                            <i class="fa-solid fa-camera"></i> 補/換照片
+                        </button>` : ''}
+                    </div>`;
+                } else if (allPhotos.length > 1) {
+                    const gridCols = allPhotos.length === 2 ? 'grid-cols-2' : (allPhotos.length === 3 ? 'grid-cols-3' : (allPhotos.length === 4 ? 'grid-cols-2' : 'grid-cols-3'));
+                    photosGalleryHtml = `
+                    <div class="my-1">
+                        <div class="grid ${gridCols} gap-1.5 rounded-xl overflow-hidden">
+                            ${allPhotos.map((p, pIdx) => `
+                                <div class="relative aspect-square overflow-hidden bg-gray-100 group border border-gray-100 rounded-lg">
+                                    <img src="${window.resolveReviewImage(p, item.restaurantName)}" onerror="this.onerror=null; this.src=window.getFallbackImage('${window.escapeForBtn(item.restaurantName)}');" class="w-full h-full object-cover transition duration-300 hover:scale-105">
+                                    <span class="absolute bottom-1 right-1 bg-black/50 text-white text-[9px] px-1 rounded font-bold backdrop-blur-2xs">${pIdx + 1}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                        <div class="flex justify-between items-center mt-1 px-0.5">
+                            <span class="text-[10px] text-gray-400 font-bold"><i class="fa-solid fa-images text-orange-400 mr-1"></i>共 ${allPhotos.length} 張照片</span>
+                            ${(window.myIdentity?.name === item.creator || window.myIdentity?.name === '黃政誥') ? `
+                            <button onclick="window.openFeedPhotoEditModal('${item.id}')" class="text-orange-500 hover:text-orange-600 text-[10px] font-bold flex items-center gap-0.5">
+                                <i class="fa-solid fa-pen-to-square"></i> 管理照片
+                            </button>` : ''}
+                        </div>
+                    </div>`;
+                }
+
                 return `
                 <div class="rounded-2xl p-4 shadow-sm ${cardStyle} flex flex-col gap-3 transition hover:shadow-md">
                     <!-- 卡片頂部：發文者身分與評價標籤 -->
                     <div class="flex items-center justify-between gap-2 border-b border-gray-100/60 pb-3">
                         <div class="flex items-center gap-3 min-w-0 cursor-pointer" onclick="window.openUserProfile('${window.escapeForBtn(item.creator)}', '${window.escapeForBtn(item.group)}')">
-                            <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm shrink-0 ${avatarStyle}">
-                                <i class="fa-solid ${isHost ? 'fa-crown' : 'fa-user'}"></i>
-                            </div>
+                            ${userAvatarHtml}
                             <div class="min-w-0">
                                 <div class="flex items-center gap-1.5 flex-wrap">
                                     <span class="text-sm font-bold text-gray-900 truncate leading-none hover:text-orange-500 transition">${item.creator}</span>
@@ -1864,36 +2539,42 @@
                         ${badgeRating}
                     </div>
 
-                    <!-- 卡片下半部：店家名稱、照片與評語 -->
+                    <!-- 卡片下半部：店家名稱、照片相簿與評語 -->
                     <div class="bg-white/90 backdrop-blur-sm p-3.5 rounded-xl border border-gray-100/80 shadow-xs flex flex-col gap-2">
                         <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.restaurantName)}" target="_blank" class="text-sm font-bold text-blue-600 hover:text-blue-700 flex items-center flex-wrap gap-1.5 transition break-all leading-snug">
                             <i class="fa-solid fa-location-dot text-orange-500 shrink-0"></i>
                             <span>${item.restaurantName}</span>
                             ${feedLocTag ? `<span class="inline-flex items-center text-[10px] font-bold text-orange-600 bg-orange-50 px-2 py-0.5 rounded-md border border-orange-100 shrink-0 ml-0.5"><i class="fa-solid fa-earth-asia mr-1 text-[9px] text-orange-400"></i>${feedLocTag}</span>` : ''}
                         </a>
-                        ${item.photoUrl ? `
-                        <div class="relative rounded-xl overflow-hidden shadow-sm max-h-60 border border-gray-100 my-1">
-                            <img src="${window.resolveReviewImage(item.photoUrl, item.restaurantName)}" onerror="this.onerror=null; this.src=window.getFallbackImage('${window.escapeForBtn(item.restaurantName)}');" class="w-full h-full object-cover">
-                        </div>` : ''}
+                        ${photosGalleryHtml}
                         <p class="text-xs sm:text-sm text-gray-700 leading-relaxed break-words font-medium pl-3 border-l-2 ${theme.quoteBorder}">
                             ${item.content || '目前沒有撰寫文字心得喔！'}
                         </p>
                     </div>
 
-                    <!-- 🌟 互動列：按讚與留言按鈕 -->
-                    <div class="border-t border-gray-100/80 pt-2 flex items-center justify-between text-xs text-gray-500 font-bold">
-                        <button onclick="window.toggleFeedLike('${item.id}')" class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl hover:bg-rose-50 hover:text-rose-500 transition ${isLiked ? 'text-rose-500 bg-rose-50' : 'text-gray-500'}">
-                            <i class="fa-${isLiked ? 'solid' : 'regular'} fa-heart text-sm"></i>
-                            <span>${likes.length > 0 ? likes.length : '讚'}</span>
-                        </button>
-                        <button onclick="window.toggleFeedComments('${item.id}')" class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl hover:bg-blue-50 hover:text-blue-500 transition">
-                            <i class="fa-regular fa-comment text-sm"></i>
-                            <span>留言 ${comments.length > 0 ? `(${comments.length})` : ''}</span>
-                        </button>
-                        <button onclick="window.openUserProfile('${window.escapeForBtn(item.creator)}', '${window.escapeForBtn(item.group)}')" class="flex items-center gap-1 px-2 py-1 rounded-xl hover:bg-orange-50 text-orange-600 transition text-[11px]">
-                            <i class="fa-solid fa-address-card"></i>
-                            <span>看名片</span>
-                        </button>
+                    <!-- 🌟 互動列：按讚、留言、新增照片與名片按鈕 -->
+                    <div class="border-t border-gray-100/80 pt-2 flex items-center justify-between text-xs text-gray-500 font-bold flex-wrap gap-1">
+                        <div class="flex items-center gap-1">
+                            <button onclick="window.toggleFeedLike('${item.id}')" class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl hover:bg-rose-50 hover:text-rose-500 transition ${isLiked ? 'text-rose-500 bg-rose-50' : 'text-gray-500'}">
+                                <i class="fa-${isLiked ? 'solid' : 'regular'} fa-heart text-sm"></i>
+                                <span>${likes.length > 0 ? likes.length : '讚'}</span>
+                            </button>
+                            <button onclick="window.toggleFeedComments('${item.id}')" class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl hover:bg-blue-50 hover:text-blue-500 transition">
+                                <i class="fa-regular fa-comment text-sm"></i>
+                                <span>留言 ${comments.length > 0 ? `(${comments.length})` : ''}</span>
+                            </button>
+                        </div>
+                        <div class="flex items-center gap-1">
+                            ${(window.myIdentity?.name === item.creator || window.myIdentity?.name === '黃政誥') ? `
+                            <button onclick="window.openFeedPhotoEditModal('${item.id}')" class="flex items-center gap-1 px-2 py-1 rounded-xl hover:bg-amber-50 text-amber-600 transition text-[11px]" title="為這則留言/動態事後補充或更換最多5張照片">
+                                <i class="fa-solid fa-camera"></i>
+                                <span>${allPhotos.length > 0 ? `照片(${allPhotos.length})` : '補照片'}</span>
+                            </button>` : ''}
+                            <button onclick="window.openUserProfile('${window.escapeForBtn(item.creator)}', '${window.escapeForBtn(item.group)}')" class="flex items-center gap-1 px-2 py-1 rounded-xl hover:bg-orange-50 text-orange-600 transition text-[11px]">
+                                <i class="fa-solid fa-address-card"></i>
+                                <span>看名片</span>
+                            </button>
+                        </div>
                     </div>
 
                     <!-- 展開的留言討論區塊 -->
@@ -2231,6 +2912,9 @@
 
         window.openAddModal = function() {
             document.getElementById('add-form')?.reset();
+            window.smartPlaceSelected = false;
+            document.getElementById('smart-place-match-status')?.classList.add('hidden');
+            window.handleAddCountryChange('台北市');
             window.setPhotoUploaderValue('admin-add', '');
             updateConfigDropdowns();
             if (window.myIdentity && window.myIdentity.group) {
@@ -2263,6 +2947,7 @@
                     return window.showCustomMsg("請輸入餐廳店名喔！");
                 }
 
+                const countryVal = document.getElementById('input-country')?.value || window.getCountryFromCity(document.getElementById('input-city').value) || '台灣';
                 let cityVal = document.getElementById('input-city').value;
                 if (!cityVal) cityVal = "台北市";
 
@@ -2290,7 +2975,8 @@
                 const placeIdVal = document.getElementById('input-place-id').value || "";
 
                 const newDoc = {
-                    name: nameVal, 
+                    name: nameVal,
+                    country: countryVal,
                     city: cityVal, 
                     hours: "", 
                     mapLink: mapLink, 
@@ -2343,11 +3029,15 @@
             const list = document.getElementById('admin-autocomplete-list'); if(!k.trim()) return list.classList.add('hidden');
             if (typeof google !== 'undefined' && google.maps && google.maps.places) {
                 try {
-                    new google.maps.places.AutocompleteService().getPlacePredictions({ input: k, componentRestrictions: {country: 'tw'} }, (p, s) => {
+                    new google.maps.places.AutocompleteService().getPlacePredictions({ input: k }, (p, s) => {
                         if (s === 'OK' && p) { 
-                            list.innerHTML = p.map(x => `<div onclick="window.selectAdminPlace('${x.place_id}')" class="p-4 border-b border-gray-50 text-sm font-bold text-gray-700 cursor-pointer hover:bg-orange-50 transition">${x.structured_formatting.main_text} <span class="text-[10px] text-gray-400 font-normal ml-2">${x.structured_formatting.secondary_text}</span></div>`).join(''); list.classList.remove('hidden'); 
+                            list.innerHTML = p.map(x => `<div onclick="window.selectAdminPlace('${x.place_id}')" class="p-4 border-b border-gray-50 text-sm font-bold text-gray-700 cursor-pointer hover:bg-orange-50 transition">${window.escapeHtml(x.structured_formatting.main_text)} <span class="text-[10px] text-gray-400 font-normal ml-2">${window.escapeHtml(x.structured_formatting.secondary_text)}</span></div>`).join(''); list.classList.remove('hidden');
                         } else if (s === 'REQUEST_DENIED') {
                             window.showCustomMsg("⚠️ 智慧建檔功能受限！\n請確認 Google Cloud 中是否啟用了經典版的「Places API」，而非「Places API (New)」。");
+                        } else {
+                            list.classList.add('hidden');
+                            const matchStatus = document.getElementById('smart-place-match-status');
+                            if (matchStatus) { matchStatus.className = 'text-[10px] font-bold mt-1.5 px-1 text-amber-600'; matchStatus.textContent = '智慧搜尋目前找不到這間店，請手動填寫國家、縣市與分類。'; }
                         }
                     });
                 } catch(e) { console.error(e); }
@@ -2358,16 +3048,32 @@
             document.getElementById('admin-autocomplete-list').classList.add('hidden');
             if (typeof google !== 'undefined' && google.maps && google.maps.places) {
                 try {
-                    new google.maps.places.PlacesService(document.createElement('div')).getDetails({ placeId: id }, (p, s) => {
+                    new google.maps.places.PlacesService(document.createElement('div')).getDetails({ placeId: id, fields: ['name','url','geometry','rating','place_id','photos','address_components','formatted_address','types'] }, (p, s) => {
                         if (s === 'OK') {
                             document.getElementById('input-name').value = p.name || ''; document.getElementById('input-map').value = p.url || '';
                             if(p.geometry) { document.getElementById('input-lat').value = p.geometry.location.lat(); document.getElementById('input-lng').value = p.geometry.location.lng(); }
                             document.getElementById('input-rating').value = p.rating || '';
                             document.getElementById('input-place-id').value = p.place_id || id;
+                            const region = window.getPlaceRegion(p);
+                            const countryEl = document.getElementById('input-country');
+                            if (region.country) window.setSelectValueWithFallback(countryEl, region.country);
+                            window.handleAddCountryChange(region.city);
+                            const category = window.inferPlaceCategory(p);
+                            document.getElementById('input-category').value = category;
+                            window.smartPlaceSelected = true;
+                            const matchStatus = document.getElementById('smart-place-match-status');
+                            if (matchStatus) {
+                                matchStatus.className = `text-[10px] font-bold mt-1.5 px-1 ${category === '未分類' ? 'text-amber-600' : 'text-emerald-600'}`;
+                                matchStatus.textContent = category === '未分類' ? '已找到店家並帶入國家、縣市；Google 未提供明確類型，請手動確認分類。' : `已自動配對：${region.country || '國家未提供'}・${region.city || '縣市未提供'}・${category}`;
+                            }
                             if (p.photos && p.photos.length > 0) {
                                 // Google 照片 URL 是臨時值，保留 placeId 以便每次即時取圖。
                                 document.getElementById('input-photo').value = '';
                             }
+                        } else {
+                            window.smartPlaceSelected = false;
+                            const matchStatus = document.getElementById('smart-place-match-status');
+                            if (matchStatus) { matchStatus.className = 'text-[10px] font-bold mt-1.5 px-1 text-amber-600'; matchStatus.textContent = '智慧搜尋找不到完整店家資料，請手動填寫國家、縣市與分類。'; }
                         }
                     });
                 } catch(e) {}

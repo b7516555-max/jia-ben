@@ -452,8 +452,29 @@
             </div>
             
             <div class="mt-3 border-t border-gray-100 pt-3">
-                <label class="block text-xs font-bold text-gray-500 mb-2"><i class="fa-solid fa-people-group text-blue-500 mr-1"></i>選擇你的美食人偶</label>
+                <label class="block text-xs font-bold text-gray-600 mb-1.5"><i class="fa-solid fa-face-smile text-orange-500 mr-1"></i>個人大頭貼 (選擇人偶 或 上傳自訂照片)</label>
                 <input type="hidden" id="id-avatar" value="host">
+                <input type="hidden" id="id-custom-avatar" value="">
+                <input type="file" id="id-custom-avatar-file" accept="image/*" class="hidden" onchange="window.handleCustomAvatarSelected(this)">
+                
+                <div class="flex items-center gap-2 mb-2 p-2 bg-orange-50/50 rounded-2xl border border-orange-100">
+                    <div id="id-current-avatar-preview" class="w-12 h-12 rounded-full border-2 border-orange-400 shadow-sm shrink-0 overflow-hidden bg-white flex items-center justify-center">
+                        <div id="id-avatar-preview-inner" class="foodie-avatar foodie-avatar-host w-full h-full rounded-full"></div>
+                    </div>
+                    <div class="min-w-0 flex-1">
+                        <p id="id-avatar-status-label" class="text-xs font-bold text-gray-800">目前頭像：活力主揪</p>
+                        <div class="flex items-center gap-1.5 mt-1">
+                            <button type="button" onclick="document.getElementById('id-custom-avatar-file').click()" class="px-2.5 py-1 bg-white border border-orange-200 text-orange-600 hover:bg-orange-100 rounded-lg text-[11px] font-bold shadow-2xs transition flex items-center gap-1">
+                                <i class="fa-solid fa-camera"></i> 上傳自己的照片
+                            </button>
+                            <button type="button" id="id-clear-custom-avatar-btn" onclick="window.clearCustomAvatar()" class="hidden px-2 py-1 bg-gray-100 text-gray-600 hover:bg-gray-200 rounded-lg text-[11px] font-bold transition">
+                                恢復人偶
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <p class="text-[11px] font-bold text-gray-400 mb-1">或挑選經典美食人偶：</p>
                 <div id="avatar-picker" class="grid grid-cols-6 gap-1.5" aria-label="美食人偶選擇"></div>
             </div>
             <div class="mt-3 border-t border-gray-100 pt-3 space-y-3">
@@ -470,44 +491,43 @@
         </div>
     </div>
 
-    <!-- 動態牆留言/貼文隨時補充與更換照片 Modal -->
+    <!-- 動態牆留言/貼文隨時補充與更換照片 Modal (支援最多 5 張照片) -->
     <div id="feed-photo-edit-modal" class="hidden fixed inset-0 z-[120] flex items-center justify-center bg-black/60 modal-backdrop fade-in">
-        <div class="bg-white rounded-3xl p-6 w-11/12 max-w-sm shadow-2xl relative modal-dialog">
+        <div class="bg-white rounded-3xl p-6 w-11/12 max-w-md shadow-2xl relative modal-dialog max-h-[90vh] overflow-y-auto no-scrollbar">
             <button onclick="window.closeModal('feed-photo-edit-modal')" class="absolute top-4 right-5 text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark text-xl"></i></button>
             <div class="text-center mb-4">
                 <div class="w-12 h-12 bg-orange-100 text-orange-500 rounded-full flex items-center justify-center mx-auto mb-2 text-xl shadow-xs"><i class="fa-solid fa-camera-retro"></i></div>
-                <h2 class="text-lg font-bold text-gray-800">為這則動態補充照片</h2>
-                <p id="feed-photo-edit-sub" class="text-xs text-gray-400 mt-1">隨時新增或更換照片，讓大家看到現場美味</p>
+                <h2 class="text-lg font-bold text-gray-800">為這則動態補充美食照片</h2>
+                <p id="feed-photo-edit-sub" class="text-xs text-gray-400 mt-1">事後可隨時追加或更換照片 (最多 5 張)</p>
             </div>
             <input type="hidden" id="feed-photo-edit-id" value="">
-            <input type="hidden" id="feed-photo-edit-url" value="">
             
             <div class="space-y-3">
-                <div class="bg-gray-50 p-3 rounded-2xl border border-gray-100 flex flex-col items-center justify-center min-h-[140px] relative overflow-hidden">
-                    <img id="feed-photo-edit-img" src="" class="hidden w-full max-h-48 object-cover rounded-xl shadow-xs">
-                    <div id="feed-photo-edit-placeholder" class="text-center text-gray-400">
-                        <i class="fa-solid fa-image text-3xl mb-1 text-gray-300"></i>
-                        <p class="text-xs">尚未選擇照片</p>
-                    </div>
+                <!-- 照片多圖清單與預覽 -->
+                <div id="feed-edit-photos-grid" class="grid grid-cols-3 gap-2 min-h-[100px] bg-gray-50 p-2.5 rounded-2xl border border-gray-100">
+                    <!-- 動態渲染已選的 1~5 張照片縮圖 -->
                 </div>
 
                 <div class="flex items-center gap-2">
-                    <input type="file" id="feed-photo-edit-file" accept="image/*" class="hidden" onchange="window.handlePhotoSelected(this, 'feed-photo-edit')">
-                    <button type="button" onclick="document.getElementById('feed-photo-edit-file').click()" class="flex-1 px-3 py-2.5 bg-orange-50 text-orange-600 border border-orange-200 hover:bg-orange-100 rounded-xl text-xs font-bold shadow-xs flex items-center justify-center gap-1.5 transition">
-                        <i class="fa-solid fa-camera"></i> 拍照 / 選照片
+                    <input type="file" id="feed-photo-edit-file" accept="image/*" multiple class="hidden" onchange="window.handleFeedPhotosSelected(this)">
+                    <button type="button" id="feed-photo-add-btn" onclick="document.getElementById('feed-photo-edit-file').click()" class="flex-1 px-3 py-2.5 bg-orange-50 text-orange-600 border border-orange-200 hover:bg-orange-100 rounded-xl text-xs font-bold shadow-xs flex items-center justify-center gap-1.5 transition">
+                        <i class="fa-solid fa-camera"></i> 拍照 / 加照片 (<span id="feed-photo-count-badge">0</span>/5)
                     </button>
-                    <button type="button" onclick="window.clearPhoto('feed-photo-edit')" class="px-3 py-2.5 bg-gray-100 text-gray-600 hover:bg-gray-200 rounded-xl text-xs font-bold transition">
-                        清除
+                    <button type="button" onclick="window.clearAllFeedEditPhotos()" class="px-3 py-2.5 bg-gray-100 text-gray-600 hover:bg-gray-200 rounded-xl text-xs font-bold transition">
+                        清空
                     </button>
                 </div>
                 <div>
-                    <input type="url" id="feed-photo-edit-url-input" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-700 focus:outline-none focus:border-orange-400 font-medium" placeholder="或貼上照片網址 (選填)" oninput="window.handlePhotoUrlInput('feed-photo-edit', this.value)">
+                    <div class="flex gap-1.5">
+                        <input type="url" id="feed-photo-edit-url-input" class="flex-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-700 focus:outline-none focus:border-orange-400 font-medium" placeholder="或貼上照片網址 https://...">
+                        <button type="button" onclick="window.addFeedPhotoByUrl()" class="px-3 py-2 bg-gray-800 text-white text-xs font-bold rounded-xl hover:bg-gray-900 transition">加入</button>
+                    </div>
                 </div>
             </div>
 
             <div class="flex gap-2 mt-5">
                 <button type="button" onclick="window.closeModal('feed-photo-edit-modal')" class="flex-1 bg-gray-100 text-gray-600 font-bold py-3 rounded-xl hover:bg-gray-200 transition text-xs">取消</button>
-                <button type="button" id="feed-photo-save-btn" onclick="window.saveFeedPhotoEdit()" class="flex-1 bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-xl shadow-md transition text-xs flex items-center justify-center gap-1.5"><i class="fa-solid fa-check"></i>儲存更新</button>
+                <button type="button" id="feed-photo-save-btn" onclick="window.saveFeedPhotoEdit()" class="flex-1 bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-xl shadow-md transition text-xs flex items-center justify-center gap-1.5"><i class="fa-solid fa-check"></i>儲存更新照片</button>
             </div>
         </div>
     </div>
@@ -2116,7 +2136,9 @@
         };
         window.openIdentityModal = function() {
             updateConfigDropdowns();
-            window.renderAvatarPicker(window.myIdentity.avatarId || window.getDefaultAvatarId(window.myIdentity.name));
+            const avatarId = window.myIdentity?.avatarId || window.getDefaultAvatarId(window.myIdentity?.name || '');
+            const customAvatarUrl = window.myIdentity?.customAvatarUrl || '';
+            window.renderAvatarPicker(avatarId, customAvatarUrl);
             document.getElementById('identity-modal').classList.remove('hidden');
         };
         const FOODIE_AVATARS = [
@@ -2128,19 +2150,84 @@
             const total = [...String(name)].reduce((sum, char) => sum + char.codePointAt(0), 0);
             return FOODIE_AVATARS[total % FOODIE_AVATARS.length].id;
         };
+        window.getAvatarInfo = function(item = {}) {
+            // 回傳 { isCustom: boolean, customUrl: string, avatarId: string }
+            if (item.customAvatarUrl) {
+                return { isCustom: true, customUrl: item.customAvatarUrl, avatarId: 'custom' };
+            }
+            if (window.myIdentity?.name === item.creator && window.myIdentity.customAvatarUrl) {
+                return { isCustom: true, customUrl: window.myIdentity.customAvatarUrl, avatarId: 'custom' };
+            }
+            let avatarId = 'host';
+            if (item.avatarId && FOODIE_AVATARS.some(a => a.id === item.avatarId)) {
+                avatarId = item.avatarId;
+            } else if (window.myIdentity?.name === item.creator && window.myIdentity.avatarId) {
+                avatarId = window.myIdentity.avatarId;
+            } else {
+                avatarId = window.getDefaultAvatarId(item.creator || item.name || '');
+            }
+            return { isCustom: false, customUrl: '', avatarId: avatarId };
+        };
         window.getAvatarId = function(item = {}) {
-            if (item.avatarId && FOODIE_AVATARS.some(a => a.id === item.avatarId)) return item.avatarId;
-            if (window.myIdentity?.name === item.creator && window.myIdentity.avatarId) return window.myIdentity.avatarId;
-            return window.getDefaultAvatarId(item.creator || item.name || '');
+            return window.getAvatarInfo(item).avatarId;
         };
-        window.renderAvatarPicker = function(selectedId = 'host') {
+        window.renderAvatarPicker = function(selectedId = 'host', customUrl = '') {
             const picker = document.getElementById('avatar-picker');
-            if (!picker) return;
-            const safeId = FOODIE_AVATARS.some(a => a.id === selectedId) ? selectedId : 'host';
-            document.getElementById('id-avatar').value = safeId;
-            picker.innerHTML = FOODIE_AVATARS.map(a => `<button type="button" class="avatar-choice foodie-avatar foodie-avatar-${a.id} aspect-square rounded-xl border-2 border-transparent transition ${a.id === safeId ? 'is-selected' : ''}" onclick="window.selectAvatar('${a.id}')" aria-label="${a.label}" title="${a.label}"></button>`).join('');
+            const hiddenAvatar = document.getElementById('id-avatar');
+            const hiddenCustom = document.getElementById('id-custom-avatar');
+            const statusLabel = document.getElementById('id-avatar-status-label');
+            const previewInner = document.getElementById('id-avatar-preview-inner');
+            const clearBtn = document.getElementById('id-clear-custom-avatar-btn');
+            
+            if (hiddenCustom) hiddenCustom.value = customUrl || '';
+            
+            if (customUrl) {
+                if (hiddenAvatar) hiddenAvatar.value = 'custom';
+                if (statusLabel) statusLabel.innerHTML = '<span class="text-emerald-600">已使用自訂大頭照 ✨</span>';
+                if (previewInner) {
+                    previewInner.className = 'w-full h-full rounded-full object-cover';
+                    previewInner.innerHTML = `<img src="${window.resolveReviewImage(customUrl)}" class="w-full h-full object-cover rounded-full">`;
+                }
+                if (clearBtn) clearBtn.classList.remove('hidden');
+            } else {
+                const safeId = FOODIE_AVATARS.some(a => a.id === selectedId) ? selectedId : 'host';
+                if (hiddenAvatar) hiddenAvatar.value = safeId;
+                const found = FOODIE_AVATARS.find(a => a.id === safeId);
+                if (statusLabel) statusLabel.textContent = `目前頭像：${found?.label || '活力主揪'}`;
+                if (previewInner) {
+                    previewInner.innerHTML = '';
+                    previewInner.className = `foodie-avatar foodie-avatar-${safeId} w-full h-full rounded-full`;
+                }
+                if (clearBtn) clearBtn.classList.add('hidden');
+            }
+
+            if (picker) {
+                const currentSafeId = FOODIE_AVATARS.some(a => a.id === selectedId) ? selectedId : 'host';
+                picker.innerHTML = FOODIE_AVATARS.map(a => `<button type="button" class="avatar-choice foodie-avatar foodie-avatar-${a.id} aspect-square rounded-xl border-2 border-transparent transition ${(!customUrl && a.id === currentSafeId) ? 'is-selected' : ''}" onclick="window.selectAvatar('${a.id}')" aria-label="${a.label}" title="${a.label}"></button>`).join('');
+            }
         };
-        window.selectAvatar = function(id) { window.renderAvatarPicker(id); };
+        window.selectAvatar = function(id) { 
+            window.renderAvatarPicker(id, ''); 
+        };
+        window.handleCustomAvatarSelected = async function(input) {
+            if (!input.files || input.files.length === 0) return;
+            const file = input.files[0];
+            try {
+                window.showCustomMsg("📸 正在優化您的大頭照...");
+                const compressedDataUrl = await window.compressImageFile(file, 600, 600, 0.85);
+                window.closeModal('custom-alert-modal');
+                window.renderAvatarPicker('custom', compressedDataUrl);
+            } catch (err) {
+                console.error("大頭照壓縮失敗:", err);
+                window.showCustomMsg("⚠️ 圖片處理失敗，請換一張照片試試。");
+            }
+        };
+        window.clearCustomAvatar = function() {
+            const fileInput = document.getElementById('id-custom-avatar-file');
+            if (fileInput) fileInput.value = '';
+            const defaultId = window.getDefaultAvatarId(window.myIdentity?.name || '');
+            window.renderAvatarPicker(defaultId, '');
+        };
         window.toggleIdTab = function(mode) {
             const btnOld = document.getElementById('tab-id-old'); const btnNew = document.getElementById('tab-id-new');
             const formOld = document.getElementById('form-id-old'); const formNew = document.getElementById('form-id-new');
@@ -2181,8 +2268,28 @@
             const lineId = document.getElementById('id-line-id') ? document.getElementById('id-line-id').value.trim() : '';
             const bio = document.getElementById('id-bio') ? document.getElementById('id-bio').value.trim() : '';
             const avatarId = document.getElementById('id-avatar')?.value || window.getDefaultAvatarId(nName);
+            let customAvatarUrl = document.getElementById('id-custom-avatar') ? document.getElementById('id-custom-avatar').value.trim() : '';
 
-            window.myIdentity = { name: nName, group: nGroup, lineId: lineId, bio: bio, avatarId: avatarId };
+            // 如果有自訂頭像且是 Base64 圖片，自動上傳至 Google Drive 備份儲存
+            if (customAvatarUrl && customAvatarUrl.startsWith('data:image')) {
+                try {
+                    const uploadRes = await window.uploadImageToDrive(customAvatarUrl, `avatar_${nName}_${Date.now()}.jpg`);
+                    if (uploadRes && (uploadRes.imageUrl || uploadRes.fileId)) {
+                        customAvatarUrl = uploadRes.imageUrl || window.getDriveImageUrl(uploadRes.fileId);
+                    }
+                } catch (e) {
+                    console.warn("頭像上傳 Google Drive 失敗，改用壓縮 base64 本地快取:", e);
+                }
+            }
+
+            window.myIdentity = { 
+                name: nName, 
+                group: nGroup, 
+                lineId: lineId, 
+                bio: bio, 
+                avatarId: avatarId,
+                customAvatarUrl: customAvatarUrl 
+            };
             
             if(db && currentUser) {
                 setDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'settings', 'profile'), window.myIdentity, { merge: true }).catch(e=>{});
@@ -2201,15 +2308,16 @@
                 
                 try {
                     await window.saveConfigToCloud();
-                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'feed'), { type: 'system_welcome', creator: nName, group: nGroup, inviter: nInviter, avatarId: avatarId, timestamp: serverTimestamp() });
+                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'feed'), { type: 'system_welcome', creator: nName, group: nGroup, inviter: nInviter, avatarId: avatarId, customAvatarUrl: customAvatarUrl, timestamp: serverTimestamp() });
                 } catch(e) {
-                    updateConfigDropdowns(); window.feedData.unshift({ id: Date.now(), type: 'system_welcome', creator: nName, group: nGroup, inviter: nInviter, avatarId: avatarId, timestamp: new Date() });
+                    updateConfigDropdowns(); window.feedData.unshift({ id: Date.now(), type: 'system_welcome', creator: nName, group: nGroup, inviter: nInviter, avatarId: avatarId, customAvatarUrl: customAvatarUrl, timestamp: new Date() });
                 }
             } else {
                 const welcomeItems = window.feedData.filter(item => item.type === 'system_welcome' && item.creator === nName);
                 welcomeItems.forEach(item => {
                     item.avatarId = avatarId;
-                    if (db && currentUser && typeof item.id === 'string') updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'feed', item.id), { avatarId }).catch(()=>{});
+                    item.customAvatarUrl = customAvatarUrl;
+                    if (db && currentUser && typeof item.id === 'string') updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'feed', item.id), { avatarId, customAvatarUrl }).catch(()=>{});
                 });
                 window.renderFeed();
             }
@@ -3002,7 +3110,8 @@
                     if(pType === 'review') {
                         const cityVal = pData.city || extractCity(pData.name + " " + (pData.formatted_address || ""));
                         const countryVal = pData.country || window.getCountryFromCity(cityVal);
-                        const reviewItem = { restaurantName: pData.name, group: g, creator: c, rating: rV, content: n, city: cityVal, country: countryVal, placeId: pData.placeId || '', mapLink: pData.mapLink || '', lat: pData.lat || null, lng: pData.lng || null, photoUrl: safePhoto };
+                        const reviewPhotos = safePhoto ? [safePhoto] : [];
+                        const reviewItem = { restaurantName: pData.name, group: g, creator: c, rating: rV, content: n, city: cityVal, country: countryVal, placeId: pData.placeId || '', mapLink: pData.mapLink || '', lat: pData.lat || null, lng: pData.lng || null, photoUrl: safePhoto, photos: reviewPhotos };
                         syncToGoogleSheets('Feed', reviewItem);
                         if(db && currentUser) {
                             await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'feed'), { ...reviewItem, timestamp: serverTimestamp() });
@@ -3183,7 +3292,7 @@
             document.getElementById('profile-name').textContent = userName;
             document.getElementById('profile-group').textContent = `${groupName || '好朋友'} 團`;
             
-            // 尋找此用戶的 Line ID 及 Bio
+            // 尋找此用戶的 Line ID 及 Bio 及 頭像
             let lineId = '';
             let bio = '';
             let inviter = '';
@@ -3195,11 +3304,16 @@
             
             const matchedFeed = window.feedData.find(f => f.creator === userName && f.type === 'system_welcome');
             if (matchedFeed) inviter = matchedFeed.inviter || '';
-            const avatarId = window.getAvatarId(matchedFeed || { creator: userName });
+            const avatarInfo = window.getAvatarInfo(matchedFeed || { creator: userName });
             const profileAvatar = document.getElementById('profile-avatar');
             if (profileAvatar) {
-                profileAvatar.className = `foodie-avatar foodie-avatar-${avatarId} w-16 h-16 rounded-full mx-auto mb-2 shadow-md border-2 border-white`;
-                profileAvatar.innerHTML = '';
+                if (avatarInfo.isCustom && avatarInfo.customUrl) {
+                    profileAvatar.className = `w-16 h-16 rounded-full mx-auto mb-2 shadow-md border-2 border-white overflow-hidden bg-white`;
+                    profileAvatar.innerHTML = `<img src="${window.resolveReviewImage(avatarInfo.customUrl)}" class="w-full h-full object-cover rounded-full">`;
+                } else {
+                    profileAvatar.className = `foodie-avatar foodie-avatar-${avatarInfo.avatarId} w-16 h-16 rounded-full mx-auto mb-2 shadow-md border-2 border-white`;
+                    profileAvatar.innerHTML = '';
+                }
             }
             
             document.getElementById('profile-inviter').textContent = inviter ? `(由 ${inviter} 引薦)` : '';
@@ -3234,7 +3348,7 @@
             const groupName = currentProfileUser?.group || window.myIdentity?.group;
             window.closeModal('user-profile-modal');
             
-            // 開啟身分設定 Modal，並預先選擇目前人偶
+            // 開啟身分設定 Modal，並預先選擇目前人偶與自訂頭像
             window.openIdentityModal();
             const tabOld = document.getElementById('tab-id-old');
             if (tabOld) window.toggleIdTab('old');
@@ -3248,17 +3362,107 @@
             if (creatorSelect && userName) {
                 creatorSelect.value = userName;
             }
-            const currentAvatar = (currentProfileUser && currentProfileUser.name === window.myIdentity.name)
-                ? (window.myIdentity.avatarId || window.getDefaultAvatarId(userName))
-                : window.getDefaultAvatarId(userName);
-            window.renderAvatarPicker(currentAvatar);
+            const avatarInfo = window.getAvatarInfo({ creator: userName, name: userName });
+            window.renderAvatarPicker(avatarInfo.avatarId, avatarInfo.customUrl);
         };
 
         window.updateHeaderAvatarBadge = function() {
             const icon = document.getElementById('header-avatar-icon');
             if (!icon) return;
-            const avatarId = window.myIdentity?.avatarId || window.getDefaultAvatarId(window.myIdentity?.name || '黃政誥');
-            icon.className = `foodie-avatar foodie-avatar-${avatarId} w-full h-full rounded-full`;
+            const avatarInfo = window.getAvatarInfo(window.myIdentity || { creator: '黃政誥' });
+            if (avatarInfo.isCustom && avatarInfo.customUrl) {
+                icon.className = 'w-full h-full rounded-full overflow-hidden object-cover';
+                icon.innerHTML = `<img src="${window.resolveReviewImage(avatarInfo.customUrl)}" class="w-full h-full object-cover rounded-full">`;
+            } else {
+                icon.innerHTML = '';
+                icon.className = `foodie-avatar foodie-avatar-${avatarInfo.avatarId} w-full h-full rounded-full`;
+            }
+        };
+
+        // 🌟 美食動態牆多圖管理 (最多 5 張照片)
+        let currentFeedEditPhotos = []; // array of strings (urls or base64 data)
+
+        window.renderFeedEditPhotosGrid = function() {
+            const grid = document.getElementById('feed-edit-photos-grid');
+            const countBadge = document.getElementById('feed-photo-count-badge');
+            const addBtn = document.getElementById('feed-photo-add-btn');
+            if (countBadge) countBadge.textContent = currentFeedEditPhotos.length;
+            if (addBtn) {
+                addBtn.disabled = currentFeedEditPhotos.length >= 5;
+                if (currentFeedEditPhotos.length >= 5) {
+                    addBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                } else {
+                    addBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                }
+            }
+            if (!grid) return;
+
+            if (currentFeedEditPhotos.length === 0) {
+                grid.innerHTML = `
+                    <div class="col-span-3 py-6 flex flex-col items-center justify-center text-gray-400">
+                        <i class="fa-solid fa-images text-2xl mb-1 text-gray-300"></i>
+                        <p class="text-xs">尚未加入照片，點擊下方「拍照 / 加照片」上傳 (最多 5 張)</p>
+                    </div>`;
+                return;
+            }
+
+            grid.innerHTML = currentFeedEditPhotos.map((url, idx) => `
+                <div class="relative aspect-square rounded-xl overflow-hidden border border-gray-200 shadow-2xs group bg-gray-100">
+                    <img src="${window.resolveReviewImage(url)}" class="w-full h-full object-cover">
+                    <button type="button" onclick="window.removeFeedEditPhoto(${idx})" class="absolute top-1 right-1 bg-black/60 hover:bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs shadow transition" title="移除此照片">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                    <span class="absolute bottom-1 left-1 bg-black/50 text-white text-[9px] px-1.5 py-0.2 rounded font-bold backdrop-blur-2xs">${idx + 1}</span>
+                </div>
+            `).join('');
+        };
+
+        window.handleFeedPhotosSelected = async function(input) {
+            if (!input.files || input.files.length === 0) return;
+            const remaining = 5 - currentFeedEditPhotos.length;
+            if (remaining <= 0) return window.showCustomMsg("⚠️ 最多只能上傳 5 張照片喔！");
+
+            const files = Array.from(input.files).slice(0, remaining);
+            window.showCustomMsg(`📸 正在為您優化 ${files.length} 張照片中...`);
+
+            try {
+                for (const file of files) {
+                    if (currentFeedEditPhotos.length >= 5) break;
+                    const compressed = await window.compressImageFile(file, 1600, 1600, 0.8);
+                    currentFeedEditPhotos.push(compressed);
+                }
+                window.closeModal('custom-alert-modal');
+                window.renderFeedEditPhotosGrid();
+            } catch (err) {
+                console.error("多圖壓縮處理失敗:", err);
+                window.showCustomMsg("⚠️ 照片處理失敗，請重試。");
+            } finally {
+                input.value = '';
+            }
+        };
+
+        window.addFeedPhotoByUrl = function() {
+            const input = document.getElementById('feed-photo-edit-url-input');
+            const url = input ? input.value.trim() : '';
+            if (!url) return;
+            if (currentFeedEditPhotos.length >= 5) return window.showCustomMsg("⚠️ 最多只能上傳 5 張照片喔！");
+            currentFeedEditPhotos.push(url);
+            if (input) input.value = '';
+            window.renderFeedEditPhotosGrid();
+        };
+
+        window.removeFeedEditPhoto = function(index) {
+            if (index >= 0 && index < currentFeedEditPhotos.length) {
+                currentFeedEditPhotos.splice(index, 1);
+                window.renderFeedEditPhotosGrid();
+            }
+        };
+
+        window.clearAllFeedEditPhotos = function() {
+            currentFeedEditPhotos = [];
+            const urlInput = document.getElementById('feed-photo-edit-url-input');
+            if (urlInput) urlInput.value = '';
+            window.renderFeedEditPhotosGrid();
         };
 
         window.openFeedPhotoEditModal = function(feedId) {
@@ -3273,44 +3477,61 @@
                 }
 
                 document.getElementById('feed-photo-edit-id').value = feedId;
-                document.getElementById('feed-photo-edit-sub').textContent = `正在為「${item.restaurantName || item.partyTitle || '動態'}」補充照片`;
-                window.setPhotoUploaderValue('feed-photo-edit', item.photoUrl || '');
+                document.getElementById('feed-photo-edit-sub').textContent = `正在為「${item.restaurantName || item.partyTitle || '動態'}」補充照片 (最多 5 張)`;
+                
+                // 解析既有照片（支援 single photoUrl 或 photos 陣列）
+                if (Array.isArray(item.photos) && item.photos.length > 0) {
+                    currentFeedEditPhotos = [...item.photos].slice(0, 5);
+                } else if (item.photoUrl) {
+                    currentFeedEditPhotos = [item.photoUrl];
+                } else {
+                    currentFeedEditPhotos = [];
+                }
+
+                window.renderFeedEditPhotosGrid();
                 document.getElementById('feed-photo-edit-modal').classList.remove('hidden');
             });
         };
 
         window.saveFeedPhotoEdit = async function() {
             const feedId = document.getElementById('feed-photo-edit-id').value;
-            const photoVal = (document.getElementById('feed-photo-edit-url')?.value || '').trim();
             const btn = document.getElementById('feed-photo-save-btn');
             const item = window.feedData.find(f => f.id === feedId);
             if (!item) return window.closeModal('feed-photo-edit-modal');
 
             const origText = btn ? btn.innerHTML : '';
-            if (btn) { btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i>儲存中...'; btn.disabled = true; }
+            if (btn) { btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i>儲存上傳中...'; btn.disabled = true; }
 
             try {
-                let finalPhotoUrl = photoVal;
-                // 如果是 base64 且已設定 Google Script 後端，自動上傳至 Google Drive
-                if (photoVal && photoVal.startsWith('data:image')) {
-                    try {
-                        const uploadRes = await window.uploadPhotoToDrive(photoVal, `${item.restaurantName || 'feed'}_${Date.now()}.jpg`);
-                        if (uploadRes && uploadRes.imageUrl) {
-                            finalPhotoUrl = uploadRes.imageUrl;
+                const finalPhotos = [];
+                for (let i = 0; i < currentFeedEditPhotos.length; i++) {
+                    let p = currentFeedEditPhotos[i];
+                    if (p.startsWith('data:image')) {
+                        try {
+                            const uploadRes = await window.uploadImageToDrive(p, `${item.restaurantName || 'feed'}_${Date.now()}_${i}.jpg`);
+                            if (uploadRes && (uploadRes.imageUrl || uploadRes.fileId)) {
+                                p = uploadRes.imageUrl || window.getDriveImageUrl(uploadRes.fileId);
+                            }
+                        } catch (uploadErr) {
+                            console.warn("上傳 Google Drive 失敗，改用壓縮後的圖片儲存:", uploadErr);
                         }
-                    } catch (uploadErr) {
-                        console.warn("上傳 Google Drive 失敗，改用壓縮後的圖片儲存:", uploadErr);
                     }
+                    finalPhotos.push(p);
                 }
 
-                item.photoUrl = finalPhotoUrl;
+                item.photos = finalPhotos;
+                item.photoUrl = finalPhotos.length > 0 ? finalPhotos[0] : '';
+
                 if (db && currentUser && typeof feedId === 'string') {
-                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'feed', feedId), { photoUrl: finalPhotoUrl });
+                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'feed', feedId), { 
+                        photos: finalPhotos, 
+                        photoUrl: item.photoUrl 
+                    });
                 }
 
                 window.closeModal('feed-photo-edit-modal');
                 window.renderFeed();
-                window.showCustomMsg("✅ 照片已成功更新至動態牆！");
+                window.showCustomMsg(`✅ 已成功更新 ${finalPhotos.length} 張照片至動態牆！`);
             } catch (err) {
                 console.error("更新動態照片失敗:", err);
                 window.showCustomMsg("⚠️ 更新失敗，請稍後再試！");
@@ -3474,11 +3695,19 @@
                 
                 // 1. 歡迎廣播卡片
                 if (item.type === 'system_welcome') {
-                    const avatarId = window.getAvatarId(item);
+                    const avatarInfo = window.getAvatarInfo(item);
+                    const avatarHtml = (avatarInfo.isCustom && avatarInfo.customUrl) 
+                        ? `<div class="w-10 h-10 rounded-full shadow shrink-0 border-2 border-white overflow-hidden bg-white"><img src="${window.resolveReviewImage(avatarInfo.customUrl)}" class="w-full h-full object-cover rounded-full"></div>`
+                        : `<div class="foodie-avatar foodie-avatar-${avatarInfo.avatarId} w-10 h-10 rounded-full shadow shrink-0 border-2 border-white"></div>`;
+                    
+                    const bigAvatarHtml = (avatarInfo.isCustom && avatarInfo.customUrl)
+                        ? `<div class="w-full max-w-[16rem] aspect-square rounded-[2rem] drop-shadow-sm overflow-hidden bg-white border-4 border-white shadow-md"><img src="${window.resolveReviewImage(avatarInfo.customUrl)}" class="w-full h-full object-cover"></div>`
+                        : `<div class="foodie-avatar foodie-avatar-${avatarInfo.avatarId} w-full max-w-[16rem] aspect-square rounded-[2rem] drop-shadow-sm"></div>`;
+
                     return `
                     <div class="feed-welcome-card w-full h-auto md:h-full min-h-[5.5rem] bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-2xl border border-blue-100 shadow-sm relative overflow-hidden self-start flex flex-col">
                         <div class="flex items-start gap-3 min-h-[3.5rem]">
-                            <div class="foodie-avatar foodie-avatar-${avatarId} w-10 h-10 rounded-full shadow shrink-0 border-2 border-white"></div>
+                            ${avatarHtml}
                             <div class="min-w-0 flex-1">
                                 <p class="text-[11px] text-blue-600 font-bold mb-0.5">🎉 新朋友加入 · ${dateStr}</p>
                                 <p class="text-xs sm:text-sm text-gray-800 font-bold leading-snug">
@@ -3488,7 +3717,7 @@
                             </div>
                         </div>
                         <div class="hidden md:flex flex-1 min-h-[13rem] items-center justify-center pt-4" aria-hidden="true">
-                            <div class="foodie-avatar foodie-avatar-${avatarId} w-full max-w-[16rem] aspect-square rounded-[2rem] drop-shadow-sm"></div>
+                            ${bigAvatarHtml}
                         </div>
                     </div>`;
                 }
@@ -3566,9 +3795,10 @@
                     : `<span class="inline-flex items-center gap-1 bg-rose-500 text-white px-2.5 py-1 rounded-full font-bold text-[11px] shadow-sm shrink-0"><i class="fa-solid fa-thumbs-down text-[10px]"></i> 避雷</span>`;
 
                 const cardStyle = `${theme.border} ${theme.bg}`;
-                const avatarStyle = isHost 
-                    ? 'bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-md' 
-                    : `${theme.avatar} border border-white/60`;
+                const avatarInfo = window.getAvatarInfo(item);
+                const userAvatarHtml = (avatarInfo.isCustom && avatarInfo.customUrl)
+                    ? `<div class="w-10 h-10 rounded-full flex items-center justify-center shrink-0 border border-white/80 shadow-xs overflow-hidden bg-white"><img src="${window.resolveReviewImage(avatarInfo.customUrl)}" class="w-full h-full object-cover rounded-full"></div>`
+                    : `<div class="w-10 h-10 rounded-full flex items-center justify-center text-sm shrink-0 ${isHost ? 'bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-md' : `${theme.avatar} border border-white/60`}"><i class="fa-solid ${isHost ? 'fa-crown' : 'fa-user'}"></i></div>`;
 
                 const matchedRes = window.restaurantData.find(r => r.name === item.restaurantName);
                 const feedCity = item.city || (matchedRes ? matchedRes.city : extractCity(item.restaurantName)) || '';
@@ -3582,14 +3812,49 @@
                     feedLocTag = feedCountry;
                 }
 
+                // 🌟 照片多圖展示邏輯 (1~5 張照片相簿呈現)
+                const allPhotos = Array.isArray(item.photos) && item.photos.length > 0 
+                    ? item.photos.filter(p => !!p).slice(0, 5) 
+                    : (item.photoUrl ? [item.photoUrl] : []);
+
+                let photosGalleryHtml = '';
+                if (allPhotos.length === 1) {
+                    photosGalleryHtml = `
+                    <div class="relative rounded-xl overflow-hidden shadow-sm max-h-64 border border-gray-100 my-1 group">
+                        <img src="${window.resolveReviewImage(allPhotos[0], item.restaurantName)}" onerror="this.onerror=null; this.src=window.getFallbackImage('${window.escapeForBtn(item.restaurantName)}');" class="w-full h-full max-h-64 object-cover">
+                        ${(window.myIdentity?.name === item.creator || window.myIdentity?.name === '黃政誥') ? `
+                        <button onclick="window.openFeedPhotoEditModal('${item.id}')" class="absolute bottom-2 right-2 bg-black/60 hover:bg-black/80 text-white text-[10px] font-bold px-2 py-1 rounded-lg backdrop-blur-xs shadow transition flex items-center gap-1">
+                            <i class="fa-solid fa-camera"></i> 補/換照片
+                        </button>` : ''}
+                    </div>`;
+                } else if (allPhotos.length > 1) {
+                    const gridCols = allPhotos.length === 2 ? 'grid-cols-2' : (allPhotos.length === 3 ? 'grid-cols-3' : (allPhotos.length === 4 ? 'grid-cols-2' : 'grid-cols-3'));
+                    photosGalleryHtml = `
+                    <div class="my-1">
+                        <div class="grid ${gridCols} gap-1.5 rounded-xl overflow-hidden">
+                            ${allPhotos.map((p, pIdx) => `
+                                <div class="relative aspect-square overflow-hidden bg-gray-100 group border border-gray-100 rounded-lg">
+                                    <img src="${window.resolveReviewImage(p, item.restaurantName)}" onerror="this.onerror=null; this.src=window.getFallbackImage('${window.escapeForBtn(item.restaurantName)}');" class="w-full h-full object-cover transition duration-300 hover:scale-105">
+                                    <span class="absolute bottom-1 right-1 bg-black/50 text-white text-[9px] px-1 rounded font-bold backdrop-blur-2xs">${pIdx + 1}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                        <div class="flex justify-between items-center mt-1 px-0.5">
+                            <span class="text-[10px] text-gray-400 font-bold"><i class="fa-solid fa-images text-orange-400 mr-1"></i>共 ${allPhotos.length} 張照片</span>
+                            ${(window.myIdentity?.name === item.creator || window.myIdentity?.name === '黃政誥') ? `
+                            <button onclick="window.openFeedPhotoEditModal('${item.id}')" class="text-orange-500 hover:text-orange-600 text-[10px] font-bold flex items-center gap-0.5">
+                                <i class="fa-solid fa-pen-to-square"></i> 管理照片
+                            </button>` : ''}
+                        </div>
+                    </div>`;
+                }
+
                 return `
                 <div class="rounded-2xl p-4 shadow-sm ${cardStyle} flex flex-col gap-3 transition hover:shadow-md">
                     <!-- 卡片頂部：發文者身分與評價標籤 -->
                     <div class="flex items-center justify-between gap-2 border-b border-gray-100/60 pb-3">
                         <div class="flex items-center gap-3 min-w-0 cursor-pointer" onclick="window.openUserProfile('${window.escapeForBtn(item.creator)}', '${window.escapeForBtn(item.group)}')">
-                            <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm shrink-0 ${avatarStyle}">
-                                <i class="fa-solid ${isHost ? 'fa-crown' : 'fa-user'}"></i>
-                            </div>
+                            ${userAvatarHtml}
                             <div class="min-w-0">
                                 <div class="flex items-center gap-1.5 flex-wrap">
                                     <span class="text-sm font-bold text-gray-900 truncate leading-none hover:text-orange-500 transition">${item.creator}</span>
@@ -3605,21 +3870,14 @@
                         ${badgeRating}
                     </div>
 
-                    <!-- 卡片下半部：店家名稱、照片與評語 -->
+                    <!-- 卡片下半部：店家名稱、照片相簿與評語 -->
                     <div class="bg-white/90 backdrop-blur-sm p-3.5 rounded-xl border border-gray-100/80 shadow-xs flex flex-col gap-2">
                         <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.restaurantName)}" target="_blank" class="text-sm font-bold text-blue-600 hover:text-blue-700 flex items-center flex-wrap gap-1.5 transition break-all leading-snug">
                             <i class="fa-solid fa-location-dot text-orange-500 shrink-0"></i>
                             <span>${item.restaurantName}</span>
                             ${feedLocTag ? `<span class="inline-flex items-center text-[10px] font-bold text-orange-600 bg-orange-50 px-2 py-0.5 rounded-md border border-orange-100 shrink-0 ml-0.5"><i class="fa-solid fa-earth-asia mr-1 text-[9px] text-orange-400"></i>${feedLocTag}</span>` : ''}
                         </a>
-                        ${item.photoUrl ? `
-                        <div class="relative rounded-xl overflow-hidden shadow-sm max-h-60 border border-gray-100 my-1 group">
-                            <img src="${window.resolveReviewImage(item.photoUrl, item.restaurantName)}" onerror="this.onerror=null; this.src=window.getFallbackImage('${window.escapeForBtn(item.restaurantName)}');" class="w-full h-full object-cover">
-                            ${(window.myIdentity?.name === item.creator || window.myIdentity?.name === '黃政誥') ? `
-                            <button onclick="window.openFeedPhotoEditModal('${item.id}')" class="absolute bottom-2 right-2 bg-black/60 hover:bg-black/80 text-white text-[10px] font-bold px-2 py-1 rounded-lg backdrop-blur-xs shadow transition flex items-center gap-1">
-                                <i class="fa-solid fa-camera"></i> 更換照片
-                            </button>` : ''}
-                        </div>` : ''}
+                        ${photosGalleryHtml}
                         <p class="text-xs sm:text-sm text-gray-700 leading-relaxed break-words font-medium pl-3 border-l-2 ${theme.quoteBorder}">
                             ${item.content || '目前沒有撰寫文字心得喔！'}
                         </p>
@@ -3639,9 +3897,9 @@
                         </div>
                         <div class="flex items-center gap-1">
                             ${(window.myIdentity?.name === item.creator || window.myIdentity?.name === '黃政誥') ? `
-                            <button onclick="window.openFeedPhotoEditModal('${item.id}')" class="flex items-center gap-1 px-2 py-1 rounded-xl hover:bg-amber-50 text-amber-600 transition text-[11px]" title="為這則留言/動態新增或更換照片">
+                            <button onclick="window.openFeedPhotoEditModal('${item.id}')" class="flex items-center gap-1 px-2 py-1 rounded-xl hover:bg-amber-50 text-amber-600 transition text-[11px]" title="為這則留言/動態事後補充或更換最多5張照片">
                                 <i class="fa-solid fa-camera"></i>
-                                <span>${item.photoUrl ? '換照' : '補照片'}</span>
+                                <span>${allPhotos.length > 0 ? `照片(${allPhotos.length})` : '補照片'}</span>
                             </button>` : ''}
                             <button onclick="window.openUserProfile('${window.escapeForBtn(item.creator)}', '${window.escapeForBtn(item.group)}')" class="flex items-center gap-1 px-2 py-1 rounded-xl hover:bg-orange-50 text-orange-600 transition text-[11px]">
                                 <i class="fa-solid fa-address-card"></i>
