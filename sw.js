@@ -1,5 +1,15 @@
-const CACHE_NAME = 'together-eat-shell-v11';
-const APP_SHELL = ['./', './index.html', './manifest.webmanifest'];
+const CACHE_NAME = 'together-eat-shell-v12';
+const APP_SHELL = [
+  './', 
+  './index.html', 
+  './manifest.webmanifest',
+  './assets/avatars/host.png',
+  './assets/avatars/explorer.png',
+  './assets/avatars/cook.png',
+  './assets/avatars/dessert.png',
+  './assets/avatars/night.png',
+  './assets/avatars/camera.png'
+];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL)));
