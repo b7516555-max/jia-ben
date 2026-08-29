@@ -5450,24 +5450,19 @@
 
                 return `
                 <div class="rounded-2xl p-4 shadow-sm ${cardStyle} flex flex-col gap-3 transition hover:shadow-md relative">
-                    <!-- 卡片頂部：發文者身分與評價標籤與操作按鈕 (工整排版) -->
-                    <div class="flex items-center justify-between gap-2 border-b border-gray-100/60 pb-3">
-                        <div class="flex items-center gap-2.5 min-w-0 flex-1 cursor-pointer" onclick="window.openUserProfile('${window.escapeForBtn(item.creator)}', '${window.escapeForBtn(item.group)}')">
+                    <!-- 卡片頂部：發文者身分（左側：頭像＋姓名＋等級＋群組）與操作狀態列（右側：日期＋評價＋編輯＋刪除）同一排工整排版 -->
+                    <div class="flex items-center justify-between gap-2 border-b border-gray-100/60 pb-3 flex-wrap">
+                        <div class="flex items-center gap-2.5 min-w-0 cursor-pointer" onclick="window.openUserProfile('${window.escapeForBtn(item.creator)}', '${window.escapeForBtn(item.group)}')">
                             ${userAvatarHtml}
-                            <div class="min-w-0 flex-1 flex flex-col justify-center gap-1">
-                                <div class="flex items-center gap-1.5 flex-wrap">
-                                    <span class="text-sm font-bold text-gray-900 hover:text-orange-500 transition shrink-0">${item.creator}</span>
-                                    ${isHost ? '<span class="bg-orange-500 text-white text-[9px] px-1.5 py-0.5 rounded font-black tracking-wider shadow-xs shrink-0">主揪</span>' : ''}
-                                    <span class="inline-flex items-center gap-0.5 bg-amber-50 text-amber-700 border border-amber-200 text-[10px] px-1.5 py-0.5 rounded font-bold shrink-0 whitespace-nowrap">${userLevelInfo.tierIcon} Lv.${userLevelInfo.level}</span>
-                                </div>
-                                <div class="flex items-center gap-1.5 text-[11px] text-gray-400 flex-wrap">
-                                    ${window.formatGroupBadgeHtml(item.group)}
-                                    <span class="text-gray-300">•</span>
-                                    <span class="whitespace-nowrap">${dateStr}</span>
-                                </div>
+                            <div class="flex items-center gap-1.5 flex-wrap">
+                                <span class="text-sm font-bold text-gray-900 hover:text-orange-500 transition shrink-0">${item.creator}</span>
+                                ${isHost ? '<span class="bg-orange-500 text-white text-[9px] px-1.5 py-0.5 rounded font-black tracking-wider shadow-xs shrink-0">主揪</span>' : ''}
+                                <span class="inline-flex items-center gap-0.5 bg-amber-50 text-amber-700 border border-amber-200 text-[10px] px-1.5 py-0.5 rounded font-bold shrink-0 whitespace-nowrap">${userLevelInfo.tierIcon} Lv.${userLevelInfo.level}</span>
+                                ${window.formatGroupBadgeHtml(item.group)}
                             </div>
                         </div>
-                        <div class="flex items-center gap-1.5 shrink-0 ml-1">
+                        <div class="flex items-center gap-1.5 shrink-0 ml-auto">
+                            <span class="text-[11px] text-gray-400 font-medium whitespace-nowrap mr-0.5">${dateStr}</span>
                             ${badgeRating}
                             <button onclick="window.openFeedItemEditModal('${item.id}')" class="w-7 h-7 rounded-lg bg-white border border-gray-200 hover:border-blue-400 text-gray-500 hover:text-blue-600 flex items-center justify-center text-xs shadow-2xs transition" title="編輯此評價">
                                 <i class="fa-solid fa-pen-to-square"></i>
