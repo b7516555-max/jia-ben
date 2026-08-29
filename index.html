@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>一起吃飯吧！</title>
+    <title>呷奔 Jia ben</title>
     
     <!-- 🌟 PWA 應用程式設定 (讓網頁變成真實 App 的關鍵) -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="一起吃飯吧">
+    <meta name="apple-mobile-web-app-title" content="呷奔">
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/1046/1046747.png">
     <link rel="manifest" href="./manifest.webmanifest">
 
@@ -404,7 +404,8 @@
                     <i class="fa-solid fa-utensils text-orange-500 text-3xl"></i>
                 </div>
             </div>
-            <h1 class="text-5xl font-black tracking-widest text-gray-800 mb-4 drop-shadow-sm text-center w-full">一起吃飯吧！</h1>
+            <h1 class="text-5xl font-black tracking-widest text-gray-800 mb-2 drop-shadow-sm text-center w-full">呷奔</h1>
+            <p class="text-xs uppercase tracking-[0.35em] text-orange-500 font-extrabold mb-4 text-center">Jia ben</p>
             <p class="text-base text-gray-500 font-bold tracking-widest mb-12 text-center leading-loose">找尋隱藏好店<br>轉出聚餐驚喜的美食輪盤</p>
             
             <div class="w-full flex flex-col items-center space-y-4 relative z-10">
@@ -1350,8 +1351,8 @@
                     <i class="fa-solid fa-share-nodes text-lg"></i>
                 </button>
                 <div class="text-center leading-none">
-                    <p class="text-[10px] uppercase tracking-[0.28em] opacity-80">一起吃飯吧</p>
-                    <h1 class="text-[16px] font-bold tracking-widest leading-none mt-1">找餐廳 • 揪團</h1>
+                    <p class="text-[10px] uppercase tracking-[0.28em] opacity-80">Jia ben</p>
+                    <h1 class="text-[16px] font-bold tracking-widest leading-none mt-1">呷奔 • 找餐廳</h1>
                 </div>
                 <div class="flex items-center gap-1.5">
                     <button id="header-avatar-btn" onclick="window.openUserSettingsModal()" class="w-10 h-10 rounded-full border-2 border-white/80 shadow-xs flex items-center justify-center bg-white/20 hover:scale-105 transition overflow-hidden p-0.5" title="個人專屬後台與等級徽章">
@@ -2741,7 +2742,7 @@
 
         window.shareVIPInvite = function() {
             const url = window.appConfig.appUrl || window.location.href;
-            const text = `💌 【一起吃飯吧！】發送了一張 VIP 邀請卡給您！\n\n嗨！我是黃政誥。這是一個專屬的美食探索與揪團神器。\n\n我們最近在用一個超酷的專屬美食社交 App，想邀請你加入我們的吃貨圈，看大家推薦了什麼好料，還能一起參加聚會喔！\n\n👇 點擊下方連結立即開啟大門：\n${url}`;
+            const text = `💌 【呷奔 Jia ben】發送了一張 VIP 邀請卡給您！\n\n嗨！我是黃政誥。這是一個專屬的美食探索與揪團神器。\n\n我們最近在用「呷奔」，想邀請你加入我們的吃貨圈，看大家推薦了什麼好料，還能一起參加聚會喔！\n\n👇 點擊下方連結立即開啟大門：\n${url}`;
             window.shareToLine(encodeURIComponent(text));
         };
 
@@ -3253,7 +3254,7 @@
                 let totalVotes = 0; const voteCounts = {}; p.options.forEach(opt => voteCounts[opt] = 0); if(p.votes) { Object.values(p.votes).forEach(opt => { if(voteCounts[opt] !== undefined) { voteCounts[opt]++; totalVotes++; } }); }
                 const optionsHtml = p.options.map(opt => { const count = voteCounts[opt]; const percent = totalVotes > 0 ? (count / totalVotes) * 100 : 0; const isMyVote = (p.votes && p.votes[window.myIdentity.name] === opt); return `<button onclick="window.voteParty('${p.id}', decodeURIComponent('${window.escapeForBtn(opt)}'))" class="w-full relative overflow-hidden border ${isMyVote ? "border-orange-400 text-orange-600 bg-orange-50 shadow-inner" : "border-gray-200 text-gray-600 hover:border-orange-200 bg-white"} rounded-xl py-2.5 px-4 text-left transition text-sm flex justify-between items-center group mb-2"><div class="vote-bar" style="width: ${percent}%"></div><span class="relative z-10 font-bold ${isMyVote ? 'text-orange-600' : ''}">${isMyVote ? '<i class="fa-solid fa-circle-check mr-1.5"></i>' : ''}${opt}</span><span class="relative z-10 text-xs font-bold ${isMyVote ? 'text-orange-500' : 'text-gray-400 group-hover:text-orange-400'}">${count} 票</span></button>`; }).join('');
                 const appUrl = window.appConfig.appUrl || window.location.href;
-                const lineText = `🔥 【揪團通知】${p.title}\n📅 時間: ${p.date} ${p.time}\n📍 地點: ${p.location}\n---\n👇 趕快開啟「一起吃飯吧！」投票＋報名：\n${appUrl}`;
+                const lineText = `🔥 【揪團通知】${p.title}\n📅 時間: ${p.date} ${p.time}\n📍 地點: ${p.location}\n---\n👇 趕快開啟「呷奔 Jia ben」投票＋報名：\n${appUrl}`;
                 return `
                 <div class="restaurant-card soft-card bg-white rounded-[24px] border ${p.creator === '黃政誥' ? 'border-orange-200 host-highlight' : 'border-gray-100'} p-5 relative overflow-hidden h-full flex flex-col transition">
                     ${p.creator === '黃政誥' ? '<div class="absolute top-0 right-0 w-20 h-20 bg-gradient-to-bl from-orange-200 to-transparent rounded-bl-full opacity-30"></div><span class="absolute top-3 right-3 bg-orange-500 text-white text-[9px] px-2 py-0.5 rounded shadow-sm font-bold tracking-widest"><i class="fa-solid fa-crown mr-1"></i>主揪邀請</span>' : `<span class="absolute top-3 right-3 bg-gray-100 text-gray-500 text-[9px] px-2 py-0.5 rounded shadow-sm font-bold tracking-widest">${p.group} 團</span>`}
@@ -5480,7 +5481,7 @@
                 placeId: restaurant.placeId || '',
                 tags: tags,
                 ratingHtml: generateRatingHtml(restaurant.rating, restaurant.reviews),
-                lineText: window.escapeForBtn(`這家看起來不錯，要約一下嗎？\n${name}\n🗺️ 地圖: ${mUrl}\n---\n來自「一起吃飯吧！」\n${appUrl}`),
+                lineText: window.escapeForBtn(`這家看起來不錯，要約一下嗎？\n${name}\n🗺️ 地圖: ${mUrl}\n---\n來自「呷奔 Jia ben」\n${appUrl}`),
                 pDataStr: window.escapeForBtn(JSON.stringify({ name: name })),
                 safeNameStr: safeNameStr
             };
