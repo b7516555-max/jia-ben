@@ -6534,6 +6534,145 @@
             } 
         };
 
+        // 🌟 新增餐廳附帶評價的狀態變數與處理函式
+        let isAddReviewExpanded = false;
+        let inputReviewPhotos = [];
+
+        window.toggleAddReviewSection = function() {
+            isAddReviewExpanded = !isAddReviewExpanded;
+            const sec = document.getElementById('add-review-section');
+            const icon = document.getElementById('icon-toggle-add-review');
+            const txt = document.getElementById('text-toggle-add-review');
+            const submitTxt = document.getElementById('submit-btn-text');
+
+            if (sec) {
+                if (isAddReviewExpanded) {
+                    sec.classList.remove('hidden');
+                    if (icon) icon.className = "fa-solid fa-minus-circle text-sm";
+                    if (txt) txt.textContent = "－ 收起美味評價與照片";
+                    if (submitTxt) submitTxt.textContent = "存入並同步發布評價";
+                } else {
+                    sec.classList.add('hidden');
+                    if (icon) icon.className = "fa-solid fa-plus-circle text-sm";
+                    if (txt) txt.textContent = "＋ 同步新增美味評價與照片";
+                    if (submitTxt) submitTxt.textContent = "存入口袋名單";
+                }
+            }
+        };
+
+        window.selectInputReviewRating = function(rating) {
+            const valInput = document.getElementById('input-review-rating-value');
+            if (valInput) valInput.value = rating;
+            const btnGood = document.getElementById('input-btn-rating-good');
+            const btnBad = document.getElementById('input-btn-rating-bad');
+
+            if (rating === 'good') {
+                if (btnGood) btnGood.className = "flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 border-emerald-400 bg-emerald-50 text-emerald-600 font-bold text-xs shadow-2xs transition";
+                if (btnBad) btnBad.className = "flex items-center justify-center gap-2 py-2.5 rounded-xl border border-gray-200 bg-white text-gray-400 font-bold text-xs transition";
+            } else {
+                if (btnGood) btnGood.className = "flex items-center justify-center gap-2 py-2.5 rounded-xl border border-gray-200 bg-white text-gray-400 font-bold text-xs transition";
+                if (btnBad) btnBad.className = "flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 border-rose-400 bg-rose-50 text-rose-600 font-bold text-xs shadow-2xs transition";
+            }
+        };
+
+        window.renderInputReviewPhotosGrid = function() {
+            const grid = document.getElementById('input-review-photos-grid');
+            const badge = document.getElementById('input-review-photo-count-badge');
+            const addBtn = document.getElementById('input-review-photos-add-btn');
+            if (!grid) return;
+
+            if (badge) badge.textContent = inputReviewPhotos.length;
+            if (addBtn) addBtn.style.display = inputReviewPhotos.length >= 5 ? 'none' : 'inline-flex';
+
+            if (inputReviewPhotos.length === 0) {
+                grid.innerHTML = `
+                    <div class="col-span-3 py-3 flex flex-col items-center justify-center text-gray-400 cursor-pointer" onclick="document.getElementById('input-review-photos-file').click()">
+                        <i class="fa-solid fa-camera text-xl mb-1 text-orange-400"></i>
+                        <p class="text-xs font-bold text-gray-600">拍照 或 從相簿挑選</p>
+                        <p class="text-[10px] text-gray-400 mt-0.5">選擇 1~5 張美味相片 (可留空)</p>
+                    </div>`;
+                return;
+            }
+
+            let html = inputReviewPhotos.map((photo, idx) => `
+                <div class="relative aspect-square rounded-xl overflow-hidden border border-orange-200 bg-gray-100 group shadow-2xs">
+                    <img src="${photo}" class="w-full h-full object-cover">
+                    <button type="button" onclick="window.removeInputReviewPhoto(${idx})" class="absolute top-1 right-1 w-5 h-5 bg-black/60 hover:bg-rose-500 text-white rounded-full flex items-center justify-center text-[10px] transition backdrop-blur-xs">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+            `).join('');
+
+            if (inputReviewPhotos.length < 5) {
+                html += `
+                    <div class="aspect-square rounded-xl border-2 border-dashed border-orange-300 hover:border-orange-500 bg-orange-50/50 hover:bg-orange-100/50 flex flex-col items-center justify-center text-orange-500 cursor-pointer transition" onclick="document.getElementById('input-review-photos-file').click()">
+                        <i class="fa-solid fa-plus text-sm"></i>
+                        <span class="text-[10px] font-bold mt-0.5">加照片</span>
+                    </div>`;
+            }
+
+            grid.innerHTML = html;
+        };
+
+        window.handleInputReviewPhotosSelected = function(input) {
+            const files = Array.from(input.files || []);
+            if (files.length === 0) return;
+            const remaining = 5 - inputReviewPhotos.length;
+            if (remaining <= 0) {
+                return window.showCustomMsg("最多只能上傳 5 張照片喔！");
+            }
+
+            const filesToProcess = files.slice(0, remaining);
+            let processed = 0;
+
+            filesToProcess.forEach(file => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.onload = function() {
+                        const canvas = document.createElement('canvas');
+                        const maxDim = 1200;
+                        let w = img.width;
+                        let h = img.height;
+                        if (w > maxDim || h > maxDim) {
+                            if (w > h) {
+                                h = Math.round((h * maxDim) / w);
+                                w = maxDim;
+                            } else {
+                                w = Math.round((w * maxDim) / h);
+                                h = maxDim;
+                            }
+                        }
+                        canvas.width = w;
+                        canvas.height = h;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, w, h);
+                        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.82);
+                        inputReviewPhotos.push(compressedBase64);
+                        processed++;
+                        if (processed === filesToProcess.length) {
+                            window.renderInputReviewPhotosGrid();
+                        }
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+            input.value = '';
+        };
+
+        window.removeInputReviewPhoto = function(idx) {
+            if (idx >= 0 && idx < inputReviewPhotos.length) {
+                inputReviewPhotos.splice(idx, 1);
+                window.renderInputReviewPhotosGrid();
+            }
+        };
+
+        window.clearAllInputReviewPhotos = function() {
+            inputReviewPhotos = [];
+            window.renderInputReviewPhotosGrid();
+        };
+
         window.openAddModal = function(prefillData) {
             const modal = document.getElementById('add-restaurant-modal');
             if (modal) modal.classList.remove('hidden');
