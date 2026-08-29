@@ -5450,26 +5450,30 @@
 
                 return `
                 <div class="rounded-2xl p-4 shadow-sm ${cardStyle} flex flex-col gap-3 transition hover:shadow-md relative">
-                    <!-- 卡片頂部：發文者身分（左側：頭像＋姓名＋等級＋群組）與操作狀態列（右側：日期＋評價＋編輯＋刪除）同一排工整排版 -->
-                    <div class="flex items-center justify-between gap-2 border-b border-gray-100/60 pb-3 flex-wrap">
-                        <div class="flex items-center gap-2.5 min-w-0 cursor-pointer" onclick="window.openUserProfile('${window.escapeForBtn(item.creator)}', '${window.escapeForBtn(item.group)}')">
+                    <!-- 卡片頂部：大頭貼居中對齊兩行，第一行（姓名＋等級＋群組），第二行與姓名靠左對齊（日期＋推爆/避雷＋編輯＋刪除） -->
+                    <div class="flex items-center gap-3 border-b border-gray-100/60 pb-3">
+                        <div class="cursor-pointer shrink-0" onclick="window.openUserProfile('${window.escapeForBtn(item.creator)}', '${window.escapeForBtn(item.group)}')">
                             ${userAvatarHtml}
-                            <div class="flex items-center gap-1.5 flex-wrap">
+                        </div>
+                        <div class="flex-1 min-w-0 flex flex-col justify-center gap-1.5">
+                            <!-- 第一行：姓名 + 等級 + 群組 -->
+                            <div class="flex items-center gap-1.5 flex-wrap cursor-pointer" onclick="window.openUserProfile('${window.escapeForBtn(item.creator)}', '${window.escapeForBtn(item.group)}')">
                                 <span class="text-sm font-bold text-gray-900 hover:text-orange-500 transition shrink-0">${item.creator}</span>
                                 ${isHost ? '<span class="bg-orange-500 text-white text-[9px] px-1.5 py-0.5 rounded font-black tracking-wider shadow-xs shrink-0">主揪</span>' : ''}
                                 <span class="inline-flex items-center gap-0.5 bg-amber-50 text-amber-700 border border-amber-200 text-[10px] px-1.5 py-0.5 rounded font-bold shrink-0 whitespace-nowrap">${userLevelInfo.tierIcon} Lv.${userLevelInfo.level}</span>
                                 ${window.formatGroupBadgeHtml(item.group)}
                             </div>
-                        </div>
-                        <div class="flex items-center gap-1.5 shrink-0 ml-auto">
-                            <span class="text-[11px] text-gray-400 font-medium whitespace-nowrap mr-0.5">${dateStr}</span>
-                            ${badgeRating}
-                            <button onclick="window.openFeedItemEditModal('${item.id}')" class="w-7 h-7 rounded-lg bg-white border border-gray-200 hover:border-blue-400 text-gray-500 hover:text-blue-600 flex items-center justify-center text-xs shadow-2xs transition" title="編輯此評價">
-                                <i class="fa-solid fa-pen-to-square"></i>
-                            </button>
-                            <button onclick="window.deleteFeedItemWithAuth('${item.id}')" class="w-7 h-7 rounded-lg bg-white border border-gray-200 hover:border-red-400 text-gray-500 hover:text-red-600 flex items-center justify-center text-xs shadow-2xs transition" title="刪除此評價">
-                                <i class="fa-solid fa-trash-can"></i>
-                            </button>
+                            <!-- 第二行：日期 + 評價 + 編輯 + 刪除 (全部靠左與第一行姓名對齊) -->
+                            <div class="flex items-center gap-1.5 flex-wrap">
+                                <span class="text-[11px] text-gray-400 font-medium whitespace-nowrap mr-0.5">${dateStr}</span>
+                                ${badgeRating}
+                                <button onclick="window.openFeedItemEditModal('${item.id}')" class="w-7 h-7 rounded-lg bg-white border border-gray-200 hover:border-blue-400 text-gray-500 hover:text-blue-600 flex items-center justify-center text-xs shadow-2xs transition shrink-0" title="編輯此評價">
+                                    <i class="fa-solid fa-pen-to-square"></i>
+                                </button>
+                                <button onclick="window.deleteFeedItemWithAuth('${item.id}')" class="w-7 h-7 rounded-lg bg-white border border-gray-200 hover:border-red-400 text-gray-500 hover:text-red-600 flex items-center justify-center text-xs shadow-2xs transition shrink-0" title="刪除此評價">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button>
+                            </div>
                         </div>
                     </div>
 
