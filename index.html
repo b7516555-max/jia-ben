@@ -4564,11 +4564,13 @@
                 };
 
                 if (isAuthor) {
-                    if (confirm(`確定要刪除您在「${item.restaurantName || '此店家'}」發布的評價動態嗎？`)) {
+                    const targetName = item.restaurantName ? `「${item.restaurantName}」的評價` : (item.type === 'system_welcome' ? '這則新朋友歡迎公告' : (item.type === 'tier_promotion' ? '這則榮耀晉階廣播' : '這則動態'));
+                    if (confirm(`確定要刪除您發布的${targetName}嗎？`)) {
                         execute();
                     }
                 } else {
-                    window.requireAdminAuthForAction(`您正在以主揪身分移除 ${item.creator} 發布的評價動態`, execute);
+                    const targetDesc = item.restaurantName ? `「${item.restaurantName}」的評價動態` : (item.type === 'system_welcome' ? '新朋友歡迎公告' : (item.type === 'tier_promotion' ? '榮耀晉階廣播' : (item.type === 'party_recap' ? '聚會花絮' : '動態內容')));
+                    window.requireAdminAuthForAction(`您正在以主揪身分移除 ${item.creator || '系統'} 的${targetDesc}`, execute);
                 }
             });
         };
@@ -4976,16 +4978,21 @@
                         : `<div class="foodie-avatar foodie-avatar-${avatarInfo.avatarId} w-full max-w-[16rem] aspect-square rounded-[2rem] drop-shadow-sm"></div>`;
 
                     return `
-                    <div class="feed-welcome-card w-full h-auto md:h-full min-h-[5.5rem] bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-2xl border border-blue-100 shadow-sm relative overflow-hidden self-start flex flex-col">
-                        <div class="flex items-start gap-3 min-h-[3.5rem]">
-                            ${avatarHtml}
-                            <div class="min-w-0 flex-1">
-                                <p class="text-[11px] text-blue-600 font-bold mb-0.5">🎉 新朋友加入 · ${dateStr}</p>
-                                <p class="text-xs sm:text-sm text-gray-800 font-bold leading-snug">
-                                    歡迎 <span class="text-blue-600 font-extrabold">${item.creator}</span> 加入 <span class="text-blue-600 font-extrabold">${item.group}</span>！
-                                </p>
-                                <p class="text-[11px] text-gray-500 mt-0.5">(由 ${item.inviter} 引薦進來 🙌)</p>
+                    <div class="feed-welcome-card w-full h-auto md:h-full min-h-[5.5rem] bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-2xl border border-blue-100 shadow-sm relative overflow-hidden self-start flex flex-col group/broadcast">
+                        <div class="flex items-start justify-between gap-2 min-h-[3.5rem]">
+                            <div class="flex items-start gap-3 min-w-0 flex-1">
+                                ${avatarHtml}
+                                <div class="min-w-0 flex-1">
+                                    <p class="text-[11px] text-blue-600 font-bold mb-0.5">🎉 新朋友加入 · ${dateStr}</p>
+                                    <p class="text-xs sm:text-sm text-gray-800 font-bold leading-snug">
+                                        歡迎 <span class="text-blue-600 font-extrabold">${item.creator}</span> 加入 <span class="text-blue-600 font-extrabold">${item.group}</span>！
+                                    </p>
+                                    <p class="text-[11px] text-gray-500 mt-0.5">(由 ${item.inviter} 引薦進來 🙌)</p>
+                                </div>
                             </div>
+                            <button onclick="window.deleteFeedItemWithAuth('${item.id}')" class="w-7 h-7 rounded-lg bg-white/80 hover:bg-white border border-blue-200 text-gray-400 hover:text-red-500 flex items-center justify-center text-xs shadow-2xs transition shrink-0" title="刪除此公告">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
                         </div>
                         <div class="hidden md:flex flex-1 min-h-[13rem] items-center justify-center pt-4" aria-hidden="true">
                             ${bigAvatarHtml}
@@ -4993,7 +5000,7 @@
                     </div>`;
                 }
 
-                // 2. 🌟 勳章升階全站榮耀廣播卡片 (Tier Promotion Broadcast)
+                // 2. 🌟 勳章升階全站榮耀廣播卡片 (Tier Promotion Broadcast - 單行工整排版)
                 if (item.type === 'tier_promotion') {
                     const avatarInfo = window.getAvatarInfo({ creator: item.creator, name: item.creator });
                     const avatarHtml = (avatarInfo.isCustom && avatarInfo.customUrl)
@@ -5008,17 +5015,18 @@
                         <div class="flex items-center justify-between gap-2 border-b border-white/30 pb-3 relative z-10">
                             <div class="flex items-center gap-2.5 min-w-0 flex-1">
                                 ${avatarHtml}
-                                <div class="min-w-0 flex-1 flex flex-col justify-center gap-0.5">
-                                    <div class="flex items-center gap-1.5 min-w-0">
-                                        <span class="text-sm sm:text-base font-black text-white truncate drop-shadow-xs">${item.creator}</span>
-                                        <span class="bg-yellow-300 text-amber-900 text-[10px] px-2 py-0.5 rounded-full font-black tracking-wider shadow-sm shrink-0 whitespace-nowrap">榮耀晉階</span>
+                                <div class="min-w-0 flex-1 flex flex-col justify-center gap-1">
+                                    <div class="flex items-center gap-1.5 min-w-0 flex-nowrap">
+                                        <span class="text-base font-black text-white truncate drop-shadow-xs shrink-0 max-w-[40%]">${item.creator}</span>
+                                        <span class="bg-yellow-300 text-amber-900 text-[10px] px-2 py-0.5 rounded-full font-black tracking-wider shadow-sm shrink-0 whitespace-nowrap leading-none inline-block">榮耀晉階</span>
+                                        <span class="bg-white/25 backdrop-blur-sm text-white px-2 py-0.5 rounded-full font-black text-[10px] sm:text-xs border border-white/40 shadow-xs shrink-0 whitespace-nowrap leading-none inline-block">第 ${item.tier} 層勳章 達成！</span>
                                     </div>
                                     <p class="text-[11px] text-yellow-100 font-bold truncate">${item.group} 團 • ${dateStr}</p>
                                 </div>
                             </div>
-                            <span class="bg-white/25 backdrop-blur-sm text-white px-2.5 py-1 rounded-full font-black text-[11px] sm:text-xs border border-white/40 shadow-xs shrink-0 whitespace-nowrap">
-                                第 ${item.tier} 層勳章 達成！
-                            </span>
+                            <button onclick="window.deleteFeedItemWithAuth('${item.id}')" class="w-7 h-7 rounded-lg bg-white/20 hover:bg-white/30 text-white flex items-center justify-center text-xs backdrop-blur-xs transition shrink-0 ml-1" title="刪除此廣播">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
                         </div>
 
                         <div class="bg-white/95 backdrop-blur-md p-4 rounded-2xl text-gray-900 shadow-md flex flex-col gap-2 relative z-10 border border-yellow-200">
@@ -5050,11 +5058,11 @@
                     return `
                     <div class="rounded-3xl p-5 shadow-sm bg-gradient-to-br from-amber-50/90 via-orange-50/50 to-white border-2 border-amber-300 flex flex-col gap-3 transition hover:shadow-md relative overflow-hidden">
                         <div class="flex items-center justify-between gap-2 border-b border-amber-200/60 pb-3">
-                            <div class="flex items-center gap-3 min-w-0">
+                            <div class="flex items-center gap-3 min-w-0 flex-1">
                                 <div class="w-10 h-10 rounded-full bg-amber-500 text-white flex items-center justify-center text-sm shrink-0 shadow-md">
                                     <i class="fa-solid fa-camera-retro"></i>
                                 </div>
-                                <div class="min-w-0">
+                                <div class="min-w-0 flex-1">
                                     <div class="flex items-center gap-1.5 flex-wrap">
                                         <span class="text-sm font-extrabold text-gray-900 truncate">${item.creator}</span>
                                         <span class="bg-amber-500 text-white text-[9px] px-1.5 py-0.5 rounded font-black tracking-wider shadow-xs">聚會花絮</span>
@@ -5066,9 +5074,14 @@
                                     </div>
                                 </div>
                             </div>
-                            <span class="inline-flex items-center gap-1 bg-gradient-to-r from-amber-500 to-orange-500 text-white px-2.5 py-1 rounded-full font-bold text-[10px] shadow-sm shrink-0">
-                                <i class="fa-solid fa-fire text-[9px]"></i> 聚會記錄
-                            </span>
+                            <div class="flex items-center gap-1.5 shrink-0">
+                                <span class="inline-flex items-center gap-1 bg-gradient-to-r from-amber-500 to-orange-500 text-white px-2.5 py-1 rounded-full font-bold text-[10px] shadow-sm shrink-0">
+                                    <i class="fa-solid fa-fire text-[9px]"></i> 聚會記錄
+                                </span>
+                                <button onclick="window.deleteFeedItemWithAuth('${item.id}')" class="w-7 h-7 rounded-lg bg-white border border-amber-200 hover:border-red-400 text-gray-400 hover:text-red-500 flex items-center justify-center text-xs shadow-2xs transition" title="刪除此聚會花絮">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button>
+                            </div>
                         </div>
 
                         <div class="bg-white/90 backdrop-blur-sm p-4 rounded-2xl border border-amber-100 shadow-xs flex flex-col gap-3">
