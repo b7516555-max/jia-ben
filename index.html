@@ -1010,9 +1010,9 @@
             <div class="p-6 overflow-y-auto no-scrollbar flex-1 bg-gray-50 space-y-4">
                 <!-- 🌟 Google 地圖評分與平均消費單價醒目標籤列 -->
                 <div class="flex items-center gap-2 flex-wrap">
-                    <a id="detail-rating" href="#" target="_blank" rel="noopener noreferrer" class="text-orange-500 font-bold text-sm bg-orange-50 px-3 py-1.5 rounded-xl border border-orange-100 flex items-center shadow-2xs cursor-pointer hover:bg-orange-100 transition no-underline">
+                    <span id="detail-rating" onclick="window.showGoogleReviews()" class="text-orange-500 font-bold text-sm bg-orange-50 px-3 py-1.5 rounded-xl border border-orange-100 flex items-center shadow-2xs cursor-pointer hover:bg-orange-100 transition">
                         <i class="fa-solid fa-star mr-1 text-amber-400"></i> 4.5
-                    </a>
+                    </span>
                     <span id="detail-price-badge" class="text-emerald-700 font-bold text-xs bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200 flex items-center shadow-2xs">
                         <i class="fa-solid fa-coins mr-1 text-emerald-500"></i> <span id="detail-price-text">消費單價：讀取中...</span>
                     </span>
@@ -1046,6 +1046,32 @@
                     <button id="detail-edit-btn" class="text-xs text-orange-600 hover:text-orange-700 font-bold px-3 py-1.5 transition flex items-center bg-orange-50 hover:bg-orange-100 rounded-lg border border-orange-200"><i class="fa-solid fa-pen-to-square mr-1"></i>編輯店家</button>
                     <button id="detail-delete-btn" class="text-xs text-gray-500 hover:text-red-500 font-bold px-3 py-1.5 transition flex items-center"><i class="fa-solid fa-trash-can mr-1"></i>移除店家</button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🌟 Google 評論彈出視窗 (Reviews Modal) -->
+    <div id="google-reviews-modal" class="hidden fixed inset-0 z-[110] flex items-center justify-center bg-black/60 modal-backdrop fade-in">
+        <div class="bg-white rounded-3xl w-11/12 max-w-lg shadow-2xl relative max-h-[85vh] flex flex-col overflow-hidden">
+            <div class="flex items-center justify-between p-5 pb-3 border-b border-gray-100">
+                <div class="flex items-center gap-2">
+                    <i class="fa-brands fa-google text-blue-500 text-lg"></i>
+                    <h3 class="text-base font-extrabold text-gray-800">Google 評論</h3>
+                    <span id="reviews-count-badge" class="bg-orange-100 text-orange-600 text-[10px] px-2 py-0.5 rounded-full font-bold"></span>
+                </div>
+                <button onclick="window.closeModal('google-reviews-modal')" class="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500 transition">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="flex items-center gap-4 px-5 py-3 bg-gradient-to-r from-amber-50 to-orange-50 border-b border-orange-100">
+                <div class="text-center">
+                    <div id="reviews-avg-score" class="text-3xl font-black text-amber-500">0.0</div>
+                    <div id="reviews-stars" class="text-amber-400 text-sm mt-0.5"></div>
+                </div>
+                <div id="reviews-bar-chart" class="flex-1 space-y-1"></div>
+            </div>
+            <div id="reviews-list" class="flex-1 overflow-y-auto p-4 space-y-3">
+                <p class="text-center text-gray-400 text-sm py-6">載入中...</p>
             </div>
         </div>
     </div>
@@ -6094,7 +6120,7 @@
             }
 
             const service = new google.maps.places.PlacesService(document.createElement('div'));
-            const fields = ['name', 'formatted_address', 'formatted_phone_number', 'opening_hours', 'price_level', 'website', 'business_status', 'photos', 'rating', 'user_ratings_total'];
+            const fields = ['name', 'formatted_address', 'formatted_phone_number', 'opening_hours', 'price_level', 'website', 'business_status', 'photos', 'rating', 'user_ratings_total', 'reviews'];
             const showDetails = (place, status) => {
                 if (status !== 'OK' || !place) {
                     infoEl.innerHTML = '<p class="text-xs text-gray-400">Google 尚未提供這間店的詳細資訊。</p>';
@@ -6106,21 +6132,22 @@
                     detailImage.src = place.photos[0].getUrl({ maxWidth: 800 });
                 }
 
-                // 🌟 Google Maps 評分與評論數更新 — 點擊可跳轉 Google Maps 評價
+                // 🌟 Google Maps 評分與評論數更新 — 點擊可顯示評論彈窗
                 const rating = place.rating || data.rating || 0;
                 const reviews = place.user_ratings_total || data.reviews || 0;
                 const detailRatingEl = document.getElementById('detail-rating');
+                
+                // 儲存 Google 評論資料供彈窗使用
+                window._currentGoogleReviews = place.reviews || [];
+                window._currentPlaceRating = rating;
+                window._currentPlaceReviewCount = reviews;
+                window._currentPlaceName = data.name;
+                
                 if (detailRatingEl) {
-                    // 構建 Google Maps 評價頁面連結
-                    const mapsReviewUrl = data.placeId
-                        ? `https://www.google.com/maps/place/?q=place_id:${data.placeId}`
-                        : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(data.name)}`;
-                    detailRatingEl.href = mapsReviewUrl;
                     if (rating > 0) {
-                        detailRatingEl.innerHTML = `<i class="fa-solid fa-star mr-1 text-amber-400"></i> ${parseFloat(rating).toFixed(1)} <span class="text-gray-500 text-xs ml-1 font-normal">(${reviews} 則 Google 評價) <i class="fa-solid fa-arrow-up-right-from-square text-[10px] ml-0.5"></i></span>`;
+                        detailRatingEl.innerHTML = `<i class="fa-solid fa-star mr-1 text-amber-400"></i> ${parseFloat(rating).toFixed(1)} <span class="text-gray-500 text-xs ml-1 font-normal">(${reviews} 則 Google 評價) <i class="fa-solid fa-chevron-right text-[10px] ml-0.5"></i></span>`;
                     } else {
                         detailRatingEl.innerHTML = `<span class="text-gray-400 text-xs">暫無評分</span>`;
-                        detailRatingEl.removeAttribute('href');
                     }
                 }
 
@@ -6165,6 +6192,87 @@
                     service.getDetails({ placeId: results[0].place_id, fields: fields }, showDetails);
                 });
             }
+        };
+
+        // 🌟 顯示 Google 評論彈窗
+        window.showGoogleReviews = function() {
+            const reviewsData = window._currentGoogleReviews || [];
+            const avgRating = window._currentPlaceRating || 0;
+            const totalCount = window._currentPlaceReviewCount || 0;
+            const placeName = window._currentPlaceName || '';
+
+            if (!avgRating && reviewsData.length === 0) {
+                return window.showCustomMsg('此店家目前尚無 Google 評論資料。');
+            }
+
+            // 更新標題區域
+            document.getElementById('reviews-count-badge').textContent = `${totalCount} 則評價`;
+            document.getElementById('reviews-avg-score').textContent = parseFloat(avgRating).toFixed(1);
+
+            // 星星顯示
+            let starsHtml = '';
+            for (let i = 1; i <= 5; i++) {
+                if (i <= Math.floor(avgRating)) starsHtml += '<i class="fa-solid fa-star"></i>';
+                else if (i - avgRating < 1) starsHtml += '<i class="fa-solid fa-star-half-stroke"></i>';
+                else starsHtml += '<i class="fa-regular fa-star text-gray-300"></i>';
+            }
+            document.getElementById('reviews-stars').innerHTML = starsHtml;
+
+            // 星等分布長條圖
+            const dist = [0, 0, 0, 0, 0];
+            reviewsData.forEach(r => { if (r.rating >= 1 && r.rating <= 5) dist[r.rating - 1]++; });
+            const maxDist = Math.max(...dist, 1);
+            let barHtml = '';
+            for (let i = 5; i >= 1; i--) {
+                const pct = Math.round((dist[i - 1] / maxDist) * 100);
+                barHtml += `<div class="flex items-center gap-1.5 text-[10px]">
+                    <span class="w-3 text-right font-bold text-gray-500">${i}</span>
+                    <div class="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                        <div class="h-full bg-amber-400 rounded-full transition-all" style="width:${pct}%"></div>
+                    </div>
+                </div>`;
+            }
+            document.getElementById('reviews-bar-chart').innerHTML = barHtml;
+
+            // 評論列表
+            const listEl = document.getElementById('reviews-list');
+            if (reviewsData.length === 0) {
+                listEl.innerHTML = `<div class="text-center py-8">
+                    <i class="fa-solid fa-star text-4xl text-amber-300 mb-3 opacity-40"></i>
+                    <p class="text-sm font-bold text-gray-500">此店家有 ${totalCount} 則評價</p>
+                    <p class="text-xs text-gray-400 mt-1">Google 僅提供最具參考性的前 5 筆評論摘要</p>
+                </div>`;
+            } else {
+                listEl.innerHTML = reviewsData
+                    .sort((a, b) => (b.time || 0) - (a.time || 0))
+                    .map(r => {
+                        const reviewStars = Array.from({length: 5}, (_, i) =>
+                            i < r.rating ? '<i class="fa-solid fa-star text-amber-400 text-[10px]"></i>' : '<i class="fa-regular fa-star text-gray-300 text-[10px]"></i>'
+                        ).join('');
+                        const timeAgo = r.relative_time_description || '';
+                        const avatarUrl = r.profile_photo_url || '';
+                        const authorName = r.author_name || '匿名';
+                        const text = r.text || '（未留文字評論）';
+                        return `<div class="bg-white rounded-2xl p-3.5 border border-gray-100 shadow-sm">
+                            <div class="flex items-center gap-2.5 mb-2">
+                                ${avatarUrl
+                                    ? `<img src="${avatarUrl}" class="w-8 h-8 rounded-full object-cover border border-gray-200" onerror="this.style.display='none'">`
+                                    : `<div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 text-xs"><i class="fa-solid fa-user"></i></div>`
+                                }
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-xs font-bold text-gray-800 truncate">${authorName}</p>
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="flex">${reviewStars}</span>
+                                        <span class="text-[10px] text-gray-400">${timeAgo}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <p class="text-xs text-gray-600 leading-relaxed ${text.length > 100 ? 'line-clamp-4' : ''}">${text}</p>
+                        </div>`;
+                    }).join('');
+            }
+
+            document.getElementById('google-reviews-modal').classList.remove('hidden');
         };
 
         window.editRestaurant = function(nameStr) {
