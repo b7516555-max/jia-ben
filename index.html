@@ -5354,6 +5354,10 @@
                         ? `<div class="w-10 h-10 rounded-full shadow shrink-0 border-2 border-white overflow-hidden bg-white"><img src="${window.resolveReviewImage(avatarInfo.customUrl)}" class="w-full h-full object-cover rounded-full"></div>`
                         : `<div class="foodie-avatar foodie-avatar-${avatarInfo.avatarId} w-10 h-10 rounded-full shadow shrink-0 border-2 border-white"></div>`;
 
+                    const bigAvatarHtml = (avatarInfo.isCustom && avatarInfo.customUrl) 
+                        ? `<div class="w-20 h-20 rounded-full shadow-lg border-4 border-white overflow-hidden bg-white"><img src="${window.resolveReviewImage(avatarInfo.customUrl)}" class="w-full h-full object-cover rounded-full"></div>`
+                        : `<div class="foodie-avatar foodie-avatar-${avatarInfo.avatarId} w-20 h-20 rounded-full shadow-lg border-4 border-white"></div>`;
+
                     return `
                     <div class="feed-welcome-card w-full bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-2xl border border-blue-100 shadow-sm relative overflow-hidden flex flex-col group/broadcast">
                         <div class="flex items-start justify-between gap-2">
@@ -5370,6 +5374,10 @@
                             <button onclick="window.deleteFeedItemWithAuth('${item.id}')" class="w-7 h-7 rounded-lg bg-white/80 hover:bg-white border border-blue-200 text-gray-400 hover:text-red-500 flex items-center justify-center text-xs shadow-2xs transition shrink-0" title="刪除此公告">
                                 <i class="fa-solid fa-trash-can"></i>
                             </button>
+                        </div>
+                        <div class="flex-1 flex flex-col items-center justify-center py-4 gap-2">
+                            ${bigAvatarHtml}
+                            <p class="text-xs font-bold text-blue-500 tracking-wide">🎊 歡迎加入大家庭！</p>
                         </div>
                     </div>`;
                 }
