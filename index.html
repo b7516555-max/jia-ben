@@ -1094,58 +1094,58 @@
     <!-- 🌟 新增：卡片詳細資訊彈出視窗 -->
     <div id="card-detail-modal" class="hidden fixed inset-0 z-[90] flex items-center justify-center bg-black/60 modal-backdrop fade-in">
         <div class="bg-white rounded-3xl w-11/12 max-w-lg shadow-2xl relative overflow-hidden flex flex-col max-h-[90vh]">
-            <button onclick="window.closeModal('card-detail-modal')" class="absolute top-4 right-4 text-white hover:text-gray-200 z-20 w-8 h-8 bg-black/30 rounded-full flex items-center justify-center backdrop-blur-sm"><i class="fa-solid fa-xmark"></i></button>
+            <button onclick="window.closeModal('card-detail-modal')" class="absolute top-3.5 right-3.5 text-white hover:text-gray-200 z-30 w-8 h-8 bg-black/40 hover:bg-black/60 rounded-full flex items-center justify-center backdrop-blur-md transition"><i class="fa-solid fa-xmark"></i></button>
             
-            <div class="h-48 md:h-64 relative w-full shrink-0">
+            <div class="h-44 md:h-56 relative w-full shrink-0">
                 <img id="detail-img" src="" class="w-full h-full object-cover">
-                <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
-                <div class="absolute bottom-4 left-5 right-5">
-                    <span id="detail-city" class="bg-orange-500 text-white text-[10px] px-2 py-0.5 rounded shadow-sm font-bold tracking-widest mb-1.5 inline-block"></span>
-                    <h2 id="detail-name" class="text-2xl font-bold text-white leading-tight drop-shadow-md"></h2>
+                <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-black/30"></div>
+                
+                <!-- 頂部照片覆蓋按鈕列：新增店家、編輯店家、移除店家 -->
+                <div class="absolute top-3.5 left-3.5 right-14 z-20 flex items-center gap-1.5 flex-wrap">
+                    <button id="detail-add-btn" class="text-[11px] font-bold px-2.5 py-1 transition flex items-center bg-white/85 text-orange-600 hover:bg-white rounded-full shadow-sm backdrop-blur-md border border-white/40"><i class="fa-solid fa-plus-circle mr-1"></i>新增店家</button>
+                    <button id="detail-edit-btn" class="text-[11px] font-bold px-2.5 py-1 transition flex items-center bg-white/85 text-blue-600 hover:bg-white rounded-full shadow-sm backdrop-blur-md border border-white/40"><i class="fa-solid fa-pen-to-square mr-1"></i>編輯店家</button>
+                    <button id="detail-delete-btn" class="text-[11px] font-bold px-2.5 py-1 transition flex items-center bg-black/40 text-white/90 hover:bg-red-500 hover:text-white rounded-full shadow-sm backdrop-blur-md border border-white/20"><i class="fa-solid fa-trash-can mr-1"></i>移除店家</button>
+                </div>
+
+                <div class="absolute bottom-3 left-4 right-4">
+                    <span id="detail-city" class="bg-orange-500 text-white text-[10px] px-2 py-0.5 rounded shadow-sm font-bold tracking-widest mb-1 inline-block"></span>
+                    <h2 id="detail-name" class="text-xl md:text-2xl font-bold text-white leading-tight drop-shadow-md truncate"></h2>
                 </div>
             </div>
             
-            <div class="p-6 overflow-y-auto no-scrollbar flex-1 bg-gray-50 space-y-4">
+            <div class="p-4 md:p-5 overflow-y-auto no-scrollbar flex-1 bg-gray-50 space-y-3">
                 <!-- 🌟 Google 地圖評分與平均消費單價醒目標籤列 -->
                 <div class="flex items-center gap-2 flex-wrap">
-                    <span id="detail-rating" onclick="window.showGoogleReviews()" class="text-orange-500 font-bold text-sm bg-orange-50 px-3 py-1.5 rounded-xl border border-orange-100 flex items-center shadow-2xs cursor-pointer hover:bg-orange-100 transition">
+                    <span id="detail-rating" onclick="window.showGoogleReviews()" class="text-orange-500 font-bold text-xs md:text-sm bg-orange-50 px-2.5 py-1 md:px-3 md:py-1.5 rounded-xl border border-orange-100 flex items-center shadow-2xs cursor-pointer hover:bg-orange-100 transition">
                         <i class="fa-solid fa-star mr-1 text-amber-400"></i> 4.5
                     </span>
-                    <span id="detail-price-badge" class="text-emerald-700 font-bold text-xs bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200 flex items-center shadow-2xs">
+                    <span id="detail-price-badge" class="text-emerald-700 font-bold text-xs bg-emerald-50 px-2.5 py-1 md:px-3 md:py-1.5 rounded-xl border border-emerald-200 flex items-center shadow-2xs">
                         <i class="fa-solid fa-coins mr-1 text-emerald-500"></i> <span id="detail-price-text">消費單價：讀取中...</span>
                     </span>
                 </div>
                 
-                <div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
-                    <p class="text-xs font-bold text-gray-500 mb-2"><i class="fa-solid fa-users mr-1"></i>誰推薦的？</p>
+                <div class="bg-white p-3.5 rounded-2xl border border-gray-100 shadow-2xs">
+                    <p class="text-xs font-bold text-gray-500 mb-1.5"><i class="fa-solid fa-users mr-1"></i>誰推薦的？</p>
                     <div id="detail-tags" class="flex flex-wrap gap-1.5"></div>
                 </div>
 
-                <div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
-                    <p class="text-xs font-bold text-gray-500 mb-3"><i class="fa-solid fa-circle-info mr-1"></i>店家基本資訊</p>
-                    <div id="detail-place-info" class="space-y-2 text-sm text-gray-600">
+                <div class="bg-white p-3.5 rounded-2xl border border-gray-100 shadow-2xs">
+                    <p class="text-xs font-bold text-gray-500 mb-2"><i class="fa-solid fa-circle-info mr-1"></i>店家基本資訊</p>
+                    <div id="detail-place-info" class="space-y-1.5 text-xs sm:text-sm text-gray-600">
                         <p class="text-xs text-gray-400"><i class="fa-solid fa-spinner fa-spin mr-1.5"></i>正在讀取 Google 店家資訊...</p>
                     </div>
-                    <details id="detail-hours-wrap" class="hidden mt-3 pt-3 border-t border-gray-100">
+                    <details id="detail-hours-wrap" class="hidden mt-2 pt-2 border-t border-gray-100">
                         <summary class="text-xs font-bold text-gray-500 cursor-pointer select-none">查看每週營業時間</summary>
                         <div id="detail-hours" class="mt-2 space-y-1 text-xs text-gray-500 leading-relaxed"></div>
                     </details>
                 </div>
                 
-                <div class="grid grid-cols-2 gap-3 mt-4">
-                    <a id="detail-nav-btn" href="#" target="_blank" class="col-span-2 text-center bg-blue-500 text-white py-3 rounded-xl font-bold hover:bg-blue-600 transition shadow-sm tracking-wide flex items-center justify-center gap-2"><i class="fa-solid fa-map-location-dot"></i> Google 地圖導航</a>
+                <div class="grid grid-cols-2 gap-2.5 pt-1">
+                    <a id="detail-nav-btn" href="#" target="_blank" class="col-span-2 text-center bg-blue-500 text-white py-2.5 md:py-3 rounded-xl font-bold hover:bg-blue-600 transition shadow-sm tracking-wide flex items-center justify-center gap-2 text-sm"><i class="fa-solid fa-map-location-dot"></i> Google 地圖導航</a>
                     
-                    <button id="detail-review-btn" class="bg-white text-gray-700 font-bold py-3 rounded-xl border border-gray-200 hover:bg-gray-50 transition shadow-sm flex items-center justify-center gap-2"><i class="fa-solid fa-comment-dots text-orange-400"></i> 寫評價</button>
+                    <button id="detail-review-btn" class="bg-white text-gray-700 font-bold py-2.5 md:py-3 rounded-xl border border-gray-200 hover:bg-gray-50 transition shadow-sm flex items-center justify-center gap-2 text-xs sm:text-sm"><i class="fa-solid fa-comment-dots text-orange-400"></i> 寫評價</button>
                     
-                    <button id="detail-share-btn" class="bg-[#00B900] text-white font-bold py-3 rounded-xl hover:bg-[#009900] transition shadow-sm flex items-center justify-center gap-2"><i class="fa-brands fa-line text-lg"></i> 分享給好友</button>
-                </div>
-                
-                <div class="flex justify-between items-center gap-2 pt-4 mt-2 border-t border-gray-200">
-                    <div class="flex items-center gap-2">
-                        <button id="detail-add-btn" class="text-xs text-orange-600 hover:text-orange-700 font-bold px-3 py-1.5 transition flex items-center bg-orange-50 hover:bg-orange-100 rounded-lg border border-orange-200"><i class="fa-solid fa-plus-circle mr-1"></i>新增店家</button>
-                        <button id="detail-edit-btn" class="text-xs text-blue-600 hover:text-blue-700 font-bold px-3 py-1.5 transition flex items-center bg-blue-50 hover:bg-blue-100 rounded-lg border border-blue-200"><i class="fa-solid fa-pen-to-square mr-1"></i>編輯店家</button>
-                    </div>
-                    <button id="detail-delete-btn" class="text-xs text-gray-500 hover:text-red-500 font-bold px-3 py-1.5 transition flex items-center"><i class="fa-solid fa-trash-can mr-1"></i>移除店家</button>
+                    <button id="detail-share-btn" class="bg-[#00B900] text-white font-bold py-2.5 md:py-3 rounded-xl hover:bg-[#009900] transition shadow-sm flex items-center justify-center gap-2 text-xs sm:text-sm"><i class="fa-brands fa-line text-base"></i> 分享給好友</button>
                 </div>
             </div>
         </div>
@@ -6314,15 +6314,15 @@
                 if (existingRes) {
                     const ownerGroup = existingRes.group || '其他';
                     const ownerName = existingRes.creator || '成員';
-                    addBtn.innerHTML = `<i class="fa-solid fa-circle-check mr-1 text-emerald-500"></i>已在【${ownerGroup}】${ownerName} 口袋名單`;
-                    addBtn.className = "text-xs text-emerald-700 font-bold px-3 py-1.5 transition flex items-center bg-emerald-50 rounded-lg border border-emerald-200 cursor-pointer hover:bg-emerald-100";
+                    addBtn.innerHTML = `<i class="fa-solid fa-circle-check mr-1 text-emerald-500"></i>已在【${ownerGroup}】${ownerName} 名單`;
+                    addBtn.className = "text-[11px] text-emerald-800 font-bold px-2.5 py-1 transition flex items-center bg-white/90 rounded-full border border-emerald-300 shadow-sm backdrop-blur-md cursor-pointer hover:bg-white";
                     addBtn.title = `這家店已經由【${ownerGroup}】${ownerName} 加入口袋名單`;
                     addBtn.onclick = function() {
                         window.showCustomMsg(`📌 「${existingRes.name}」已經在口袋名單中囉！\n\n推薦者：【${ownerGroup} 團】${ownerName}\n\n如需撰寫心得或上傳照片，可直接點擊「寫評價」即可分享！`);
                     };
                 } else {
                     addBtn.innerHTML = `<i class="fa-solid fa-plus-circle mr-1"></i>新增店家`;
-                    addBtn.className = "text-xs text-orange-600 hover:text-orange-700 font-bold px-3 py-1.5 transition flex items-center bg-orange-50 hover:bg-orange-100 rounded-lg border border-orange-200";
+                    addBtn.className = "text-[11px] text-orange-600 hover:text-orange-700 font-bold px-2.5 py-1 transition flex items-center bg-white/90 hover:bg-white rounded-full shadow-sm backdrop-blur-md border border-white/50";
                     addBtn.title = "將這間店家存入自己的口袋名單";
                     addBtn.onclick = function() {
                         const prefillObj = {
