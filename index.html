@@ -1412,7 +1412,11 @@
                 window.handleListCountryChange();
             }
             if ('serviceWorker' in navigator && location.protocol === 'https:' && location.hostname.endsWith('github.io')) {
-                navigator.serviceWorker.register('./sw.js').catch((err) => console.warn('Service Worker 註冊失敗:', err));
+                navigator.serviceWorker.register('./sw.js').then((reg) => {
+                    if (reg) {
+                        reg.update().catch(() => {});
+                    }
+                }).catch((err) => console.warn('Service Worker 註冊失敗:', err));
             }
             if (typeof window.drawRadarWheel === 'function') window.drawRadarWheel([]);
         });
