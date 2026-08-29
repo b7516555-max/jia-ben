@@ -1010,8 +1010,14 @@
             </div>
             
             <div class="p-6 overflow-y-auto no-scrollbar flex-1 bg-gray-50 space-y-4">
-                <div class="flex items-center gap-3">
-                    <span id="detail-rating" class="text-orange-500 font-bold text-sm bg-orange-50 px-3 py-1.5 rounded-xl border border-orange-100 flex items-center"><i class="fa-solid fa-star mr-1"></i></span>
+                <!-- 🌟 Google 地圖評分與平均消費單價醒目標籤列 -->
+                <div class="flex items-center gap-2 flex-wrap">
+                    <span id="detail-rating" class="text-orange-500 font-bold text-sm bg-orange-50 px-3 py-1.5 rounded-xl border border-orange-100 flex items-center shadow-2xs">
+                        <i class="fa-solid fa-star mr-1 text-amber-400"></i> 4.5
+                    </span>
+                    <span id="detail-price-badge" class="text-emerald-700 font-bold text-xs bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200 flex items-center shadow-2xs">
+                        <i class="fa-solid fa-coins mr-1 text-emerald-500"></i> <span id="detail-price-text">消費單價：讀取中...</span>
+                    </span>
                 </div>
                 
                 <div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
@@ -6039,7 +6045,7 @@
             }
 
             const service = new google.maps.places.PlacesService(document.createElement('div'));
-            const fields = ['name', 'formatted_address', 'formatted_phone_number', 'opening_hours', 'price_level', 'website', 'business_status', 'photos'];
+            const fields = ['name', 'formatted_address', 'formatted_phone_number', 'opening_hours', 'price_level', 'website', 'business_status', 'photos', 'rating', 'user_ratings_total'];
             const showDetails = (place, status) => {
                 if (status !== 'OK' || !place) {
                     infoEl.innerHTML = '<p class="text-xs text-gray-400">Google 尚未提供這間店的詳細資訊。</p>';
@@ -6051,9 +6057,27 @@
                     detailImage.src = place.photos[0].getUrl({ maxWidth: 800 });
                 }
 
-                const priceLabels = ['免費', '$（平價）', '$$（中等）', '$$$（偏高）', '$$$$（高價）'];
+                // 🌟 Google Maps 評分與評論數更新
+                const rating = place.rating || data.rating || 0;
+                const reviews = place.user_ratings_total || data.reviews || 0;
+                const detailRatingEl = document.getElementById('detail-rating');
+                if (detailRatingEl) {
+                    if (rating > 0) {
+                        detailRatingEl.innerHTML = `<i class="fa-solid fa-star mr-1 text-amber-400"></i> ${parseFloat(rating).toFixed(1)} <span class="text-gray-500 text-xs ml-1 font-normal">(${reviews} 則 Google 評價)</span>`;
+                    } else {
+                        detailRatingEl.innerHTML = `<span class="text-gray-400 text-xs">暫無評分</span>`;
+                    }
+                }
+
+                // 🌟 Google Maps 平均單價 / 價位等級更新
+                const priceLabels = ['免費', '$（平價 · 約 $100~200）', '$$（中等 · 約 $200~500）', '$$$（偏高 · 約 $500~1000）', '$$$$（高價 · 約 $1000+）'];
+                const priceDesc = Number.isInteger(place.price_level) ? priceLabels[place.price_level] : (Number.isInteger(data.price_level) ? priceLabels[data.price_level] : '未提供');
+                const priceTextEl = document.getElementById('detail-price-text');
+                if (priceTextEl) {
+                    priceTextEl.textContent = `平均消費：${priceDesc}`;
+                }
+
                 const phone = place.formatted_phone_number || '未提供';
-                const price = Number.isInteger(place.price_level) ? priceLabels[place.price_level] : '未提供';
                 const address = place.formatted_address || data.city || '未提供';
                 
                 const openStatusInfo = window.computeOpeningStatus(place);
@@ -6067,7 +6091,7 @@
                 infoEl.innerHTML = `
                     <p class="flex items-center gap-2"><i class="fa-solid fa-clock text-gray-400 w-5"></i><span class="font-bold ${openClass}">${openStatusInfo.text}</span> ${openStatusInfo.badgeHtml}</p>
                     <p class="flex items-start"><i class="fa-solid fa-phone text-gray-400 w-5 mt-0.5"></i><span>${phoneHtml}</span></p>
-                    <p class="flex items-start"><i class="fa-solid fa-dollar-sign text-gray-400 w-5 mt-0.5"></i><span>價位：${price}</span></p>
+                    <p class="flex items-start"><i class="fa-solid fa-coins text-gray-400 w-5 mt-0.5"></i><span>消費價位：${priceDesc}</span></p>
                     <p class="flex items-start"><i class="fa-solid fa-location-dot text-gray-400 w-5 mt-0.5"></i><span>${address}</span></p>
                     ${websiteHtml}`;
 
