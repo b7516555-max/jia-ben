@@ -6535,78 +6535,94 @@
         };
 
         window.openAddModal = function(prefillData) {
-            const addForm = document.getElementById('add-form');
-            if (addForm) addForm.reset();
-            const matchStatus = document.getElementById('smart-place-match-status');
-            if (matchStatus) { matchStatus.className = 'hidden'; matchStatus.textContent = ''; }
-            window.smartPlaceSelected = false;
-            window.handleAddCountryChange('台北市');
-            window.setPhotoUploaderValue('admin-add', '');
-            updateConfigDropdowns();
-            
-            // 重設評價區塊
-            isAddReviewExpanded = false;
-            inputReviewPhotos = [];
-            const sec = document.getElementById('add-review-section');
-            if (sec) sec.classList.add('hidden');
-            const icon = document.getElementById('icon-toggle-add-review');
-            if (icon) icon.className = "fa-solid fa-plus-circle text-sm";
-            const txt = document.getElementById('text-toggle-add-review');
-            if (txt) txt.textContent = "＋ 同步新增美味評價與照片";
-            const submitTxt = document.getElementById('submit-btn-text');
-            if (submitTxt) submitTxt.textContent = "存入口袋名單";
-            window.selectInputReviewRating('good');
-            window.renderInputReviewPhotosGrid();
-
-            if (window.myIdentity && window.myIdentity.group) {
-                const grpEl = document.getElementById('input-group');
-                if (grpEl) {
-                    grpEl.value = window.myIdentity.group;
-                    window.handleDropdownSync(grpEl, 'group');
-                }
-            }
-            if (window.myIdentity && window.myIdentity.name) {
-                const creEl = document.getElementById('input-creator');
-                if (creEl) {
-                    const hasOption = Array.from(creEl.options).some(opt => opt.value === window.myIdentity.name);
-                    if (hasOption) creEl.value = window.myIdentity.name;
-                }
-            }
-
-            // 如果有帶入預填資料（例如從餐廳詳情頁面直接點擊新增）
-            if (prefillData) {
-                const pData = typeof prefillData === 'string' ? { name: prefillData } : prefillData;
-                if (pData.name) {
-                    const nameInput = document.getElementById('input-name');
-                    if (nameInput) nameInput.value = pData.name;
-                }
-                if (pData.placeId) {
-                    const placeIdInput = document.getElementById('input-place-id');
-                    if (placeIdInput) placeIdInput.value = pData.placeId;
-                    if (typeof window.selectAdminPlace === 'function') {
-                        window.selectAdminPlace(pData.placeId);
-                    }
-                } else if (pData.name) {
-                    if (typeof window.adminSearchPlace === 'function') {
-                        window.adminSearchPlace(pData.name);
-                    }
-                }
-                if (pData.city) {
-                    const cityInput = document.getElementById('input-city');
-                    if (cityInput) cityInput.value = pData.city;
-                }
-                if (pData.country) {
-                    const countryInput = document.getElementById('input-country');
-                    if (countryInput) countryInput.value = pData.country;
-                }
-                if (pData.mUrl) {
-                    const mapInput = document.getElementById('input-map');
-                    if (mapInput && !mapInput.value) mapInput.value = pData.mUrl;
-                }
-            }
-
             const modal = document.getElementById('add-restaurant-modal');
             if (modal) modal.classList.remove('hidden');
+
+            try {
+                const addForm = document.getElementById('add-form');
+                if (addForm) addForm.reset();
+                const matchStatus = document.getElementById('smart-place-match-status');
+                if (matchStatus) { matchStatus.className = 'hidden'; matchStatus.textContent = ''; }
+                window.smartPlaceSelected = false;
+                if (typeof window.handleAddCountryChange === 'function') {
+                    window.handleAddCountryChange('台北市');
+                }
+                if (typeof window.setPhotoUploaderValue === 'function') {
+                    window.setPhotoUploaderValue('admin-add', '');
+                }
+                if (typeof updateConfigDropdowns === 'function') {
+                    updateConfigDropdowns();
+                }
+                
+                // 重設評價區塊
+                isAddReviewExpanded = false;
+                inputReviewPhotos = [];
+                const sec = document.getElementById('add-review-section');
+                if (sec) sec.classList.add('hidden');
+                const icon = document.getElementById('icon-toggle-add-review');
+                if (icon) icon.className = "fa-solid fa-plus-circle text-sm";
+                const txt = document.getElementById('text-toggle-add-review');
+                if (txt) txt.textContent = "＋ 同步新增美味評價與照片";
+                const submitTxt = document.getElementById('submit-btn-text');
+                if (submitTxt) submitTxt.textContent = "存入口袋名單";
+                if (typeof window.selectInputReviewRating === 'function') {
+                    window.selectInputReviewRating('good');
+                }
+                if (typeof window.renderInputReviewPhotosGrid === 'function') {
+                    window.renderInputReviewPhotosGrid();
+                }
+
+                if (window.myIdentity && window.myIdentity.group) {
+                    const grpEl = document.getElementById('input-group');
+                    if (grpEl) {
+                        grpEl.value = window.myIdentity.group;
+                        if (typeof window.handleDropdownSync === 'function') {
+                            window.handleDropdownSync(grpEl, 'group');
+                        }
+                    }
+                }
+                if (window.myIdentity && window.myIdentity.name) {
+                    const creEl = document.getElementById('input-creator');
+                    if (creEl) {
+                        const hasOption = Array.from(creEl.options).some(opt => opt.value === window.myIdentity.name);
+                        if (hasOption) creEl.value = window.myIdentity.name;
+                    }
+                }
+
+                // 如果有帶入預填資料（例如從餐廳詳情頁面直接點擊新增）
+                if (prefillData) {
+                    const pData = typeof prefillData === 'string' ? { name: prefillData } : prefillData;
+                    if (pData.name) {
+                        const nameInput = document.getElementById('input-name');
+                        if (nameInput) nameInput.value = pData.name;
+                    }
+                    if (pData.placeId) {
+                        const placeIdInput = document.getElementById('input-place-id');
+                        if (placeIdInput) placeIdInput.value = pData.placeId;
+                        if (typeof window.selectAdminPlace === 'function') {
+                            window.selectAdminPlace(pData.placeId);
+                        }
+                    } else if (pData.name) {
+                        if (typeof window.adminSearchPlace === 'function') {
+                            window.adminSearchPlace(pData.name);
+                        }
+                    }
+                    if (pData.city) {
+                        const cityInput = document.getElementById('input-city');
+                        if (cityInput) cityInput.value = pData.city;
+                    }
+                    if (pData.country) {
+                        const countryInput = document.getElementById('input-country');
+                        if (countryInput) countryInput.value = pData.country;
+                    }
+                    if (pData.mUrl) {
+                        const mapInput = document.getElementById('input-map');
+                        if (mapInput && !mapInput.value) mapInput.value = pData.mUrl;
+                    }
+                }
+            } catch(e) {
+                console.warn("初始化新增表單時出錯:", e);
+            }
         };
 
         window.submitForm = async function(e) {
