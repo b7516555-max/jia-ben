@@ -654,7 +654,10 @@
             </div>
 
             <div class="flex gap-2 mt-4">
-                <button type="button" onclick="window.openIdentityModal()" class="px-4 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl text-xs hover:bg-gray-200 transition">切換身分</button>
+                <button type="button" onclick="window.openIdentityModal()" class="px-3.5 py-3 bg-blue-50 text-blue-600 border border-blue-200 font-bold rounded-xl text-xs hover:bg-blue-100 transition flex items-center justify-center gap-1.5 shadow-2xs">
+                    <i class="fa-solid fa-user-plus text-xs"></i>
+                    <span>切換 / 新增身分</span>
+                </button>
                 <button type="button" onclick="window.saveUserSettings()" class="flex-1 bg-orange-500 text-white font-bold py-3 rounded-xl shadow-md hover:bg-orange-600 active:scale-95 transition text-xs">儲存個人設定</button>
             </div>
         </div>
@@ -1556,13 +1559,9 @@
                                     </select>
                                 </div>
                             </div>
-                            <!-- 第 2 行：新增身分與新增餐廳按鈕 -->
-                            <div class="flex items-center gap-2 w-full">
-                                <button onclick="window.openIdentityModal()" class="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2.5 px-3 rounded-2xl shadow-sm transition flex items-center justify-center gap-1.5 text-xs" title="建立或切換個人身分">
-                                    <i class="fa-solid fa-user-plus text-xs"></i>
-                                    <span>新增身分</span>
-                                </button>
-                                <button onclick="window.openAddModal()" class="flex-1 bg-orange-500 hover:bg-orange-600 text-white font-bold py-2.5 px-3 rounded-2xl shadow-md transition flex items-center justify-center gap-1.5 text-xs" title="新增口袋餐廳">
+                            <!-- 第 2 行：新增餐廳按鈕 (點擊右上角大頭貼即可切換/新增個人身分) -->
+                            <div class="w-full">
+                                <button onclick="window.openAddModal()" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-2.5 px-4 rounded-2xl shadow-md transition flex items-center justify-center gap-2 text-xs" title="新增口袋餐廳">
                                     <i class="fa-solid fa-plus text-xs"></i>
                                     <span>新增餐廳</span>
                                 </button>
