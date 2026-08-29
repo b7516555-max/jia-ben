@@ -1080,12 +1080,78 @@
                     </div>
                 </div>
                 
-                <div class="grid grid-cols-2 gap-3 mb-5">
+                <div class="grid grid-cols-2 gap-3 mb-4">
                     <div><label class="block text-xs font-bold text-gray-500 mb-1">這是哪團的？</label><select id="input-group" onchange="window.handleDropdownSync(this, 'group')" class="w-full px-3 py-2.5 bg-gray-50 border border-gray-100 rounded-xl text-sm"></select></div>
                     <div><label class="block text-xs font-bold text-gray-500 mb-1">誰推薦的？</label><select id="input-creator" class="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-sm"></select></div>
                 </div>
+
+                <!-- 🌟 整合：直接在新增餐廳下方展開「+ 新增評價」區塊 -->
+                <div class="mb-5 border-t border-dashed border-gray-200 pt-3">
+                    <div class="flex items-center justify-between">
+                        <button type="button" id="btn-toggle-add-review" onclick="window.toggleAddReviewSection()" class="flex items-center gap-2 text-xs font-bold text-orange-600 hover:text-orange-700 transition py-1.5 px-3 rounded-xl bg-orange-50/80 hover:bg-orange-100 border border-orange-200 shadow-2xs">
+                            <i id="icon-toggle-add-review" class="fa-solid fa-plus-circle text-sm"></i>
+                            <span id="text-toggle-add-review">＋ 同步新增美味評價與照片</span>
+                        </button>
+                        <span class="text-[10px] text-gray-400 font-medium">選填，可直接存入或一同發布評價</span>
+                    </div>
+
+                    <!-- 評價內容展開區 -->
+                    <div id="add-review-section" class="hidden mt-3 p-3.5 bg-gradient-to-br from-orange-50/60 to-amber-50/40 rounded-2xl border border-orange-100/90 flex flex-col gap-3">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 mb-1.5 flex items-center justify-between">
+                                <span><i class="fa-solid fa-face-smile text-orange-500 mr-1"></i>您的用餐體驗</span>
+                                <span class="text-[10px] text-orange-500 font-bold">動態牆同步</span>
+                            </label>
+                            <input type="hidden" id="input-review-rating-value" value="good">
+                            <div class="grid grid-cols-2 gap-2">
+                                <button type="button" id="input-btn-rating-good" onclick="window.selectInputReviewRating('good')" class="flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 border-emerald-400 bg-emerald-50 text-emerald-600 font-bold text-xs shadow-2xs transition">
+                                    <i class="fa-solid fa-thumbs-up text-sm"></i> 推爆好店
+                                </button>
+                                <button type="button" id="input-btn-rating-bad" onclick="window.selectInputReviewRating('bad')" class="flex items-center justify-center gap-2 py-2.5 rounded-xl border border-gray-200 bg-white text-gray-400 font-bold text-xs transition">
+                                    <i class="fa-solid fa-thumbs-down text-sm"></i> 避雷提醒
+                                </button>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 mb-1 flex items-center justify-between">
+                                <span><i class="fa-solid fa-pen-nib text-orange-500 mr-1"></i>評價心得 / 必點推薦</span>
+                            </label>
+                            <textarea id="input-review-notes" rows="2" class="w-full px-3 py-2 bg-white border border-orange-200 rounded-xl text-xs focus:ring-2 focus:ring-orange-300 font-medium" placeholder="寫下這家店有多美味、必點招牌、環境如何..."></textarea>
+                        </div>
+
+                        <div>
+                            <div class="flex items-center justify-between mb-1.5">
+                                <label class="text-xs font-bold text-gray-700 flex items-center gap-1">
+                                    <i class="fa-solid fa-camera text-orange-500"></i>
+                                    <span>上傳用餐照片</span>
+                                    <span class="text-[10px] text-orange-600 font-normal bg-orange-100/70 px-1.5 py-0.2 rounded-full">(最多 5 張，<span id="input-review-photo-count-badge">0</span>/5)</span>
+                                </label>
+                                <div class="flex items-center gap-2">
+                                    <button type="button" onclick="window.clearAllInputReviewPhotos()" class="text-[10px] text-gray-400 hover:text-red-500 font-bold transition">清空</button>
+                                    <button type="button" id="input-review-photos-add-btn" onclick="document.getElementById('input-review-photos-file').click()" class="text-xs font-bold text-orange-600 bg-white px-2 py-0.5 rounded-lg border border-orange-200 shadow-2xs hover:bg-orange-50">
+                                        <i class="fa-solid fa-plus text-[10px] mr-0.5"></i>選照片
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <input type="file" id="input-review-photos-file" accept="image/*" multiple class="hidden" onchange="window.handleInputReviewPhotosSelected(this)">
+                            
+                            <div id="input-review-photos-grid" class="grid grid-cols-3 gap-2 bg-white/80 p-2.5 rounded-xl border border-orange-200 min-h-[5.5rem] items-center">
+                                <div class="col-span-3 py-3 flex flex-col items-center justify-center text-gray-400 cursor-pointer" onclick="document.getElementById('input-review-photos-file').click()">
+                                    <i class="fa-solid fa-camera text-xl mb-1 text-orange-400"></i>
+                                    <p class="text-xs font-bold text-gray-600">拍照 或 從相簿挑選</p>
+                                    <p class="text-[10px] text-gray-400 mt-0.5">選擇 1~5 張美味相片 (可留空)</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 
-                <button type="submit" id="submit-btn" class="w-full bg-orange-500 text-white font-bold py-3.5 rounded-xl shadow hover:bg-orange-600 transition">存入口袋名單</button>
+                <button type="submit" id="submit-btn" class="w-full bg-orange-500 text-white font-bold py-3.5 rounded-xl shadow hover:bg-orange-600 transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-check"></i>
+                    <span id="submit-btn-text">存入口袋名單</span>
+                </button>
             </form>
         </div>
     </div>
@@ -2229,7 +2295,14 @@
             }).catch(e => {});
 
             onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'restaurants'), (snap) => { 
-                window.restaurantData = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); 
+                const list = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); 
+                list.sort((a, b) => {
+                    const timeA = a.timestamp?.seconds || (a.id && !isNaN(a.id) ? Number(a.id)/1000 : 0);
+                    const timeB = b.timestamp?.seconds || (b.id && !isNaN(b.id) ? Number(b.id)/1000 : 0);
+                    if (timeA && timeB && timeA !== timeB) return timeB - timeA;
+                    return 0;
+                });
+                window.restaurantData = list;
                 document.getElementById('db-count').textContent = window.restaurantData.length; 
                 if (!document.getElementById('view-list').classList.contains('hidden')) window.renderList(); 
             }, handleSyncError);
@@ -4982,7 +5055,7 @@
 
             if (window.restaurantData.length === 0) return container.innerHTML = '<div class="text-center text-gray-400 py-10 col-span-full"><i class="fa-solid fa-box-open text-5xl mb-4 opacity-30"></i><p class="text-sm">大家的口袋目前還是空的呢！</p></div>';
             
-            let fD = window.restaurantData; 
+            let fD = [...window.restaurantData]; 
             if (countryVal !== 'all') {
                 fD = fD.filter(r => {
                     const rCity = r.city || extractCity(r.name);
@@ -4993,7 +5066,6 @@
             if (cityVal !== 'all') {
                 fD = fD.filter(r => (r.city || extractCity(r.name)) === cityVal);
             }
-            fD = [...fD].reverse();
 
             if (fD.length === 0) return container.innerHTML = `<div class="text-center text-gray-500 py-10 col-span-full">此區域無紀錄。</div>`;
 
@@ -5260,12 +5332,29 @@
         };
 
         window.openAddModal = function() {
-            document.getElementById('add-form')?.reset();
+            const addForm = document.getElementById('add-form');
+            if (addForm) addForm.reset();
+            const matchStatus = document.getElementById('smart-place-match-status');
+            if (matchStatus) { matchStatus.className = 'hidden'; matchStatus.textContent = ''; }
             window.smartPlaceSelected = false;
-            document.getElementById('smart-place-match-status')?.classList.add('hidden');
             window.handleAddCountryChange('台北市');
             window.setPhotoUploaderValue('admin-add', '');
             updateConfigDropdowns();
+            
+            // 重設評價區塊
+            isAddReviewExpanded = false;
+            inputReviewPhotos = [];
+            const sec = document.getElementById('add-review-section');
+            if (sec) sec.classList.add('hidden');
+            const icon = document.getElementById('icon-toggle-add-review');
+            if (icon) icon.className = "fa-solid fa-plus-circle text-sm";
+            const txt = document.getElementById('text-toggle-add-review');
+            if (txt) txt.textContent = "＋ 同步新增美味評價與照片";
+            const submitTxt = document.getElementById('submit-btn-text');
+            if (submitTxt) submitTxt.textContent = "存入口袋名單";
+            window.selectInputReviewRating('good');
+            window.renderInputReviewPhotosGrid();
+
             if (window.myIdentity && window.myIdentity.group) {
                 const grpEl = document.getElementById('input-group');
                 if (grpEl) {
@@ -5280,7 +5369,6 @@
                     if (hasOption) creEl.value = window.myIdentity.name;
                 }
             }
-            document.getElementById('add-restaurant-modal')?.classList.remove('hidden');
         };
 
         window.submitForm = async function(e) {
@@ -5354,18 +5442,73 @@
                 const tempId = Date.now().toString();
                 const existingIdx = window.restaurantData.findIndex(r => r.name === newDoc.name && r.creator === newDoc.creator && r.group === newDoc.group);
                 if (existingIdx >= 0) {
-                    window.restaurantData[existingIdx] = { id: window.restaurantData[existingIdx].id || tempId, ...newDoc };
-                } else {
-                    window.restaurantData.unshift({ id: tempId, ...newDoc });
+                    window.restaurantData.splice(existingIdx, 1);
+                }
+                // 🌟 最新新增的餐廳排序在最上方
+                window.restaurantData.unshift({ id: tempId, ...newDoc, timestamp: { seconds: Date.now() / 1000 } });
+
+                // 🌟 如果有展開「同步新增評價」
+                const reviewNotes = document.getElementById('input-review-notes')?.value.trim() || '';
+                const reviewRating = document.getElementById('input-review-rating-value')?.value || 'good';
+                
+                if (isAddReviewExpanded || reviewNotes || inputReviewPhotos.length > 0) {
+                    const finalReviewPhotos = [];
+                    if (inputReviewPhotos.length > 0) {
+                        if (btn) btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-2"></i> 上傳評價照片中 (${inputReviewPhotos.length} 張)...`;
+                        for (let i = 0; i < inputReviewPhotos.length; i++) {
+                            let p = inputReviewPhotos[i];
+                            if (p.startsWith('data:image')) {
+                                try {
+                                    const uploadRes = await window.uploadImageToDrive(p, `review_${nameVal || 'food'}_${Date.now()}_${i}.jpg`);
+                                    if (uploadRes && (uploadRes.imageUrl || uploadRes.fileId)) {
+                                        p = uploadRes.imageUrl || window.getDriveImageUrl(uploadRes.fileId);
+                                    }
+                                } catch (uploadErr) {
+                                    console.warn("上傳 Google Drive 失敗:", uploadErr);
+                                }
+                            }
+                            finalReviewPhotos.push(p);
+                        }
+                    }
+
+                    const primaryPhoto = finalReviewPhotos.length > 0 ? finalReviewPhotos[0] : '';
+                    const reviewItem = {
+                        restaurantName: nameVal,
+                        group: groupVal,
+                        creator: creatorVal,
+                        rating: reviewRating,
+                        content: reviewNotes || `推薦了這家美味口袋好店：${nameVal}！`,
+                        city: cityVal,
+                        country: countryVal,
+                        placeId: placeIdVal,
+                        mapLink: mapLink,
+                        lat: latVal,
+                        lng: lngVal,
+                        photoUrl: primaryPhoto,
+                        photos: finalReviewPhotos
+                    };
+
+                    syncToGoogleSheets('Feed', reviewItem);
+                    if (db && currentUser) {
+                        await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'feed'), { ...reviewItem, timestamp: serverTimestamp() });
+                    } else {
+                        window.feedData.unshift({ id: Date.now().toString(), ...reviewItem, timestamp: { seconds: Date.now() / 1000 } });
+                    }
+                    window.renderFeed();
                 }
 
                 window.closeModal('add-restaurant-modal');
-                window.showCustomMsg(`✨ 太棒了！「${nameVal}」已成功存入口袋名單。`); 
+                window.showCustomMsg(`✨ 太棒了！「${nameVal}」已成功存入口袋名單${(isAddReviewExpanded || reviewNotes || inputReviewPhotos.length > 0) ? '，評價也已同步發布至動態牆！' : '。'}`); 
                 document.getElementById('add-form')?.reset(); 
+                inputReviewPhotos = [];
+                isAddReviewExpanded = false;
                 
                 window.renderList();
                 if (typeof window.renderAdminDataList === 'function') window.renderAdminDataList();
                 window.switchTab('list', true);
+
+                // 🌟 檢查晉階勳章廣播
+                window.checkAndAnnounceTierPromotion(creatorVal, groupVal);
             } catch (err) { 
                 console.error("新增失敗:", err);
                 window.showCustomMsg(`新增失敗：${err.message || err}`); 
