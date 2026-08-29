@@ -1199,6 +1199,7 @@
             <button onclick="window.switchTab('random')" id="tab-random" class="tab-btn flex-1 md:flex-none py-2 md:py-3 flex flex-col items-center gap-1 transition md:w-[84px] md:mx-auto md:hover:bg-orange-50 md:hover:text-orange-400"><i class="fa-solid fa-wand-magic-sparkles text-[18px] md:text-[20px] mb-0.5"></i><span>隨機抽</span></button>
             <button onclick="window.switchTab('party')" id="tab-party" class="tab-btn flex-1 md:flex-none py-2 md:py-3 flex flex-col items-center gap-1 transition md:w-[84px] md:mx-auto md:hover:bg-orange-50 md:hover:text-orange-400 relative"><i class="fa-solid fa-fire text-[18px] md:text-[20px] mb-0.5"></i><span>揪團</span></button>
             <button onclick="window.switchTab('feed')" id="tab-feed" class="tab-btn flex-1 md:flex-none py-2 md:py-3 flex flex-col items-center gap-1 transition md:w-[84px] md:mx-auto md:hover:bg-orange-50 md:hover:text-orange-400"><i class="fa-solid fa-comments text-[18px] md:text-[20px] mb-0.5"></i><span>動態牆</span></button>
+            <button onclick="window.switchTab('chat')" id="tab-chat" class="tab-btn flex-1 md:flex-none py-2 md:py-3 flex flex-col items-center gap-1 transition md:w-[84px] md:mx-auto md:hover:bg-orange-50 md:hover:text-orange-400 relative"><i class="fa-solid fa-message text-[18px] md:text-[20px] mb-0.5"></i><span>留言板</span></button>
             <button onclick="window.switchTab('list')" id="tab-list" class="tab-btn flex-1 md:flex-none py-2 md:py-3 flex flex-col items-center gap-1 transition md:w-[84px] md:mx-auto md:hover:bg-orange-50 md:hover:text-orange-400"><i class="fa-solid fa-book-open text-[18px] md:text-[20px] mb-0.5"></i><span>口袋名單</span></button>
         </nav>
 
@@ -1435,6 +1436,53 @@
                         </div>
                     </div>
                     <div id="feed-container" class="flex-1 overflow-y-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 p-4 md:p-6 pb-6 items-stretch content-start"></div>
+                </div>
+
+                <!-- 🌟 視圖 3.5: 留言板／聊天群組 (Chat Room) -->
+                <div id="view-chat" class="hidden fade-in h-full flex flex-col relative w-full bg-[#f8fafc]">
+                    <!-- 聊天頂部資訊列 -->
+                    <div class="bg-white p-3.5 sm:p-4 shadow-sm z-10 border-b border-gray-100 flex flex-col">
+                        <div class="w-full flex items-center justify-between gap-3">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-orange-400 to-amber-500 text-white flex items-center justify-center text-lg shadow-sm shrink-0">
+                                    <i class="fa-solid fa-comments"></i>
+                                </div>
+                                <div>
+                                    <h2 class="text-base sm:text-lg font-bold text-gray-800 flex items-center gap-1.5 leading-none">
+                                        <span>吃貨交流留言板</span>
+                                        <span class="bg-emerald-50 text-emerald-600 border border-emerald-200 text-[10px] px-2 py-0.5 rounded-full font-bold">即時連線中</span>
+                                    </h2>
+                                    <p class="text-[11px] text-gray-400 mt-1">跨群友聊天大廳 · 即時分享好店情報、聊天打屁</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-1.5 shrink-0">
+                                <button onclick="window.renderChatMessages(true)" class="w-9 h-9 flex items-center justify-center bg-gray-100 text-gray-600 rounded-xl hover:bg-orange-50 hover:text-orange-500 transition text-sm" title="重新整理聊天紀錄">
+                                    <i class="fa-solid fa-rotate-right"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 聊天訊息串流區 -->
+                    <div id="chat-messages-container" class="flex-1 overflow-y-auto p-4 sm:p-5 space-y-3.5 no-scrollbar flex flex-col">
+                        <div class="text-center text-gray-300 py-12">
+                            <i class="fa-regular fa-comment-dots text-5xl mb-2 opacity-30"></i>
+                            <p class="text-xs font-medium text-gray-400">目前尚無留言，成為第一個發言的人吧！</p>
+                        </div>
+                    </div>
+
+                    <!-- 底部輸入列 -->
+                    <div class="bg-white p-2.5 sm:p-3 border-t border-gray-100 shadow-[0_-4px_16px_rgba(0,0,0,0.03)] z-10">
+                        <form onsubmit="window.sendChatMessage(event)" class="max-w-3xl mx-auto flex items-center gap-2">
+                            <div class="flex-1 relative flex items-center bg-gray-50 border border-gray-200 rounded-2xl px-3 py-1.5 focus-within:border-orange-400 focus-within:bg-white transition">
+                                <input type="text" id="chat-input-text" placeholder="說點什麼吧… (隨時暢所欲言)" class="w-full bg-transparent text-xs sm:text-sm text-gray-800 placeholder-gray-400 focus:outline-none py-1" autocomplete="off">
+                            </div>
+                            <button type="submit" id="chat-send-btn" class="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold px-4 py-2.5 rounded-2xl shadow-sm hover:shadow transition flex items-center gap-1.5 text-xs sm:text-sm shrink-0">
+                                <span>送出</span>
+                                <i class="fa-solid fa-paper-plane text-xs"></i>
+                            </button>
+                        </form>
+                    </div>
                 </div>
 
                 <!-- 視圖 4: 口袋名單 (List) 🌟 -->
@@ -1691,7 +1739,7 @@
 
         let db, auth, appId, currentUser = null;
         const GAS_API_URL = "https://script.google.com/macros/s/AKfycbwTg7lmireS-npCAzvDZVPVmI7u5jAFpslg7SNL59Ab3ulLOUr7cPB5wzIaTSyTUJpl/exec";
-        window.restaurantData = []; window.feedData = []; window.partyData = [];
+        window.restaurantData = []; window.feedData = []; window.partyData = []; window.chatData = [];
         window.appConfig = { deleteCode: '850930', appUrl: '', groups: ['主揪', '玉泉', '屏東', '高雄', '台北', '老服', '社發'], creators: ['黃政誥'], membersMap: null, userPasswords: { '黃政誥': 'Bb19960930' } }; 
         window.myIdentity = { group: '', name: '', password: '' }; 
 
@@ -2232,6 +2280,11 @@
                 window.partyData = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); 
                 if (!document.getElementById('view-party').classList.contains('hidden')) window.renderParties(); 
             }, handleSyncError);
+
+            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'chat'), (snap) => { 
+                window.chatData = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); 
+                if (!document.getElementById('view-chat').classList.contains('hidden')) window.renderChatMessages(); 
+            }, handleSyncError);
         }
 
         function updateConfigDropdowns() {
@@ -2294,10 +2347,13 @@
 
         window.switchTab = function(tabName, forceRefresh = false) {
             if (!forceRefresh && document.getElementById('tab-' + tabName) && document.getElementById('tab-' + tabName).classList.contains('active')) return;
-            ['explore', 'nearby', 'random', 'party', 'feed', 'list', 'admin', 'guide'].forEach(name => { document.getElementById('view-' + name)?.classList.add('hidden'); if(document.getElementById('tab-' + name)) document.getElementById('tab-' + name).classList.remove('active'); });
+            ['explore', 'nearby', 'random', 'party', 'feed', 'chat', 'list', 'admin', 'guide'].forEach(name => { document.getElementById('view-' + name)?.classList.add('hidden'); if(document.getElementById('tab-' + name)) document.getElementById('tab-' + name).classList.remove('active'); });
             document.getElementById('view-' + tabName)?.classList.remove('hidden'); if(document.getElementById('tab-' + tabName)) document.getElementById('tab-' + tabName).classList.add('active');
             if(tabName !== 'admin' && tabName !== 'guide') previousTab = tabName;
-            if(tabName === 'list') window.renderList(); if(tabName === 'feed') window.renderFeed(); if(tabName === 'party') window.renderParties();
+            if(tabName === 'list') window.renderList(); 
+            if(tabName === 'feed') window.renderFeed(); 
+            if(tabName === 'party') window.renderParties();
+            if(tabName === 'chat') window.renderChatMessages(true);
             if(tabName === 'admin') window.renderAdminDataList();
         };
 
@@ -4612,6 +4668,134 @@
                     </div>
                 </div>`;
             }).join('');
+        };
+
+        // 🌟 留言板 / 聊天群組功能實作 (即時顯示名稱、等級勳章圖示與稱號、所屬群組)
+        window.renderChatMessages = function(autoScroll = false) {
+            const container = document.getElementById('chat-messages-container');
+            if (!container) return;
+
+            if (!window.chatData || window.chatData.length === 0) {
+                container.innerHTML = `
+                <div class="text-center text-gray-300 py-16 flex flex-col items-center justify-center">
+                    <div class="w-16 h-16 rounded-full bg-orange-50 text-orange-400 flex items-center justify-center text-2xl mb-3 shadow-inner">
+                        <i class="fa-regular fa-comments"></i>
+                    </div>
+                    <h3 class="text-sm font-bold text-gray-700">吃貨交流大廳</h3>
+                    <p class="text-xs text-gray-400 mt-1">目前尚無聊天留言，輸入訊息搶先發言吧！</p>
+                </div>`;
+                return;
+            }
+
+            // 按時間排序（由舊到新）
+            const sorted = [...window.chatData].sort((a, b) => {
+                const timeA = a.timestamp?.seconds ? a.timestamp.seconds * 1000 : (new Date(a.createdAt || 0).getTime() || 0);
+                const timeB = b.timestamp?.seconds ? b.timestamp.seconds * 1000 : (new Date(b.createdAt || 0).getTime() || 0);
+                return timeA - timeB;
+            });
+
+            const myName = window.myIdentity?.name;
+
+            container.innerHTML = sorted.map(msg => {
+                const isMe = myName && msg.creator === myName;
+                const isHost = msg.creator === '黃政誥' || msg.group === '主揪';
+                const lvlInfo = window.getUserLevel(msg.creator);
+                const theme = window.getGroupColorTheme(msg.group);
+                const avatarInfo = window.getAvatarInfo({ creator: msg.creator, name: msg.creator, avatarId: msg.avatarId, customAvatarUrl: msg.customAvatarUrl });
+                
+                const timeStr = msg.timestamp?.seconds 
+                    ? new Date(msg.timestamp.seconds * 1000).toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' })
+                    : (msg.time || '剛剛');
+
+                const avatarHtml = (avatarInfo.isCustom && avatarInfo.customUrl)
+                    ? `<div class="w-9 h-9 rounded-full shadow-xs shrink-0 border border-white/80 overflow-hidden bg-white cursor-pointer" onclick="window.openUserProfile('${window.escapeForBtn(msg.creator)}', '${window.escapeForBtn(msg.group)}')"><img src="${window.resolveReviewImage(avatarInfo.customUrl)}" class="w-full h-full object-cover rounded-full"></div>`
+                    : `<div class="w-9 h-9 rounded-full shadow-xs shrink-0 flex items-center justify-center text-xs cursor-pointer ${isHost ? 'bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-xs' : `${theme.avatar} border border-white/80`}" onclick="window.openUserProfile('${window.escapeForBtn(msg.creator)}', '${window.escapeForBtn(msg.group)}')"><i class="fa-solid ${isHost ? 'fa-crown' : 'fa-user'}"></i></div>`;
+
+                if (isMe) {
+                    return `
+                    <div class="flex items-end justify-end gap-2 group">
+                        <span class="text-[10px] text-gray-400 font-medium mb-0.5">${timeStr}</span>
+                        <div class="flex flex-col items-end max-w-[80%] sm:max-w-[70%]">
+                            <div class="flex items-center gap-1.5 mb-1 flex-wrap justify-end">
+                                <span class="bg-amber-100 text-amber-800 border border-amber-300 text-[9px] px-1.5 py-0.2 rounded font-bold" title="${lvlInfo.tierName} (Lv.${lvlInfo.level})">${lvlInfo.tierIcon} Lv.${lvlInfo.level}</span>
+                                <span class="${theme.badge} text-[9px] px-1.5 py-0.2 rounded font-bold">${msg.group} 團</span>
+                                <span class="text-xs font-bold text-gray-700">${msg.creator}</span>
+                            </div>
+                            <div class="bg-gradient-to-r from-orange-500 to-amber-500 text-white px-4 py-2.5 rounded-2xl rounded-tr-xs text-xs sm:text-sm font-medium shadow-xs break-words text-left leading-relaxed">
+                                ${window.escapeHtml(msg.text)}
+                            </div>
+                        </div>
+                        ${avatarHtml}
+                    </div>`;
+                } else {
+                    return `
+                    <div class="flex items-end gap-2 group">
+                        ${avatarHtml}
+                        <div class="flex flex-col items-start max-w-[80%] sm:max-w-[70%]">
+                            <div class="flex items-center gap-1.5 mb-1 flex-wrap">
+                                <span class="text-xs font-bold text-gray-900 cursor-pointer hover:text-orange-500" onclick="window.openUserProfile('${window.escapeForBtn(msg.creator)}', '${window.escapeForBtn(msg.group)}')">${msg.creator}</span>
+                                ${isHost ? '<span class="bg-orange-500 text-white text-[8px] px-1 rounded font-black">主揪</span>' : ''}
+                                <span class="bg-amber-50 text-amber-700 border border-amber-200 text-[9px] px-1.5 py-0.2 rounded font-bold" title="${lvlInfo.tierName} (Lv.${lvlInfo.level})">${lvlInfo.tierIcon} Lv.${lvlInfo.level}</span>
+                                <span class="${theme.badge} text-[9px] px-1.5 py-0.2 rounded font-bold">${msg.group} 團</span>
+                            </div>
+                            <div class="bg-white text-gray-800 border border-gray-200/80 px-4 py-2.5 rounded-2xl rounded-tl-xs text-xs sm:text-sm font-medium shadow-xs break-words leading-relaxed">
+                                ${window.escapeHtml(msg.text)}
+                            </div>
+                        </div>
+                        <span class="text-[10px] text-gray-400 font-medium mb-0.5">${timeStr}</span>
+                    </div>`;
+                }
+            }).join('');
+
+            if (autoScroll) {
+                setTimeout(() => {
+                    container.scrollTop = container.scrollHeight;
+                }, 80);
+            }
+        };
+
+        window.sendChatMessage = async function(e) {
+            if (e && e.preventDefault) e.preventDefault();
+            const input = document.getElementById('chat-input-text');
+            const text = input ? input.value.trim() : '';
+            if (!text) return;
+
+            window.requireIdentity(async () => {
+                const userName = window.myIdentity.name;
+                const userGroup = window.myIdentity.group || '主揪';
+                const avatarInfo = window.getAvatarInfo(window.myIdentity);
+
+                const newMsg = {
+                    creator: userName,
+                    group: userGroup,
+                    text: text,
+                    avatarId: avatarInfo.avatarId || 'host',
+                    customAvatarUrl: avatarInfo.customUrl || '',
+                    createdAt: new Date().toISOString()
+                };
+
+                if (input) input.value = '';
+
+                try {
+                    if (db && currentUser) {
+                        await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'chat'), {
+                            ...newMsg,
+                            timestamp: serverTimestamp ? serverTimestamp() : new Date()
+                        });
+                    } else {
+                        window.chatData.push({
+                            id: Date.now().toString(),
+                            ...newMsg,
+                            timestamp: { seconds: Date.now() / 1000 }
+                        });
+                        window.renderChatMessages(true);
+                    }
+                    window.renderChatMessages(true);
+                } catch (err) {
+                    console.error("發送留言失敗:", err);
+                    window.showCustomMsg("⚠️ 發送留言失敗，請檢查網路連線。");
+                }
+            });
         };
 
         window.openRestaurantDetailByName = function(encodedName) {
