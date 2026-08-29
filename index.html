@@ -195,13 +195,13 @@
             .wheel-stage { width: min(60vw, 26vh, 230px); }
         }
         @media (min-width: 768px) {
-            .wheel-stage { width: min(38vw, 52vh, 440px) !important; max-width: 440px; }
-            #nearby-search-box { max-width: 48rem !important; }
-            #radar-keyword { font-size: 1rem !important; padding: 0.6rem 1rem !important; }
-            #radar-spin-btn { font-size: 0.95rem !important; padding: 0.6rem 1.25rem !important; }
-            .desktop-radar-price { font-size: 0.95rem !important; padding: 0.5rem 0.8rem !important; }
-            .desktop-radar-price input { font-size: 0.95rem !important; width: 4.5rem !important; }
-            #wheel-result-container { max-width: 460px !important; width: 100% !important; }
+            .wheel-stage { width: min(38vw, 50vh, 440px) !important; max-width: 440px; }
+            #nearby-search-box { max-width: 52rem !important; }
+            #radar-keyword { font-size: 1rem !important; padding: 0.65rem 1rem !important; }
+            #radar-spin-btn { font-size: 1rem !important; padding: 0.65rem 1.4rem !important; }
+            .desktop-radar-price { font-size: 0.95rem !important; padding: 0.55rem 0.9rem !important; }
+            .desktop-radar-price input { font-size: 0.95rem !important; width: 4.8rem !important; }
+            #wheel-result-container { max-width: min(44vw, 540px) !important; width: 100% !important; }
         }
         .wheel-disc { transition: transform 4.8s cubic-bezier(.14,.8,.1,1); will-change: transform; }
         .wheel-pointer { filter: drop-shadow(0 4px 6px rgba(234,88,12,.35)); }
@@ -4233,22 +4233,22 @@
             const address = p.formatted_address || '';
 
             return `
-            <div class="restaurant-card bg-white rounded-2xl md:rounded-3xl shadow-lg border border-orange-100/90 overflow-hidden cursor-pointer group hover:border-orange-300 transition flex flex-col md:flex-row items-stretch" onclick="window.openRestaurantDetailByName('${safeNameStr}')">
-                <div class="relative h-28 sm:h-32 md:h-44 md:w-48 shrink-0 overflow-hidden">
+            <div class="restaurant-card bg-white rounded-2xl md:rounded-3xl shadow-xl border border-orange-100/90 overflow-hidden cursor-pointer group hover:border-orange-300 transition flex flex-col md:flex-row items-stretch md:min-h-[220px]" onclick="window.openRestaurantDetailByName('${safeNameStr}')">
+                <div class="relative h-28 sm:h-32 md:h-auto md:w-56 shrink-0 overflow-hidden">
                     <img src="${img}" onerror="this.onerror=null; this.src=window.getFallbackImage('${safeNameStr}');" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105">
-                    <div class="absolute top-2 left-2 bg-black/60 backdrop-blur-xs text-white text-[10px] md:text-xs px-2 md:px-2.5 py-0.5 md:py-1 rounded-full font-bold tracking-wider"><i class="fa-solid fa-location-arrow mr-1 text-orange-400"></i>${p.dist.toFixed(1)} km</div>
+                    <div class="absolute top-2.5 left-2.5 bg-black/65 backdrop-blur-xs text-white text-[10px] md:text-xs px-2 md:px-3 py-0.5 md:py-1 rounded-full font-bold tracking-wider shadow-sm"><i class="fa-solid fa-location-arrow mr-1 text-orange-400"></i>${p.dist.toFixed(1)} km</div>
                 </div>
-                <div class="p-3 md:p-4 flex-1 flex flex-col justify-between min-w-0 bg-white">
+                <div class="p-3.5 md:p-5 flex-1 flex flex-col justify-between min-w-0 bg-white">
                     <div>
-                        <div class="flex items-start justify-between gap-2 mb-1.5">
-                            <h3 class="text-sm sm:text-base md:text-lg font-extrabold text-gray-900 line-clamp-1 leading-snug">${window.escapeHtml(p.name)}</h3>
-                            <div class="shrink-0">${openStatusInfo.badgeHtml}</div>
+                        <div class="flex items-start justify-between gap-2 mb-2">
+                            <h3 class="text-base sm:text-lg md:text-xl font-black text-gray-900 line-clamp-1 leading-snug tracking-tight">${window.escapeHtml(p.name)}</h3>
+                            <div class="shrink-0 scale-90 md:scale-100 origin-right">${openStatusInfo.badgeHtml}</div>
                         </div>
-                        <p class="text-[11px] md:text-xs text-gray-500 line-clamp-2 mb-2"><i class="fa-solid fa-location-dot text-orange-400 mr-1"></i>${window.escapeHtml(address)}</p>
+                        <p class="text-[11px] md:text-sm text-gray-500 line-clamp-2 md:line-clamp-3 mb-2.5 leading-relaxed"><i class="fa-solid fa-location-dot text-orange-400 mr-1.5"></i>${window.escapeHtml(address)}</p>
                     </div>
-                    <div class="flex items-center justify-between gap-2 pt-2 border-t border-gray-100">
-                        <div>${ratingHtml}</div>
-                        <span class="text-[11px] md:text-xs font-bold text-orange-600 group-hover:translate-x-0.5 transition flex items-center bg-orange-50 md:px-2.5 md:py-1 md:rounded-lg">查看店家詳情 <i class="fa-solid fa-chevron-right text-[9px] md:text-[10px] ml-1"></i></span>
+                    <div class="flex items-center justify-between gap-2 pt-2.5 border-t border-gray-100">
+                        <div class="scale-95 md:scale-105 origin-left">${ratingHtml}</div>
+                        <span class="text-xs md:text-sm font-bold text-orange-600 group-hover:translate-x-1 transition flex items-center bg-orange-50 md:bg-orange-500 md:text-white px-2.5 md:px-3.5 py-1 md:py-1.5 rounded-lg md:rounded-xl shadow-2xs">查看詳情 <i class="fa-solid fa-chevron-right text-[10px] ml-1.5"></i></span>
                     </div>
                 </div>
             </div>`;
