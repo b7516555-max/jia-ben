@@ -1723,7 +1723,7 @@
         let db, auth, appId, currentUser = null;
         const GAS_API_URL = "https://script.google.com/macros/s/AKfycbwTg7lmireS-npCAzvDZVPVmI7u5jAFpslg7SNL59Ab3ulLOUr7cPB5wzIaTSyTUJpl/exec";
         window.restaurantData = []; window.feedData = []; window.partyData = []; window.chatData = [];
-        window.appConfig = { deleteCode: '850930', appUrl: '', groups: ['主揪', '玉泉', '屏東', '高雄', '台北', '老服', '社發'], creators: ['黃政誥'], membersMap: null, userPasswords: { '黃政誥': 'Bb19960930' } }; 
+        window.appConfig = { deleteCode: '850930', appUrl: '', groups: ['主揪', '玉泉', '屏東', '高雄', '台北', '老服', '社發'], creators: ['黃政誥'], membersMap: null, userPasswords: { '黃政誥': 'Bb19960930' }, memberAvatars: {} }; 
         window.myIdentity = { group: '', name: '', password: '' }; 
 
         let pendingInteraction = null; let itemToDelete = null; let pendingPartyAction = null;
@@ -2195,7 +2195,8 @@
                     groups: window.appConfig.groups || ['主揪'],
                     creators: window.appConfig.creators || ['黃政誥'],
                     membersMap: window.appConfig.membersMap || { '主揪': ['黃政誥'] },
-                    userPasswords: window.appConfig.userPasswords || { '黃政誥': 'Bb19960930' }
+                    userPasswords: window.appConfig.userPasswords || { '黃政誥': 'Bb19960930' },
+                    memberAvatars: window.appConfig.memberAvatars || {}
                 };
                 if (window.appConfig.id) {
                     await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'config', window.appConfig.id), payload);
@@ -2243,7 +2244,8 @@
                         groups: conf.groups || ['主揪', '玉泉', '屏東', '高雄', '台北', '老服', '社發'], 
                         creators: conf.creators || ['黃政誥'], 
                         membersMap: conf.membersMap || { '主揪': ['黃政誥'] },
-                        userPasswords: conf.userPasswords || { '黃政誥': 'Bb19960930' }
+                        userPasswords: conf.userPasswords || { '黃政誥': 'Bb19960930' },
+                        memberAvatars: conf.memberAvatars || {}
                     }; 
                 } else { 
                     try {
@@ -2252,6 +2254,8 @@
                     } catch(e) {}
                 } 
                 updateConfigDropdowns(); 
+                if (!document.getElementById('view-feed').classList.contains('hidden')) window.renderFeed();
+                if (!document.getElementById('view-chat').classList.contains('hidden')) window.renderChatMessages();
             }, handleSyncError);
             
             onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'feed'), (snap) => { 
@@ -2601,21 +2605,53 @@
         };
         window.getAvatarInfo = function(item = {}) {
             // 回傳 { isCustom: boolean, customUrl: string, avatarId: string }
+            const targetName = item.creator || item.name || '';
+            
+            // 1. 如果傳入的物件本身就有指定
             if (item.customAvatarUrl) {
                 return { isCustom: true, customUrl: item.customAvatarUrl, avatarId: 'custom' };
             }
-            if (window.myIdentity?.name === item.creator && window.myIdentity.customAvatarUrl) {
-                return { isCustom: true, customUrl: window.myIdentity.customAvatarUrl, avatarId: 'custom' };
-            }
-            let avatarId = 'host';
             if (item.avatarId && FOODIE_AVATARS.some(a => a.id === item.avatarId)) {
-                avatarId = item.avatarId;
-            } else if (window.myIdentity?.name === item.creator && window.myIdentity.avatarId) {
-                avatarId = window.myIdentity.avatarId;
-            } else {
-                avatarId = window.getDefaultAvatarId(item.creator || item.name || '');
+                return { isCustom: false, customUrl: '', avatarId: item.avatarId };
             }
-            return { isCustom: false, customUrl: '', avatarId: avatarId };
+
+            // 2. 如果是當前使用者本人的身分
+            if (window.myIdentity?.name === targetName) {
+                if (window.myIdentity.customAvatarUrl) {
+                    return { isCustom: true, customUrl: window.myIdentity.customAvatarUrl, avatarId: 'custom' };
+                }
+                if (window.myIdentity.avatarId && FOODIE_AVATARS.some(a => a.id === window.myIdentity.avatarId)) {
+                    return { isCustom: false, customUrl: '', avatarId: window.myIdentity.avatarId };
+                }
+            }
+
+            // 3. 從全域雲端設定的 memberAvatars 中尋找 (跨裝置、所有用戶即時共享)
+            if (targetName && window.appConfig?.memberAvatars && window.appConfig.memberAvatars[targetName]) {
+                const confAvatar = window.appConfig.memberAvatars[targetName];
+                if (confAvatar.customAvatarUrl) {
+                    return { isCustom: true, customUrl: confAvatar.customAvatarUrl, avatarId: 'custom' };
+                }
+                if (confAvatar.avatarId && FOODIE_AVATARS.some(a => a.id === confAvatar.avatarId)) {
+                    return { isCustom: false, customUrl: '', avatarId: confAvatar.avatarId };
+                }
+            }
+
+            // 4. 從 feedData 動態牆的廣播/歷史紀錄中尋找頭像紀錄 (降級相容)
+            if (targetName && Array.isArray(window.feedData)) {
+                const foundWelcome = window.feedData.find(f => f.creator === targetName && (f.customAvatarUrl || f.avatarId));
+                if (foundWelcome) {
+                    if (foundWelcome.customAvatarUrl) {
+                        return { isCustom: true, customUrl: foundWelcome.customAvatarUrl, avatarId: 'custom' };
+                    }
+                    if (foundWelcome.avatarId && FOODIE_AVATARS.some(a => a.id === foundWelcome.avatarId)) {
+                        return { isCustom: false, customUrl: '', avatarId: foundWelcome.avatarId };
+                    }
+                }
+            }
+
+            // 5. 預設人偶計算 (依姓名雜湊固定分配)
+            const defaultId = window.getDefaultAvatarId(targetName);
+            return { isCustom: false, customUrl: '', avatarId: defaultId };
         };
         window.getAvatarId = function(item = {}) {
             return window.getAvatarInfo(item).avatarId;
@@ -2797,6 +2833,14 @@
                 setDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'settings', 'profile'), window.myIdentity, { merge: true }).catch(e=>{});
             }
             
+            if (!window.appConfig.memberAvatars) window.appConfig.memberAvatars = {};
+            window.appConfig.memberAvatars[nName] = {
+                avatarId: avatarId,
+                customAvatarUrl: customAvatarUrl,
+                lineId: lineId,
+                bio: bio
+            };
+
             if(isNew) {
                 if(!window.appConfig.membersMap) window.appConfig.membersMap = { '主揪': ['黃政誥'] };
                 if(!Array.isArray(window.appConfig.groups)) window.appConfig.groups = [];
@@ -2815,6 +2859,7 @@
                     updateConfigDropdowns(); window.feedData.unshift({ id: Date.now(), type: 'system_welcome', creator: nName, group: nGroup, inviter: nInviter, avatarId: avatarId, customAvatarUrl: customAvatarUrl, timestamp: new Date() });
                 }
             } else {
+                await window.saveConfigToCloud();
                 const welcomeItems = window.feedData.filter(item => item.type === 'system_welcome' && item.creator === nName);
                 welcomeItems.forEach(item => {
                     item.avatarId = avatarId;
@@ -3897,11 +3942,14 @@
             if (window.myIdentity && window.myIdentity.name === userName) {
                 lineId = window.myIdentity.lineId || '';
                 bio = window.myIdentity.bio || '';
+            } else if (window.appConfig?.memberAvatars && window.appConfig.memberAvatars[userName]) {
+                lineId = window.appConfig.memberAvatars[userName].lineId || '';
+                bio = window.appConfig.memberAvatars[userName].bio || '';
             }
             
             const matchedFeed = window.feedData.find(f => f.creator === userName && f.type === 'system_welcome');
             if (matchedFeed) inviter = matchedFeed.inviter || '';
-            const avatarInfo = window.getAvatarInfo(matchedFeed || { creator: userName });
+            const avatarInfo = window.getAvatarInfo({ creator: userName });
             const profileAvatar = document.getElementById('profile-avatar');
             if (profileAvatar) {
                 if (avatarInfo.isCustom && avatarInfo.customUrl) {
@@ -4101,6 +4149,15 @@
             if (db && currentUser) {
                 setDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'settings', 'profile'), window.myIdentity, { merge: true }).catch(()=>{});
             }
+
+            if (!window.appConfig.memberAvatars) window.appConfig.memberAvatars = {};
+            window.appConfig.memberAvatars[userName] = {
+                avatarId: avatarId,
+                customAvatarUrl: customAvatarUrl,
+                lineId: newLineId,
+                bio: newBio
+            };
+            await window.saveConfigToCloud();
 
             // 更新動態牆上的大頭貼
             const welcomeItems = window.feedData.filter(item => item.type === 'system_welcome' && item.creator === userName);
@@ -4370,12 +4427,15 @@
 
             container.innerHTML = allMembers.map(m => {
                 const theme = window.getGroupColorTheme(m.group);
+                const avatarInfo = window.getAvatarInfo({ creator: m.name });
+                const avatarHtml = (avatarInfo.isCustom && avatarInfo.customUrl)
+                    ? `<div class="w-10 h-10 rounded-full border border-white/80 shadow-sm shrink-0 overflow-hidden bg-white"><img src="${window.resolveReviewImage(avatarInfo.customUrl)}" class="w-full h-full object-cover rounded-full"></div>`
+                    : `<div class="foodie-avatar foodie-avatar-${avatarInfo.avatarId} w-10 h-10 rounded-full shadow-sm shrink-0 border border-white/60"></div>`;
+
                 return `
                 <div class="bg-gray-50/90 hover:bg-orange-50/50 p-3 rounded-2xl border border-gray-100/80 flex items-center justify-between gap-2 transition">
                     <div class="flex items-center gap-3 min-w-0 cursor-pointer" onclick="window.openUserProfile('${window.escapeForBtn(m.name)}', '${window.escapeForBtn(m.group)}')">
-                        <div class="w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 text-white font-bold text-sm flex items-center justify-center shrink-0 shadow-sm">
-                            <i class="fa-solid fa-user"></i>
-                        </div>
+                        ${avatarHtml}
                         <div class="min-w-0">
                             <p class="text-sm font-bold text-gray-900 truncate leading-snug">${m.name}</p>
                             <span class="${theme.badge} px-2 py-0.5 rounded-md font-bold text-[10px] inline-block mt-0.5">${m.group} 團</span>
@@ -4616,10 +4676,12 @@
                     : `<span class="inline-flex items-center gap-1 bg-rose-500 text-white px-2.5 py-1 rounded-full font-bold text-[11px] shadow-sm shrink-0"><i class="fa-solid fa-thumbs-down text-[10px]"></i> 避雷</span>`;
 
                 const cardStyle = `${theme.border} ${theme.bg}`;
-                const avatarInfo = window.getAvatarInfo(item);
+                const avatarInfo = window.getAvatarInfo({ creator: item.creator, ...item });
                 const userAvatarHtml = (avatarInfo.isCustom && avatarInfo.customUrl)
                     ? `<div class="w-10 h-10 rounded-full flex items-center justify-center shrink-0 border border-white/80 shadow-xs overflow-hidden bg-white"><img src="${window.resolveReviewImage(avatarInfo.customUrl)}" class="w-full h-full object-cover rounded-full"></div>`
-                    : `<div class="w-10 h-10 rounded-full flex items-center justify-center text-sm shrink-0 ${isHost ? 'bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-md' : `${theme.avatar} border border-white/60`}"><i class="fa-solid ${isHost ? 'fa-crown' : 'fa-user'}"></i></div>`;
+                    : (isHost 
+                        ? `<div class="foodie-avatar foodie-avatar-host w-10 h-10 rounded-full shadow-md shrink-0 border-2 border-amber-400"></div>`
+                        : `<div class="foodie-avatar foodie-avatar-${avatarInfo.avatarId} w-10 h-10 rounded-full shadow-sm shrink-0 border border-white/80"></div>`);
 
                 const matchedRes = window.restaurantData.find(r => r.name === item.restaurantName);
                 const feedCity = item.city || (matchedRes ? matchedRes.city : extractCity(item.restaurantName)) || '';
@@ -4788,7 +4850,9 @@
 
                 const avatarHtml = (avatarInfo.isCustom && avatarInfo.customUrl)
                     ? `<div class="w-9 h-9 rounded-full shadow-xs shrink-0 border border-white/80 overflow-hidden bg-white cursor-pointer" onclick="window.openUserProfile('${window.escapeForBtn(msg.creator)}', '${window.escapeForBtn(msg.group)}')"><img src="${window.resolveReviewImage(avatarInfo.customUrl)}" class="w-full h-full object-cover rounded-full"></div>`
-                    : `<div class="w-9 h-9 rounded-full shadow-xs shrink-0 flex items-center justify-center text-xs cursor-pointer ${isHost ? 'bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-xs' : `${theme.avatar} border border-white/80`}" onclick="window.openUserProfile('${window.escapeForBtn(msg.creator)}', '${window.escapeForBtn(msg.group)}')"><i class="fa-solid ${isHost ? 'fa-crown' : 'fa-user'}"></i></div>`;
+                    : (isHost
+                        ? `<div class="foodie-avatar foodie-avatar-host w-9 h-9 rounded-full shadow-md shrink-0 border border-amber-300 cursor-pointer" onclick="window.openUserProfile('${window.escapeForBtn(msg.creator)}', '${window.escapeForBtn(msg.group)}')"></div>`
+                        : `<div class="foodie-avatar foodie-avatar-${avatarInfo.avatarId} w-9 h-9 rounded-full shadow-xs shrink-0 border border-white/80 cursor-pointer" onclick="window.openUserProfile('${window.escapeForBtn(msg.creator)}', '${window.escapeForBtn(msg.group)}')"></div>`);
 
                 if (isMe) {
                     return `
