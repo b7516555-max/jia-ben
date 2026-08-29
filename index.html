@@ -2352,6 +2352,116 @@
             return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
         }
 
+        // 🌟 營業狀態智慧判定（營業中: 綠色、休息中: 紅色、即將打烊: 橘黃色）
+        window.placeOpenStatusCache = {}; // 快取 Google Places 營業狀態
+
+        window.computeOpeningStatus = function(placeOrHours) {
+            if (!placeOrHours) return { status: 'unknown', text: '營業狀態未提供', badgeHtml: '' };
+
+            if (placeOrHours.business_status === 'CLOSED_PERMANENTLY') {
+                return { status: 'closed_perm', text: '已永久停業', badgeHtml: '<span class="bg-rose-500/90 text-white text-[10px] px-2 py-0.5 rounded-full font-black shadow-sm shrink-0 whitespace-nowrap">永久停業</span>' };
+            }
+            if (placeOrHours.business_status === 'CLOSED_TEMPORARILY') {
+                return { status: 'closed_temp', text: '暫時停業', badgeHtml: '<span class="bg-rose-500/90 text-white text-[10px] px-2 py-0.5 rounded-full font-black shadow-sm shrink-0 whitespace-nowrap">暫時停業</span>' };
+            }
+
+            const openingHours = placeOrHours.opening_hours || (placeOrHours.periods ? placeOrHours : null);
+            if (!openingHours) {
+                return { status: 'unknown', text: '營業狀態未提供', badgeHtml: '' };
+            }
+
+            // 判斷是否營業中
+            let isOpen = false;
+            if (typeof openingHours.isOpen === 'function') {
+                try { isOpen = openingHours.isOpen(); } catch(e) { isOpen = openingHours.open_now; }
+            } else if (typeof openingHours.open_now !== 'undefined') {
+                isOpen = openingHours.open_now;
+            }
+
+            if (isOpen === false) {
+                return {
+                    status: 'closed',
+                    text: '休息中',
+                    badgeHtml: '<span class="bg-rose-500 text-white text-[10px] px-2 py-0.5 rounded-full font-black shadow-sm shrink-0 whitespace-nowrap"><i class="fa-solid fa-moon text-[9px] mr-1"></i>休息中</span>'
+                };
+            }
+
+            if (isOpen === true) {
+                // 檢查是否即將打烊（小於 60 分鐘）
+                let isClosingSoon = false;
+                try {
+                    const now = new Date();
+                    const nowDay = now.getDay();
+                    const nowMinutes = now.getHours() * 60 + now.getMinutes();
+
+                    if (Array.isArray(openingHours.periods)) {
+                        for (const period of openingHours.periods) {
+                            if (period.open && period.close && period.open.day === nowDay) {
+                                const openMin = parseInt(period.open.time.slice(0, 2), 10) * 60 + parseInt(period.open.time.slice(2), 10);
+                                const closeMin = parseInt(period.close.time.slice(0, 2), 10) * 60 + parseInt(period.close.time.slice(2), 10);
+                                
+                                if (nowMinutes >= openMin && nowMinutes < closeMin) {
+                                    const minutesLeft = closeMin - nowMinutes;
+                                    if (minutesLeft <= 60 && minutesLeft > 0) {
+                                        isClosingSoon = true;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } catch(e) {}
+
+                if (isClosingSoon) {
+                    return {
+                        status: 'closing_soon',
+                        text: '即將打烊',
+                        badgeHtml: '<span class="bg-amber-500 text-white text-[10px] px-2 py-0.5 rounded-full font-black shadow-sm shrink-0 whitespace-nowrap"><i class="fa-regular fa-clock text-[9px] mr-1"></i>即將打烊</span>'
+                    };
+                }
+
+                return {
+                    status: 'open',
+                    text: '營業中',
+                    badgeHtml: '<span class="bg-emerald-500 text-white text-[10px] px-2 py-0.5 rounded-full font-black shadow-sm shrink-0 whitespace-nowrap"><i class="fa-solid fa-circle text-[7px] mr-1"></i>營業中</span>'
+                };
+            }
+
+            return { status: 'unknown', text: '營業狀態未提供', badgeHtml: '' };
+        };
+
+        window.fetchRestaurantOpenStatus = function(placeId, name, city, callback) {
+            const cacheKey = placeId || name;
+            if (window.placeOpenStatusCache[cacheKey]) {
+                if (callback) callback(window.placeOpenStatusCache[cacheKey]);
+                return;
+            }
+            if (typeof google === 'undefined' || !google.maps || !google.maps.places) return;
+
+            try {
+                const service = new google.maps.places.PlacesService(document.createElement('div'));
+                const applyResult = (place, status) => {
+                    if (status === 'OK' && place) {
+                        const statusObj = window.computeOpeningStatus(place);
+                        window.placeOpenStatusCache[cacheKey] = statusObj;
+                        if (callback) callback(statusObj);
+                    }
+                };
+
+                if (placeId) {
+                    service.getDetails({ placeId: placeId, fields: ['opening_hours', 'business_status', 'photos'] }, applyResult);
+                } else {
+                    service.textSearch({ query: `${city || ''} ${name}` }, (results, status) => {
+                        if (status === 'OK' && results && results[0]) {
+                            const first = results[0];
+                            const statusObj = window.computeOpeningStatus(first);
+                            window.placeOpenStatusCache[cacheKey] = statusObj;
+                            if (callback) callback(statusObj);
+                        }
+                    });
+                }
+            } catch(e) {}
+        };
+
         window.enterApp = function() {
             const intro = document.getElementById('intro-screen');
             intro.classList.add('intro-exit');
@@ -3860,11 +3970,15 @@
             const cStr = extractCity(p.formatted_address); 
             const pDataStr = window.escapeForBtn(JSON.stringify({ name: p.name, placeId: p.place_id || '', mapLink: mUrl, lat: p.geometry.location.lat(), lng: p.geometry.location.lng(), rating: p.rating || 0, reviews: p.user_ratings_total || 0, photoUrl: '', city: cStr })); 
             const safeNameStr = window.escapeForBtn(p.name);
+            const openStatusInfo = window.computeOpeningStatus(p);
 
             return `<div class="restaurant-card bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden relative cursor-pointer group h-48 md:h-56 lg:h-64 transition" onclick="window.openRestaurantDetailByName('${safeNameStr}')">
                 <img src="${img}" onerror="this.onerror=null; this.src=window.getFallbackImage('${safeNameStr}');" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110">
                 <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent"></div>
                 <div class="absolute top-2.5 left-2.5 bg-black/60 backdrop-blur-md text-white text-[10px] px-2.5 py-1 rounded-full z-10 font-bold tracking-widest border border-white/20"><i class="fa-solid fa-location-arrow mr-1 text-orange-400"></i>${p.dist.toFixed(1)} km</div>
+                <div class="absolute top-2.5 right-2.5 z-10 flex items-center gap-1">
+                    ${openStatusInfo.badgeHtml}
+                </div>
                 <div class="absolute bottom-0 left-0 right-0 p-3.5 md:p-4 z-10">
                     <h3 class="text-base md:text-lg font-bold text-white line-clamp-2 drop-shadow-md leading-tight">${p.name}</h3>
                 </div>
@@ -3877,6 +3991,8 @@
             let img = window.getSafeImage(rawImg, p.name);
             const mUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.name + ' ' + p.formatted_address)}`;
             const cStr = extractCity(p.formatted_address);
+            const openStatusInfo = window.computeOpeningStatus(p);
+
             document.getElementById('res-photo').src = img;
             document.getElementById('res-photo').onerror = function() { this.onerror = null; this.src = window.getFallbackImage(p.name); };
             document.getElementById('res-name').textContent = p.name;
@@ -3887,18 +4003,27 @@
             document.getElementById('res-map').href = mUrl;
             const pDataStr = window.escapeForBtn(JSON.stringify({ name: p.name, placeId: p.place_id || '', mapLink: mUrl, lat: p.geometry.location.lat(), lng: p.geometry.location.lng(), rating: p.rating||0, reviews: p.user_ratings_total||0, photoUrl: '', city: cStr }));
             document.getElementById('res-save-btn').setAttribute('onclick', `window.initInteraction("save", decodeURIComponent("${pDataStr}"))`);
+            
+            // 在隨機抽結果卡片右上角加上營業狀態徽章
+            const resHeader = document.getElementById('random-result-header');
+            if (resHeader) {
+                let badgeWrap = document.getElementById('random-res-status-badge');
+                if (!badgeWrap) {
+                    badgeWrap = document.createElement('div');
+                    badgeWrap.id = 'random-res-status-badge';
+                    badgeWrap.className = 'absolute top-4 left-4 z-10';
+                    resHeader.appendChild(badgeWrap);
+                }
+                badgeWrap.innerHTML = openStatusInfo.badgeHtml;
+            }
+
             document.getElementById('random-btn').classList.add('hidden');
             document.getElementById('random-intro').classList.add('hidden');
             document.getElementById('random-result').classList.remove('hidden');
             
-            let statusHtml = '';
-            if (p.openStatus === 1) statusHtml = `<span class="bg-emerald-50 text-emerald-600 text-[10px] px-2.5 py-1 rounded-lg border border-emerald-100 font-bold shrink-0">營業中</span>`;
-            else if (p.openStatus === -1) statusHtml = `<span class="bg-gray-100 text-gray-400 text-[10px] px-2.5 py-1 rounded-lg border border-gray-200 font-bold shrink-0">休息中</span>`;
-            else statusHtml = `<span class="bg-blue-50 text-blue-500 text-[10px] px-2.5 py-1 rounded-lg border border-blue-100 font-bold shrink-0">看地圖確認</span>`;
-            
             const infoDiv = document.querySelector('#random-result .p-5 .flex.items-center');
             if (infoDiv) {
-                infoDiv.innerHTML = `<span id="res-rating" class="text-orange-500 font-bold text-sm bg-orange-50 px-2.5 py-1 rounded-lg border border-orange-100"><i class="fa-solid fa-star"></i> ${p.rating || '無'}</span>${statusHtml}`;
+                infoDiv.innerHTML = `<span id="res-rating" class="text-orange-500 font-bold text-sm bg-orange-50 px-2.5 py-1 rounded-lg border border-orange-100"><i class="fa-solid fa-star"></i> ${p.rating || '無'}</span>${openStatusInfo.badgeHtml}`;
             }
         }
 
@@ -5753,19 +5878,34 @@
 
             const groupedArr = Array.from(groupedMap.values());
 
-            // 店家照片一律使用 Google Maps 官方照片
+            // 店家照片與營業狀態一律自 Google Maps 同步
             groupedArr.forEach(item => {
+                const safeNameStr = window.escapeForBtn(item.name);
+                window.fetchRestaurantOpenStatus(item.placeId, item.name, item.city, (statusObj) => {
+                    const badgeContainer = document.getElementById(`list-status-${safeNameStr}`);
+                    if (badgeContainer && statusObj && statusObj.badgeHtml) {
+                        badgeContainer.innerHTML = statusObj.badgeHtml;
+                    }
+                });
+
                 if (typeof google !== 'undefined' && google.maps && google.maps.places) {
                     try {
                         const service = new google.maps.places.PlacesService(document.createElement('div'));
-                        const request = item.placeId ? { placeId: item.placeId, fields: ['photos'] } : null;
+                        const request = item.placeId ? { placeId: item.placeId, fields: ['photos', 'opening_hours', 'business_status'] } : null;
                         const applyPhoto = (results, status) => {
                             const place = Array.isArray(results) ? results[0] : results;
-                            if (status === 'OK' && place && place.photos && place.photos.length > 0) {
-                                const realPhotoUrl = place.photos[0].getUrl({ maxWidth: 600 });
-                                item.photoUrl = realPhotoUrl;
-                                const cardImgEl = document.getElementById(`list-img-${window.escapeForBtn(item.name)}`);
-                                if (cardImgEl) cardImgEl.src = realPhotoUrl;
+                            if (status === 'OK' && place) {
+                                if (place.photos && place.photos.length > 0) {
+                                    const realPhotoUrl = place.photos[0].getUrl({ maxWidth: 600 });
+                                    item.photoUrl = realPhotoUrl;
+                                    const cardImgEl = document.getElementById(`list-img-${safeNameStr}`);
+                                    if (cardImgEl) cardImgEl.src = realPhotoUrl;
+                                }
+                                const statusObj = window.computeOpeningStatus(place);
+                                const badgeContainer = document.getElementById(`list-status-${safeNameStr}`);
+                                if (badgeContainer && statusObj && statusObj.badgeHtml) {
+                                    badgeContainer.innerHTML = statusObj.badgeHtml;
+                                }
                             }
                         };
                         if (request) service.getDetails(request, applyPhoto);
@@ -5783,12 +5923,20 @@
                     ? window.getFallbackImage(i.name)
                     : window.getSafeImage(i.photoUrl, i.name);
 
+                const cachedStatus = window.placeOpenStatusCache[i.placeId || i.name];
+                const initialBadgeHtml = (cachedStatus && cachedStatus.badgeHtml) ? cachedStatus.badgeHtml : '';
+
                 return `
                 <div class="restaurant-card bg-white rounded-2xl shadow-sm border ${isH ? 'border-orange-200' : 'border-gray-100'} overflow-hidden relative cursor-pointer group h-48 md:h-56 lg:h-64" onclick="window.openRestaurantDetailByName('${safeNameStr}')">
                     <img id="list-img-${safeNameStr}" src="${displayImg}" onerror="this.onerror=null; this.src=window.getFallbackImage('${safeNameStr}');" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110">
                     <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent"></div>
-                    <span class="absolute top-3 right-3 bg-black/50 backdrop-blur-md text-white text-[10px] px-2 py-1 rounded-full z-10 font-bold tracking-widest border border-white/20">${i.city || '未分類'}</span>
-                    ${isH ? '<span class="absolute top-3 left-3 bg-orange-500/90 backdrop-blur-sm text-white text-[10px] w-6 h-6 flex items-center justify-center rounded-full z-10 shadow-sm"><i class="fa-solid fa-crown"></i></span>' : ''}
+                    <div class="absolute top-2.5 left-2.5 z-10 flex items-center gap-1">
+                        <span class="bg-black/50 backdrop-blur-md text-white text-[10px] px-2 py-0.5 rounded-full font-bold tracking-widest border border-white/20">${i.city || '未分類'}</span>
+                        ${isH ? '<span class="bg-orange-500/90 backdrop-blur-sm text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full shadow-sm"><i class="fa-solid fa-crown text-[9px]"></i></span>' : ''}
+                    </div>
+                    <div id="list-status-${safeNameStr}" class="absolute top-2.5 right-2.5 z-10 flex items-center gap-1">
+                        ${initialBadgeHtml}
+                    </div>
                     <div class="absolute bottom-0 left-0 right-0 p-3 md:p-4 z-10">
                         <h3 class="text-base md:text-lg font-bold text-white line-clamp-2 drop-shadow-md leading-tight">${i.name}</h3>
                     </div>
@@ -5907,20 +6055,17 @@
                 const phone = place.formatted_phone_number || '未提供';
                 const price = Number.isInteger(place.price_level) ? priceLabels[place.price_level] : '未提供';
                 const address = place.formatted_address || data.city || '未提供';
-                let openText = '營業狀態未提供';
+                
+                const openStatusInfo = window.computeOpeningStatus(place);
                 let openClass = 'text-gray-500';
-                if (place.business_status === 'CLOSED_PERMANENTLY') { openText = '已永久停業'; openClass = 'text-red-500'; }
-                else if (place.business_status === 'CLOSED_TEMPORARILY') { openText = '暫時停業'; openClass = 'text-red-500'; }
-                else if (place.opening_hours) {
-                    const isOpen = typeof place.opening_hours.isOpen === 'function' ? place.opening_hours.isOpen() : place.opening_hours.open_now;
-                    if (isOpen === true) { openText = '營業中'; openClass = 'text-emerald-600'; }
-                    else if (isOpen === false) { openText = '休息中'; openClass = 'text-gray-500'; }
-                }
+                if (openStatusInfo.status === 'open') openClass = 'text-emerald-600';
+                else if (openStatusInfo.status === 'closing_soon') openClass = 'text-amber-500';
+                else if (openStatusInfo.status === 'closed' || openStatusInfo.status.startsWith('closed_')) openClass = 'text-rose-500';
 
                 const phoneHtml = phone === '未提供' ? phone : `<a href="tel:${phone.replace(/[^\d+]/g, '')}" class="text-blue-600 font-bold hover:underline">${phone}</a>`;
                 const websiteHtml = place.website ? `<p class="flex items-start"><i class="fa-solid fa-globe text-gray-400 w-5 mt-0.5"></i><a href="${place.website}" target="_blank" rel="noopener noreferrer" class="text-blue-600 font-bold hover:underline break-all">官方網站</a></p>` : '';
                 infoEl.innerHTML = `
-                    <p class="flex items-start"><i class="fa-solid fa-clock text-gray-400 w-5 mt-0.5"></i><span class="font-bold ${openClass}">${openText}</span></p>
+                    <p class="flex items-center gap-2"><i class="fa-solid fa-clock text-gray-400 w-5"></i><span class="font-bold ${openClass}">${openStatusInfo.text}</span> ${openStatusInfo.badgeHtml}</p>
                     <p class="flex items-start"><i class="fa-solid fa-phone text-gray-400 w-5 mt-0.5"></i><span>${phoneHtml}</span></p>
                     <p class="flex items-start"><i class="fa-solid fa-dollar-sign text-gray-400 w-5 mt-0.5"></i><span>價位：${price}</span></p>
                     <p class="flex items-start"><i class="fa-solid fa-location-dot text-gray-400 w-5 mt-0.5"></i><span>${address}</span></p>
