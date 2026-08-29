@@ -3703,6 +3703,10 @@
                     return window.showCustomMsg("今天想吃點什麼呢？請輸入關鍵字或選擇國家縣市！");
                 }
                 
+                if (countryVal !== 'all' && cityVal === 'all') {
+                    return window.showCustomMsg("請先選擇地區（縣市）再搜尋！\n\n只選國家不選地區，搜尋結果可能不準確喔 🙏");
+                }
+                
                 k = [...locationParts, rawK || '餐廳'].join(' ');
                 cId = 'explore-results-container'; 
                 document.getElementById(cId).innerHTML = `<div class="text-center text-orange-400 py-10 col-span-full"><i class="fa-brands fa-google fa-bounce text-4xl mb-3"></i><p class="font-bold tracking-widest text-sm mt-2">為您搜尋 ${k} ...</p></div>`; 
