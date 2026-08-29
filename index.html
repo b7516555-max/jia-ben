@@ -17,6 +17,19 @@
     <!-- 🌟 Google Maps API (強制綁定台灣地區語系) -->
     <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBdg7-gSShN3uf3vtF8vVbl4u_7FzWGejc&libraries=places&language=zh-TW&region=TW"></script>
     <script>
+        window.enterApp = function() {
+            var intro = document.getElementById('intro-screen');
+            var mainApp = document.getElementById('main-app');
+            if (intro) {
+                intro.classList.add('intro-exit');
+                setTimeout(function() {
+                    intro.classList.add('hidden');
+                    if (mainApp) mainApp.classList.remove('hidden');
+                }, 400);
+            } else if (mainApp) {
+                mainApp.classList.remove('hidden');
+            }
+        };
         window.openAddModal = function() {
             var m = document.getElementById('add-restaurant-modal');
             if (m) m.classList.remove('hidden');
@@ -409,12 +422,12 @@
             <p class="text-base text-gray-500 font-bold tracking-widest mb-12 text-center leading-loose">找尋隱藏好店<br>轉出聚餐驚喜的美食輪盤</p>
             
             <div class="w-full flex flex-col items-center space-y-4 relative z-10">
-                <button id="btn-install-app" onclick="window.handleInstallClick()" class="w-full group relative px-8 py-4 text-base bg-orange-500 text-white rounded-full font-bold tracking-widest shadow-[0_10px_30px_rgba(249,115,22,0.3)] hover:bg-orange-600 transition-all duration-300 hover:scale-105 active:scale-95 flex items-center justify-center gap-3 overflow-hidden">
+                <button id="btn-install-app" onclick="window.handleInstallClick()" class="w-full group relative px-8 py-4 text-base bg-orange-500 text-white rounded-full font-bold tracking-widest shadow-[0_10px_30px_rgba(249,115,22,0.3)] hover:bg-orange-600 transition-all duration-300 hover:scale-105 active:scale-95 flex items-center justify-center gap-3 overflow-hidden cursor-pointer">
                     <span class="relative z-10 flex items-center gap-2"><i class="fa-solid fa-download mb-0.5"></i> 下載專屬 App</span>
                     <div class="absolute inset-0 bg-gradient-to-r from-orange-400 to-amber-500 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                 </button>
-                <button id="btn-enter-web" onclick="window.enterApp()" class="w-full px-8 py-3 text-gray-500 hover:text-gray-800 font-bold tracking-widest transition-colors duration-300 text-sm flex items-center justify-center">
-                    直接進入網頁版 <i class="fa-solid fa-arrow-right ml-1.5 mt-0.5 opacity-70"></i>
+                <button id="btn-enter-web" onclick="window.enterApp()" class="w-full px-8 py-3.5 bg-orange-50/80 hover:bg-orange-100/80 text-orange-600 rounded-full font-bold tracking-widest transition-all duration-300 text-sm flex items-center justify-center border border-orange-200 shadow-xs cursor-pointer active:scale-95">
+                    直接進入網頁版 <i class="fa-solid fa-arrow-right ml-2 text-xs opacity-80"></i>
                 </button>
             </div>
         </div>
