@@ -5283,7 +5283,7 @@
                     </div>`;
                 }
 
-                // 2. 🌟 勳章升階全站榮耀廣播卡片 (Tier Promotion Broadcast - 單行工整排版)
+                // 2. 🌟 勳章升階全站榮耀廣播卡片 (Tier Promotion Broadcast - 清楚工整且自適應排版)
                 if (item.type === 'tier_promotion') {
                     const avatarInfo = window.getAvatarInfo({ creator: item.creator, name: item.creator });
                     const avatarHtml = (avatarInfo.isCustom && avatarInfo.customUrl)
@@ -5291,27 +5291,27 @@
                         : `<div class="foodie-avatar foodie-avatar-${avatarInfo.avatarId} w-12 h-12 rounded-full shadow-md shrink-0 border-2 border-amber-300"></div>`;
 
                     return `
-                    <div class="rounded-3xl p-5 shadow-lg bg-gradient-to-br from-amber-400 via-orange-400 to-amber-500 text-white border-2 border-yellow-200 flex flex-col gap-3 relative overflow-hidden transform hover:-translate-y-0.5 transition duration-300">
+                    <div class="rounded-3xl p-4 sm:p-5 shadow-lg bg-gradient-to-br from-amber-400 via-orange-400 to-amber-500 text-white border-2 border-yellow-200 flex flex-col gap-3 relative overflow-hidden transform hover:-translate-y-0.5 transition duration-300">
                         <div class="absolute -right-6 -bottom-6 text-white/10 text-9xl font-black pointer-events-none select-none">
                             ${item.tierIcon || '👑'}
                         </div>
-                        <div class="flex items-center justify-between gap-2 border-b border-white/30 pb-3 relative z-10">
+                        <div class="flex items-start justify-between gap-2 border-b border-white/30 pb-3 relative z-10">
                             <div class="flex items-center gap-2.5 min-w-0 flex-1">
                                 ${avatarHtml}
                                 <div class="min-w-0 flex-1 flex flex-col justify-center gap-1">
-                                    <div class="flex items-center gap-1.5 min-w-0 flex-nowrap">
-                                        <span class="text-base font-black text-white truncate drop-shadow-xs shrink-0 max-w-[40%]">${item.creator}</span>
+                                    <div class="flex items-center gap-1.5 flex-wrap">
+                                        <span class="text-base font-black text-white shrink-0 drop-shadow-xs">${item.creator}</span>
                                         <span class="bg-yellow-300 text-amber-900 text-[10px] px-2 py-0.5 rounded-full font-black tracking-wider shadow-sm shrink-0 whitespace-nowrap leading-none inline-block">榮耀晉階</span>
                                         <span class="bg-white/25 backdrop-blur-sm text-white px-2 py-0.5 rounded-full font-black text-[10px] sm:text-xs border border-white/40 shadow-xs shrink-0 whitespace-nowrap leading-none inline-block">第 ${item.tier} 層勳章 達成！</span>
                                     </div>
-                                    <div class="flex items-center gap-1.5 text-[11px] text-yellow-100 font-bold truncate">
+                                    <div class="flex items-center gap-1.5 text-[11px] text-yellow-100 font-bold flex-wrap">
                                         <span>${item.group} 團${!window.isGroupVerified(item.group) ? ' (未認證)' : ''}</span>
                                         <span>•</span>
                                         <span>${dateStr}</span>
                                     </div>
                                 </div>
                             </div>
-                            <button onclick="window.deleteFeedItemWithAuth('${item.id}')" class="w-7 h-7 rounded-lg bg-white/20 hover:bg-white/30 text-white flex items-center justify-center text-xs backdrop-blur-xs transition shrink-0 ml-1" title="刪除此廣播">
+                            <button onclick="window.deleteFeedItemWithAuth('${item.id}')" class="w-7 h-7 rounded-lg bg-white/20 hover:bg-white/30 text-white flex items-center justify-center text-xs backdrop-blur-xs transition shrink-0 ml-1 mt-0.5" title="刪除此廣播">
                                 <i class="fa-solid fa-trash-can"></i>
                             </button>
                         </div>
@@ -5520,15 +5520,15 @@
                         <div class="flex items-center gap-2.5 min-w-0 flex-1 cursor-pointer" onclick="window.openUserProfile('${window.escapeForBtn(item.creator)}', '${window.escapeForBtn(item.group)}')">
                             ${userAvatarHtml}
                             <div class="min-w-0 flex-1 flex flex-col justify-center gap-1">
-                                <div class="flex items-center gap-1.5 min-w-0">
-                                    <span class="text-sm font-bold text-gray-900 truncate hover:text-orange-500 transition">${item.creator}</span>
+                                <div class="flex items-center gap-1.5 flex-wrap">
+                                    <span class="text-sm font-bold text-gray-900 hover:text-orange-500 transition shrink-0">${item.creator}</span>
                                     ${isHost ? '<span class="bg-orange-500 text-white text-[9px] px-1.5 py-0.5 rounded font-black tracking-wider shadow-xs shrink-0">主揪</span>' : ''}
                                     <span class="inline-flex items-center gap-0.5 bg-amber-50 text-amber-700 border border-amber-200 text-[10px] px-1.5 py-0.5 rounded font-bold shrink-0 whitespace-nowrap">${userLevelInfo.tierIcon} Lv.${userLevelInfo.level}</span>
                                 </div>
-                                <div class="flex items-center gap-1.5 text-[11px] text-gray-400 min-w-0">
+                                <div class="flex items-center gap-1.5 text-[11px] text-gray-400 flex-wrap">
                                     ${window.formatGroupBadgeHtml(item.group)}
                                     <span class="text-gray-300">•</span>
-                                    <span class="truncate whitespace-nowrap">${dateStr}</span>
+                                    <span class="whitespace-nowrap">${dateStr}</span>
                                 </div>
                             </div>
                         </div>
