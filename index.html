@@ -1065,7 +1065,7 @@
                 </div>
                 
                 <div class="flex justify-between items-center gap-3 pt-4 mt-2 border-t border-gray-200">
-                    <button id="detail-edit-btn" class="text-xs text-orange-600 hover:text-orange-700 font-bold px-3 py-1.5 transition flex items-center bg-orange-50 hover:bg-orange-100 rounded-lg border border-orange-200"><i class="fa-solid fa-pen-to-square mr-1"></i>編輯店家</button>
+                    <button id="detail-add-btn" class="text-xs text-orange-600 hover:text-orange-700 font-bold px-3 py-1.5 transition flex items-center bg-orange-50 hover:bg-orange-100 rounded-lg border border-orange-200"><i class="fa-solid fa-plus-circle mr-1"></i>新增店家</button>
                     <button id="detail-delete-btn" class="text-xs text-gray-500 hover:text-red-500 font-bold px-3 py-1.5 transition flex items-center"><i class="fa-solid fa-trash-can mr-1"></i>移除店家</button>
                 </div>
             </div>
@@ -6209,12 +6209,39 @@
                 };
             }
             
-            const editBtn = document.getElementById('detail-edit-btn');
-            if (editBtn) {
-                editBtn.onclick = function() {
-                    window.editRestaurant(safeName);
-                    window.closeModal('card-detail-modal');
-                };
+            const addBtn = document.getElementById('detail-add-btn') || document.getElementById('detail-edit-btn');
+            if (addBtn) {
+                // 檢查此餐廳是否已存在於口袋名單
+                const normName = (data.name || '').toLowerCase().replace(/\s+/g, '');
+                const existingRes = (window.restaurantData || []).find(r => {
+                    if (!r.name) return false;
+                    return r.name.toLowerCase().replace(/\s+/g, '') === normName || r.name === data.name;
+                });
+
+                if (existingRes) {
+                    const ownerGroup = existingRes.group || '其他';
+                    const ownerName = existingRes.creator || '成員';
+                    addBtn.innerHTML = `<i class="fa-solid fa-circle-check mr-1 text-emerald-500"></i>已在【${ownerGroup}】${ownerName} 口袋名單`;
+                    addBtn.className = "text-xs text-emerald-700 font-bold px-3 py-1.5 transition flex items-center bg-emerald-50 rounded-lg border border-emerald-200 cursor-pointer hover:bg-emerald-100";
+                    addBtn.title = `這家店已經由【${ownerGroup}】${ownerName} 加入口袋名單`;
+                    addBtn.onclick = function() {
+                        window.showCustomMsg(`📌 「${existingRes.name}」已經在口袋名單中囉！\n\n推薦者：【${ownerGroup} 團】${ownerName}\n\n如需撰寫心得或上傳照片，可直接點擊「寫評價」即可分享！`);
+                    };
+                } else {
+                    addBtn.innerHTML = `<i class="fa-solid fa-plus-circle mr-1"></i>新增店家`;
+                    addBtn.className = "text-xs text-orange-600 hover:text-orange-700 font-bold px-3 py-1.5 transition flex items-center bg-orange-50 hover:bg-orange-100 rounded-lg border border-orange-200";
+                    addBtn.title = "將這間店家存入自己的口袋名單";
+                    addBtn.onclick = function() {
+                        const prefillObj = {
+                            name: data.name,
+                            placeId: data.placeId || '',
+                            city: data.city || '',
+                            mUrl: data.mUrl || ''
+                        };
+                        window.closeModal('card-detail-modal');
+                        window.openAddModal(prefillObj);
+                    };
+                }
             }
 
             const deleteBtn = document.getElementById('detail-delete-btn');
@@ -6507,7 +6534,7 @@
             } 
         };
 
-        window.openAddModal = function() {
+        window.openAddModal = function(prefillData) {
             const addForm = document.getElementById('add-form');
             if (addForm) addForm.reset();
             const matchStatus = document.getElementById('smart-place-match-status');
@@ -6545,6 +6572,41 @@
                     if (hasOption) creEl.value = window.myIdentity.name;
                 }
             }
+
+            // 如果有帶入預填資料（例如從餐廳詳情頁面直接點擊新增）
+            if (prefillData) {
+                const pData = typeof prefillData === 'string' ? { name: prefillData } : prefillData;
+                if (pData.name) {
+                    const nameInput = document.getElementById('input-name');
+                    if (nameInput) nameInput.value = pData.name;
+                }
+                if (pData.placeId) {
+                    const placeIdInput = document.getElementById('input-place-id');
+                    if (placeIdInput) placeIdInput.value = pData.placeId;
+                    if (typeof window.selectAdminPlace === 'function') {
+                        window.selectAdminPlace(pData.placeId);
+                    }
+                } else if (pData.name) {
+                    if (typeof window.adminSearchPlace === 'function') {
+                        window.adminSearchPlace(pData.name);
+                    }
+                }
+                if (pData.city) {
+                    const cityInput = document.getElementById('input-city');
+                    if (cityInput) cityInput.value = pData.city;
+                }
+                if (pData.country) {
+                    const countryInput = document.getElementById('input-country');
+                    if (countryInput) countryInput.value = pData.country;
+                }
+                if (pData.mUrl) {
+                    const mapInput = document.getElementById('input-map');
+                    if (mapInput && !mapInput.value) mapInput.value = pData.mUrl;
+                }
+            }
+
+            const modal = document.getElementById('add-restaurant-modal');
+            if (modal) modal.classList.remove('hidden');
         };
 
         window.submitForm = async function(e) {
