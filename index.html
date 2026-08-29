@@ -517,7 +517,16 @@
             <div id="form-id-new" class="space-y-3.5 hidden">
                 <div class="bg-blue-50 p-3 rounded-xl border border-blue-100 mb-2"><p class="text-xs text-blue-700 font-bold"><i class="fa-solid fa-hand-wave mr-1"></i>歡迎加入！建檔後大家就會認識你囉！</p></div>
                 <div><label class="block text-xs font-bold text-gray-500 mb-1">你的名字 / 綽號 *</label><input type="text" id="new-id-name" placeholder="大家該怎麼稱呼你？" class="w-full px-3 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:border-orange-400 text-sm font-bold"></div>
-                <div><label class="block text-xs font-bold text-gray-500 mb-1">建立/選擇你的所屬群組 *</label><input type="text" id="new-id-group" placeholder="例如：羽球團、大學同學" class="w-full px-3 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:border-orange-400 text-sm font-bold"></div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 mb-1">選擇或自行新增所屬群組 *</label>
+                    <select id="new-id-group-select" onchange="window.handleNewIdGroupSelect(this)" class="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none text-sm font-bold text-gray-700 mb-1.5"></select>
+                    <div id="new-id-custom-group-box" class="hidden">
+                        <input type="text" id="new-id-group" placeholder="請輸入欲新增的群組名稱 (例如：羽球團、大學同學)" class="w-full px-3 py-2.5 border border-orange-300 bg-orange-50/30 rounded-xl focus:outline-none focus:border-orange-500 text-sm font-bold">
+                        <p class="text-[10px] text-orange-600 font-bold mt-1 leading-relaxed">
+                            <i class="fa-solid fa-circle-info mr-1"></i>自行新增的群組在主揪於後台審核同意前，會暫時標記為「未認證」，同意後自動移除。
+                        </p>
+                    </div>
+                </div>
                 <div><label class="block text-xs font-bold text-gray-500 mb-1">是誰帶你來的？(引薦人) *</label><select id="new-id-inviter" class="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none text-sm"></select></div>
                 <div>
                     <label class="block text-xs font-bold text-gray-700 mb-1"><i class="fa-solid fa-lock text-orange-500 mr-1"></i>設定你的專屬登入密碼 *</label>
@@ -1712,6 +1721,7 @@
                                     <button onclick="window.switchAdminSubTab('restaurants')" id="admin-subtab-res" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-orange-500 text-white shadow-sm transition">口袋店家 (<span id="admin-res-count">0</span>)</button>
                                     <button onclick="window.switchAdminSubTab('feed')" id="admin-subtab-feed" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-gray-100 text-gray-600 hover:bg-gray-200 transition">動態評價 (<span id="admin-feed-count">0</span>)</button>
                                     <button onclick="window.switchAdminSubTab('members')" id="admin-subtab-members" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-gray-100 text-gray-600 hover:bg-gray-200 transition"><i class="fa-solid fa-key mr-1"></i>成員密碼 (<span id="admin-members-count">0</span>)</button>
+                                    <button onclick="window.switchAdminSubTab('pending-groups')" id="admin-subtab-pending-groups" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-gray-100 text-gray-600 hover:bg-gray-200 transition"><i class="fa-solid fa-layer-group mr-1"></i>待審核群組 (<span id="admin-pending-groups-count">0</span>)</button>
                                 </div>
                             </div>
 
@@ -1731,6 +1741,18 @@
                                     </div>
                                 </div>
                                 <div id="admin-members-list-container" class="space-y-2"></div>
+                            </div>
+
+                            <!-- 🌟 待審核群組管理列表 (主揪審核成員自建群組) -->
+                            <div id="admin-data-list-pending-groups" class="hidden space-y-2.5 max-h-96 overflow-y-auto pr-1">
+                                <div class="bg-blue-50 p-3 rounded-2xl border border-blue-200 mb-3 text-xs text-blue-800 flex items-start gap-2">
+                                    <i class="fa-solid fa-clipboard-check text-blue-600 text-base shrink-0 mt-0.5"></i>
+                                    <div>
+                                        <p class="font-bold">新群組審核中心</p>
+                                        <p class="text-[11px] text-blue-700 leading-relaxed">成員若找不到所屬群組可自行新增建檔。此處列出尚未認證的群組，主揪點擊「同意認證」後將正式納入官方名單並移除「未認證」標籤。</p>
+                                    </div>
+                                </div>
+                                <div id="admin-pending-groups-container" class="space-y-2"></div>
                             </div>
                         </div>
 
@@ -1942,6 +1964,37 @@
                 color: tierObj.color,
                 badgeFullLabel: `${tierObj.icon} ${tierObj.name} (Lv.${level})`
             };
+        };
+
+        // 🌟 群組審核與認證機制 (未認證群組檢查與標籤渲染)
+        window.isGroupVerified = function(groupName) {
+            if (!groupName || groupName === '主揪' || groupName === '未分類') return true;
+            // 預設核心群組自動視為已認證
+            const DEFAULT_VERIFIED_GROUPS = ['主揪', '玉泉', '屏東', '高雄', '台北', '老服', '社發'];
+            if (DEFAULT_VERIFIED_GROUPS.includes(groupName)) return true;
+
+            const pendingList = Array.isArray(window.appConfig.pendingGroups) ? window.appConfig.pendingGroups : [];
+            const approvedList = Array.isArray(window.appConfig.approvedGroups) ? window.appConfig.approvedGroups : [];
+
+            if (pendingList.includes(groupName)) return false;
+            if (approvedList.includes(groupName)) return true;
+
+            // 如果群組在 appConfig.groups 中且不在 pendingGroups，視為已認證
+            return true;
+        };
+
+        window.formatGroupBadgeHtml = function(groupName, extraClass = '') {
+            if (!groupName) return '';
+            const theme = window.getGroupColorTheme(groupName);
+            const verified = window.isGroupVerified(groupName);
+            const unverifiedTag = !verified ? `<span class="bg-rose-500 text-white text-[8px] px-1 py-0.2 rounded font-black ml-1 shadow-2xs">未認證</span>` : '';
+            return `<span class="${theme.badge} px-1.5 py-0.5 rounded font-bold text-[10px] inline-flex items-center shrink-0 whitespace-nowrap ${extraClass}">${groupName} 團${unverifiedTag}</span>`;
+        };
+
+        window.formatGroupNameDisplay = function(groupName) {
+            if (!groupName) return '';
+            const verified = window.isGroupVerified(groupName);
+            return verified ? `${groupName} 團` : `${groupName} 團 (未認證)`;
         };
 
         // 🌟 檢查並發布升階勳章全站公告
@@ -2351,7 +2404,9 @@
                     creators: window.appConfig.creators || ['黃政誥'],
                     membersMap: window.appConfig.membersMap || { '主揪': ['黃政誥'] },
                     userPasswords: window.appConfig.userPasswords || { '黃政誥': 'Bb19960930' },
-                    memberAvatars: window.appConfig.memberAvatars || {}
+                    memberAvatars: window.appConfig.memberAvatars || {},
+                    pendingGroups: window.appConfig.pendingGroups || [],
+                    approvedGroups: window.appConfig.approvedGroups || []
                 };
                 if (window.appConfig.id) {
                     await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'config', window.appConfig.id), payload);
@@ -2407,7 +2462,9 @@
                         creators: conf.creators || ['黃政誥'], 
                         membersMap: conf.membersMap || { '主揪': ['黃政誥'] },
                         userPasswords: conf.userPasswords || { '黃政誥': 'Bb19960930' },
-                        memberAvatars: conf.memberAvatars || {}
+                        memberAvatars: conf.memberAvatars || {},
+                        pendingGroups: conf.pendingGroups || [],
+                        approvedGroups: conf.approvedGroups || []
                     }; 
                 } else { 
                     try {
@@ -2418,6 +2475,7 @@
                 updateConfigDropdowns(); 
                 if (!document.getElementById('view-feed').classList.contains('hidden')) window.renderFeed();
                 if (!document.getElementById('view-chat').classList.contains('hidden')) window.renderChatMessages();
+                if (!document.getElementById('view-admin').classList.contains('hidden')) window.renderAdminDataList();
             }, handleSyncError);
             
             onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'feed'), (snap) => { 
@@ -2435,6 +2493,19 @@
                 if (!document.getElementById('view-chat').classList.contains('hidden')) window.renderChatMessages(); 
             }, handleSyncError);
         }
+
+        window.handleNewIdGroupSelect = function(el) {
+            const val = el ? el.value : '';
+            const customBox = document.getElementById('new-id-custom-group-box');
+            const customInput = document.getElementById('new-id-group');
+            if (val === '__custom__') {
+                if (customBox) customBox.classList.remove('hidden');
+                if (customInput) { customInput.focus(); }
+            } else {
+                if (customBox) customBox.classList.add('hidden');
+                if (customInput) customInput.value = val;
+            }
+        };
 
         function updateConfigDropdowns() {
             let safeGroups = Array.isArray(window.appConfig.groups) && window.appConfig.groups.length > 0 ? window.appConfig.groups : ['未分類'];
@@ -2467,7 +2538,7 @@
             if (!window.appConfig.membersMap['主揪']) window.appConfig.membersMap['主揪'] = [];
             if (!window.appConfig.membersMap['主揪'].includes('黃政誥')) window.appConfig.membersMap['主揪'].push('黃政誥');
 
-            const gHtml = safeGroups.map(g => `<option value="${g}">${g}</option>`).join('');
+            const gHtml = safeGroups.map(g => `<option value="${g}">${g}${!window.isGroupVerified(g) ? ' (未認證)' : ''}</option>`).join('');
             
             ['id-group', 'admin-group', 'input-group'].forEach(id => { 
                 const el = document.getElementById(id); 
@@ -2477,6 +2548,22 @@
                     if (oldVal && safeGroups.includes(oldVal)) el.value = oldVal;
                 }
             });
+
+            // 註冊表單的新群組選單 (包含自定義新增)
+            const newIdGroupSelect = document.getElementById('new-id-group-select');
+            if (newIdGroupSelect) {
+                const oldSelectVal = newIdGroupSelect.value;
+                const selectableGroups = safeGroups.filter(g => g !== '主揪');
+                let newGOptionsHtml = selectableGroups.map(g => `<option value="${g}">${g}${!window.isGroupVerified(g) ? ' (未認證)' : ''}</option>`).join('');
+                newGOptionsHtml += `<option value="__custom__">➕ 自行新增群組 (需主揪審核)...</option>`;
+                newIdGroupSelect.innerHTML = newGOptionsHtml;
+                if (oldSelectVal && (selectableGroups.includes(oldSelectVal) || oldSelectVal === '__custom__')) {
+                    newIdGroupSelect.value = oldSelectVal;
+                } else if (selectableGroups.length > 0) {
+                    newIdGroupSelect.value = selectableGroups[0];
+                }
+                window.handleNewIdGroupSelect(newIdGroupSelect);
+            }
 
             ['id', 'admin', 'input'].forEach(prefix => {
                 const groupEl = document.getElementById(prefix + '-group');
@@ -2510,14 +2597,16 @@
             const btnRes = document.getElementById('admin-subtab-res');
             const btnFeed = document.getElementById('admin-subtab-feed');
             const btnMembers = document.getElementById('admin-subtab-members');
+            const btnPending = document.getElementById('admin-subtab-pending-groups');
             const listRes = document.getElementById('admin-data-list-restaurants');
             const listFeed = document.getElementById('admin-data-list-feed');
             const listMembers = document.getElementById('admin-data-list-members');
+            const listPending = document.getElementById('admin-data-list-pending-groups');
 
-            [btnRes, btnFeed, btnMembers].forEach(b => {
+            [btnRes, btnFeed, btnMembers, btnPending].forEach(b => {
                 if (b) b.className = "px-3 py-1.5 rounded-xl text-xs font-bold bg-gray-100 text-gray-600 hover:bg-gray-200 transition";
             });
-            [listRes, listFeed, listMembers].forEach(l => {
+            [listRes, listFeed, listMembers, listPending].forEach(l => {
                 if (l) l.classList.add('hidden');
             });
 
@@ -2530,6 +2619,9 @@
             } else if (tab === 'members') {
                 if (btnMembers) btnMembers.className = "px-3 py-1.5 rounded-xl text-xs font-bold bg-orange-500 text-white shadow-sm transition";
                 if (listMembers) listMembers.classList.remove('hidden');
+            } else if (tab === 'pending-groups') {
+                if (btnPending) btnPending.className = "px-3 py-1.5 rounded-xl text-xs font-bold bg-orange-500 text-white shadow-sm transition";
+                if (listPending) listPending.classList.remove('hidden');
             }
         };
 
@@ -2537,9 +2629,11 @@
             const resCountEl = document.getElementById('admin-res-count');
             const feedCountEl = document.getElementById('admin-feed-count');
             const membersCountEl = document.getElementById('admin-members-count');
+            const pendingCountEl = document.getElementById('admin-pending-groups-count');
             const listRes = document.getElementById('admin-data-list-restaurants');
             const listFeed = document.getElementById('admin-data-list-feed');
             const membersListContainer = document.getElementById('admin-members-list-container');
+            const pendingGroupsContainer = document.getElementById('admin-pending-groups-container');
 
             if (resCountEl) resCountEl.textContent = window.restaurantData.length;
             if (feedCountEl) feedCountEl.textContent = window.feedData.length;
@@ -2562,6 +2656,10 @@
             });
 
             if (membersCountEl) membersCountEl.textContent = membersList.length;
+
+            // 統計待審核群組
+            const pendingList = Array.isArray(window.appConfig.pendingGroups) ? window.appConfig.pendingGroups : [];
+            if (pendingCountEl) pendingCountEl.textContent = pendingList.length;
 
             if (listRes) {
                 if (window.restaurantData.length === 0) {
@@ -2628,7 +2726,7 @@
                                         <h4 class="text-xs font-bold text-gray-800 truncate">${m.name}</h4>
                                         <span class="text-[9px] bg-orange-50 text-orange-600 border border-orange-200 px-1.5 py-0.2 rounded font-bold">${lvlInfo.badgeFullLabel}</span>
                                     </div>
-                                    <p class="text-[10px] text-gray-400 truncate">${m.group} 團</p>
+                                    <p class="text-[10px] text-gray-400 truncate">${m.group} 團${!window.isGroupVerified(m.group) ? ' (未認證)' : ''}</p>
                                 </div>
                             </div>
                             <div class="flex items-center gap-2 shrink-0 ml-2">
@@ -2642,6 +2740,91 @@
                         </div>`;
                     }).join('');
                 }
+            }
+
+            // 🌟 渲染待審核群組列表
+            if (pendingGroupsContainer) {
+                if (pendingList.length === 0) {
+                    pendingGroupsContainer.innerHTML = `<div class="text-center text-gray-400 py-6 text-xs font-medium">目前沒有待審核的新增群組 🎉</div>`;
+                } else {
+                    pendingGroupsContainer.innerHTML = pendingList.map(grp => {
+                        const membersInGrp = (membersMap[grp] || []).join('、') || '暫無成員';
+                        const safeGrp = window.escapeForBtn(grp);
+                        return `
+                        <div class="flex items-center justify-between p-3.5 bg-gray-50 rounded-2xl border border-orange-200/80 hover:border-orange-400 transition">
+                            <div class="flex items-center gap-3 overflow-hidden min-w-0">
+                                <div class="w-9 h-9 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center font-bold text-sm shrink-0">
+                                    <i class="fa-solid fa-layer-group"></i>
+                                </div>
+                                <div class="truncate">
+                                    <div class="flex items-center gap-1.5">
+                                        <h4 class="text-sm font-bold text-gray-900 truncate">${grp} 團</h4>
+                                        <span class="bg-rose-500 text-white text-[9px] px-1.5 py-0.2 rounded font-black shadow-2xs shrink-0">未認證</span>
+                                    </div>
+                                    <p class="text-[11px] text-gray-500 mt-0.5 truncate">群組成員：${membersInGrp}</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2 shrink-0 ml-2">
+                                <button onclick="window.adminApproveGroup('${safeGrp}')" class="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-xs font-bold transition flex items-center gap-1 shadow-xs">
+                                    <i class="fa-solid fa-check"></i> 同意認證
+                                </button>
+                                <button onclick="window.adminRejectGroup('${safeGrp}')" class="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl text-xs font-bold transition flex items-center gap-1">
+                                    <i class="fa-solid fa-xmark"></i> 移除
+                                </button>
+                            </div>
+                        </div>`;
+                    }).join('');
+                }
+            }
+        };
+
+        window.adminApproveGroup = async function(grpName) {
+            if (!grpName) return;
+            try { grpName = decodeURIComponent(grpName); } catch(e) {}
+            
+            if (!confirm(`確定要同意並正式認證「${grpName} 團」嗎？\n\n認證後，所有該群組成員的「未認證」標記將會立即移除。`)) return;
+
+            if (!Array.isArray(window.appConfig.approvedGroups)) window.appConfig.approvedGroups = [];
+            if (!window.appConfig.approvedGroups.includes(grpName)) window.appConfig.approvedGroups.push(grpName);
+            
+            if (Array.isArray(window.appConfig.pendingGroups)) {
+                window.appConfig.pendingGroups = window.appConfig.pendingGroups.filter(g => g !== grpName);
+            }
+            if (Array.isArray(window.appConfig.groups) && !window.appConfig.groups.includes(grpName)) {
+                window.appConfig.groups.push(grpName);
+            }
+
+            try {
+                await window.saveConfigToCloud();
+                updateConfigDropdowns();
+                window.renderAdminDataList();
+                if (typeof window.renderFeed === 'function') window.renderFeed();
+                if (typeof window.renderChatMessages === 'function') window.renderChatMessages();
+                window.showCustomMsg(`✅ 已成功認證「${grpName} 團」！\n「未認證」標誌已全面移除。`);
+            } catch(e) {
+                console.error("審核群組失敗:", e);
+                window.showCustomMsg("⚠️ 審核失敗，請檢查網路連線。");
+            }
+        };
+
+        window.adminRejectGroup = async function(grpName) {
+            if (!grpName) return;
+            try { grpName = decodeURIComponent(grpName); } catch(e) {}
+            
+            if (!confirm(`確定要移除待審核群組「${grpName}」嗎？`)) return;
+
+            if (Array.isArray(window.appConfig.pendingGroups)) {
+                window.appConfig.pendingGroups = window.appConfig.pendingGroups.filter(g => g !== grpName);
+            }
+            
+            try {
+                await window.saveConfigToCloud();
+                updateConfigDropdowns();
+                window.renderAdminDataList();
+                window.showCustomMsg(`🗑️ 已移除「${grpName}」。`);
+            } catch(e) {
+                console.error("移除群組失敗:", e);
+                window.showCustomMsg("⚠️ 移除失敗，請稍後再試。");
             }
         };
 
@@ -3007,6 +3190,16 @@
                 if(!window.appConfig.membersMap) window.appConfig.membersMap = { '主揪': ['黃政誥'] };
                 if(!Array.isArray(window.appConfig.groups)) window.appConfig.groups = [];
                 if(!Array.isArray(window.appConfig.creators)) window.appConfig.creators = [];
+                if(!Array.isArray(window.appConfig.pendingGroups)) window.appConfig.pendingGroups = [];
+                if(!Array.isArray(window.appConfig.approvedGroups)) window.appConfig.approvedGroups = [];
+
+                // 判斷是否為新創立的群組（不在既有列表中）
+                const isBrandNewGroup = !window.appConfig.groups.includes(nGroup);
+                if (isBrandNewGroup) {
+                    if (!window.appConfig.pendingGroups.includes(nGroup)) {
+                        window.appConfig.pendingGroups.push(nGroup);
+                    }
+                }
 
                 if(!window.appConfig.groups.includes(nGroup)) window.appConfig.groups.push(nGroup);
                 if(!window.appConfig.creators.includes(nName)) window.appConfig.creators.push(nName);
@@ -3790,6 +3983,96 @@
                     <span class="absolute bottom-1 left-1 bg-black/50 text-white text-[9px] px-1.5 py-0.2 rounded font-bold backdrop-blur-2xs">${idx + 1}</span>
                 </div>
             `).join('');
+        };
+
+        let currentProfileUser = null;
+        window.openUserProfile = function(userName, groupName) {
+            if (!userName) return;
+            try { userName = decodeURIComponent(userName); } catch(e) {}
+            try { groupName = decodeURIComponent(groupName || ''); } catch(e) {}
+            currentProfileUser = { name: userName, group: groupName || '' };
+            const modal = document.getElementById('user-profile-modal');
+            if (!modal) return;
+
+            document.getElementById('profile-name').textContent = userName;
+            const groupEl = document.getElementById('profile-group');
+            if (groupEl) {
+                const verified = window.isGroupVerified(groupName);
+                groupEl.innerHTML = `${groupName || '好朋友'} 團${!verified ? ' <span class="bg-rose-500 text-white text-[9px] px-1 py-0.2 rounded font-black ml-1 shadow-2xs">未認證</span>' : ''}`;
+            }
+            
+            // 尋找此用戶的 Line ID 及 Bio 及 頭像
+            let lineId = '';
+            let bio = '';
+            let inviter = '';
+            
+            if (window.myIdentity && window.myIdentity.name === userName) {
+                lineId = window.myIdentity.lineId || '';
+                bio = window.myIdentity.bio || '';
+            } else if (window.appConfig?.memberAvatars && window.appConfig.memberAvatars[userName]) {
+                lineId = window.appConfig.memberAvatars[userName].lineId || '';
+                bio = window.appConfig.memberAvatars[userName].bio || '';
+            }
+            
+            const matchedFeed = window.feedData.find(f => f.creator === userName && f.type === 'system_welcome');
+            if (matchedFeed) inviter = matchedFeed.inviter || '';
+            const avatarInfo = window.getAvatarInfo({ creator: userName });
+            const profileAvatar = document.getElementById('profile-avatar');
+            if (profileAvatar) {
+                if (avatarInfo.isCustom && avatarInfo.customUrl) {
+                    profileAvatar.className = `w-16 h-16 rounded-full mx-auto mb-2 shadow-md border-2 border-white overflow-hidden bg-white`;
+                    profileAvatar.innerHTML = `<img src="${window.resolveReviewImage(avatarInfo.customUrl)}" class="w-full h-full object-cover rounded-full">`;
+                } else {
+                    profileAvatar.className = `foodie-avatar foodie-avatar-${avatarInfo.avatarId} w-16 h-16 rounded-full mx-auto mb-2 shadow-md border-2 border-white`;
+                    profileAvatar.innerHTML = '';
+                }
+            }
+            
+            document.getElementById('profile-inviter').textContent = inviter ? `(由 ${inviter} 引薦)` : '';
+            document.getElementById('profile-bio').textContent = bio ? `「${bio}」` : '「無辣不歡，熱愛尋找高 C/P 值隱藏版美食！」';
+            document.getElementById('profile-line-id').textContent = lineId ? lineId : '尚未設定 LINE ID';
+
+            // 🌟 顯示 60 級與 12 層勳章資訊
+            const lvlInfo = window.getUserLevel(userName);
+            const tierBadgeEl = document.getElementById('profile-tier-badge');
+            const levelTagEl = document.getElementById('profile-level-tag');
+            const badgeTitleEl = document.getElementById('profile-badge-title');
+            const levelSubEl = document.getElementById('profile-level-sub');
+
+            if (tierBadgeEl) tierBadgeEl.textContent = `第 ${lvlInfo.tier} 層 勳章`;
+            if (levelTagEl) levelTagEl.textContent = `Lv.${lvlInfo.level}`;
+            if (badgeTitleEl) badgeTitleEl.innerHTML = `${lvlInfo.tierIcon} ${lvlInfo.tierName}`;
+            if (levelSubEl) levelSubEl.textContent = `${lvlInfo.title} (累計 ${lvlInfo.exp} 次口碑貢獻)`;
+
+            const copyBtn = document.getElementById('profile-copy-line-btn');
+            if (copyBtn) {
+                copyBtn.setAttribute('data-line-id', lineId);
+                copyBtn.style.display = lineId ? 'inline-flex' : 'none';
+            }
+
+            // 列出此人推薦的餐廳
+            const recs = window.restaurantData.filter(r => r.creator === userName);
+            document.getElementById('profile-rec-count').textContent = `${recs.length} 間`;
+            const recListEl = document.getElementById('profile-rec-list');
+            if (recListEl) {
+                if (recs.length === 0) {
+                    recListEl.innerHTML = `<div class="text-center text-gray-400 py-4 text-xs">目前尚未推薦任何口袋餐廳</div>`;
+                } else {
+                    recListEl.innerHTML = recs.map(r => `
+                        <div class="flex items-center justify-between p-2 bg-white rounded-xl border border-gray-100 shadow-2xs">
+                            <div class="truncate">
+                                <p class="text-xs font-bold text-gray-800 truncate">${r.name}</p>
+                                <p class="text-[10px] text-gray-400 truncate">${r.city || '美食好店'} | ⭐ ${r.rating || '推薦'}</p>
+                            </div>
+                            <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(r.name)}" target="_blank" class="text-orange-500 hover:text-orange-600 text-xs px-2 py-1 bg-orange-50 rounded-lg shrink-0 font-bold">
+                                地圖 <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i>
+                            </a>
+                        </div>
+                    `).join('');
+                }
+            }
+
+            modal.classList.remove('hidden');
         };
 
         window.handleIntPhotosSelected = async function(input) {
@@ -4817,7 +5100,7 @@
                         ${avatarHtml}
                         <div class="min-w-0">
                             <p class="text-sm font-bold text-gray-900 truncate leading-snug">${m.name}</p>
-                            <span class="${theme.badge} px-2 py-0.5 rounded-md font-bold text-[10px] inline-block mt-0.5">${m.group} 團</span>
+                            <div class="mt-0.5">${window.formatGroupBadgeHtml(m.group)}</div>
                         </div>
                     </div>
                     <button onclick="window.openUserProfile('${window.escapeForBtn(m.name)}', '${window.escapeForBtn(m.group)}')" class="bg-white border border-gray-200 hover:border-orange-300 text-gray-700 hover:text-orange-600 text-xs font-bold px-3 py-1.5 rounded-xl shadow-2xs transition shrink-0">
@@ -4985,7 +5268,7 @@
                                 <div class="min-w-0 flex-1">
                                     <p class="text-[11px] text-blue-600 font-bold mb-0.5">🎉 新朋友加入 · ${dateStr}</p>
                                     <p class="text-xs sm:text-sm text-gray-800 font-bold leading-snug">
-                                        歡迎 <span class="text-blue-600 font-extrabold">${item.creator}</span> 加入 <span class="text-blue-600 font-extrabold">${item.group}</span>！
+                                        歡迎 <span class="text-blue-600 font-extrabold">${item.creator}</span> 加入 <span class="text-blue-600 font-extrabold">${item.group}</span>${!window.isGroupVerified(item.group) ? ' <span class="bg-rose-500 text-white text-[8px] px-1 py-0.2 rounded font-black ml-1">未認證</span>' : ''}！
                                     </p>
                                     <p class="text-[11px] text-gray-500 mt-0.5">(由 ${item.inviter} 引薦進來 🙌)</p>
                                 </div>
@@ -5021,7 +5304,11 @@
                                         <span class="bg-yellow-300 text-amber-900 text-[10px] px-2 py-0.5 rounded-full font-black tracking-wider shadow-sm shrink-0 whitespace-nowrap leading-none inline-block">榮耀晉階</span>
                                         <span class="bg-white/25 backdrop-blur-sm text-white px-2 py-0.5 rounded-full font-black text-[10px] sm:text-xs border border-white/40 shadow-xs shrink-0 whitespace-nowrap leading-none inline-block">第 ${item.tier} 層勳章 達成！</span>
                                     </div>
-                                    <p class="text-[11px] text-yellow-100 font-bold truncate">${item.group} 團 • ${dateStr}</p>
+                                    <div class="flex items-center gap-1.5 text-[11px] text-yellow-100 font-bold truncate">
+                                        <span>${item.group} 團${!window.isGroupVerified(item.group) ? ' (未認證)' : ''}</span>
+                                        <span>•</span>
+                                        <span>${dateStr}</span>
+                                    </div>
                                 </div>
                             </div>
                             <button onclick="window.deleteFeedItemWithAuth('${item.id}')" class="w-7 h-7 rounded-lg bg-white/20 hover:bg-white/30 text-white flex items-center justify-center text-xs backdrop-blur-xs transition shrink-0 ml-1" title="刪除此廣播">
@@ -5054,7 +5341,6 @@
                 // 3. 🌟 聚會結束照片廣播卡片 (Party Recap)
                 if (item.type === 'party_recap') {
                     const joinedStr = Array.isArray(item.joined) && item.joined.length > 0 ? item.joined.join('、') : item.creator;
-                    const theme = window.getGroupColorTheme(item.group);
                     return `
                     <div class="rounded-3xl p-5 shadow-sm bg-gradient-to-br from-amber-50/90 via-orange-50/50 to-white border-2 border-amber-300 flex flex-col gap-3 transition hover:shadow-md relative overflow-hidden">
                         <div class="flex items-center justify-between gap-2 border-b border-amber-200/60 pb-3">
@@ -5068,7 +5354,7 @@
                                         <span class="bg-amber-500 text-white text-[9px] px-1.5 py-0.5 rounded font-black tracking-wider shadow-xs">聚會花絮</span>
                                     </div>
                                     <div class="flex items-center gap-1.5 text-[11px] text-gray-500 mt-0.5">
-                                        <span class="${theme.badge} px-2 py-0.5 rounded-md font-bold text-[10px]">${item.group} 團</span>
+                                        ${window.formatGroupBadgeHtml(item.group)}
                                         <span>•</span>
                                         <span>${dateStr}</span>
                                     </div>
@@ -5125,7 +5411,6 @@
 
                 const commentsHtml = comments.map((c, cIdx) => {
                     const cLevelInfo = window.getUserLevel(c.creator);
-                    const cTheme = window.getGroupColorTheme(c.group);
                     const isCHost = c.creator === '黃政誥' || c.group === '主揪';
                     const cPhotos = Array.isArray(c.photos) && c.photos.length > 0
                         ? c.photos
@@ -5138,7 +5423,7 @@
                                 <span class="font-bold text-gray-900 cursor-pointer hover:text-orange-500 transition leading-none" onclick="window.openUserProfile('${window.escapeForBtn(c.creator)}', '${window.escapeForBtn(c.group)}')">${c.creator}</span>
                                 ${isCHost ? '<span class="bg-orange-500 text-white text-[8px] px-1 rounded font-black">主揪</span>' : ''}
                                 <span class="bg-amber-50 text-amber-700 border border-amber-200 text-[9px] px-1.5 py-0.2 rounded font-bold" title="${cLevelInfo.tierName} (Lv.${cLevelInfo.level})">${cLevelInfo.tierIcon} Lv.${cLevelInfo.level}</span>
-                                <span class="${cTheme.badge} text-[9px] px-1.5 py-0.2 rounded font-bold">${c.group} 團</span>
+                                ${window.formatGroupBadgeHtml(c.group)}
                             </div>
                             <div class="flex items-center gap-1">
                                 <button onclick="window.openFeedCommentEditModal('${item.id}', ${cIdx})" class="text-gray-400 hover:text-blue-500 text-[10px] px-1.5 py-0.5 rounded hover:bg-blue-50 transition font-bold" title="編輯留言">
@@ -5241,7 +5526,7 @@
                                     <span class="inline-flex items-center gap-0.5 bg-amber-50 text-amber-700 border border-amber-200 text-[10px] px-1.5 py-0.5 rounded font-bold shrink-0 whitespace-nowrap">${userLevelInfo.tierIcon} Lv.${userLevelInfo.level}</span>
                                 </div>
                                 <div class="flex items-center gap-1.5 text-[11px] text-gray-400 min-w-0">
-                                    <span class="${theme.badge} px-1.5 py-0.5 rounded font-bold text-[10px] shrink-0 whitespace-nowrap">${item.group} 團</span>
+                                    ${window.formatGroupBadgeHtml(item.group)}
                                     <span class="text-gray-300">•</span>
                                     <span class="truncate whitespace-nowrap">${dateStr}</span>
                                 </div>
@@ -5375,7 +5660,7 @@
                         <div class="flex flex-col items-end max-w-[80%] sm:max-w-[70%]">
                             <div class="flex items-center gap-1.5 mb-1 flex-wrap justify-end">
                                 <span class="bg-amber-100 text-amber-800 border border-amber-300 text-[9px] px-1.5 py-0.2 rounded font-bold" title="${lvlInfo.tierName} (Lv.${lvlInfo.level})">${lvlInfo.tierIcon} Lv.${lvlInfo.level}</span>
-                                <span class="${theme.badge} text-[9px] px-1.5 py-0.2 rounded font-bold">${msg.group} 團</span>
+                                ${window.formatGroupBadgeHtml(msg.group)}
                                 <span class="text-xs font-bold text-gray-700">${msg.creator}</span>
                             </div>
                             <div class="bg-gradient-to-r from-orange-500 to-amber-500 text-white px-4 py-2.5 rounded-2xl rounded-tr-xs text-xs sm:text-sm font-medium shadow-xs break-words text-left leading-relaxed">
@@ -5393,7 +5678,7 @@
                                 <span class="text-xs font-bold text-gray-900 cursor-pointer hover:text-orange-500" onclick="window.openUserProfile('${window.escapeForBtn(msg.creator)}', '${window.escapeForBtn(msg.group)}')">${msg.creator}</span>
                                 ${isHost ? '<span class="bg-orange-500 text-white text-[8px] px-1 rounded font-black">主揪</span>' : ''}
                                 <span class="bg-amber-50 text-amber-700 border border-amber-200 text-[9px] px-1.5 py-0.2 rounded font-bold" title="${lvlInfo.tierName} (Lv.${lvlInfo.level})">${lvlInfo.tierIcon} Lv.${lvlInfo.level}</span>
-                                <span class="${theme.badge} text-[9px] px-1.5 py-0.2 rounded font-bold">${msg.group} 團</span>
+                                ${window.formatGroupBadgeHtml(msg.group)}
                             </div>
                             <div class="bg-white text-gray-800 border border-gray-200/80 px-4 py-2.5 rounded-2xl rounded-tl-xs text-xs sm:text-sm font-medium shadow-xs break-words leading-relaxed">
                                 ${window.escapeHtml(msg.text)}
