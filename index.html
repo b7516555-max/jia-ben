@@ -190,7 +190,10 @@
         .foodie-avatar-night { background-image: url('https://b7516555-max.github.io/jia-ben/assets/avatars/night.png'); }
         .foodie-avatar-camera { background-image: url('https://b7516555-max.github.io/jia-ben/assets/avatars/camera.png'); }
         .avatar-choice.is-selected { border-color: #f97316; box-shadow: 0 0 0 3px rgba(249,115,22,.18); transform: translateY(-2px); }
-        .wheel-stage { width: min(78vw, 400px); aspect-ratio: 1; }
+        .wheel-stage { width: min(72vw, 36vh, 340px); aspect-ratio: 1; }
+        @media (max-height: 750px) {
+            .wheel-stage { width: min(65vw, 30vh, 260px); }
+        }
         .wheel-disc { transition: transform 4.8s cubic-bezier(.14,.8,.1,1); will-change: transform; }
         .wheel-pointer { filter: drop-shadow(0 4px 6px rgba(234,88,12,.35)); }
         .jelly-wheel-wrap {
@@ -1645,50 +1648,50 @@
                 </div>
 
                 <!-- 視圖 1.5: 美食旋轉輪盤（內部代號仍保留 radar 以相容既有搜尋流程） -->
-                <div id="view-nearby" class="hidden fade-in h-full flex flex-col relative w-full">
-                    <div class="bg-white p-3.5 sm:p-5 shadow-sm z-10 border-b border-gray-100 flex flex-col items-center">
+                <div id="view-nearby" class="hidden fade-in h-full flex flex-col relative w-full overflow-hidden">
+                    <div class="bg-white p-2.5 sm:p-4 shadow-sm z-10 border-b border-gray-100 flex flex-col items-center shrink-0">
                         <div class="w-full max-w-3xl">
-                            <h2 class="text-base sm:text-lg font-bold text-gray-800 mb-2 leading-none"><i class="fa-solid fa-dharmachakra text-orange-500 mr-1.5"></i>附近美食旋轉輪盤</h2>
+                            <h2 class="text-sm sm:text-lg font-bold text-gray-800 mb-1.5 leading-none"><i class="fa-solid fa-dharmachakra text-orange-500 mr-1.5"></i>附近美食旋轉輪盤</h2>
                             <div class="flex gap-1.5">
-                                <input type="text" id="radar-keyword" placeholder="想找什麼？(可空白，直接點輪盤正中央開抽！)" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none text-gray-800 text-xs sm:text-sm font-medium" onkeypress="if(event.key === 'Enter') window.searchGooglePlaces('radar')">
-                                <button id="radar-spin-btn" onclick="window.searchGooglePlaces('radar')" class="bg-gradient-to-r from-amber-500 to-orange-500 text-white px-4 rounded-xl shadow-xs font-bold text-xs sm:text-sm hover:from-amber-600 hover:to-orange-600 transition whitespace-nowrap"><i class="fa-solid fa-play mr-1"></i>轉動輪盤</button>
+                                <input type="text" id="radar-keyword" placeholder="想找什麼？(可留空，直接點輪盤中央開抽！)" class="w-full px-3 py-1.5 sm:py-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none text-gray-800 text-xs sm:text-sm font-medium" onkeypress="if(event.key === 'Enter') window.searchGooglePlaces('radar')">
+                                <button id="radar-spin-btn" onclick="window.searchGooglePlaces('radar')" class="bg-gradient-to-r from-amber-500 to-orange-500 text-white px-3.5 sm:px-4 rounded-xl shadow-xs font-bold text-xs sm:text-sm hover:from-amber-600 hover:to-orange-600 transition whitespace-nowrap"><i class="fa-solid fa-play mr-1"></i>轉動輪盤</button>
                             </div>
-                            <div class="desktop-price-row flex items-center gap-1.5 mt-2.5 text-xs text-gray-600 justify-end overflow-x-auto no-scrollbar">
-                                <i class="fa-solid fa-coins text-orange-400 text-xs"></i><span class="font-bold text-xs shrink-0 text-gray-700">金額預算</span>
-                                <div class="flex items-center bg-gray-50 border border-gray-300 rounded-xl px-2.5 py-1 shadow-2xs focus-within:border-orange-400 transition">
-                                    <span class="text-xs text-gray-400 font-bold mr-1">$</span>
-                                    <input type="number" id="radar-price-min" placeholder="最低" min="0" step="50" class="w-16 sm:w-20 bg-transparent text-xs sm:text-sm font-bold text-gray-800 focus:outline-none placeholder:text-gray-300" onkeypress="if(event.key === 'Enter') window.searchGooglePlaces('radar')">
-                                    <span class="text-gray-300 mx-1.5 font-bold">~</span>
-                                    <span class="text-xs text-gray-400 font-bold mr-1">$</span>
-                                    <input type="number" id="radar-price-max" placeholder="最高" min="0" step="50" class="w-16 sm:w-20 bg-transparent text-xs sm:text-sm font-bold text-gray-800 focus:outline-none placeholder:text-gray-300" onkeypress="if(event.key === 'Enter') window.searchGooglePlaces('radar')">
+                            <div class="desktop-price-row flex items-center gap-1.5 mt-1.5 sm:mt-2 text-xs text-gray-600 justify-end overflow-x-auto no-scrollbar">
+                                <i class="fa-solid fa-coins text-orange-400 text-xs"></i><span class="font-bold text-[11px] sm:text-xs shrink-0 text-gray-700">金額預算</span>
+                                <div class="flex items-center bg-gray-50 border border-gray-300 rounded-xl px-2 py-0.5 sm:py-1 shadow-2xs focus-within:border-orange-400 transition">
+                                    <span class="text-[11px] text-gray-400 font-bold mr-1">$</span>
+                                    <input type="number" id="radar-price-min" placeholder="最低" min="0" step="50" class="w-14 sm:w-20 bg-transparent text-xs sm:text-sm font-bold text-gray-800 focus:outline-none placeholder:text-gray-300" onkeypress="if(event.key === 'Enter') window.searchGooglePlaces('radar')">
+                                    <span class="text-gray-300 mx-1 font-bold">~</span>
+                                    <span class="text-[11px] text-gray-400 font-bold mr-1">$</span>
+                                    <input type="number" id="radar-price-max" placeholder="最高" min="0" step="50" class="w-14 sm:w-20 bg-transparent text-xs sm:text-sm font-bold text-gray-800 focus:outline-none placeholder:text-gray-300" onkeypress="if(event.key === 'Enter') window.searchGooglePlaces('radar')">
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <div id="nearby-container" class="flex-1 overflow-y-auto p-4 md:p-6 pb-10 flex flex-col items-center">
-                        <div class="text-center mb-3">
-                            <p class="text-sm font-extrabold text-gray-800 flex items-center justify-center gap-1.5">
+                    <div id="nearby-container" class="flex-1 overflow-y-auto px-3 py-2 sm:p-4 pb-20 flex flex-col items-center justify-start max-w-full">
+                        <div class="text-center mb-1.5 shrink-0">
+                            <p class="text-xs sm:text-sm font-extrabold text-gray-800 flex items-center justify-center gap-1">
                                 <span>✨ 點擊輪盤正中央按鈕，立刻開抽！</span>
                             </p>
-                            <p class="text-[11px] text-gray-400 mt-1">從符合關鍵字、位置與價位的附近好店中命運抽選</p>
+                            <p class="text-[10px] text-gray-400 mt-0.5">從符合條件的附近好店中命運抽選</p>
                         </div>
-                        <div class="wheel-stage relative shrink-0">
+                        <div class="wheel-stage relative shrink-0 my-1">
                             <!-- 頂部可愛果凍指針 -->
-                            <div class="wheel-pointer absolute z-20 left-1/2 -top-2 -translate-x-1/2 text-orange-500 text-4xl drop-shadow-md cursor-pointer pointer-events-none transition"><i class="fa-solid fa-location-pin"></i></div>
+                            <div class="wheel-pointer absolute z-20 left-1/2 -top-1.5 -translate-x-1/2 text-orange-500 text-3xl sm:text-4xl drop-shadow-md cursor-pointer pointer-events-none transition"><i class="fa-solid fa-location-pin"></i></div>
                             
                             <!-- 半透明果凍輪盤 Canvas -->
-                            <canvas id="restaurant-wheel" width="720" height="720" class="wheel-disc jelly-wheel-wrap w-full h-full rounded-full border-[6px] border-white/90 shadow-2xl"></canvas>
+                            <canvas id="restaurant-wheel" width="720" height="720" class="wheel-disc jelly-wheel-wrap w-full h-full rounded-full border-[4px] sm:border-[6px] border-white/90 shadow-2xl"></canvas>
                             
                             <!-- 正中央點擊旋轉按鈕（可愛果凍、半透明立體風格） -->
-                            <button id="wheel-center-spin-btn" type="button" onclick="window.searchGooglePlaces('radar')" class="jelly-center-btn jelly-pulse absolute inset-[32%] rounded-full z-30 flex flex-col items-center justify-center text-orange-600 cursor-pointer select-none group focus:outline-none" title="點擊轉動輪盤">
-                                <div class="w-10 h-10 rounded-full bg-white/90 shadow-xs flex items-center justify-center mb-1 group-hover:scale-110 transition">
-                                    <i class="fa-solid fa-utensils text-orange-500 text-xl"></i>
+                            <button id="wheel-center-spin-btn" type="button" onclick="window.searchGooglePlaces('radar')" class="jelly-center-btn jelly-pulse absolute inset-[30%] rounded-full z-30 flex flex-col items-center justify-center text-orange-600 cursor-pointer select-none group focus:outline-none" title="點擊轉動輪盤">
+                                <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-white/90 shadow-xs flex items-center justify-center mb-0.5 group-hover:scale-110 transition">
+                                    <i class="fa-solid fa-utensils text-orange-500 text-base sm:text-xl"></i>
                                 </div>
-                                <span class="text-[11px] sm:text-xs font-black tracking-wider text-orange-600 drop-shadow-xs">點我抽籤</span>
+                                <span class="text-[10px] sm:text-xs font-black tracking-wider text-orange-600 drop-shadow-xs">點我抽籤</span>
                             </button>
                         </div>
-                        <div id="wheel-status" class="mt-5 text-center text-sm font-bold text-gray-600 bg-white/80 px-4 py-2 rounded-2xl border border-orange-100 shadow-xs backdrop-blur-xs">輪盤正在等您召集附近好店，點擊正中間開始！</div>
-                        <div id="wheel-result" class="hidden w-full max-w-md mt-4"></div>
+                        <div id="wheel-status" class="mt-1.5 text-center text-xs font-bold text-gray-600 bg-white/90 px-3 py-1 rounded-xl border border-orange-100 shadow-2xs backdrop-blur-xs shrink-0 max-w-xs">輪盤正在等您召集附近好店，點擊正中間開始！</div>
+                        <div id="wheel-result" class="hidden w-full max-w-sm mt-2 shrink-0"></div>
                     </div>
                 </div>
 
@@ -4174,7 +4177,7 @@
             setTimeout(() => {
                 const winner = places[selectedIndex];
                 statusEl.innerHTML = `🎉 今天就吃 <span class="text-orange-600 font-extrabold">${window.escapeHtml(winner.name)}</span>！`;
-                resultEl.innerHTML = `<div class="text-center text-xs font-bold text-amber-600 mb-2">命運選中的附近好店</div>${generatePlaceCardHtml(winner)}`;
+                resultEl.innerHTML = `<div class="text-center text-[11px] font-bold text-amber-600 mb-1">命運選中的附近好店</div>${generateWheelPlaceCardHtml(winner)}`;
                 resultEl.classList.remove('hidden');
                 if (btn) { btn.disabled = false; btn.classList.remove('opacity-60'); btn.innerHTML = '<i class="fa-solid fa-rotate mr-1"></i>再轉一次'; }
                 if (centerBtn) {
@@ -4207,27 +4210,34 @@
         
         function generateRatingHtml(rating, reviews) { if(!rating) return `<span class="text-gray-400 text-[11px]">暫無評價</span>`; return `<span class="text-orange-500 font-bold text-[11px] bg-orange-50 px-1.5 py-0.5 rounded-lg flex items-center w-fit border border-orange-100"><i class="fa-solid fa-star text-[9px] mr-1"></i> ${parseFloat(rating).toFixed(1)} <span class="text-gray-500 text-[9px] ml-1 font-normal">(${reviews||0})</span></span>`; }
         
-        function generatePlaceCardHtml(p) { 
+        function generateWheelPlaceCardHtml(p) {
             let rawImg = p.photos && p.photos.length > 0 ? p.photos[0].getUrl({maxWidth: 500}) : '';
             let img = window.getSafeImage(rawImg, p.name);
-            
-            const mUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.name + ' ' + p.formatted_address)}`; 
-            const cStr = extractCity(p.formatted_address); 
-            const pDataStr = window.escapeForBtn(JSON.stringify({ name: p.name, placeId: p.place_id || '', mapLink: mUrl, lat: p.geometry.location.lat(), lng: p.geometry.location.lng(), rating: p.rating || 0, reviews: p.user_ratings_total || 0, photoUrl: '', city: cStr })); 
             const safeNameStr = window.escapeForBtn(p.name);
             const openStatusInfo = window.computeOpeningStatus(p);
+            const ratingHtml = generateRatingHtml(p.rating, p.user_ratings_total);
+            const address = p.formatted_address || '';
 
-            return `<div class="restaurant-card bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden relative cursor-pointer group h-48 md:h-56 lg:h-64 transition" onclick="window.openRestaurantDetailByName('${safeNameStr}')">
-                <img src="${img}" onerror="this.onerror=null; this.src=window.getFallbackImage('${safeNameStr}');" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110">
-                <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent"></div>
-                <div class="absolute top-2.5 left-2.5 bg-black/60 backdrop-blur-md text-white text-[10px] px-2.5 py-1 rounded-full z-10 font-bold tracking-widest border border-white/20"><i class="fa-solid fa-location-arrow mr-1 text-orange-400"></i>${p.dist.toFixed(1)} km</div>
-                <div class="absolute top-2.5 right-2.5 z-10 flex items-center gap-1">
-                    ${openStatusInfo.badgeHtml}
+            return `
+            <div class="restaurant-card bg-white rounded-2xl shadow-md border border-orange-100/80 overflow-hidden cursor-pointer group hover:border-orange-300 transition flex flex-col sm:flex-row items-stretch" onclick="window.openRestaurantDetailByName('${safeNameStr}')">
+                <div class="relative h-28 sm:h-auto sm:w-36 shrink-0 overflow-hidden">
+                    <img src="${img}" onerror="this.onerror=null; this.src=window.getFallbackImage('${safeNameStr}');" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105">
+                    <div class="absolute top-2 left-2 bg-black/60 backdrop-blur-xs text-white text-[10px] px-2 py-0.5 rounded-full font-bold tracking-wider"><i class="fa-solid fa-location-arrow mr-1 text-orange-400"></i>${p.dist.toFixed(1)} km</div>
                 </div>
-                <div class="absolute bottom-0 left-0 right-0 p-3.5 md:p-4 z-10">
-                    <h3 class="text-base md:text-lg font-bold text-white line-clamp-2 drop-shadow-md leading-tight">${p.name}</h3>
+                <div class="p-3 flex-1 flex flex-col justify-between min-w-0 bg-white">
+                    <div>
+                        <div class="flex items-center justify-between gap-1.5 mb-1">
+                            <h3 class="text-sm sm:text-base font-extrabold text-gray-900 truncate">${window.escapeHtml(p.name)}</h3>
+                            <div class="shrink-0">${openStatusInfo.badgeHtml}</div>
+                        </div>
+                        <p class="text-[11px] text-gray-500 line-clamp-1 mb-1"><i class="fa-solid fa-location-dot text-orange-400 mr-1"></i>${window.escapeHtml(address)}</p>
+                    </div>
+                    <div class="flex items-center justify-between gap-2 pt-1 border-t border-gray-100">
+                        <div>${ratingHtml}</div>
+                        <span class="text-[11px] font-bold text-orange-600 group-hover:translate-x-0.5 transition flex items-center">查看詳情 <i class="fa-solid fa-chevron-right text-[9px] ml-1"></i></span>
+                    </div>
                 </div>
-            </div>`; 
+            </div>`;
         }
         
         function renderRandomResult(p) { 
