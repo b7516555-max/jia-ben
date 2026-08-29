@@ -245,6 +245,33 @@
         </div>
     </div>
 
+    <!-- 🌟 全螢幕高畫質照片放大檢視 (Lightbox) -->
+    <div id="image-lightbox-modal" class="hidden fixed inset-0 z-[200] flex items-center justify-center bg-black/90 modal-backdrop fade-in select-none" onclick="if(event.target === this) window.closeImageLightbox()">
+        <!-- 頂部資訊與關閉按鈕 -->
+        <div class="absolute top-0 left-0 right-0 p-4 flex items-center justify-between z-30 bg-gradient-to-b from-black/70 to-transparent">
+            <div class="flex items-center gap-2 text-white">
+                <span id="lightbox-title" class="font-bold text-sm drop-shadow-sm tracking-wide truncate max-w-[200px] sm:max-w-xs"></span>
+                <span id="lightbox-counter" class="text-xs bg-white/20 px-2 py-0.5 rounded-full font-mono text-gray-200"></span>
+            </div>
+            <button onclick="window.closeImageLightbox()" class="w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center backdrop-blur-md transition active:scale-90" title="關閉 (ESC)">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+        </div>
+
+        <!-- 主圖容器 -->
+        <div class="relative w-full h-full flex items-center justify-center p-4 sm:p-8">
+            <img id="lightbox-img" src="" class="max-w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl transition duration-300 transform scale-100" alt="放大照片" onclick="event.stopPropagation()">
+        </div>
+
+        <!-- 切換上一張 / 下一張按鈕 -->
+        <button id="lightbox-prev-btn" onclick="event.stopPropagation(); window.switchLightboxPhoto(-1)" class="hidden absolute left-3 sm:left-6 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-black/50 hover:bg-black/80 text-white flex items-center justify-center backdrop-blur-md transition shadow-lg active:scale-90 z-30">
+            <i class="fa-solid fa-chevron-left text-lg"></i>
+        </button>
+        <button id="lightbox-next-btn" onclick="event.stopPropagation(); window.switchLightboxPhoto(1)" class="hidden absolute right-3 sm:right-6 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-black/50 hover:bg-black/80 text-white flex items-center justify-center backdrop-blur-md transition shadow-lg active:scale-90 z-30">
+            <i class="fa-solid fa-chevron-right text-lg"></i>
+        </button>
+    </div>
+
     <!-- 🌟 全新高顏值自訂輸入視窗 -->
     <div id="custom-prompt-modal" class="hidden fixed inset-0 z-[130] flex items-center justify-center bg-black/60 modal-backdrop fade-in">
         <div class="bg-white rounded-3xl p-6 w-11/12 max-w-sm shadow-2xl relative flex flex-col items-center">
@@ -3757,8 +3784,13 @@
                             </div>
 
                             ${item.photoUrl ? `
-                            <div class="relative rounded-xl overflow-hidden shadow-sm max-h-72 border border-gray-100 group">
+                            <div class="relative rounded-xl overflow-hidden shadow-sm max-h-72 border border-gray-100 group cursor-zoom-in" onclick="window.openFeedPhotoPreview('${item.id}', 0)">
                                 <img src="${window.resolveReviewImage(item.photoUrl, item.partyTitle)}" onerror="this.onerror=null; this.src=window.getFallbackImage('${window.escapeForBtn(item.partyTitle)}');" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+                                <div class="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+                                    <span class="bg-black/60 text-white text-xs font-bold px-3 py-1.5 rounded-full backdrop-blur-xs flex items-center gap-1.5 shadow-lg">
+                                        <i class="fa-solid fa-magnifying-glass-plus"></i> 點擊放大
+                                    </span>
+                                </div>
                             </div>` : ''}
 
                             <p class="text-xs sm:text-sm text-gray-800 leading-relaxed font-medium pl-3 border-l-2 border-amber-400">
@@ -3820,9 +3852,14 @@
                 let photosGalleryHtml = '';
                 if (allPhotos.length === 1) {
                     photosGalleryHtml = `
-                    <div class="relative rounded-xl overflow-hidden shadow-sm max-h-64 border border-gray-100 my-1 group">
-                        <img src="${window.resolveReviewImage(allPhotos[0], item.restaurantName)}" onerror="this.onerror=null; this.src=window.getFallbackImage('${window.escapeForBtn(item.restaurantName)}');" class="w-full h-full max-h-64 object-cover">
-                        <button onclick="window.openFeedPhotoEditModal('${item.id}')" class="absolute bottom-2 right-2 bg-black/60 hover:bg-black/80 text-white text-[10px] font-bold px-2 py-1 rounded-lg backdrop-blur-xs shadow transition flex items-center gap-1">
+                    <div class="relative rounded-xl overflow-hidden shadow-sm max-h-64 border border-gray-100 my-1 group cursor-zoom-in" onclick="window.openFeedPhotoPreview('${item.id}', 0)">
+                        <img src="${window.resolveReviewImage(allPhotos[0], item.restaurantName)}" onerror="this.onerror=null; this.src=window.getFallbackImage('${window.escapeForBtn(item.restaurantName)}');" class="w-full h-full max-h-64 object-cover group-hover:scale-[1.02] transition duration-300">
+                        <div class="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+                            <span class="bg-black/60 text-white text-xs font-bold px-3 py-1.5 rounded-full backdrop-blur-xs flex items-center gap-1.5 shadow-lg">
+                                <i class="fa-solid fa-magnifying-glass-plus"></i> 點擊放大
+                            </span>
+                        </div>
+                        <button onclick="event.stopPropagation(); window.openFeedPhotoEditModal('${item.id}')" class="absolute bottom-2 right-2 bg-black/60 hover:bg-black/80 text-white text-[10px] font-bold px-2 py-1 rounded-lg backdrop-blur-xs shadow transition flex items-center gap-1 z-10">
                             <i class="fa-solid fa-camera"></i> 補/換照片
                         </button>
                     </div>`;
@@ -3832,14 +3869,17 @@
                     <div class="my-1">
                         <div class="grid ${gridCols} gap-1.5 rounded-xl overflow-hidden">
                             ${allPhotos.map((p, pIdx) => `
-                                <div class="relative aspect-square overflow-hidden bg-gray-100 group border border-gray-100 rounded-lg">
-                                    <img src="${window.resolveReviewImage(p, item.restaurantName)}" onerror="this.onerror=null; this.src=window.getFallbackImage('${window.escapeForBtn(item.restaurantName)}');" class="w-full h-full object-cover transition duration-300 hover:scale-105">
+                                <div class="relative aspect-square overflow-hidden bg-gray-100 group border border-gray-100 rounded-lg cursor-zoom-in" onclick="window.openFeedPhotoPreview('${item.id}', ${pIdx})">
+                                    <img src="${window.resolveReviewImage(p, item.restaurantName)}" onerror="this.onerror=null; this.src=window.getFallbackImage('${window.escapeForBtn(item.restaurantName)}');" class="w-full h-full object-cover transition duration-300 group-hover:scale-110">
                                     <span class="absolute bottom-1 right-1 bg-black/50 text-white text-[9px] px-1 rounded font-bold backdrop-blur-2xs">${pIdx + 1}</span>
+                                    <div class="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+                                        <i class="fa-solid fa-magnifying-glass-plus text-white text-base drop-shadow-md"></i>
+                                    </div>
                                 </div>
                             `).join('')}
                         </div>
                         <div class="flex justify-between items-center mt-1 px-0.5">
-                            <span class="text-[10px] text-gray-400 font-bold"><i class="fa-solid fa-images text-orange-400 mr-1"></i>共 ${allPhotos.length} 張照片</span>
+                            <span class="text-[10px] text-gray-400 font-bold"><i class="fa-solid fa-images text-orange-400 mr-1"></i>共 ${allPhotos.length} 張照片 (點擊可放大)</span>
                             <button onclick="window.openFeedPhotoEditModal('${item.id}')" class="text-orange-500 hover:text-orange-600 text-[10px] font-bold flex items-center gap-0.5">
                                 <i class="fa-solid fa-pen-to-square"></i> 管理照片
                             </button>
@@ -4414,6 +4454,96 @@
             if (wrapper && !wrapper.contains(e.target)) { list?.classList.add('hidden'); }
         };
         
+        window.currentLightboxPhotos = [];
+        window.currentLightboxIndex = 0;
+        window.currentLightboxTitle = '';
+
+        window.openFeedPhotoPreview = function(feedId, photoIndex) {
+            const item = (window.feedData || []).find(f => String(f.id) === String(feedId));
+            if (!item) return;
+
+            let photos = [];
+            if (Array.isArray(item.photos) && item.photos.length > 0) {
+                photos = item.photos.filter(p => !!p);
+            } else if (item.photoUrl) {
+                photos = [item.photoUrl];
+            }
+            if (photos.length === 0) return;
+
+            const title = item.restaurantName || item.partyTitle || '美食照片';
+            window.currentLightboxPhotos = photos.map(p => window.resolveReviewImage(p, title));
+            window.currentLightboxIndex = Math.max(0, Math.min(photoIndex || 0, photos.length - 1));
+            window.currentLightboxTitle = title;
+
+            window.renderLightboxPhoto();
+            const modal = document.getElementById('image-lightbox-modal');
+            if (modal) modal.classList.remove('hidden');
+        };
+
+        window.renderLightboxPhoto = function() {
+            const imgEl = document.getElementById('lightbox-img');
+            const titleEl = document.getElementById('lightbox-title');
+            const counterEl = document.getElementById('lightbox-counter');
+            const prevBtn = document.getElementById('lightbox-prev-btn');
+            const nextBtn = document.getElementById('lightbox-next-btn');
+
+            if (!imgEl) return;
+            const currentUrl = window.currentLightboxPhotos[window.currentLightboxIndex];
+            imgEl.src = currentUrl || '';
+            imgEl.onerror = function() {
+                this.onerror = null;
+                this.src = window.getFallbackImage(window.currentLightboxTitle);
+            };
+
+            if (titleEl) titleEl.textContent = window.currentLightboxTitle;
+            if (counterEl) {
+                if (window.currentLightboxPhotos.length > 1) {
+                    counterEl.textContent = `${window.currentLightboxIndex + 1} / ${window.currentLightboxPhotos.length}`;
+                    counterEl.classList.remove('hidden');
+                } else {
+                    counterEl.classList.add('hidden');
+                }
+            }
+
+            if (prevBtn && nextBtn) {
+                if (window.currentLightboxPhotos.length > 1) {
+                    prevBtn.classList.remove('hidden');
+                    nextBtn.classList.remove('hidden');
+                } else {
+                    prevBtn.classList.add('hidden');
+                    nextBtn.classList.add('hidden');
+                }
+            }
+        };
+
+        window.switchLightboxPhoto = function(direction) {
+            if (!window.currentLightboxPhotos || window.currentLightboxPhotos.length <= 1) return;
+            const total = window.currentLightboxPhotos.length;
+            window.currentLightboxIndex = (window.currentLightboxIndex + direction + total) % total;
+            window.renderLightboxPhoto();
+        };
+
+        window.closeImageLightbox = function() {
+            const modal = document.getElementById('image-lightbox-modal');
+            if (modal) modal.classList.add('hidden');
+            window.currentLightboxPhotos = [];
+            window.currentLightboxIndex = 0;
+        };
+
+        // 鍵盤快捷鍵支援 (ESC 關閉, 左右鍵切換照片)
+        window.addEventListener('keydown', function(e) {
+            const modal = document.getElementById('image-lightbox-modal');
+            if (!modal || modal.classList.contains('hidden')) return;
+
+            if (e.key === 'Escape') {
+                window.closeImageLightbox();
+            } else if (e.key === 'ArrowLeft') {
+                window.switchLightboxPhoto(-1);
+            } else if (e.key === 'ArrowRight') {
+                window.switchLightboxPhoto(1);
+            }
+        });
+
         function setupMockData() { 
             updateConfigDropdowns(); 
             window.partyData = [{ id: 'p1', title: "期末考後解脫大爆吃", date: "2026-06-25", time: "18:30", location: "台北市大安區", group: "社發", options: ["叫披薩", "買火鍋料自己煮", "熱炒店"], costMode: "split", amount: 2000, creator: "黃政誥", joined: ["黃政誥", "小華"], votes: {"黃政誥": "叫披薩"} }];
