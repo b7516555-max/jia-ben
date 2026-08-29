@@ -3837,18 +3837,27 @@
                         // 🌟 檢查是否晉階並發布公告
                         window.checkAndAnnounceTierPromotion(c, g);
                     } else {
+                        // 🌟 自動阻擋重複新增店家（全域比對是否已被其他成員或自己新增過）
+                        const normName = (pData.name || '').toLowerCase().replace(/\s+/g, '');
+                        const duplicateRestaurant = (window.restaurantData || []).find(r => {
+                            if (!r.name) return false;
+                            const rNorm = r.name.toLowerCase().replace(/\s+/g, '');
+                            return rNorm === normName || r.name === pData.name;
+                        });
+
+                        if (duplicateRestaurant) {
+                            const adderGroup = duplicateRestaurant.group || '其他';
+                            const adderName = duplicateRestaurant.creator || '朋友';
+                            return window.showCustomMsg(`⚠️ 「${duplicateRestaurant.name}」已經在口袋名單中囉！\n\n📌 推薦者：【${adderGroup} 團】${adderName}\n\n大家可以直接在口袋名單中查看或直接去吃喔！`);
+                        }
+
                         const restaurantItem = { ...pData, city: pData.city || "未分類", hours: "", category: "未分類", status: "想去", notes: n, group: g, creator: c, photoUrl: pData.photoUrl || '' };
                         syncToGoogleSheets('Restaurants', restaurantItem);
                         if(db && currentUser) {
                             await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'restaurants'), { ...restaurantItem, timestamp: serverTimestamp() });
                         }
                         const tempId = Date.now().toString();
-                        const existingIdx = window.restaurantData.findIndex(r => r.name === restaurantItem.name && r.creator === restaurantItem.creator && r.group === restaurantItem.group);
-                        if (existingIdx >= 0) {
-                            window.restaurantData[existingIdx] = { id: window.restaurantData[existingIdx].id || tempId, ...restaurantItem };
-                        } else {
-                            window.restaurantData.unshift({ id: tempId, ...restaurantItem, timestamp: {seconds: Date.now()/1000} });
-                        }
+                        window.restaurantData.unshift({ id: tempId, ...restaurantItem, timestamp: {seconds: Date.now()/1000} });
                         window.renderList();
                         if (typeof window.renderAdminDataList === 'function') window.renderAdminDataList();
                         window.showCustomMsg(`❤️ 「${pData.name}」已成功收進口袋名單！`);
@@ -5524,6 +5533,21 @@
                 if (!nameVal) {
                     if (btn) { btn.innerHTML = originalText; btn.disabled = false; }
                     return window.showCustomMsg("請輸入餐廳店名喔！");
+                }
+
+                // 🌟 自動阻擋重複新增店家（全域比對是否已被其他成員或自己新增過）
+                const normName = nameVal.toLowerCase().replace(/\s+/g, '');
+                const duplicateRestaurant = (window.restaurantData || []).find(r => {
+                    if (!r.name) return false;
+                    const rNorm = r.name.toLowerCase().replace(/\s+/g, '');
+                    return rNorm === normName || r.name === nameVal;
+                });
+
+                if (duplicateRestaurant) {
+                    if (btn) { btn.innerHTML = originalText; btn.disabled = false; }
+                    const adderGroup = duplicateRestaurant.group || '其他';
+                    const adderName = duplicateRestaurant.creator || '朋友';
+                    return window.showCustomMsg(`⚠️ 「${duplicateRestaurant.name}」已經在口袋名單中囉！\n\n📌 推薦者：【${adderGroup} 團】${adderName}\n\n如需撰寫心得或上傳照片，請直接至該店家卡片點擊「寫評價」即可。`);
                 }
 
                 const countryVal = document.getElementById('input-country')?.value || window.getCountryFromCity(document.getElementById('input-city').value) || '台灣';
