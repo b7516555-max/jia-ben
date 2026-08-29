@@ -802,31 +802,23 @@
                     <input type="hidden" id="int-rating-value">
                 </div>
 
-                <!-- 🌟 評價照片上傳區塊：支援手機拍照/相簿選擇與縮圖預覽 (選填) -->
+                <!-- 🌟 評價照片上傳區塊：直接支援最多 5 張照片 (拍照/相簿多選與縮圖預覽) -->
                 <div>
-                    <label class="block text-xs font-bold text-gray-600 mb-1.5"><i class="fa-solid fa-camera text-orange-400 mr-1"></i>📷 附上美食照片 (選填)</label>
-                    <input type="hidden" id="int-photo-url">
-                    <input type="file" id="int-photo-file" accept="image/*" class="hidden" onchange="window.handlePhotoSelected(this, 'int-photo')">
-                    
-                    <div id="int-photo-preview-wrap" class="relative w-full h-40 rounded-2xl overflow-hidden border-2 border-dashed border-orange-200 bg-orange-50/40 flex flex-col items-center justify-center group cursor-pointer hover:border-orange-400 transition" onclick="document.getElementById('int-photo-file').click()">
-                        <img id="int-photo-img" src="" class="hidden w-full h-full object-cover">
-                        
-                        <div id="int-photo-placeholder" class="flex flex-col items-center justify-center p-3 text-center">
-                            <div class="w-11 h-11 rounded-full bg-orange-100 text-orange-500 flex items-center justify-center mb-1.5 group-hover:scale-110 transition shadow-xs">
-                                <i class="fa-solid fa-camera text-lg"></i>
-                            </div>
-                            <span class="text-xs font-bold text-gray-700">拍照 或 從相簿挑選</span>
-                            <span class="text-[10px] text-gray-400 mt-0.5">點擊記錄美味現場 (可空白直接送出)</span>
-                        </div>
+                    <div class="flex items-center justify-between mb-1.5">
+                        <label class="block text-xs font-bold text-gray-700"><i class="fa-solid fa-camera text-orange-500 mr-1"></i>📷 美食照片 (<span id="int-photo-count-badge">0</span>/5 張，選填)</label>
+                        <button type="button" onclick="window.clearAllIntPhotos()" class="text-[11px] text-gray-400 hover:text-red-500 font-semibold">清空</button>
+                    </div>
 
-                        <div id="int-photo-actions" class="hidden absolute inset-0 bg-black/45 backdrop-blur-[2px] flex items-center justify-center gap-2">
-                            <button type="button" onclick="event.stopPropagation(); document.getElementById('int-photo-file').click();" class="px-3.5 py-2 bg-white text-gray-800 text-xs font-bold rounded-xl shadow-md hover:bg-orange-50 hover:text-orange-600 transition flex items-center gap-1.5">
-                                <i class="fa-solid fa-arrows-rotate"></i> 重新選擇照片
-                            </button>
-                            <button type="button" onclick="event.stopPropagation(); window.clearPhoto('int-photo');" class="px-3 py-2 bg-red-500 text-white text-xs font-bold rounded-xl shadow-md hover:bg-red-600 transition flex items-center gap-1">
-                                <i class="fa-solid fa-trash-can"></i> 移除
-                            </button>
-                        </div>
+                    <!-- 多圖縮圖展示區 -->
+                    <div id="int-photos-grid" class="grid grid-cols-3 gap-2 p-2.5 bg-orange-50/40 rounded-2xl border-2 border-dashed border-orange-200 min-h-[90px] mb-2">
+                        <!-- 動態插入 1~5 張照片預覽 -->
+                    </div>
+
+                    <input type="file" id="int-photos-file" accept="image/*" multiple class="hidden" onchange="window.handleIntPhotosSelected(this)">
+                    <div class="flex gap-2">
+                        <button type="button" id="int-photos-add-btn" onclick="document.getElementById('int-photos-file').click()" class="flex-1 px-3 py-2.5 bg-white border border-orange-300 hover:bg-orange-50 text-orange-600 rounded-xl text-xs font-bold shadow-2xs flex items-center justify-center gap-1.5 transition">
+                            <i class="fa-solid fa-camera text-sm"></i> 拍照 / 從相簿挑選 (最多 5 張)
+                        </button>
                     </div>
                 </div>
 
@@ -3555,6 +3547,80 @@
         };
         window.selectIntRating = function(v) { document.getElementById('int-rating-value').value = v; const bG = document.getElementById('btn-rating-good'); const bB = document.getElementById('btn-rating-bad'); if(v === 'good') { bG.classList.add('bg-emerald-50','border-emerald-400','text-emerald-600'); bB.classList.remove('bg-red-50','border-red-400','text-red-600'); } else { bB.classList.add('bg-red-50','border-red-400','text-red-600'); bG.classList.remove('bg-emerald-50','border-emerald-400','text-emerald-600'); } };
         
+        let currentIntPhotos = []; // array of strings (urls or base64 data)
+
+        window.renderIntPhotosGrid = function() {
+            const grid = document.getElementById('int-photos-grid');
+            const countBadge = document.getElementById('int-photo-count-badge');
+            const addBtn = document.getElementById('int-photos-add-btn');
+            if (countBadge) countBadge.textContent = currentIntPhotos.length;
+            if (addBtn) {
+                addBtn.disabled = currentIntPhotos.length >= 5;
+                if (currentIntPhotos.length >= 5) {
+                    addBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                } else {
+                    addBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                }
+            }
+            if (!grid) return;
+
+            if (currentIntPhotos.length === 0) {
+                grid.innerHTML = `
+                    <div class="col-span-3 py-5 flex flex-col items-center justify-center text-gray-400 cursor-pointer" onclick="document.getElementById('int-photos-file').click()">
+                        <i class="fa-solid fa-camera text-2xl mb-1 text-orange-400"></i>
+                        <p class="text-xs font-bold text-gray-600">拍照 或 從相簿挑選</p>
+                        <p class="text-[10px] text-gray-400 mt-0.5">點擊選擇美味照片 (最多 5 張，可留空直接發布)</p>
+                    </div>`;
+                return;
+            }
+
+            grid.innerHTML = currentIntPhotos.map((url, idx) => `
+                <div class="relative aspect-square rounded-xl overflow-hidden border border-orange-200 shadow-2xs group bg-gray-100">
+                    <img src="${window.resolveReviewImage(url)}" class="w-full h-full object-cover">
+                    <button type="button" onclick="window.removeIntPhoto(${idx})" class="absolute top-1 right-1 bg-black/60 hover:bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs shadow transition" title="移除此照片">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                    <span class="absolute bottom-1 left-1 bg-black/50 text-white text-[9px] px-1.5 py-0.2 rounded font-bold backdrop-blur-2xs">${idx + 1}</span>
+                </div>
+            `).join('');
+        };
+
+        window.handleIntPhotosSelected = async function(input) {
+            if (!input.files || input.files.length === 0) return;
+            const remaining = 5 - currentIntPhotos.length;
+            if (remaining <= 0) return window.showCustomMsg("⚠️ 最多只能上傳 5 張照片喔！");
+
+            const files = Array.from(input.files).slice(0, remaining);
+            window.showCustomMsg(`📸 正在為您優化 ${files.length} 張照片中...`);
+
+            try {
+                for (const file of files) {
+                    if (currentIntPhotos.length >= 5) break;
+                    const compressed = await window.compressImageFile(file, 1600, 1600, 0.8);
+                    currentIntPhotos.push(compressed);
+                }
+                window.closeModal('custom-alert-modal');
+                window.renderIntPhotosGrid();
+            } catch (err) {
+                console.error("多圖壓縮處理失敗:", err);
+                window.showCustomMsg("⚠️ 照片處理失敗，請重試。");
+            } finally {
+                input.value = '';
+            }
+        };
+
+        window.removeIntPhoto = function(index) {
+            if (index >= 0 && index < currentIntPhotos.length) {
+                currentIntPhotos.splice(index, 1);
+                window.renderIntPhotosGrid();
+            }
+        };
+
+        window.clearAllIntPhotos = function() {
+            currentIntPhotos = [];
+            window.renderIntPhotosGrid();
+        };
+
         function openInteractionModal() { 
             if(!pendingInteraction) return; 
             document.getElementById('interaction-name').textContent = pendingInteraction.placeData.name; 
@@ -3563,7 +3629,8 @@
             document.getElementById('interaction-rating-section').classList.toggle('hidden', isS); 
             document.getElementById('btn-confirm-int').innerHTML = isS ? '收進口袋名單' : '發布至動態牆'; 
             document.getElementById('int-notes').value = ''; 
-            window.setPhotoUploaderValue('int-photo', '');
+            currentIntPhotos = [];
+            window.renderIntPhotosGrid();
             window.selectIntRating('good'); 
             document.getElementById('interaction-modal').classList.remove('hidden'); 
         }
@@ -3586,7 +3653,6 @@
             if(!pendingInteraction) return; 
             const n = document.getElementById('int-notes').value; 
             const rV = document.getElementById('int-rating-value').value;
-            const photoVal = document.getElementById('int-photo-url') ? document.getElementById('int-photo-url').value.trim() : '';
             const btn = document.getElementById('btn-confirm-int');
             const originalBtnHtml = btn ? btn.innerHTML : '發布';
 
@@ -3596,24 +3662,23 @@
                 const pType = pendingInteraction.type;
                 const pData = { ...pendingInteraction.placeData };
                 
-                let safePhoto = window.isGoogleMapsPhotoUrl(photoVal) ? "" : photoVal;
-                
-                // 若有拍照/選擇相簿照片 (Base64 Data URL)，先上傳至 Google Drive
-                if (safePhoto && safePhoto.startsWith('data:')) {
-                    if (btn) { btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> 照片上傳中...'; btn.disabled = true; }
-                    try {
-                        const uploadRes = await window.uploadImageToDrive(safePhoto, `review_${pData.name || 'food'}_${Date.now()}.jpg`);
-                        if (uploadRes && (uploadRes.imageUrl || uploadRes.fileId)) {
-                            safePhoto = uploadRes.imageUrl || window.getDriveImageUrl(uploadRes.fileId);
+                const finalPhotos = [];
+                if (currentIntPhotos.length > 0) {
+                    if (btn) { btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-2"></i> 上傳照片中 (${currentIntPhotos.length} 張)...`; btn.disabled = true; }
+                    for (let i = 0; i < currentIntPhotos.length; i++) {
+                        let p = currentIntPhotos[i];
+                        if (p.startsWith('data:image')) {
+                            try {
+                                const uploadRes = await window.uploadImageToDrive(p, `review_${pData.name || 'food'}_${Date.now()}_${i}.jpg`);
+                                if (uploadRes && (uploadRes.imageUrl || uploadRes.fileId)) {
+                                    p = uploadRes.imageUrl || window.getDriveImageUrl(uploadRes.fileId);
+                                }
+                            } catch (uploadErr) {
+                                console.warn("上傳 Google Drive 失敗，改用本機優化圖片儲存:", uploadErr);
+                            }
                         }
-                    } catch (uploadErr) {
-                        console.error("照片上傳 Drive 失敗:", uploadErr);
-                        if (btn) { btn.innerHTML = originalBtnHtml; btn.disabled = false; }
-                        const detail = uploadErr && uploadErr.message ? `\n\n原因：${uploadErr.message}` : '';
-                        return window.showCustomMsg(`⚠️ 照片上傳失敗，請稍後再試。${detail}`);
+                        finalPhotos.push(p);
                     }
-                } else if (safePhoto && !safePhoto.startsWith('http://') && !safePhoto.startsWith('https://')) {
-                    safePhoto = window.resolveReviewImage(safePhoto);
                 }
 
                 if (btn) { btn.innerHTML = originalBtnHtml; btn.disabled = false; }
@@ -3624,23 +3689,37 @@
                     if(pType === 'review') {
                         const cityVal = pData.city || extractCity(pData.name + " " + (pData.formatted_address || ""));
                         const countryVal = pData.country || window.getCountryFromCity(cityVal);
-                        const reviewPhotos = safePhoto ? [safePhoto] : [];
-                        const reviewItem = { restaurantName: pData.name, group: g, creator: c, rating: rV, content: n, city: cityVal, country: countryVal, placeId: pData.placeId || '', mapLink: pData.mapLink || '', lat: pData.lat || null, lng: pData.lng || null, photoUrl: safePhoto, photos: reviewPhotos };
+                        const primaryPhoto = finalPhotos.length > 0 ? finalPhotos[0] : '';
+                        const reviewItem = { 
+                            restaurantName: pData.name, 
+                            group: g, 
+                            creator: c, 
+                            rating: rV, 
+                            content: n, 
+                            city: cityVal, 
+                            country: countryVal, 
+                            placeId: pData.placeId || '', 
+                            mapLink: pData.mapLink || '', 
+                            lat: pData.lat || null, 
+                            lng: pData.lng || null, 
+                            photoUrl: primaryPhoto, 
+                            photos: finalPhotos 
+                        };
                         syncToGoogleSheets('Feed', reviewItem);
                         if(db && currentUser) {
                             await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'feed'), { ...reviewItem, timestamp: serverTimestamp() });
-                            window.showCustomMsg(`✅ 評價已成功發布並同步至 Google 試算表！`);
+                            window.showCustomMsg(`✅ 評價已成功發布！(${finalPhotos.length > 0 ? `附帶 ${finalPhotos.length} 張照片` : '無照片'})`);
                         } else {
                             window.feedData.unshift({ id: Date.now().toString(), ...reviewItem, timestamp: {seconds: Date.now()/1000} });
                             window.renderFeed();
-                            window.showCustomMsg(`✅ 評價已存入並寫入 Google 試算表！`);
+                            window.showCustomMsg(`✅ 評價已存入並同步！`);
                         }
                         window.renderFeed();
                         window.switchTab('feed');
                         // 🌟 檢查是否晉階並發布公告
                         window.checkAndAnnounceTierPromotion(c, g);
                     } else {
-                        const restaurantItem = { ...pData, city: pData.city || "未分類", hours: "", category: "未分類", status: "想去", notes: n, group: g, creator: c, photoUrl: safePhoto || pData.photoUrl || '' };
+                        const restaurantItem = { ...pData, city: pData.city || "未分類", hours: "", category: "未分類", status: "想去", notes: n, group: g, creator: c, photoUrl: pData.photoUrl || '' };
                         syncToGoogleSheets('Restaurants', restaurantItem);
                         if(db && currentUser) {
                             await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'restaurants'), { ...restaurantItem, timestamp: serverTimestamp() });
