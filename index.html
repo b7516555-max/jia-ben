@@ -1446,9 +1446,9 @@
                                 </div>
                                 <div class="flex items-center gap-1 text-[10px] text-gray-500 shrink-0">
                                     <i class="fa-solid fa-coins text-orange-400"></i>
-                                    <select id="explore-price-min" class="px-1.5 py-0.5 bg-white border border-gray-200 rounded-lg focus:outline-none font-bold text-[10px]"><option value="">最低</option><option value="0">免費</option><option value="1">$ 平價</option><option value="2">$$ 中等</option><option value="3">$$$ 偏高</option><option value="4">$$$$ 高價</option></select>
+                                    <select id="explore-price-min" class="px-1.5 py-0.5 bg-white border border-gray-200 rounded-lg focus:outline-none font-bold text-[10px]"><option value="">最低</option><option value="0">$0 (免費)</option><option value="1">$100 (平價)</option><option value="2">$200 (中等)</option><option value="3">$500 (偏高)</option><option value="4">$1000 (高價)</option></select>
                                     <span class="text-gray-300">~</span>
-                                    <select id="explore-price-max" class="px-1.5 py-0.5 bg-white border border-gray-200 rounded-lg focus:outline-none font-bold text-[10px]"><option value="">最高</option><option value="0">免費</option><option value="1">$ 平價</option><option value="2">$$ 中等</option><option value="3">$$$ 偏高</option><option value="4">$$$$ 高價</option></select>
+                                    <select id="explore-price-max" class="px-1.5 py-0.5 bg-white border border-gray-200 rounded-lg focus:outline-none font-bold text-[10px]"><option value="">最高</option><option value="0">$0 (免費)</option><option value="1">$200 (平價)</option><option value="2">$500 (中等)</option><option value="3">$1000 (偏高)</option><option value="4">$1000+ (高價)</option></select>
                                 </div>
                             </div>
                         </div>
@@ -1485,24 +1485,26 @@
                         <div class="w-full space-y-2 pt-1">
                             <input type="text" id="random-keyword" placeholder="想吃哪類或哪區？(例如：燒肉、大安區)" class="w-full text-center px-3 py-2.5 bg-white border border-gray-200 rounded-xl shadow-2xs focus:outline-none focus:border-orange-400 font-medium text-gray-700 text-xs sm:text-sm">
                             
-                            <!-- 金額 / 價位區間設定 (RWD 極簡緊湊版) -->
+                            <!-- 金額 / 價位區間設定 (實際金額顯示版) -->
                             <div class="desktop-budget-row bg-white p-2.5 rounded-xl border border-gray-200/80 shadow-2xs flex items-center justify-between gap-1.5 text-xs text-gray-600 w-full overflow-hidden">
                                 <span class="font-bold shrink-0 flex items-center gap-1 text-orange-500 text-[11px]"><i class="fa-solid fa-coins"></i>預算</span>
                                 <div class="flex items-center gap-1 flex-1 min-w-0 w-full">
                                     <select id="random-price-min" class="flex-1 min-w-0 px-2 py-1 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none text-[11px] font-bold text-gray-700 truncate">
                                         <option value="">最低不限</option>
-                                        <option value="1">$ 平價</option>
-                                        <option value="2">$$ 中等</option>
-                                        <option value="3">$$$ 偏高</option>
-                                        <option value="4">$$$$ 高價</option>
+                                        <option value="0">$0 (免費)</option>
+                                        <option value="1">$100 (平價)</option>
+                                        <option value="2">$200 (中等)</option>
+                                        <option value="3">$500 (偏高)</option>
+                                        <option value="4">$1000 (高價)</option>
                                     </select>
                                     <span class="text-gray-300 shrink-0 text-[10px]">~</span>
                                     <select id="random-price-max" class="flex-1 min-w-0 px-2 py-1 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none text-[11px] font-bold text-gray-700 truncate">
                                         <option value="">最高不限</option>
-                                        <option value="1">$ 平價</option>
-                                        <option value="2">$$ 中等</option>
-                                        <option value="3">$$$ 偏高</option>
-                                        <option value="4">$$$$ 高價</option>
+                                        <option value="0">$0 (免費)</option>
+                                        <option value="1">$200 (平價)</option>
+                                        <option value="2">$500 (中等)</option>
+                                        <option value="3">$1000 (偏高)</option>
+                                        <option value="4">$1000+ (高價)</option>
                                     </select>
                                 </div>
                             </div>
@@ -1538,10 +1540,10 @@
                                 <button id="radar-spin-btn" onclick="window.searchGooglePlaces('radar')" class="bg-gradient-to-r from-amber-500 to-orange-500 text-white px-4 rounded-xl shadow-xs font-bold text-xs sm:text-sm hover:from-amber-600 hover:to-orange-600 transition whitespace-nowrap"><i class="fa-solid fa-play mr-1"></i>轉動輪盤</button>
                             </div>
                             <div class="desktop-price-row flex items-center gap-1 mt-2 text-xs text-gray-500 justify-end overflow-x-auto no-scrollbar">
-                                <i class="fa-solid fa-coins text-orange-400 text-[10px]"></i><span class="font-bold text-[10px] shrink-0">價位</span>
-                                <select id="radar-price-min" class="px-1.5 py-0.5 bg-gray-50 border border-gray-200 rounded-lg text-[10px] focus:outline-none"><option value="">最低</option><option value="0">免費</option><option value="1">$ 平價</option><option value="2">$$ 中等</option><option value="3">$$$ 偏高</option><option value="4">$$$$ 高價</option></select>
+                                <i class="fa-solid fa-coins text-orange-400 text-[10px]"></i><span class="font-bold text-[10px] shrink-0">金額預算</span>
+                                <select id="radar-price-min" class="px-1.5 py-0.5 bg-gray-50 border border-gray-200 rounded-lg text-[10px] focus:outline-none font-bold"><option value="">最低</option><option value="0">$0 (免費)</option><option value="1">$100 (平價)</option><option value="2">$200 (中等)</option><option value="3">$500 (偏高)</option><option value="4">$1000 (高價)</option></select>
                                 <span class="text-gray-300">~</span>
-                                <select id="radar-price-max" class="px-1.5 py-0.5 bg-gray-50 border border-gray-200 rounded-lg text-[10px] focus:outline-none"><option value="">最高</option><option value="0">免費</option><option value="1">$ 平價</option><option value="2">$$ 中等</option><option value="3">$$$ 偏高</option><option value="4">$$$$ 高價</option></select>
+                                <select id="radar-price-max" class="px-1.5 py-0.5 bg-gray-50 border border-gray-200 rounded-lg text-[10px] focus:outline-none font-bold"><option value="">最高</option><option value="0">$0 (免費)</option><option value="1">$200 (平價)</option><option value="2">$500 (中等)</option><option value="3">$1000 (偏高)</option><option value="4">$1000+ (高價)</option></select>
                             </div>
                         </div>
                     </div>
