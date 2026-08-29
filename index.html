@@ -338,32 +338,90 @@
 
     <!-- 🌟 新增：專屬口袋名單編輯視窗 -->
     <div id="edit-restaurant-modal" class="hidden fixed inset-0 z-[140] flex items-center justify-center bg-black/60 modal-backdrop fade-in">
-        <div class="bg-white rounded-3xl p-6 w-11/12 max-w-sm shadow-2xl relative flex flex-col max-h-[90vh] overflow-y-auto no-scrollbar">
+        <div class="bg-white rounded-3xl p-6 w-11/12 max-w-lg shadow-2xl relative flex flex-col max-h-[90vh] overflow-y-auto no-scrollbar">
             <button onclick="window.closeModal('edit-restaurant-modal')" class="absolute top-4 right-5 text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark text-xl"></i></button>
             <div class="text-center mb-4">
-                <div class="w-14 h-14 bg-orange-50 rounded-full flex items-center justify-center mx-auto mb-2"><i class="fa-solid fa-pen text-orange-500 text-xl"></i></div>
+                <div class="w-14 h-14 bg-orange-50 rounded-full flex items-center justify-center mx-auto mb-2"><i class="fa-solid fa-pen-to-square text-orange-500 text-xl"></i></div>
                 <h2 class="text-lg font-bold text-gray-800">編輯店家資訊</h2>
-                <p class="text-xs text-gray-500 mt-1">拍照或挑選照片，幫餐廳換上美照！</p>
+                <p class="text-xs text-gray-500 mt-0.5">每位成員皆可共同編輯與更新店家資訊、照片、營業時間與價位！</p>
             </div>
             <div class="space-y-4 w-full">
                 <input type="hidden" id="edit-res-name-old">
+                <input type="hidden" id="edit-res-place-id">
+                
                 <div>
-                    <label class="block text-xs font-bold text-gray-500 mb-1">店名</label>
-                    <input type="text" id="edit-res-name" class="w-full px-4 py-3 border-2 border-gray-100 rounded-xl focus:border-orange-400 focus:outline-none transition font-bold text-gray-700" placeholder="餐廳名稱">
+                    <label class="block text-xs font-bold text-gray-700 mb-1">店名</label>
+                    <input type="text" id="edit-res-name" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:border-orange-400 focus:outline-none transition font-bold text-gray-800 text-sm" placeholder="餐廳名稱">
                 </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1">國家</label>
+                        <select id="edit-res-country" onchange="window.handleEditCountryChange()" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-medium">
+                            <option value="台灣" selected>🇹🇼 台灣</option><option value="日本">🇯🇵 日本</option><option value="韓國">🇰🇷 韓國</option><option value="美國">🇺🇸 美國</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1">縣市</label>
+                        <select id="edit-res-city" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-medium">
+                            <option value="台北市" selected>台北市</option>
+                            <optgroup label="🇹🇼 台灣縣市">
+                                <option value="基隆市">基隆市</option><option value="台北市">台北市</option><option value="新北市">新北市</option><option value="桃園市">桃園市</option><option value="新竹縣">新竹縣</option><option value="新竹市">新竹市</option><option value="苗栗縣">苗栗縣</option><option value="台中市">台中市</option><option value="彰化縣">彰化縣</option><option value="南投縣">南投縣</option><option value="雲林縣">雲林縣</option><option value="嘉義縣">嘉義縣</option><option value="嘉義市">嘉義市</option><option value="台南市">台南市</option><option value="高雄市">高雄市</option><option value="屏東縣">屏東縣</option><option value="宜蘭縣">宜蘭縣</option><option value="花蓮縣">花蓮縣</option><option value="台東縣">台東縣</option><option value="澎湖縣">澎湖縣</option><option value="金門縣">金門縣</option><option value="連江縣">連江縣</option>
+                            </optgroup>
+                            <optgroup label="🇯🇵 日本都道府縣">
+                                <option value="東京都">東京都</option><option value="大阪府">大阪府</option><option value="京都府">京都府</option><option value="北海道">北海道</option><option value="沖繩縣">沖繩縣</option><option value="福岡縣">福岡縣</option><option value="愛知縣">愛知縣</option><option value="神奈川縣">神奈川縣</option><option value="埼玉縣">埼玉縣</option><option value="千葉縣">千葉縣</option><option value="兵庫縣">兵庫縣</option><option value="廣島縣">廣島縣</option><option value="宮城縣">宮城縣</option><option value="熊本縣">熊本縣</option><option value="靜岡縣">靜岡縣</option><option value="長野縣">長野縣</option><option value="岐阜縣">岐阜縣</option><option value="三重縣">三重縣</option><option value="滋賀縣">滋賀縣</option><option value="奈良縣">奈良縣</option><option value="和歌山縣">和歌山縣</option><option value="岡山縣">岡山縣</option><option value="山口縣">山口縣</option><option value="香川縣">香川縣</option><option value="愛媛縣">愛媛縣</option><option value="高知縣">高知縣</option><option value="德島縣">德島縣</option><option value="大分縣">大分縣</option><option value="宮崎縣">宮崎縣</option><option value="鹿兒島縣">鹿兒島縣</option><option value="佐賀縣">佐賀縣</option><option value="長崎縣">長崎縣</option><option value="青森縣">青森縣</option><option value="岩手縣">岩手縣</option><option value="秋田縣">秋田縣</option><option value="山形縣">山形縣</option><option value="福島縣">福島縣</option><option value="茨城縣">茨城縣</option><option value="栃木縣">栃木縣</option><option value="群馬縣">群馬縣</option><option value="新潟縣">新潟縣</option><option value="富山縣">富山縣</option><option value="石川縣">石川縣</option><option value="福井縣">福井縣</option><option value="山梨縣">山梨縣</option><option value="鳥取縣">鳥取縣</option><option value="島根縣">島根縣</option>
+                            </optgroup>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1">料理分類</label>
+                        <select id="edit-res-category" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-medium">
+                            <option value="麵食">麵食</option><option value="小吃">小吃</option><option value="飯食">飯食</option><option value="鍋物">鍋物</option><option value="甜點/飲料">甜點/飲料</option><option value="異國料理">異國料理</option><option value="其他餐廳">其他餐廳</option><option value="未分類" selected>未分類</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1"><i class="fa-solid fa-coins text-amber-500 mr-1"></i>消費價位</label>
+                        <select id="edit-res-price" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-medium">
+                            <option value="未提供">未提供</option>
+                            <option value="0">免費</option>
+                            <option value="1">$（平價 · 約 $100~200）</option>
+                            <option value="2">$$（中等 · 約 $200~500）</option>
+                            <option value="3">$$$（偏高 · 約 $500~1000）</option>
+                            <option value="4">$$$$（高價 · 約 $1000+）</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1"><i class="fa-solid fa-star text-amber-400 mr-1"></i>評分星級</label>
+                        <input type="number" step="0.1" id="edit-res-rating" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-medium" placeholder="例如：4.5">
+                    </div>
+                </div>
+
                 <div>
-                    <label class="block text-xs font-bold text-gray-500 mb-1.5"><i class="fa-solid fa-camera text-orange-500 mr-1"></i>店家照片</label>
+                    <label class="block text-xs font-bold text-gray-700 mb-1"><i class="fa-solid fa-location-dot text-orange-500 mr-1"></i>地址 / 地圖連結</label>
+                    <input type="text" id="edit-res-map" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-700" placeholder="https://maps.google.com/... 或店家詳細地址">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1"><i class="fa-solid fa-clock text-blue-500 mr-1"></i>每週營業時間 / 公休資訊</label>
+                    <textarea id="edit-res-hours" rows="2" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-700 font-medium" placeholder="例如：週一至週五 11:00-14:00, 17:00-21:00 (週二公休)"></textarea>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1.5"><i class="fa-solid fa-camera text-orange-500 mr-1"></i>店家照片</label>
                     <input type="hidden" id="edit-res-photo">
                     <input type="file" id="edit-res-file" accept="image/*" class="hidden" onchange="window.handlePhotoSelected(this, 'edit-res')">
                     
-                    <div id="edit-res-photo-preview-wrap" class="relative w-full h-44 rounded-2xl overflow-hidden border-2 border-dashed border-gray-200 bg-gray-50 flex flex-col items-center justify-center group cursor-pointer hover:border-orange-400 transition" onclick="document.getElementById('edit-res-file').click()">
+                    <div id="edit-res-photo-preview-wrap" class="relative w-full h-36 rounded-2xl overflow-hidden border-2 border-dashed border-gray-200 bg-gray-50 flex flex-col items-center justify-center group cursor-pointer hover:border-orange-400 transition" onclick="document.getElementById('edit-res-file').click()">
                         <img id="edit-res-photo-img" src="" class="hidden w-full h-full object-cover">
                         
                         <div id="edit-res-photo-placeholder" class="flex flex-col items-center justify-center p-4 text-center">
-                            <div class="w-12 h-12 rounded-full bg-orange-100 text-orange-500 flex items-center justify-center mb-2 shadow-sm group-hover:scale-110 transition">
-                                <i class="fa-solid fa-camera text-xl"></i>
+                            <div class="w-10 h-10 rounded-full bg-orange-100 text-orange-500 flex items-center justify-center mb-1.5 shadow-sm group-hover:scale-110 transition">
+                                <i class="fa-solid fa-camera text-lg"></i>
                             </div>
-                            <span class="text-xs font-bold text-gray-700">拍照 / 選擇手機或電腦照片</span>
+                            <span class="text-xs font-bold text-gray-700">拍照 / 選擇手機相簿照片</span>
                             <span class="text-[10px] text-gray-400 mt-0.5">點擊即可拍照、選相簿或上傳</span>
                         </div>
 
@@ -386,7 +444,13 @@
                         <input type="url" id="edit-res-photo-url-input" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:border-orange-400 focus:outline-none text-xs text-gray-600" placeholder="貼上 https://... 圖片網址" oninput="window.handlePhotoUrlInput('edit-res', this.value)">
                     </div>
                 </div>
-                <button onclick="window.saveRestaurantEdit()" class="w-full bg-orange-500 text-white font-bold py-3.5 rounded-xl shadow-md hover:bg-orange-600 active:scale-95 transition tracking-widest mt-2">儲存修改</button>
+
+                <div class="pt-2 flex gap-3">
+                    <button type="button" onclick="window.closeModal('edit-restaurant-modal')" class="flex-1 bg-gray-100 text-gray-600 font-bold py-3 rounded-xl hover:bg-gray-200 transition text-sm">取消</button>
+                    <button type="button" id="edit-res-save-btn" onclick="window.saveRestaurantEdit()" class="flex-1 bg-orange-500 text-white font-bold py-3 rounded-xl shadow-md hover:bg-orange-600 active:scale-95 transition text-sm flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-floppy-disk"></i> 儲存修改
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -1064,8 +1128,11 @@
                     <button id="detail-share-btn" class="bg-[#00B900] text-white font-bold py-3 rounded-xl hover:bg-[#009900] transition shadow-sm flex items-center justify-center gap-2"><i class="fa-brands fa-line text-lg"></i> 分享給好友</button>
                 </div>
                 
-                <div class="flex justify-between items-center gap-3 pt-4 mt-2 border-t border-gray-200">
-                    <button id="detail-add-btn" class="text-xs text-orange-600 hover:text-orange-700 font-bold px-3 py-1.5 transition flex items-center bg-orange-50 hover:bg-orange-100 rounded-lg border border-orange-200"><i class="fa-solid fa-plus-circle mr-1"></i>新增店家</button>
+                <div class="flex justify-between items-center gap-2 pt-4 mt-2 border-t border-gray-200">
+                    <div class="flex items-center gap-2">
+                        <button id="detail-add-btn" class="text-xs text-orange-600 hover:text-orange-700 font-bold px-3 py-1.5 transition flex items-center bg-orange-50 hover:bg-orange-100 rounded-lg border border-orange-200"><i class="fa-solid fa-plus-circle mr-1"></i>新增店家</button>
+                        <button id="detail-edit-btn" class="text-xs text-blue-600 hover:text-blue-700 font-bold px-3 py-1.5 transition flex items-center bg-blue-50 hover:bg-blue-100 rounded-lg border border-blue-200"><i class="fa-solid fa-pen-to-square mr-1"></i>編輯店家</button>
+                    </div>
                     <button id="detail-delete-btn" class="text-xs text-gray-500 hover:text-red-500 font-bold px-3 py-1.5 transition flex items-center"><i class="fa-solid fa-trash-can mr-1"></i>移除店家</button>
                 </div>
             </div>
@@ -6209,15 +6276,17 @@
                 };
             }
             
-            const addBtn = document.getElementById('detail-add-btn') || document.getElementById('detail-edit-btn');
-            if (addBtn) {
-                // 檢查此餐廳是否已存在於口袋名單
-                const normName = (data.name || '').toLowerCase().replace(/\s+/g, '');
-                const existingRes = (window.restaurantData || []).find(r => {
-                    if (!r.name) return false;
-                    return r.name.toLowerCase().replace(/\s+/g, '') === normName || r.name === data.name;
-                });
+            const addBtn = document.getElementById('detail-add-btn');
+            const editBtn = document.getElementById('detail-edit-btn');
+            
+            // 檢查此餐廳是否已存在於口袋名單
+            const normName = (data.name || '').toLowerCase().replace(/\s+/g, '');
+            const existingRes = (window.restaurantData || []).find(r => {
+                if (!r.name) return false;
+                return r.name.toLowerCase().replace(/\s+/g, '') === normName || r.name === data.name;
+            });
 
+            if (addBtn) {
                 if (existingRes) {
                     const ownerGroup = existingRes.group || '其他';
                     const ownerName = existingRes.creator || '成員';
@@ -6242,6 +6311,13 @@
                         window.openAddModal(prefillObj);
                     };
                 }
+            }
+
+            if (editBtn) {
+                editBtn.onclick = function() {
+                    window.closeModal('card-detail-modal');
+                    window.editRestaurant(data.name);
+                };
             }
 
             const deleteBtn = document.getElementById('detail-delete-btn');
@@ -6434,51 +6510,120 @@
             document.getElementById('google-reviews-modal').classList.remove('hidden');
         };
 
+        window.handleEditCountryChange = function(selectedCity = '') {
+            const country = document.getElementById('edit-res-country')?.value || '台灣';
+            const cityEl = document.getElementById('edit-res-city');
+            if (!cityEl) return;
+            const cities = (CITIES_BY_COUNTRY[country] || []).filter(city => !city.startsWith('不限'));
+            cityEl.innerHTML = cities.map(city => `<option value="${window.escapeHtml(city)}">${window.escapeHtml(city)}</option>`).join('');
+            if (selectedCity) window.setSelectValueWithFallback(cityEl, selectedCity);
+        };
+
         window.editRestaurant = function(nameStr) {
-            const name = decodeURIComponent(nameStr);
-            const resList = window.restaurantData.filter(r => r.name === name);
-            if(resList.length === 0) return;
-            
-            document.getElementById('edit-res-name-old').value = name;
-            document.getElementById('edit-res-name').value = name;
-            
-            let currentPhoto = resList[0].photoUrl || '';
+            let name = nameStr;
+            try { name = decodeURIComponent(nameStr); } catch(e) {}
+            const resList = (window.restaurantData || []).filter(r => r.name === name || window.escapeForBtn(r.name) === nameStr);
+            const targetRes = resList[0] || { name: name };
+
+            document.getElementById('edit-res-name-old').value = targetRes.name || name;
+            document.getElementById('edit-res-name').value = targetRes.name || name;
+            document.getElementById('edit-res-place-id').value = targetRes.placeId || '';
+
+            const countryVal = targetRes.country || window.getCountryFromCity(targetRes.city) || '台灣';
+            const countryEl = document.getElementById('edit-res-country');
+            if (countryEl) {
+                countryEl.value = countryVal;
+                window.handleEditCountryChange(targetRes.city || '台北市');
+            }
+
+            const catEl = document.getElementById('edit-res-category');
+            if (catEl) catEl.value = targetRes.category || '未分類';
+
+            const mapEl = document.getElementById('edit-res-map');
+            if (mapEl) mapEl.value = targetRes.mapLink || targetRes.address || '';
+
+            const hoursEl = document.getElementById('edit-res-hours');
+            if (hoursEl) hoursEl.value = targetRes.hours || '';
+
+            const priceEl = document.getElementById('edit-res-price');
+            if (priceEl) {
+                if (targetRes.price_level !== undefined && targetRes.price_level !== null) {
+                    priceEl.value = String(targetRes.price_level);
+                } else {
+                    priceEl.value = '未提供';
+                }
+            }
+
+            const ratingEl = document.getElementById('edit-res-rating');
+            if (ratingEl) ratingEl.value = (targetRes.rating !== null && targetRes.rating !== undefined) ? targetRes.rating : '';
+
+            let currentPhoto = targetRes.photoUrl || '';
             if (currentPhoto.includes('googleapis.com') || currentPhoto.includes('staticmap')) currentPhoto = '';
             window.setPhotoUploaderValue('edit-res', currentPhoto);
-            
+
             document.getElementById('edit-restaurant-modal').classList.remove('hidden');
         };
 
         window.saveRestaurantEdit = async function() {
+            const saveBtn = document.getElementById('edit-res-save-btn');
+            const origHtml = saveBtn ? saveBtn.innerHTML : '<i class="fa-solid fa-floppy-disk"></i> 儲存修改';
+            if (saveBtn) { saveBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 儲存中...'; saveBtn.disabled = true; }
+
             const oldName = document.getElementById('edit-res-name-old').value;
-            const newName = document.getElementById('edit-res-name').value;
-            const newPhoto = document.getElementById('edit-res-photo').value;
-            
-            if(!newName) return window.showCustomMsg("店名不能為空喔！");
-            window.closeModal('edit-restaurant-modal');
-            
+            const newName = document.getElementById('edit-res-name').value.trim();
+            const newPhoto = document.getElementById('edit-res-photo').value.trim();
+            const newCountry = document.getElementById('edit-res-country')?.value || '台灣';
+            const newCity = document.getElementById('edit-res-city')?.value || '台北市';
+            const newCat = document.getElementById('edit-res-category')?.value || '未分類';
+            const newMap = document.getElementById('edit-res-map')?.value.trim() || '';
+            const newHours = document.getElementById('edit-res-hours')?.value.trim() || '';
+            const priceVal = document.getElementById('edit-res-price')?.value;
+            const newPrice = (priceVal !== '未提供' && priceVal !== '') ? parseInt(priceVal, 10) : null;
+            const ratingInput = document.getElementById('edit-res-rating')?.value.trim();
+            const newRating = ratingInput ? parseFloat(ratingInput) : null;
+            const placeIdVal = document.getElementById('edit-res-place-id')?.value || '';
+
+            if (!newName) {
+                if (saveBtn) { saveBtn.innerHTML = origHtml; saveBtn.disabled = false; }
+                return window.showCustomMsg("店名不能為空喔！");
+            }
+
+            const updateData = {
+                name: newName,
+                country: newCountry,
+                city: newCity,
+                category: newCat,
+                mapLink: newMap,
+                hours: newHours,
+                photoUrl: newPhoto,
+                price_level: newPrice,
+                rating: newRating
+            };
+            if (placeIdVal) updateData.placeId = placeIdVal;
+
             try {
                 if (db && currentUser) {
-                    const qDocs = window.restaurantData.filter(r => r.name === oldName);
+                    const qDocs = (window.restaurantData || []).filter(r => r.name === oldName || r.id === oldName);
                     for (const docItem of qDocs) {
-                        await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'restaurants', docItem.id), {
-                            name: newName,
-                            photoUrl: newPhoto
-                        });
+                        await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'restaurants', docItem.id), updateData);
                     }
-                    window.showCustomMsg("✅ 店家照片與資訊已成功更新！");
-                } else {
-                    window.restaurantData.forEach(r => {
-                        if (r.name === oldName) {
-                            r.name = newName;
-                            r.photoUrl = newPhoto;
-                        }
-                    });
-                    window.renderList();
-                    window.showCustomMsg("✅ 店家資訊已更新 (本機)！");
                 }
+
+                (window.restaurantData || []).forEach(r => {
+                    if (r.name === oldName || r.id === oldName) {
+                        Object.assign(r, updateData);
+                    }
+                });
+
+                window.closeModal('edit-restaurant-modal');
+                window.renderList();
+                if (typeof window.renderAdminDataList === 'function') window.renderAdminDataList();
+                window.showCustomMsg(`✨ 「${newName}」店家資訊已成功更新！`);
             } catch (e) {
-                window.showCustomMsg("更新失敗，請確認網路連線。");
+                console.error("更新店家失敗:", e);
+                window.showCustomMsg(`更新失敗：${e.message || e}`);
+            } finally {
+                if (saveBtn) { saveBtn.innerHTML = origHtml; saveBtn.disabled = false; }
             }
         };
 
