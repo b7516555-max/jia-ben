@@ -513,7 +513,7 @@
             </div>
             <div id="form-id-old" class="space-y-3.5">
                 <div><label class="block text-xs font-bold text-gray-500 mb-1">你是哪團的？</label><select id="id-group" onchange="window.handleDropdownSync(this, 'group')" class="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none text-sm font-bold text-gray-700"></select></div>
-                <div><label class="block text-xs font-bold text-gray-500 mb-1">你的名字</label><select id="id-creator" class="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-xl focus:outline-none text-sm text-gray-700 font-bold"></select></div>
+                <div><label class="block text-xs font-bold text-gray-500 mb-1">你的名字</label><select id="id-creator" onchange="window.syncIdentityFormPreview(this.value)" class="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-xl focus:outline-none text-sm text-gray-700 font-bold"></select></div>
                 <div>
                     <div class="flex items-center justify-between mb-1">
                         <label class="block text-xs font-bold text-gray-700"><i class="fa-solid fa-lock text-orange-500 mr-1"></i>個人登入密碼 *</label>
@@ -674,12 +674,18 @@
                 </div>
             </div>
 
-            <div class="flex gap-2 mt-4">
-                <button type="button" onclick="window.openIdentityModal()" class="px-3.5 py-3 bg-blue-50 text-blue-600 border border-blue-200 font-bold rounded-xl text-xs hover:bg-blue-100 transition flex items-center justify-center gap-1.5 shadow-2xs">
-                    <i class="fa-solid fa-user-plus text-xs"></i>
-                    <span>切換 / 新增身分</span>
+            <div class="flex flex-col gap-2 mt-4">
+                <div class="flex gap-2">
+                    <button type="button" onclick="window.openIdentityModal()" class="px-3.5 py-3 bg-blue-50 text-blue-600 border border-blue-200 font-bold rounded-xl text-xs hover:bg-blue-100 transition flex items-center justify-center gap-1.5 shadow-2xs">
+                        <i class="fa-solid fa-user-plus text-xs"></i>
+                        <span>切換 / 新增身分</span>
+                    </button>
+                    <button type="button" onclick="window.saveUserSettings()" class="flex-1 bg-orange-500 text-white font-bold py-3 rounded-xl shadow-md hover:bg-orange-600 active:scale-95 transition text-xs">儲存個人設定</button>
+                </div>
+                <button type="button" onclick="window.logoutIdentity()" class="w-full py-2.5 bg-gray-100 text-gray-500 hover:bg-red-50 hover:text-red-500 border border-gray-200 rounded-xl font-bold text-xs transition flex items-center justify-center gap-1.5">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                    <span>登出當前身分</span>
                 </button>
-                <button type="button" onclick="window.saveUserSettings()" class="flex-1 bg-orange-500 text-white font-bold py-3 rounded-xl shadow-md hover:bg-orange-600 active:scale-95 transition text-xs">儲存個人設定</button>
             </div>
         </div>
     </div>
@@ -1415,7 +1421,7 @@
                     <h1 class="text-[16px] font-bold tracking-widest leading-none mt-1">呷奔 • 找餐廳</h1>
                 </div>
                 <div class="flex items-center gap-1.5">
-                    <button id="header-avatar-btn" onclick="window.openUserSettingsModal()" class="w-10 h-10 rounded-full border-2 border-white/80 shadow-xs flex items-center justify-center bg-white/20 hover:scale-105 transition overflow-hidden p-0.5" title="個人專屬後台與等級徽章">
+                    <button id="header-avatar-btn" onclick="window.handleHeaderAvatarClick()" class="w-10 h-10 rounded-full border-2 border-white/80 shadow-xs flex items-center justify-center bg-white/20 hover:scale-105 transition overflow-hidden p-0.5" title="個人專屬後台與等級徽章">
                         <div id="header-avatar-icon" class="foodie-avatar foodie-avatar-host w-full h-full rounded-full"></div>
                     </button>
                     <button onclick="window.attemptAdminAccess('admin')" class="w-10 h-10 flex items-center justify-center bg-white/20 backdrop-blur-sm rounded-full transition hover:bg-white/30" title="主揪後台">
@@ -2386,6 +2392,11 @@
             
             if (allowedCreators.includes(oldCreator)) creatorEl.value = oldCreator;
             else creatorEl.selectedIndex = 0;
+
+            // 🌟 如果是身分登入表單，選擇名字時若雲端已有大頭貼、LINE ID 則自動預覽帶入
+            if (prefix === 'id' && creatorEl.value && creatorEl.value !== '(無成員)') {
+                window.syncIdentityFormPreview(creatorEl.value);
+            }
         };
 
         function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
@@ -2597,9 +2608,22 @@
                 if (docSnap.exists() && docSnap.data().unlocked) { isAdminUnlocked = true; }
             }).catch(e => {});
 
+            // 🌟 1. 優先由 localStorage 本地快取秒速載入身分 (防止跨重整/重啟 App 時遺失)
+            try {
+                const localSaved = localStorage.getItem('together_eat_saved_identity');
+                if (localSaved) {
+                    const parsed = JSON.parse(localSaved);
+                    if (parsed && parsed.name) {
+                        window.myIdentity = parsed;
+                        if (typeof window.updateHeaderAvatarBadge === 'function') window.updateHeaderAvatarBadge();
+                    }
+                }
+            } catch(e) {}
+
             getDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'settings', 'profile')).then(docSnap => {
                 if (docSnap.exists() && docSnap.data().name) { 
-                    window.myIdentity = docSnap.data(); 
+                    window.myIdentity = { ...window.myIdentity, ...docSnap.data() }; 
+                    try { localStorage.setItem('together_eat_saved_identity', JSON.stringify(window.myIdentity)); } catch(e) {}
                     if (typeof window.updateHeaderAvatarBadge === 'function') window.updateHeaderAvatarBadge();
                 }
             }).catch(e => {});
@@ -3100,10 +3124,28 @@
         };
         window.openIdentityModal = function() {
             updateConfigDropdowns();
-            const avatarId = window.myIdentity?.avatarId || window.getDefaultAvatarId(window.myIdentity?.name || '');
-            const customAvatarUrl = window.myIdentity?.customAvatarUrl || '';
-            window.renderAvatarPicker(avatarId, customAvatarUrl);
+            const currentName = document.getElementById('id-creator')?.value || window.myIdentity?.name || '';
+            if (currentName && currentName !== '(無成員)') {
+                window.syncIdentityFormPreview(currentName);
+            } else {
+                const avatarId = window.myIdentity?.avatarId || window.getDefaultAvatarId('');
+                const customAvatarUrl = window.myIdentity?.customAvatarUrl || '';
+                window.renderAvatarPicker(avatarId, customAvatarUrl);
+            }
             document.getElementById('identity-modal').classList.remove('hidden');
+        };
+
+        window.syncIdentityFormPreview = function(memberName) {
+            if (!memberName || memberName === '(無成員)') return;
+            const profile = (window.appConfig.memberAvatars && window.appConfig.memberAvatars[memberName]) || {};
+            const lineInput = document.getElementById('id-line-id');
+            const bioInput = document.getElementById('id-bio');
+            
+            if (lineInput) lineInput.value = profile.lineId || '';
+            if (bioInput) bioInput.value = profile.bio || '';
+            
+            const avatarInfo = window.getAvatarInfo({ creator: memberName });
+            window.renderAvatarPicker(avatarInfo.avatarId, avatarInfo.customUrl);
         };
         const FOODIE_AVATARS = [
             { id: 'host', label: '活力主揪' }, { id: 'explorer', label: '藍衣探險家' },
@@ -3266,6 +3308,25 @@
             });
         };
 
+        window.logoutIdentity = function() {
+            window.myIdentity = { group: '', name: '', password: '', lineId: '', bio: '', avatarId: 'host', customAvatarUrl: '' };
+            try { localStorage.removeItem('together_eat_saved_identity'); } catch(e) {}
+            if (db && currentUser) {
+                setDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'settings', 'profile'), window.myIdentity, { merge: true }).catch(()=>{});
+            }
+            window.updateHeaderAvatarBadge();
+            window.closeModal('user-settings-modal');
+            window.showCustomMsg("👋 已成功登出身分！\n\n下次點擊右上角大頭貼時，請輸入密碼即可快速登入並自動帶入個人資料。");
+        };
+
+        window.handleHeaderAvatarClick = function() {
+            if (window.myIdentity && window.myIdentity.name) {
+                window.openUserSettingsModal();
+            } else {
+                window.openIdentityModal();
+            }
+        };
+
         window.saveIdentity = async function() {
             let isNew = !document.getElementById('form-id-new').classList.contains('hidden');
             let nName = '', nGroup = '', nInviter = '', nPassword = '';
@@ -3277,7 +3338,7 @@
                 nName = document.getElementById('id-creator').value;
                 nPassword = document.getElementById('id-password-old') ? document.getElementById('id-password-old').value.trim() : '';
                 if(!nName || nName === '(無成員)') return window.showCustomMsg("請選擇有效的名字喔！");
-                if(!nPassword) return window.showCustomMsg("請輸入您的個人登入密碼！\n(首次使用請直接設定，日後將用於身分驗證)");
+                if(!nPassword) return window.showCustomMsg("請輸入您的個人登入密碼！\n(首次使用請直接設定，日後換裝置輸入即可自動帶入資料)");
 
                 // 檢查密碼
                 const existingPass = window.appConfig.userPasswords[nName];
@@ -3286,7 +3347,12 @@
                         return window.showCustomMsg("⚠️ 密碼不正確喔！\n\n若忘記密碼，請點擊「忘記密碼？聯絡主揪」由主揪黃政誥協助查詢或重設。");
                     }
                 } else {
-                    // 首次綁定此成員的密碼
+                    // 🌟 首次綁定此成員的密碼：檢查是否與其他成員的密碼重複！
+                    const passEntries = Object.entries(window.appConfig.userPasswords || {});
+                    const duplicateUser = passEntries.find(([user, pass]) => user !== nName && pass === nPassword);
+                    if (duplicateUser) {
+                        return window.showCustomMsg(`⚠️ 抱歉！此密碼已被其他成員使用。\n\n為了保障每位好友的個人資料安全，不能設定跟別人一樣的密碼，請換一組專屬的新密碼！`);
+                    }
                     window.appConfig.userPasswords[nName] = nPassword;
                     await window.saveConfigToCloud();
                 }
@@ -3298,6 +3364,13 @@
                 if(!nName || !nGroup) return window.showCustomMsg("請填寫你的名字與想建立的群組！");
                 if(!nPassword) return window.showCustomMsg("請為您的新帳號設定一組登入密碼！");
                 if(nPassword.length < 3) return window.showCustomMsg("密碼長度至少需 3 碼以上喔！");
+
+                // 🌟 新增帳號：檢查密碼是否與現有其他成員的密碼重複！
+                const passEntries = Object.entries(window.appConfig.userPasswords || {});
+                const duplicateUser = passEntries.find(([user, pass]) => user !== nName && pass === nPassword);
+                if (duplicateUser) {
+                    return window.showCustomMsg(`⚠️ 抱歉！此密碼已被其他成員使用。\n\n為了保障每位好友的個人資料安全，不能設定跟別人一樣的密碼，請設定一組專屬於你的新密碼！`);
+                }
 
                 window.appConfig.userPasswords[nName] = nPassword;
             }
@@ -3313,10 +3386,25 @@
                 return window.showCustomMsg("⚠️ 「主揪」是專屬群組，只有黃政誥可以使用喔！");
             }
 
-            const lineId = document.getElementById('id-line-id') ? document.getElementById('id-line-id').value.trim() : '';
-            const bio = document.getElementById('id-bio') ? document.getElementById('id-bio').value.trim() : '';
-            const avatarId = document.getElementById('id-avatar')?.value || window.getDefaultAvatarId(nName);
+            // 🌟 跨裝置與登入自動帶入：優先使用雲端已存的大頭貼、LINE ID、個人宣言
+            const savedCloudProfile = (window.appConfig.memberAvatars && window.appConfig.memberAvatars[nName]) || {};
+            
+            let lineId = document.getElementById('id-line-id') ? document.getElementById('id-line-id').value.trim() : '';
+            if (!lineId && savedCloudProfile.lineId) lineId = savedCloudProfile.lineId;
+            
+            let bio = document.getElementById('id-bio') ? document.getElementById('id-bio').value.trim() : '';
+            if (!bio && savedCloudProfile.bio) bio = savedCloudProfile.bio;
+            
+            let avatarId = document.getElementById('id-avatar')?.value;
             let customAvatarUrl = document.getElementById('id-custom-avatar') ? document.getElementById('id-custom-avatar').value.trim() : '';
+            
+            if (!customAvatarUrl && savedCloudProfile.customAvatarUrl) {
+                customAvatarUrl = savedCloudProfile.customAvatarUrl;
+            }
+            if ((!avatarId || avatarId === 'host') && savedCloudProfile.avatarId) {
+                avatarId = savedCloudProfile.avatarId;
+            }
+            if (!avatarId) avatarId = window.getDefaultAvatarId(nName);
 
             // 如果有自訂頭像且是 Base64 圖片，自動上傳至 Google Drive 備份儲存
             if (customAvatarUrl && customAvatarUrl.startsWith('data:image')) {
@@ -3340,6 +3428,11 @@
                 password: nPassword
             };
             
+            // 🌟 寫入 localStorage 供同一裝置離線/重整/換網頁時自動持久化登入
+            try {
+                localStorage.setItem('together_eat_saved_identity', JSON.stringify(window.myIdentity));
+            } catch(e) {}
+
             if(db && currentUser) {
                 setDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'settings', 'profile'), window.myIdentity, { merge: true }).catch(e=>{});
             }
@@ -3394,7 +3487,7 @@
             if(pendingPartyAction) { pendingPartyAction(); pendingPartyAction = null; } 
             
             const lvl = window.getUserLevel(nName);
-            window.showCustomMsg(`✅ 登入成功！\n\n身分：${window.myIdentity.group} • ${window.myIdentity.name}\n當前美食榮耀：${lvl.badgeFullLabel} (${lvl.title})`);
+            window.showCustomMsg(`✅ 登入成功！已為您自動帶入大頭貼與個人資料！\n\n身分：${window.myIdentity.group} • ${window.myIdentity.name}\n當前美食榮耀：${lvl.badgeFullLabel} (${lvl.title})`);
         };
 
         let calcPeopleCount = 1;
@@ -4710,6 +4803,14 @@
 
             if (newPass) {
                 if (newPass.length < 3) return window.showCustomMsg("新密碼長度至少需 3 碼以上喔！");
+                
+                // 🌟 檢查新密碼是否已被其他人使用
+                const passEntries = Object.entries(window.appConfig.userPasswords || {});
+                const duplicateUser = passEntries.find(([user, pass]) => user !== userName && pass === newPass);
+                if (duplicateUser) {
+                    return window.showCustomMsg(`⚠️ 抱歉！此密碼已被其他成員使用。\n\n為了保障每位好友的個人資料安全，不能設定跟別人一樣的密碼，請換一組專屬的新密碼！`);
+                }
+
                 if (!window.appConfig.userPasswords) window.appConfig.userPasswords = {};
                 window.appConfig.userPasswords[userName] = newPass;
                 window.myIdentity.password = newPass;
@@ -4735,6 +4836,7 @@
             if (db && currentUser) {
                 setDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'settings', 'profile'), window.myIdentity, { merge: true }).catch(()=>{});
             }
+            try { localStorage.setItem('together_eat_saved_identity', JSON.stringify(window.myIdentity)); } catch(e) {}
 
             if (!window.appConfig.memberAvatars) window.appConfig.memberAvatars = {};
             window.appConfig.memberAvatars[userName] = {
