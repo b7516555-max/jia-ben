@@ -1015,7 +1015,8 @@
                     <button id="detail-share-btn" class="bg-[#00B900] text-white font-bold py-3 rounded-xl hover:bg-[#009900] transition shadow-sm flex items-center justify-center gap-2"><i class="fa-brands fa-line text-lg"></i> 分享給好友</button>
                 </div>
                 
-                <div class="flex justify-end gap-3 pt-4 mt-2 border-t border-gray-200">
+                <div class="flex justify-between items-center gap-3 pt-4 mt-2 border-t border-gray-200">
+                    <button id="detail-edit-btn" class="text-xs text-orange-600 hover:text-orange-700 font-bold px-3 py-1.5 transition flex items-center bg-orange-50 hover:bg-orange-100 rounded-lg border border-orange-200"><i class="fa-solid fa-pen-to-square mr-1"></i>編輯店家</button>
                     <button id="detail-delete-btn" class="text-xs text-gray-500 hover:text-red-500 font-bold px-3 py-1.5 transition flex items-center"><i class="fa-solid fa-trash-can mr-1"></i>移除店家</button>
                 </div>
             </div>
@@ -5111,9 +5112,15 @@
             });
         };
 
-        window.openRestaurantDetailByName = function(encodedName) {
-            const name = decodeURIComponent(encodedName || '');
+        window.openRestaurantDetailByName = function(nameOrEncoded) {
+            let name = nameOrEncoded || '';
+            try {
+                if (typeof name === 'string' && name.includes('%')) {
+                    name = decodeURIComponent(name);
+                }
+            } catch(e) {}
             if (!name) return;
+
             const matches = window.restaurantData.filter(item => item.name === name);
             const restaurant = matches[0] || {};
             const mUrl = restaurant.mapLink || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(name)}`;
@@ -5140,7 +5147,7 @@
                 pDataStr: window.escapeForBtn(JSON.stringify({ name: name })),
                 safeNameStr: safeNameStr
             };
-            window.openDetailModal(window.escapeForBtn(JSON.stringify(detailData)));
+            window.openDetailModal(detailData);
         };
 
         // 🌟 全新升級：口袋名單的「相簿風格」與「點擊展開詳情視窗」
@@ -5200,34 +5207,14 @@
             });
 
             container.innerHTML = groupedArr.map(i => {
-                const tagsHtml = i.recommenders.map(rec => {
-                    const isH = rec.creator === '黃政誥';
-                    const tC = isH ? 'bg-orange-50 text-orange-600 border-orange-200' : 'bg-gray-50 text-gray-600 border-gray-200';
-                    const cI = isH ? '<i class="fa-solid fa-crown mr-1"></i>' : '<i class="fa-solid fa-user-tag mr-1"></i>';
-                    return `<span class="${tC} text-[10px] px-2 py-1 rounded-lg border inline-block font-bold mt-1.5 mr-1.5">${cI}${rec.group} - ${rec.creator}</span>`;
-                }).join('');
-
-                const appUrl = window.appConfig.appUrl || window.location.href;
                 const isH = i.recommenders.some(rec => rec.creator === '黃政誥');
-                const mUrl = i.mapLink || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(i.name)}`;
-
                 const safeNameStr = window.escapeForBtn(i.name);
-                const pDataStr = window.escapeForBtn(JSON.stringify({name: i.name}));
-                const lineText = window.escapeForBtn(`這家看起來不錯，要約一下嗎？\n${i.name}\n📍 ${i.city}\n🗺️ 地圖: ${mUrl}\n---\n來自「一起吃飯吧！」\n${appUrl}`);
                 let displayImg = (!i.photoUrl || i.photoUrl.includes('unsplash.com') || window.isGoogleMapsPhotoUrl(i.photoUrl))
                     ? window.getFallbackImage(i.name)
                     : window.getSafeImage(i.photoUrl, i.name);
-                const ratingHtml = generateRatingHtml(i.rating, i.reviews);
-
-                const itemDataObj = window.escapeForBtn(JSON.stringify({
-                    name: i.name, img: displayImg, city: i.city, mUrl: mUrl, 
-                    placeId: i.placeId || '',
-                    tags: tagsHtml, ratingHtml: ratingHtml, lineText: lineText, 
-                    pDataStr: pDataStr, safeNameStr: safeNameStr
-                }));
 
                 return `
-                <div class="restaurant-card bg-white rounded-2xl shadow-sm border ${isH ? 'border-orange-200' : 'border-gray-100'} overflow-hidden relative cursor-pointer group h-48 md:h-56 lg:h-64" onclick="window.openDetailModal('${itemDataObj}')">
+                <div class="restaurant-card bg-white rounded-2xl shadow-sm border ${isH ? 'border-orange-200' : 'border-gray-100'} overflow-hidden relative cursor-pointer group h-48 md:h-56 lg:h-64" onclick="window.openRestaurantDetailByName('${safeNameStr}')">
                     <img id="list-img-${safeNameStr}" src="${displayImg}" onerror="this.onerror=null; this.src=window.getFallbackImage('${safeNameStr}');" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110">
                     <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent"></div>
                     <span class="absolute top-3 right-3 bg-black/50 backdrop-blur-md text-white text-[10px] px-2 py-1 rounded-full z-10 font-bold tracking-widest border border-white/20">${i.city || '未分類'}</span>
@@ -5239,27 +5226,85 @@
             }).join('');
         };
         
-        // 🌟 開啟詳細資訊卡片 Modal
-        window.openDetailModal = function(encodedData) {
-            const data = JSON.parse(decodeURIComponent(encodedData));
-            const liveCardImage = document.getElementById(`list-img-${data.safeNameStr}`);
-            if (liveCardImage) data.img = liveCardImage.src;
+        // 🌟 開啟詳細資訊卡片 Modal (全面強化防呆與容錯)
+        window.openDetailModal = function(inputData) {
+            let data = inputData;
+            if (typeof inputData === 'string') {
+                try {
+                    data = JSON.parse(decodeURIComponent(inputData));
+                } catch(e) {
+                    try {
+                        data = JSON.parse(inputData);
+                    } catch(err) {
+                        console.warn("解析餐廳資料失敗，改用名稱搜尋:", err);
+                        return window.openRestaurantDetailByName(inputData);
+                    }
+                }
+            }
+            if (!data || !data.name) return;
+
+            const safeName = data.safeNameStr || window.escapeForBtn(data.name);
+            const liveCardImage = document.getElementById(`list-img-${safeName}`);
+            if (liveCardImage && liveCardImage.src) data.img = liveCardImage.src;
             
-            document.getElementById('detail-img').src = data.img;
-            document.getElementById('detail-city').textContent = data.city || '未分類';
-            document.getElementById('detail-name').textContent = data.name;
-            document.getElementById('detail-rating').innerHTML = data.ratingHtml;
-            document.getElementById('detail-tags').innerHTML = data.tags;
+            const detailImgEl = document.getElementById('detail-img');
+            if (detailImgEl) {
+                detailImgEl.src = data.img || window.getFallbackImage(data.name);
+                detailImgEl.onerror = function() { this.onerror = null; this.src = window.getFallbackImage(data.name); };
+            }
+
+            const detailCityEl = document.getElementById('detail-city');
+            if (detailCityEl) detailCityEl.textContent = data.city || '未分類';
+
+            const detailNameEl = document.getElementById('detail-name');
+            if (detailNameEl) detailNameEl.textContent = data.name;
+
+            const detailRatingEl = document.getElementById('detail-rating');
+            if (detailRatingEl) detailRatingEl.innerHTML = data.ratingHtml || '<span class="text-gray-400 text-xs">暫無評分</span>';
+
+            const detailTagsEl = document.getElementById('detail-tags');
+            if (detailTagsEl) detailTagsEl.innerHTML = data.tags || '<span class="text-gray-400 text-xs">口袋好店</span>';
+
             window.loadPlaceDetails(data);
             
-            document.getElementById('detail-nav-btn').href = data.mUrl;
-            document.getElementById('detail-review-btn').setAttribute('onclick', `window.initInteraction('review', decodeURIComponent('${data.pDataStr}')); window.closeModal('card-detail-modal');`);
-            document.getElementById('detail-share-btn').setAttribute('onclick', `window.shareToLine('${data.lineText}')`);
+            const navBtn = document.getElementById('detail-nav-btn');
+            if (navBtn) navBtn.href = data.mUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(data.name)}`;
+
+            const reviewBtn = document.getElementById('detail-review-btn');
+            if (reviewBtn) {
+                const pStr = data.pDataStr || window.escapeForBtn(JSON.stringify({ name: data.name }));
+                reviewBtn.onclick = function() {
+                    window.initInteraction('review', decodeURIComponent(pStr));
+                    window.closeModal('card-detail-modal');
+                };
+            }
+
+            const shareBtn = document.getElementById('detail-share-btn');
+            if (shareBtn) {
+                const lText = data.lineText ? decodeURIComponent(data.lineText) : `推薦餐廳：${data.name}`;
+                shareBtn.onclick = function() {
+                    window.shareToLine(lText);
+                };
+            }
             
-            document.getElementById('detail-edit-btn').setAttribute('onclick', `window.editRestaurant('${data.safeNameStr}'); window.closeModal('card-detail-modal');`);
-            document.getElementById('detail-delete-btn').setAttribute('onclick', `window.confirmDelete(decodeURIComponent('${data.safeNameStr}')); window.closeModal('card-detail-modal');`);
+            const editBtn = document.getElementById('detail-edit-btn');
+            if (editBtn) {
+                editBtn.onclick = function() {
+                    window.editRestaurant(safeName);
+                    window.closeModal('card-detail-modal');
+                };
+            }
+
+            const deleteBtn = document.getElementById('detail-delete-btn');
+            if (deleteBtn) {
+                deleteBtn.onclick = function() {
+                    window.confirmDelete(data.name);
+                    window.closeModal('card-detail-modal');
+                };
+            }
             
-            document.getElementById('card-detail-modal').classList.remove('hidden');
+            const modal = document.getElementById('card-detail-modal');
+            if (modal) modal.classList.remove('hidden');
         };
 
         window.loadPlaceDetails = function(data) {
