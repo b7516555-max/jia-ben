@@ -4277,10 +4277,30 @@
             if(vT === 'random') { document.getElementById('random-btn').classList.remove('animate-pulse'); window.showCustomMsg("附近找不到喔！"); } 
         }
         
-        function extractCity(address) { const m = address ? address.match(/(基隆市|台北市|新北市|桃園市|新竹縣|新竹市|苗栗縣|台中市|彰化縣|南投縣|雲林縣|嘉義縣|嘉義市|台南市|高雄市|屏東縣|宜蘭縣|花蓮縣|台東縣|澎湖縣|金門縣|連江縣|東京都|大阪府|京都府|北海道|沖繩縣|福岡縣|愛知縣|神奈川縣|埼玉縣|千葉縣|兵庫縣|廣島縣|宮城縣|熊本縣|靜岡縣|長野縣|岐阜縣|三重縣|滋賀縣|奈良縣|和歌山縣|岡山縣|山口縣|香川縣|愛媛縣|高知縣|德島縣|大分縣|宮崎縣|鹿兒島縣|佐賀縣|長崎縣|青森縣|岩手縣|秋田縣|山形縣|福島縣|茨城縣|栃木縣|群馬縣|新潟縣|富山縣|石川縣|福井縣|山梨縣|鳥取縣|島根縣)/) : null; return m ? m[0] : '未分類'; }
-        
-        function generateRatingHtml(rating, reviews) { if(!rating) return `<span class="text-gray-400 text-[11px]">暫無評價</span>`; return `<span class="text-orange-500 font-bold text-[11px] bg-orange-50 px-1.5 py-0.5 rounded-lg flex items-center w-fit border border-orange-100"><i class="fa-solid fa-star text-[9px] mr-1"></i> ${parseFloat(rating).toFixed(1)} <span class="text-gray-500 text-[9px] ml-1 font-normal">(${reviews||0})</span></span>`; }
-        
+        function generateRatingHtml(rating, reviews) { 
+            if(!rating) return `<span class="text-gray-400 text-[11px]">暫無評價</span>`; 
+            return `<span class="text-orange-500 font-bold text-[11px] bg-orange-50 px-1.5 py-0.5 rounded-lg flex items-center w-fit border border-orange-100"><i class="fa-solid fa-star text-[9px] mr-1"></i> ${parseFloat(rating).toFixed(1)} <span class="text-gray-500 text-[9px] ml-1 font-normal">(${reviews||0})</span></span>`; 
+        }
+
+        function generatePlaceCardHtml(p) { 
+            let rawImg = p.photos && p.photos.length > 0 ? p.photos[0].getUrl({maxWidth: 500}) : '';
+            let img = window.getSafeImage(rawImg, p.name);
+            const safeNameStr = window.escapeForBtn(p.name);
+            const openStatusInfo = window.computeOpeningStatus(p);
+
+            return `<div class="restaurant-card bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden relative cursor-pointer group h-48 md:h-56 lg:h-64 transition" onclick="window.openRestaurantDetailByName('${safeNameStr}')">
+                <img src="${img}" onerror="this.onerror=null; this.src=window.getFallbackImage('${safeNameStr}');" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110">
+                <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent"></div>
+                <div class="absolute top-2.5 left-2.5 bg-black/60 backdrop-blur-md text-white text-[10px] px-2.5 py-1 rounded-full z-10 font-bold tracking-widest border border-white/20"><i class="fa-solid fa-location-arrow mr-1 text-orange-400"></i>${p.dist.toFixed(1)} km</div>
+                <div class="absolute top-2.5 right-2.5 z-10 flex items-center gap-1">
+                    ${openStatusInfo.badgeHtml}
+                </div>
+                <div class="absolute bottom-0 left-0 right-0 p-3.5 md:p-4 z-10">
+                    <h3 class="text-base md:text-lg font-bold text-white line-clamp-2 drop-shadow-md leading-tight">${p.name}</h3>
+                </div>
+            </div>`; 
+        }
+
         function generateWheelPlaceCardHtml(p) {
             let rawImg = p.photos && p.photos.length > 0 ? p.photos[0].getUrl({maxWidth: 600}) : '';
             let img = window.getSafeImage(rawImg, p.name);
