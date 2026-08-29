@@ -194,6 +194,14 @@
         @media (max-height: 700px) {
             .wheel-stage { width: min(60vw, 26vh, 230px); }
         }
+        @media (min-width: 768px) {
+            .wheel-stage { width: min(42vw, 55vh, 480px) !important; max-width: 480px; }
+            #nearby-search-box { max-width: 48rem !important; }
+            #radar-keyword { font-size: 1rem !important; padding: 0.6rem 1rem !important; }
+            #radar-spin-btn { font-size: 0.95rem !important; padding: 0.6rem 1.25rem !important; }
+            .desktop-radar-price { font-size: 0.95rem !important; padding: 0.5rem 0.8rem !important; }
+            .desktop-radar-price input { font-size: 0.95rem !important; width: 4.5rem !important; }
+        }
         .wheel-disc { transition: transform 4.8s cubic-bezier(.14,.8,.1,1); will-change: transform; }
         .wheel-pointer { filter: drop-shadow(0 4px 6px rgba(234,88,12,.35)); }
         .jelly-wheel-wrap {
@@ -1649,48 +1657,51 @@
 
                 <!-- 視圖 1.5: 美食旋轉輪盤（內部代號仍保留 radar 以相容既有搜尋流程） -->
                 <div id="view-nearby" class="hidden fade-in h-full flex flex-col relative w-full overflow-hidden">
-                    <!-- 頂部精簡搜尋與預算列 -->
-                    <div class="bg-white px-3 py-2 shadow-2xs z-10 border-b border-gray-100 flex flex-col items-center shrink-0">
-                        <div class="w-full max-w-lg">
-                            <div class="flex items-center gap-1.5">
+                    <!-- 頂部精簡搜尋與預算列（電腦版放大，手機版維持緊湊） -->
+                    <div class="bg-white px-3 py-2 md:py-3 shadow-2xs z-10 border-b border-gray-100 flex flex-col items-center shrink-0">
+                        <div id="nearby-search-box" class="w-full max-w-lg">
+                            <div class="flex items-center gap-1.5 md:gap-3">
                                 <div class="flex-1 relative">
-                                    <input type="text" id="radar-keyword" placeholder="想找什麼？(可留空直接抽)" class="w-full pl-3 pr-2 py-1.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none text-gray-800 text-xs font-medium" onkeypress="if(event.key === 'Enter') window.searchGooglePlaces('radar')">
+                                    <input type="text" id="radar-keyword" placeholder="想找什麼？(可留空直接抽)" class="w-full pl-3 pr-2 py-1.5 md:py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none text-gray-800 text-xs md:text-base font-medium" onkeypress="if(event.key === 'Enter') window.searchGooglePlaces('radar')">
                                 </div>
-                                <div class="flex items-center bg-gray-50 border border-gray-200 rounded-xl px-2 py-1 shrink-0">
-                                    <span class="text-[10px] text-gray-400 font-bold">$</span>
-                                    <input type="number" id="radar-price-min" placeholder="低" min="0" step="50" class="w-8 sm:w-12 bg-transparent text-[11px] font-bold text-gray-800 focus:outline-none placeholder:text-gray-300" onkeypress="if(event.key === 'Enter') window.searchGooglePlaces('radar')">
-                                    <span class="text-gray-300 mx-0.5 text-[10px]">~</span>
-                                    <span class="text-[10px] text-gray-400 font-bold">$</span>
-                                    <input type="number" id="radar-price-max" placeholder="高" min="0" step="50" class="w-8 sm:w-12 bg-transparent text-[11px] font-bold text-gray-800 focus:outline-none placeholder:text-gray-300" onkeypress="if(event.key === 'Enter') window.searchGooglePlaces('radar')">
+                                <div class="desktop-radar-price flex items-center bg-gray-50 border border-gray-200 rounded-xl px-2 md:px-3 py-1 md:py-2 shrink-0">
+                                    <span class="text-[10px] md:text-sm text-gray-400 font-bold mr-0.5">$</span>
+                                    <input type="number" id="radar-price-min" placeholder="低" min="0" step="50" class="w-8 sm:w-12 md:w-16 bg-transparent text-[11px] md:text-sm font-bold text-gray-800 focus:outline-none placeholder:text-gray-300" onkeypress="if(event.key === 'Enter') window.searchGooglePlaces('radar')">
+                                    <span class="text-gray-300 mx-0.5 md:mx-1 text-[10px] md:text-sm">~</span>
+                                    <span class="text-[10px] md:text-sm text-gray-400 font-bold mr-0.5">$</span>
+                                    <input type="number" id="radar-price-max" placeholder="高" min="0" step="50" class="w-8 sm:w-12 md:w-16 bg-transparent text-[11px] md:text-sm font-bold text-gray-800 focus:outline-none placeholder:text-gray-300" onkeypress="if(event.key === 'Enter') window.searchGooglePlaces('radar')">
                                 </div>
-                                <button id="radar-spin-btn" onclick="window.searchGooglePlaces('radar')" class="bg-gradient-to-r from-amber-500 to-orange-500 text-white px-3 py-1.5 rounded-xl shadow-xs font-bold text-xs hover:from-amber-600 hover:to-orange-600 transition whitespace-nowrap shrink-0">
+                                <button id="radar-spin-btn" onclick="window.searchGooglePlaces('radar')" class="bg-gradient-to-r from-amber-500 to-orange-500 text-white px-3 md:px-5 py-1.5 md:py-2.5 rounded-xl shadow-xs font-bold text-xs md:text-sm hover:from-amber-600 hover:to-orange-600 transition whitespace-nowrap shrink-0">
                                     <i class="fa-solid fa-play mr-1"></i>開抽
                                 </button>
                             </div>
                         </div>
                     </div>
 
-                    <!-- 輪盤與中獎卡片主容器：單頁自適應無滑動 -->
-                    <div id="nearby-container" class="flex-1 overflow-hidden px-3 py-1 flex flex-col items-center justify-evenly max-w-full">
-                        <div class="wheel-stage relative shrink-0 my-0.5">
+                    <!-- 輪盤與中獎卡片主容器：手機版上下自適應、電腦版左右並排呈現 -->
+                    <div id="nearby-container" class="flex-1 overflow-hidden px-3 md:px-8 py-1 md:py-4 flex flex-col md:flex-row items-center justify-evenly md:justify-center md:gap-10 max-w-full">
+                        <!-- 輪盤本體區塊 -->
+                        <div class="wheel-stage relative shrink-0 my-0.5 md:my-0 flex items-center justify-center">
                             <!-- 頂部可愛果凍指針 -->
-                            <div class="wheel-pointer absolute z-20 left-1/2 -top-1 -translate-x-1/2 text-orange-500 text-3xl drop-shadow-md cursor-pointer pointer-events-none transition"><i class="fa-solid fa-location-pin"></i></div>
+                            <div class="wheel-pointer absolute z-20 left-1/2 -top-1 md:-top-3 -translate-x-1/2 text-orange-500 text-3xl md:text-5xl drop-shadow-md cursor-pointer pointer-events-none transition"><i class="fa-solid fa-location-pin"></i></div>
                             
                             <!-- 半透明果凍輪盤 Canvas -->
-                            <canvas id="restaurant-wheel" width="720" height="720" class="wheel-disc jelly-wheel-wrap w-full h-full rounded-full border-[4px] border-white/90 shadow-xl"></canvas>
+                            <canvas id="restaurant-wheel" width="720" height="720" class="wheel-disc jelly-wheel-wrap w-full h-full rounded-full border-[4px] md:border-[8px] border-white/90 shadow-xl"></canvas>
                             
                             <!-- 正中央點擊旋轉按鈕（可愛果凍、半透明立體風格） -->
                             <button id="wheel-center-spin-btn" type="button" onclick="window.searchGooglePlaces('radar')" class="jelly-center-btn jelly-pulse absolute inset-[30%] rounded-full z-30 flex flex-col items-center justify-center text-orange-600 cursor-pointer select-none group focus:outline-none" title="點擊轉動輪盤">
-                                <div class="w-7 h-7 sm:w-9 sm:h-9 rounded-full bg-white/90 shadow-xs flex items-center justify-center mb-0.5 group-hover:scale-110 transition">
-                                    <i class="fa-solid fa-utensils text-orange-500 text-sm sm:text-base"></i>
+                                <div class="w-7 h-7 sm:w-9 sm:h-9 md:w-14 md:h-14 rounded-full bg-white/90 shadow-xs flex items-center justify-center mb-0.5 md:mb-1.5 group-hover:scale-110 transition">
+                                    <i class="fa-solid fa-utensils text-orange-500 text-sm sm:text-base md:text-2xl"></i>
                                 </div>
-                                <span class="text-[10px] sm:text-xs font-black tracking-wider text-orange-600 drop-shadow-xs">點我抽籤</span>
+                                <span class="text-[10px] sm:text-xs md:text-sm font-black tracking-wider text-orange-600 drop-shadow-xs">點我抽籤</span>
                             </button>
                         </div>
 
-                        <!-- 狀態提示 / 中獎卡片區塊（未中獎時顯示狀態，中獎時呈現極致緊湊卡片） -->
-                        <div id="wheel-status" class="text-center text-[11px] font-bold text-gray-600 bg-white/90 px-3 py-1 rounded-xl border border-orange-100 shadow-2xs backdrop-blur-xs shrink-0 max-w-xs transition-all">✨ 點擊正中間或右上角開抽！</div>
-                        <div id="wheel-result" class="hidden w-full max-w-sm shrink-0 transition-all"></div>
+                        <!-- 狀態提示 / 中獎卡片區塊（手機在下方，電腦版在右側並排呈現） -->
+                        <div class="flex flex-col items-center justify-center w-full max-w-sm md:max-w-md shrink-0">
+                            <div id="wheel-status" class="text-center text-[11px] md:text-sm font-bold text-gray-600 bg-white/90 px-3 md:px-5 py-1.5 md:py-3 rounded-2xl border border-orange-100 shadow-2xs backdrop-blur-xs w-full transition-all">✨ 點擊正中間或右上角開抽！</div>
+                            <div id="wheel-result" class="hidden w-full transition-all"></div>
+                        </div>
                     </div>
                 </div>
 
