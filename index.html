@@ -1446,9 +1446,14 @@
                                 </div>
                                 <div class="flex items-center gap-1 text-[10px] text-gray-500 shrink-0">
                                     <i class="fa-solid fa-coins text-orange-400"></i>
-                                    <select id="explore-price-min" class="px-1.5 py-0.5 bg-white border border-gray-200 rounded-lg focus:outline-none font-bold text-[10px]"><option value="">最低</option><option value="0">$0 (免費)</option><option value="1">$100 (平價)</option><option value="2">$200 (中等)</option><option value="3">$500 (偏高)</option><option value="4">$1000 (高價)</option></select>
-                                    <span class="text-gray-300">~</span>
-                                    <select id="explore-price-max" class="px-1.5 py-0.5 bg-white border border-gray-200 rounded-lg focus:outline-none font-bold text-[10px]"><option value="">最高</option><option value="0">$0 (免費)</option><option value="1">$200 (平價)</option><option value="2">$500 (中等)</option><option value="3">$1000 (偏高)</option><option value="4">$1000+ (高價)</option></select>
+                                    <span class="font-bold text-[10px] text-gray-600">預算</span>
+                                    <div class="flex items-center bg-white border border-gray-200 rounded-lg px-1.5 py-0.5 shadow-2xs">
+                                        <span class="text-[10px] text-gray-400 mr-0.5">$</span>
+                                        <input type="number" id="explore-price-min" placeholder="最低" min="0" step="50" class="w-11 sm:w-14 bg-transparent text-[10px] font-bold text-gray-800 focus:outline-none placeholder:text-gray-300" onkeypress="if(event.key === 'Enter') window.searchGooglePlaces('explore')">
+                                        <span class="text-gray-300 mx-1">~</span>
+                                        <span class="text-[10px] text-gray-400 mr-0.5">$</span>
+                                        <input type="number" id="explore-price-max" placeholder="最高" min="0" step="50" class="w-11 sm:w-14 bg-transparent text-[10px] font-bold text-gray-800 focus:outline-none placeholder:text-gray-300" onkeypress="if(event.key === 'Enter') window.searchGooglePlaces('explore')">
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -1485,27 +1490,15 @@
                         <div class="w-full space-y-2 pt-1">
                             <input type="text" id="random-keyword" placeholder="想吃哪類或哪區？(例如：燒肉、大安區)" class="w-full text-center px-3 py-2.5 bg-white border border-gray-200 rounded-xl shadow-2xs focus:outline-none focus:border-orange-400 font-medium text-gray-700 text-xs sm:text-sm">
                             
-                            <!-- 金額 / 價位區間設定 (實際金額顯示版) -->
-                            <div class="desktop-budget-row bg-white p-2.5 rounded-xl border border-gray-200/80 shadow-2xs flex items-center justify-between gap-1.5 text-xs text-gray-600 w-full overflow-hidden">
-                                <span class="font-bold shrink-0 flex items-center gap-1 text-orange-500 text-[11px]"><i class="fa-solid fa-coins"></i>預算</span>
-                                <div class="flex items-center gap-1 flex-1 min-w-0 w-full">
-                                    <select id="random-price-min" class="flex-1 min-w-0 px-2 py-1 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none text-[11px] font-bold text-gray-700 truncate">
-                                        <option value="">最低不限</option>
-                                        <option value="0">$0 (免費)</option>
-                                        <option value="1">$100 (平價)</option>
-                                        <option value="2">$200 (中等)</option>
-                                        <option value="3">$500 (偏高)</option>
-                                        <option value="4">$1000 (高價)</option>
-                                    </select>
-                                    <span class="text-gray-300 shrink-0 text-[10px]">~</span>
-                                    <select id="random-price-max" class="flex-1 min-w-0 px-2 py-1 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none text-[11px] font-bold text-gray-700 truncate">
-                                        <option value="">最高不限</option>
-                                        <option value="0">$0 (免費)</option>
-                                        <option value="1">$200 (平價)</option>
-                                        <option value="2">$500 (中等)</option>
-                                        <option value="3">$1000 (偏高)</option>
-                                        <option value="4">$1000+ (高價)</option>
-                                    </select>
+                            <!-- 金額 / 價位區間設定 (自訂金額輸入版) -->
+                            <div class="desktop-budget-row bg-white p-2.5 rounded-xl border border-gray-200/80 shadow-2xs flex items-center justify-between gap-2 text-xs text-gray-600 w-full overflow-hidden">
+                                <span class="font-bold shrink-0 flex items-center gap-1 text-orange-500 text-[11px]"><i class="fa-solid fa-coins"></i>預算金額</span>
+                                <div class="flex items-center gap-1 flex-1 min-w-0 bg-gray-50 border border-gray-200 rounded-lg px-2 py-1">
+                                    <span class="text-xs text-gray-400 font-bold">$</span>
+                                    <input type="number" id="random-price-min" placeholder="最低" min="0" step="50" class="w-full bg-transparent text-xs font-bold text-gray-800 focus:outline-none placeholder:text-gray-300">
+                                    <span class="text-gray-300 shrink-0 mx-1">~</span>
+                                    <span class="text-xs text-gray-400 font-bold">$</span>
+                                    <input type="number" id="random-price-max" placeholder="最高" min="0" step="50" class="w-full bg-transparent text-xs font-bold text-gray-800 focus:outline-none placeholder:text-gray-300">
                                 </div>
                             </div>
                         </div>
@@ -1540,10 +1533,14 @@
                                 <button id="radar-spin-btn" onclick="window.searchGooglePlaces('radar')" class="bg-gradient-to-r from-amber-500 to-orange-500 text-white px-4 rounded-xl shadow-xs font-bold text-xs sm:text-sm hover:from-amber-600 hover:to-orange-600 transition whitespace-nowrap"><i class="fa-solid fa-play mr-1"></i>轉動輪盤</button>
                             </div>
                             <div class="desktop-price-row flex items-center gap-1 mt-2 text-xs text-gray-500 justify-end overflow-x-auto no-scrollbar">
-                                <i class="fa-solid fa-coins text-orange-400 text-[10px]"></i><span class="font-bold text-[10px] shrink-0">金額預算</span>
-                                <select id="radar-price-min" class="px-1.5 py-0.5 bg-gray-50 border border-gray-200 rounded-lg text-[10px] focus:outline-none font-bold"><option value="">最低</option><option value="0">$0 (免費)</option><option value="1">$100 (平價)</option><option value="2">$200 (中等)</option><option value="3">$500 (偏高)</option><option value="4">$1000 (高價)</option></select>
-                                <span class="text-gray-300">~</span>
-                                <select id="radar-price-max" class="px-1.5 py-0.5 bg-gray-50 border border-gray-200 rounded-lg text-[10px] focus:outline-none font-bold"><option value="">最高</option><option value="0">$0 (免費)</option><option value="1">$200 (平價)</option><option value="2">$500 (中等)</option><option value="3">$1000 (偏高)</option><option value="4">$1000+ (高價)</option></select>
+                                <i class="fa-solid fa-coins text-orange-400 text-[10px]"></i><span class="font-bold text-[10px] shrink-0 text-gray-600">金額預算</span>
+                                <div class="flex items-center bg-gray-50 border border-gray-200 rounded-lg px-1.5 py-0.5">
+                                    <span class="text-[10px] text-gray-400 mr-0.5">$</span>
+                                    <input type="number" id="radar-price-min" placeholder="最低" min="0" step="50" class="w-12 sm:w-14 bg-transparent text-[10px] font-bold text-gray-800 focus:outline-none placeholder:text-gray-300" onkeypress="if(event.key === 'Enter') window.searchGooglePlaces('radar')">
+                                    <span class="text-gray-300 mx-1">~</span>
+                                    <span class="text-[10px] text-gray-400 mr-0.5">$</span>
+                                    <input type="number" id="radar-price-max" placeholder="最高" min="0" step="50" class="w-12 sm:w-14 bg-transparent text-[10px] font-bold text-gray-800 focus:outline-none placeholder:text-gray-300" onkeypress="if(event.key === 'Enter') window.searchGooglePlaces('radar')">
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -3736,18 +3733,40 @@
         };
         
         window.getSearchPriceRange = function(viewType) {
-            if (viewType !== 'explore' && viewType !== 'radar' && viewType !== 'random') return { min: null, max: null, active: false };
+            if (viewType !== 'explore' && viewType !== 'radar' && viewType !== 'random') return { min: null, max: null, minDollars: null, maxDollars: null, active: false };
             const minEl = document.getElementById(`${viewType}-price-min`);
             const maxEl = document.getElementById(`${viewType}-price-max`);
-            const minValue = minEl ? minEl.value : '';
-            const maxValue = maxEl ? maxEl.value : '';
-            const min = minValue === '' ? null : Number(minValue);
-            const max = maxValue === '' ? null : Number(maxValue);
-            if (min !== null && max !== null && min > max) {
-                window.showCustomMsg("⚠️ 最低價位不能高於最高價位，請重新選擇。");
+            const minValue = minEl ? minEl.value.trim() : '';
+            const maxValue = maxEl ? maxEl.value.trim() : '';
+            
+            const minDollars = minValue === '' ? null : Math.max(0, Number(minValue));
+            const maxDollars = maxValue === '' ? null : Math.max(0, Number(maxValue));
+
+            if (minDollars !== null && maxDollars !== null && minDollars > maxDollars) {
+                window.showCustomMsg("⚠️ 最低金額不能大於最高金額，請重新填寫。");
                 return null;
             }
-            return { min: min, max: max, active: min !== null || max !== null };
+
+            // 將用戶自訂的金額（NT$）轉換為 Google Maps 價位級距 (0: 免費, 1: <200, 2: 200~500, 3: 500~1000, 4: >1000)
+            const dollarToLevel = (dollars, isMax = false) => {
+                if (dollars === null) return null;
+                if (dollars <= 0) return 0;
+                if (dollars <= 200) return 1;
+                if (dollars <= 500) return 2;
+                if (dollars <= 1000) return 3;
+                return 4;
+            };
+
+            const minLevel = minDollars !== null ? (minDollars <= 0 ? 0 : (minDollars < 200 ? 1 : (minDollars < 500 ? 2 : (minDollars < 1000 ? 3 : 4)))) : null;
+            const maxLevel = maxDollars !== null ? dollarToLevel(maxDollars, true) : null;
+
+            return { 
+                min: minLevel, 
+                max: maxLevel, 
+                minDollars: minDollars, 
+                maxDollars: maxDollars, 
+                active: minDollars !== null || maxDollars !== null 
+            };
         };
 
         window.runQuickSearch = function(keyword) {
@@ -3814,9 +3833,12 @@
             const priceRange = window.getSearchPriceRange(vT);
             if (!priceRange) return;
             if (priceRange.active) {
-                res = res.filter(r => Number.isInteger(r.price_level)
-                    && (priceRange.min === null || r.price_level >= priceRange.min)
-                    && (priceRange.max === null || r.price_level <= priceRange.max));
+                res = res.filter(r => {
+                    if (!Number.isInteger(r.price_level)) return true; // 若 Google 未標記價位則寬鬆保留
+                    if (priceRange.min !== null && r.price_level < priceRange.min) return false;
+                    if (priceRange.max !== null && r.price_level > priceRange.max) return false;
+                    return true;
+                });
             }
 
             res = res.sort((a, b) => {
