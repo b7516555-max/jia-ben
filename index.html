@@ -1010,9 +1010,9 @@
             <div class="p-6 overflow-y-auto no-scrollbar flex-1 bg-gray-50 space-y-4">
                 <!-- 🌟 Google 地圖評分與平均消費單價醒目標籤列 -->
                 <div class="flex items-center gap-2 flex-wrap">
-                    <span id="detail-rating" class="text-orange-500 font-bold text-sm bg-orange-50 px-3 py-1.5 rounded-xl border border-orange-100 flex items-center shadow-2xs">
+                    <a id="detail-rating" href="#" target="_blank" rel="noopener noreferrer" class="text-orange-500 font-bold text-sm bg-orange-50 px-3 py-1.5 rounded-xl border border-orange-100 flex items-center shadow-2xs cursor-pointer hover:bg-orange-100 transition no-underline">
                         <i class="fa-solid fa-star mr-1 text-amber-400"></i> 4.5
-                    </span>
+                    </a>
                     <span id="detail-price-badge" class="text-emerald-700 font-bold text-xs bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200 flex items-center shadow-2xs">
                         <i class="fa-solid fa-coins mr-1 text-emerald-500"></i> <span id="detail-price-text">消費單價：讀取中...</span>
                     </span>
@@ -1674,9 +1674,15 @@
                                     </select>
                                 </div>
                             </div>
-                            <!-- 第 2 行：新增餐廳按鈕 (點擊右上角大頭貼即可切換/新增個人身分) -->
-                            <div class="w-full">
-                                <button onclick="window.openAddModal()" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-2.5 px-4 rounded-2xl shadow-md transition flex items-center justify-center gap-2 text-xs" title="新增口袋餐廳">
+                            <!-- 第 2 行：人名篩選 + 新增餐廳按鈕 -->
+                            <div class="flex items-center gap-2 w-full">
+                                <div class="flex-1 flex items-center gap-1 bg-gray-50 px-3 py-2 rounded-2xl border border-gray-100 shadow-inner min-w-0 overflow-hidden">
+                                    <i class="fa-solid fa-user text-orange-400 ml-1 text-xs shrink-0"></i>
+                                    <select id="list-person" onchange="window.renderList()" class="w-full bg-transparent text-gray-700 focus:outline-none font-bold text-xs cursor-pointer truncate">
+                                        <option value="all">👥 全體</option>
+                                    </select>
+                                </div>
+                                <button onclick="window.openAddModal()" class="shrink-0 bg-orange-500 hover:bg-orange-600 text-white font-bold py-2.5 px-4 rounded-2xl shadow-md transition flex items-center justify-center gap-2 text-xs" title="新增口袋餐廳">
                                     <i class="fa-solid fa-plus text-xs"></i>
                                     <span>新增餐廳</span>
                                 </button>
@@ -5876,10 +5882,26 @@
             const container = document.getElementById('list-container');
             const countryVal = document.getElementById('list-country')?.value || 'all';
             const cityVal = document.getElementById('list-city')?.value || 'all';
+            const personVal = document.getElementById('list-person')?.value || 'all';
+
+            // 🌟 動態更新人名篩選下拉選單
+            const personSelect = document.getElementById('list-person');
+            if (personSelect) {
+                const allCreators = [...new Set(window.restaurantData.map(r => r.creator).filter(Boolean))].sort();
+                const currentPersonVal = personSelect.value;
+                personSelect.innerHTML = '<option value="all">👥 全體</option>' + allCreators.map(name => `<option value="${name}">${name}</option>`).join('');
+                if (allCreators.includes(currentPersonVal) || currentPersonVal === 'all') {
+                    personSelect.value = currentPersonVal;
+                }
+            }
 
             if (window.restaurantData.length === 0) return container.innerHTML = '<div class="text-center text-gray-400 py-10 col-span-full"><i class="fa-solid fa-box-open text-5xl mb-4 opacity-30"></i><p class="text-sm">大家的口袋目前還是空的呢！</p></div>';
             
             let fD = [...window.restaurantData]; 
+            // 🌟 依人名篩選
+            if (personVal !== 'all') {
+                fD = fD.filter(r => r.creator === personVal);
+            }
             if (countryVal !== 'all') {
                 fD = fD.filter(r => {
                     const rCity = r.city || extractCity(r.name);
@@ -5891,7 +5913,7 @@
                 fD = fD.filter(r => (r.city || extractCity(r.name)) === cityVal);
             }
 
-            if (fD.length === 0) return container.innerHTML = `<div class="text-center text-gray-500 py-10 col-span-full">此區域無紀錄。</div>`;
+            if (fD.length === 0) return container.innerHTML = `<div class="text-center text-gray-500 py-10 col-span-full">${personVal !== 'all' ? personVal + ' 的' : '此區域'}口袋名單目前沒有紀錄。</div>`;
 
             const groupedMap = new Map();
             fD.forEach(r => {
@@ -6076,15 +6098,21 @@
                     detailImage.src = place.photos[0].getUrl({ maxWidth: 800 });
                 }
 
-                // 🌟 Google Maps 評分與評論數更新
+                // 🌟 Google Maps 評分與評論數更新 — 點擊可跳轉 Google Maps 評價
                 const rating = place.rating || data.rating || 0;
                 const reviews = place.user_ratings_total || data.reviews || 0;
                 const detailRatingEl = document.getElementById('detail-rating');
                 if (detailRatingEl) {
+                    // 構建 Google Maps 評價頁面連結
+                    const mapsReviewUrl = data.placeId
+                        ? `https://www.google.com/maps/place/?q=place_id:${data.placeId}`
+                        : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(data.name)}`;
+                    detailRatingEl.href = mapsReviewUrl;
                     if (rating > 0) {
-                        detailRatingEl.innerHTML = `<i class="fa-solid fa-star mr-1 text-amber-400"></i> ${parseFloat(rating).toFixed(1)} <span class="text-gray-500 text-xs ml-1 font-normal">(${reviews} 則 Google 評價)</span>`;
+                        detailRatingEl.innerHTML = `<i class="fa-solid fa-star mr-1 text-amber-400"></i> ${parseFloat(rating).toFixed(1)} <span class="text-gray-500 text-xs ml-1 font-normal">(${reviews} 則 Google 評價) <i class="fa-solid fa-arrow-up-right-from-square text-[10px] ml-0.5"></i></span>`;
                     } else {
                         detailRatingEl.innerHTML = `<span class="text-gray-400 text-xs">暫無評分</span>`;
+                        detailRatingEl.removeAttribute('href');
                     }
                 }
 
