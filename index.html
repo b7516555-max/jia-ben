@@ -4698,7 +4698,7 @@
             }
         };
 
-        // 6. 留言板聊天訊息：刪除
+        // 6. 留言板聊天訊息：收回訊息 / 刪除
         window.deleteChatMessageWithAuth = function(msgId) {
             const msg = window.chatData.find(m => m.id === msgId);
             if (!msg) return;
@@ -4712,19 +4712,19 @@
                         }
                         window.chatData = window.chatData.filter(m => m.id !== msgId);
                         window.renderChatMessages();
-                        window.showCustomMsg("🗑️ 已成功刪除該聊天訊息。");
+                        window.showCustomMsg(isAuthor ? "↩️ 已成功收回該則訊息。" : "🗑️ 已成功移除該聊天訊息。");
                     } catch(e) {
-                        console.error("刪除訊息失敗:", e);
-                        window.showCustomMsg("⚠️ 刪除訊息失敗。");
+                        console.error("收回/刪除訊息失敗:", e);
+                        window.showCustomMsg("⚠️ 收回訊息失敗，請檢查網路。");
                     }
                 };
 
                 if (isAuthor) {
-                    if (confirm("確定要刪除您發送的這則訊息嗎？")) {
+                    if (confirm("確定要收回您發送的這則訊息嗎？\n\n收回後大家將不再看見此內容。")) {
                         execute();
                     }
                 } else {
-                    window.requireAdminAuthForAction(`您正在以主揪身分刪除 ${msg.creator} 的聊天訊息`, execute);
+                    window.requireAdminAuthForAction(`您正在以主揪身分移除 ${msg.creator} 的聊天訊息`, execute);
                 }
             });
         };
@@ -5349,12 +5349,12 @@
                 if (isMe) {
                     return `
                     <div class="flex items-end justify-end gap-2 group/msg relative">
-                        <div class="flex items-center gap-1 opacity-0 group-hover/msg:opacity-100 transition mb-1 shrink-0">
-                            <button onclick="window.openChatMessageEditModal('${msg.id}')" class="text-gray-400 hover:text-blue-500 text-[11px] p-1 rounded hover:bg-gray-100 transition" title="編輯訊息">
+                        <div class="flex items-center gap-1 opacity-0 group-hover/msg:opacity-100 transition mb-1 shrink-0 bg-white/80 backdrop-blur-xs px-1.5 py-0.5 rounded-lg border border-gray-200 shadow-2xs">
+                            <button onclick="window.openChatMessageEditModal('${msg.id}')" class="text-gray-500 hover:text-blue-600 text-[11px] p-1 rounded hover:bg-blue-50 transition" title="編輯訊息">
                                 <i class="fa-solid fa-pen"></i>
                             </button>
-                            <button onclick="window.deleteChatMessageWithAuth('${msg.id}')" class="text-gray-400 hover:text-red-500 text-[11px] p-1 rounded hover:bg-gray-100 transition" title="刪除訊息">
-                                <i class="fa-solid fa-trash-can"></i>
+                            <button onclick="window.deleteChatMessageWithAuth('${msg.id}')" class="text-gray-500 hover:text-orange-600 text-[11px] p-1 rounded hover:bg-orange-50 transition" title="收回訊息">
+                                <i class="fa-solid fa-arrow-rotate-left"></i>
                             </button>
                         </div>
                         <span class="text-[10px] text-gray-400 font-medium mb-0.5">${timeStr}</span>
@@ -5386,11 +5386,11 @@
                             </div>
                         </div>
                         <span class="text-[10px] text-gray-400 font-medium mb-0.5">${timeStr}</span>
-                        <div class="flex items-center gap-1 opacity-0 group-hover/msg:opacity-100 transition mb-1 shrink-0">
-                            <button onclick="window.openChatMessageEditModal('${msg.id}')" class="text-gray-400 hover:text-blue-500 text-[11px] p-1 rounded hover:bg-gray-100 transition" title="主揪編輯訊息">
+                        <div class="flex items-center gap-1 opacity-0 group-hover/msg:opacity-100 transition mb-1 shrink-0 bg-white/80 backdrop-blur-xs px-1.5 py-0.5 rounded-lg border border-gray-200 shadow-2xs">
+                            <button onclick="window.openChatMessageEditModal('${msg.id}')" class="text-gray-500 hover:text-blue-600 text-[11px] p-1 rounded hover:bg-blue-50 transition" title="主揪編輯訊息">
                                 <i class="fa-solid fa-pen"></i>
                             </button>
-                            <button onclick="window.deleteChatMessageWithAuth('${msg.id}')" class="text-gray-400 hover:text-red-500 text-[11px] p-1 rounded hover:bg-gray-100 transition" title="主揪刪除訊息">
+                            <button onclick="window.deleteChatMessageWithAuth('${msg.id}')" class="text-gray-500 hover:text-red-600 text-[11px] p-1 rounded hover:bg-red-50 transition" title="主揪強制收回/移除訊息">
                                 <i class="fa-solid fa-trash-can"></i>
                             </button>
                         </div>
