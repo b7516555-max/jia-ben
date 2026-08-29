@@ -1160,7 +1160,95 @@
         </div>
     </div>
 
-    <!-- 🌟 全新：美食好友個人名片 Modal -->
+    <!-- 🌟 動態評價編輯 Modal -->
+    <div id="feed-item-edit-modal" class="hidden fixed inset-0 z-[108] flex items-center justify-center bg-black/60 modal-backdrop fade-in">
+        <div class="bg-white rounded-3xl p-6 w-11/12 max-w-lg shadow-2xl relative max-h-[85vh] overflow-y-auto no-scrollbar">
+            <button onclick="window.closeModal('feed-item-edit-modal')" class="absolute top-4 right-5 text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark text-xl"></i></button>
+            <div class="text-center mb-4">
+                <div class="w-12 h-12 bg-orange-100 text-orange-500 rounded-full flex items-center justify-center mx-auto mb-1.5"><i class="fa-solid fa-pen-to-square text-xl"></i></div>
+                <h2 class="text-lg font-bold text-gray-800">編輯動態評價</h2>
+                <p id="feed-item-edit-sub" class="text-xs text-gray-400">修改您的美食推薦評分與心得</p>
+            </div>
+            <input type="hidden" id="feed-item-edit-id">
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1.5">用餐體驗評分</label>
+                    <input type="hidden" id="feed-item-edit-rating" value="good">
+                    <div class="grid grid-cols-2 gap-2">
+                        <button type="button" id="feed-edit-btn-good" onclick="window.selectFeedEditRating('good')" class="flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 border-emerald-400 bg-emerald-50 text-emerald-600 font-bold text-xs shadow-2xs transition">
+                            <i class="fa-solid fa-thumbs-up text-sm"></i> 推爆好店
+                        </button>
+                        <button type="button" id="feed-edit-btn-bad" onclick="window.selectFeedEditRating('bad')" class="flex items-center justify-center gap-2 py-2.5 rounded-xl border border-gray-200 bg-white text-gray-400 font-bold text-xs transition">
+                            <i class="fa-solid fa-thumbs-down text-sm"></i> 避雷提醒
+                        </button>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">評語心得 / 必點特色</label>
+                    <textarea id="feed-item-edit-content" rows="4" class="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm focus:ring-2 focus:ring-orange-300 font-medium"></textarea>
+                </div>
+                <button type="button" id="feed-item-save-btn" onclick="window.saveFeedItemEdit()" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-xl shadow-md transition flex items-center justify-center gap-1.5 text-xs">
+                    <i class="fa-solid fa-check"></i> 儲存修改
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🌟 動態牆留言編輯 Modal -->
+    <div id="feed-comment-edit-modal" class="hidden fixed inset-0 z-[108] flex items-center justify-center bg-black/60 modal-backdrop fade-in">
+        <div class="bg-white rounded-3xl p-6 w-11/12 max-w-sm shadow-2xl relative">
+            <button onclick="window.closeModal('feed-comment-edit-modal')" class="absolute top-4 right-5 text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark text-xl"></i></button>
+            <div class="text-center mb-4">
+                <div class="w-12 h-12 bg-blue-100 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-1.5"><i class="fa-solid fa-pen text-xl"></i></div>
+                <h2 class="text-lg font-bold text-gray-800">編輯留言內容</h2>
+                <p id="feed-comment-edit-sub" class="text-xs text-gray-400">修改您的留言文字</p>
+            </div>
+            <input type="hidden" id="feed-comment-edit-feed-id">
+            <input type="hidden" id="feed-comment-edit-index">
+            <div class="space-y-3">
+                <textarea id="feed-comment-edit-text" rows="3" class="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:ring-2 focus:ring-blue-300 font-medium" placeholder="請輸入留言..."></textarea>
+                <button type="button" onclick="window.saveFeedCommentEdit()" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2.5 rounded-xl shadow-md transition flex items-center justify-center gap-1.5 text-xs">
+                    <i class="fa-solid fa-check"></i> 儲存留言
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🌟 留言板聊天訊息編輯 Modal -->
+    <div id="chat-msg-edit-modal" class="hidden fixed inset-0 z-[108] flex items-center justify-center bg-black/60 modal-backdrop fade-in">
+        <div class="bg-white rounded-3xl p-6 w-11/12 max-w-sm shadow-2xl relative">
+            <button onclick="window.closeModal('chat-msg-edit-modal')" class="absolute top-4 right-5 text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark text-xl"></i></button>
+            <div class="text-center mb-4">
+                <div class="w-12 h-12 bg-orange-100 text-orange-500 rounded-full flex items-center justify-center mx-auto mb-1.5"><i class="fa-solid fa-message text-xl"></i></div>
+                <h2 class="text-lg font-bold text-gray-800">編輯聊天訊息</h2>
+                <p id="chat-msg-edit-sub" class="text-xs text-gray-400">修改留言板發送的文字</p>
+            </div>
+            <input type="hidden" id="chat-msg-edit-id">
+            <div class="space-y-3">
+                <textarea id="chat-msg-edit-text" rows="3" class="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:ring-2 focus:ring-orange-300 font-medium" placeholder="請輸入訊息..."></textarea>
+                <button type="button" onclick="window.saveChatMessageEdit()" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-2.5 rounded-xl shadow-md transition flex items-center justify-center gap-1.5 text-xs">
+                    <i class="fa-solid fa-check"></i> 儲存訊息
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🌟 主揪權限通行密碼輸入 Modal -->
+    <div id="admin-action-auth-modal" class="hidden fixed inset-0 z-[120] flex items-center justify-center bg-black/60 modal-backdrop fade-in">
+        <div class="bg-white rounded-3xl p-6 w-11/12 max-w-sm shadow-2xl relative">
+            <button onclick="window.closeModal('admin-action-auth-modal')" class="absolute top-4 right-5 text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark text-xl"></i></button>
+            <div class="text-center mb-4">
+                <div class="w-12 h-12 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-1.5"><i class="fa-solid fa-key text-xl"></i></div>
+                <h2 class="text-lg font-bold text-gray-800">主揪權限確認</h2>
+                <p id="admin-action-auth-sub" class="text-xs text-gray-400">執行管理操作請輸入主揪密碼</p>
+            </div>
+            <div class="space-y-3">
+                <input type="password" id="admin-action-auth-pass" onkeypress="if(event.key==='Enter') window.verifyAdminActionPassword()" class="w-full px-4 py-3 border-2 border-gray-100 rounded-xl text-center tracking-widest focus:border-amber-400 focus:outline-none text-sm font-bold" placeholder="請輸入主揪密碼">
+                <button type="button" onclick="window.verifyAdminActionPassword()" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-2.5 rounded-xl shadow-md transition text-xs">確認執行</button>
+                <p id="admin-action-auth-error" class="text-red-500 text-xs text-center hidden font-bold">⚠️ 主揪密碼錯誤！</p>
+            </div>
+        </div>
+    </div>
     <div id="user-profile-modal" class="hidden fixed inset-0 z-[110] flex items-center justify-center bg-black/60 modal-backdrop fade-in">
         <div class="bg-white rounded-3xl p-6 w-11/12 max-w-sm shadow-2xl relative overflow-hidden">
             <button onclick="window.closeModal('user-profile-modal')" class="absolute top-4 right-5 text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark text-xl"></i></button>
@@ -4353,86 +4441,292 @@
             }
         };
 
-        window.clearAllFeedEditPhotos = function() {
-            currentFeedEditPhotos = [];
-            const urlInput = document.getElementById('feed-photo-edit-url-input');
-            if (urlInput) urlInput.value = '';
-            window.renderFeedEditPhotosGrid();
+        // ==========================================
+        // 🌟 動態牆與留言板：編輯與刪除權限管理 (含主揪密碼防護)
+        // ==========================================
+        let pendingAdminAction = null;
+
+        // 通用主揪密碼驗證執行器
+        window.requireAdminAuthForAction = function(actionDesc, callback) {
+            const adminPass = typeof window.getAdminPassword === 'function' ? window.getAdminPassword() : 'Bb19960930';
+            const sub = document.getElementById('admin-action-auth-sub');
+            if (sub) sub.textContent = actionDesc || '執行主揪管理操作請輸入主揪密碼';
+            const passInput = document.getElementById('admin-action-auth-pass');
+            if (passInput) passInput.value = '';
+            document.getElementById('admin-action-auth-error')?.classList.add('hidden');
+            pendingAdminAction = callback;
+            document.getElementById('admin-action-auth-modal').classList.remove('hidden');
+            setTimeout(() => passInput?.focus(), 100);
         };
 
-        window.openFeedPhotoEditModal = function(feedId) {
+        window.verifyAdminActionPassword = function() {
+            const inputPass = (document.getElementById('admin-action-auth-pass')?.value || '').trim();
+            const adminPass = typeof window.getAdminPassword === 'function' ? window.getAdminPassword() : 'Bb19960930';
+            if (inputPass !== adminPass && inputPass !== 'Bb19960930') {
+                document.getElementById('admin-action-auth-error')?.classList.remove('hidden');
+                return;
+            }
+            window.closeModal('admin-action-auth-modal');
+            if (typeof pendingAdminAction === 'function') {
+                const action = pendingAdminAction;
+                pendingAdminAction = null;
+                action();
+            }
+        };
+
+        // 1. 動態評價：編輯
+        window.openFeedItemEditModal = function(feedId) {
             const item = window.feedData.find(f => f.id === feedId);
             if (!item) return;
-
             window.requireIdentity(() => {
-                // 檢查是否為本人（主揪黃政誥有管理者權限，發文者本人可隨時補充照片）
-                const isAuthor = window.myIdentity?.name === item.creator || window.myIdentity?.name === '黃政誥';
-                if (!isAuthor) {
-                    return window.showCustomMsg("⚠️ 只有動態的發布者本人（或主揪）可以為此留言新增/更換照片喔！");
-                }
+                const myName = window.myIdentity?.name;
+                const isAuthor = myName === item.creator;
+                const proceed = () => {
+                    document.getElementById('feed-item-edit-id').value = feedId;
+                    document.getElementById('feed-item-edit-sub').textContent = `正在編輯「${item.restaurantName || item.partyTitle || '動態'}」的評價`;
+                    document.getElementById('feed-item-edit-content').value = item.content || '';
+                    window.selectFeedEditRating(item.rating === 'bad' ? 'bad' : 'good');
+                    document.getElementById('feed-item-edit-modal').classList.remove('hidden');
+                };
 
-                document.getElementById('feed-photo-edit-id').value = feedId;
-                document.getElementById('feed-photo-edit-sub').textContent = `正在為「${item.restaurantName || item.partyTitle || '動態'}」補充照片 (最多 5 張)`;
-                
-                // 解析既有照片（支援 single photoUrl 或 photos 陣列）
-                if (Array.isArray(item.photos) && item.photos.length > 0) {
-                    currentFeedEditPhotos = [...item.photos].slice(0, 5);
-                } else if (item.photoUrl) {
-                    currentFeedEditPhotos = [item.photoUrl];
+                if (isAuthor) {
+                    proceed();
                 } else {
-                    currentFeedEditPhotos = [];
+                    window.requireAdminAuthForAction(`您正在以主揪身分編輯 ${item.creator} 的評價動態`, proceed);
                 }
-
-                window.renderFeedEditPhotosGrid();
-                document.getElementById('feed-photo-edit-modal').classList.remove('hidden');
             });
         };
 
-        window.saveFeedPhotoEdit = async function() {
-            const feedId = document.getElementById('feed-photo-edit-id').value;
-            const btn = document.getElementById('feed-photo-save-btn');
-            const item = window.feedData.find(f => f.id === feedId);
-            if (!item) return window.closeModal('feed-photo-edit-modal');
+        window.selectFeedEditRating = function(r) {
+            document.getElementById('feed-item-edit-rating').value = r;
+            const bG = document.getElementById('feed-edit-btn-good');
+            const bB = document.getElementById('feed-edit-btn-bad');
+            if (r === 'good') {
+                bG.className = 'flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 border-emerald-400 bg-emerald-50 text-emerald-600 font-bold text-xs shadow-2xs transition';
+                bB.className = 'flex items-center justify-center gap-2 py-2.5 rounded-xl border border-gray-200 bg-white text-gray-400 font-bold text-xs transition';
+            } else {
+                bB.className = 'flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 border-rose-400 bg-rose-50 text-rose-600 font-bold text-xs shadow-2xs transition';
+                bG.className = 'flex items-center justify-center gap-2 py-2.5 rounded-xl border border-gray-200 bg-white text-gray-400 font-bold text-xs transition';
+            }
+        };
 
-            const origText = btn ? btn.innerHTML : '';
-            if (btn) { btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i>儲存上傳中...'; btn.disabled = true; }
+        window.saveFeedItemEdit = async function() {
+            const feedId = document.getElementById('feed-item-edit-id').value;
+            const newContent = (document.getElementById('feed-item-edit-content')?.value || '').trim();
+            const newRating = document.getElementById('feed-item-edit-rating')?.value || 'good';
+            const item = window.feedData.find(f => f.id === feedId);
+            if (!item) return window.closeModal('feed-item-edit-modal');
+
+            const btn = document.getElementById('feed-item-save-btn');
+            if (btn) { btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i>儲存中...'; btn.disabled = true; }
 
             try {
-                const finalPhotos = [];
-                for (let i = 0; i < currentFeedEditPhotos.length; i++) {
-                    let p = currentFeedEditPhotos[i];
-                    if (p.startsWith('data:image')) {
-                        try {
-                            const uploadRes = await window.uploadImageToDrive(p, `${item.restaurantName || 'feed'}_${Date.now()}_${i}.jpg`);
-                            if (uploadRes && (uploadRes.imageUrl || uploadRes.fileId)) {
-                                p = uploadRes.imageUrl || window.getDriveImageUrl(uploadRes.fileId);
-                            }
-                        } catch (uploadErr) {
-                            console.warn("上傳 Google Drive 失敗，改用壓縮後的圖片儲存:", uploadErr);
-                        }
-                    }
-                    finalPhotos.push(p);
-                }
-
-                item.photos = finalPhotos;
-                item.photoUrl = finalPhotos.length > 0 ? finalPhotos[0] : '';
-
+                item.content = newContent;
+                item.rating = newRating;
                 if (db && currentUser && typeof feedId === 'string') {
-                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'feed', feedId), { 
-                        photos: finalPhotos, 
-                        photoUrl: item.photoUrl 
+                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'feed', feedId), {
+                        content: newContent,
+                        rating: newRating
                     });
                 }
-
-                window.closeModal('feed-photo-edit-modal');
+                window.closeModal('feed-item-edit-modal');
                 window.renderFeed();
-                window.showCustomMsg(`✅ 已成功更新 ${finalPhotos.length} 張照片至動態牆！`);
-            } catch (err) {
-                console.error("更新動態照片失敗:", err);
-                window.showCustomMsg("⚠️ 更新失敗，請稍後再試！");
+                window.showCustomMsg("✅ 評價內容已成功更新！");
+            } catch(e) {
+                console.error("更新評價失敗:", e);
+                window.showCustomMsg("⚠️ 更新失敗，請檢查網路連線。");
             } finally {
-                if (btn) { btn.innerHTML = origText; btn.disabled = false; }
+                if (btn) { btn.innerHTML = '<i class="fa-solid fa-check"></i> 儲存修改'; btn.disabled = false; }
             }
+        };
+
+        // 2. 動態評價：刪除
+        window.deleteFeedItemWithAuth = function(feedId) {
+            const item = window.feedData.find(f => f.id === feedId);
+            if (!item) return;
+            window.requireIdentity(() => {
+                const myName = window.myIdentity?.name;
+                const isAuthor = myName === item.creator;
+                const execute = async () => {
+                    try {
+                        if (db && currentUser && typeof feedId === 'string') {
+                            await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'feed', feedId));
+                        }
+                        window.feedData = window.feedData.filter(f => f.id !== feedId);
+                        window.renderFeed();
+                        if (typeof window.renderAdminDataList === 'function') window.renderAdminDataList();
+                        window.showCustomMsg("🗑️ 已成功移除該筆評價動態。");
+                    } catch (e) {
+                        console.error("刪除動態失敗:", e);
+                        window.showCustomMsg("⚠️ 移除失敗，請稍後再試。");
+                    }
+                };
+
+                if (isAuthor) {
+                    if (confirm(`確定要刪除您在「${item.restaurantName || '此店家'}」發布的評價動態嗎？`)) {
+                        execute();
+                    }
+                } else {
+                    window.requireAdminAuthForAction(`您正在以主揪身分移除 ${item.creator} 發布的評價動態`, execute);
+                }
+            });
+        };
+
+        // 3. 動態牆留言：編輯
+        window.openFeedCommentEditModal = function(feedId, commentIdx) {
+            const item = window.feedData.find(f => f.id === feedId);
+            if (!item || !Array.isArray(item.comments) || !item.comments[commentIdx]) return;
+            const c = item.comments[commentIdx];
+
+            window.requireIdentity(() => {
+                const myName = window.myIdentity?.name;
+                const isAuthor = myName === c.creator;
+                const proceed = () => {
+                    document.getElementById('feed-comment-edit-feed-id').value = feedId;
+                    document.getElementById('feed-comment-edit-index').value = commentIdx;
+                    document.getElementById('feed-comment-edit-text').value = c.text || '';
+                    document.getElementById('feed-comment-edit-modal').classList.remove('hidden');
+                };
+
+                if (isAuthor) {
+                    proceed();
+                } else {
+                    window.requireAdminAuthForAction(`您正在以主揪身分編輯 ${c.creator} 的留言`, proceed);
+                }
+            });
+        };
+
+        window.saveFeedCommentEdit = async function() {
+            const feedId = document.getElementById('feed-comment-edit-feed-id').value;
+            const idx = parseInt(document.getElementById('feed-comment-edit-index').value, 10);
+            const newText = (document.getElementById('feed-comment-edit-text')?.value || '').trim();
+            const item = window.feedData.find(f => f.id === feedId);
+            if (!item || !Array.isArray(item.comments) || !item.comments[idx]) return window.closeModal('feed-comment-edit-modal');
+
+            try {
+                item.comments[idx].text = newText;
+                if (db && currentUser && typeof feedId === 'string') {
+                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'feed', feedId), {
+                        comments: item.comments
+                    });
+                }
+                window.closeModal('feed-comment-edit-modal');
+                window.renderFeed();
+                window.showCustomMsg("✅ 留言內容已更新！");
+            } catch(e) {
+                console.error("更新留言失敗:", e);
+                window.showCustomMsg("⚠️ 更新留言失敗。");
+            }
+        };
+
+        // 4. 動態牆留言：刪除
+        window.deleteFeedCommentWithAuth = function(feedId, commentIdx) {
+            const item = window.feedData.find(f => f.id === feedId);
+            if (!item || !Array.isArray(item.comments) || !item.comments[commentIdx]) return;
+            const c = item.comments[commentIdx];
+
+            window.requireIdentity(() => {
+                const myName = window.myIdentity?.name;
+                const isAuthor = myName === c.creator;
+                const execute = async () => {
+                    try {
+                        item.comments.splice(commentIdx, 1);
+                        if (db && currentUser && typeof feedId === 'string') {
+                            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'feed', feedId), {
+                                comments: item.comments
+                            });
+                        }
+                        window.renderFeed();
+                        window.showCustomMsg("🗑️ 已成功刪除該則留言。");
+                    } catch (e) {
+                        console.error("刪除留言失敗:", e);
+                        window.showCustomMsg("⚠️ 刪除留言失敗。");
+                    }
+                };
+
+                if (isAuthor) {
+                    if (confirm("確定要刪除您的這則留言嗎？")) {
+                        execute();
+                    }
+                } else {
+                    window.requireAdminAuthForAction(`您正在以主揪身分刪除 ${c.creator} 的留言`, execute);
+                }
+            });
+        };
+
+        // 5. 留言板聊天訊息：編輯
+        window.openChatMessageEditModal = function(msgId) {
+            const msg = window.chatData.find(m => m.id === msgId);
+            if (!msg) return;
+            window.requireIdentity(() => {
+                const myName = window.myIdentity?.name;
+                const isAuthor = myName === msg.creator;
+                const proceed = () => {
+                    document.getElementById('chat-msg-edit-id').value = msgId;
+                    document.getElementById('chat-msg-edit-text').value = msg.text || '';
+                    document.getElementById('chat-msg-edit-modal').classList.remove('hidden');
+                };
+
+                if (isAuthor) {
+                    proceed();
+                } else {
+                    window.requireAdminAuthForAction(`您正在以主揪身分編輯 ${msg.creator} 的聊天訊息`, proceed);
+                }
+            });
+        };
+
+        window.saveChatMessageEdit = async function() {
+            const msgId = document.getElementById('chat-msg-edit-id').value;
+            const newText = (document.getElementById('chat-msg-edit-text')?.value || '').trim();
+            if (!newText) return window.showCustomMsg("訊息不能為空喔！");
+            const msg = window.chatData.find(m => m.id === msgId);
+            if (!msg) return window.closeModal('chat-msg-edit-modal');
+
+            try {
+                msg.text = newText;
+                if (db && currentUser && typeof msgId === 'string') {
+                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'chat', msgId), {
+                        text: newText
+                    });
+                }
+                window.closeModal('chat-msg-edit-modal');
+                window.renderChatMessages();
+                window.showCustomMsg("✅ 訊息已成功更新！");
+            } catch(e) {
+                console.error("更新訊息失敗:", e);
+                window.showCustomMsg("⚠️ 更新訊息失敗。");
+            }
+        };
+
+        // 6. 留言板聊天訊息：刪除
+        window.deleteChatMessageWithAuth = function(msgId) {
+            const msg = window.chatData.find(m => m.id === msgId);
+            if (!msg) return;
+            window.requireIdentity(() => {
+                const myName = window.myIdentity?.name;
+                const isAuthor = myName === msg.creator;
+                const execute = async () => {
+                    try {
+                        if (db && currentUser && typeof msgId === 'string') {
+                            await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'chat', msgId));
+                        }
+                        window.chatData = window.chatData.filter(m => m.id !== msgId);
+                        window.renderChatMessages();
+                        window.showCustomMsg("🗑️ 已成功刪除該聊天訊息。");
+                    } catch(e) {
+                        console.error("刪除訊息失敗:", e);
+                        window.showCustomMsg("⚠️ 刪除訊息失敗。");
+                    }
+                };
+
+                if (isAuthor) {
+                    if (confirm("確定要刪除您發送的這則訊息嗎？")) {
+                        execute();
+                    }
+                } else {
+                    window.requireAdminAuthForAction(`您正在以主揪身分刪除 ${msg.creator} 的聊天訊息`, execute);
+                }
+            });
         };
 
         window.copyProfileLineId = function() {
@@ -4815,7 +5109,7 @@
                 const isLiked = window.myIdentity && likes.includes(window.myIdentity.name);
                 const comments = Array.isArray(item.comments) ? item.comments : [];
 
-                const commentsHtml = comments.map(c => {
+                const commentsHtml = comments.map((c, cIdx) => {
                     const cLevelInfo = window.getUserLevel(c.creator);
                     const cTheme = window.getGroupColorTheme(c.group);
                     const isCHost = c.creator === '黃政誥' || c.group === '主揪';
@@ -4824,12 +5118,22 @@
                         : (c.photoUrl ? [c.photoUrl] : []);
 
                     return `
-                    <div class="text-xs bg-white p-2.5 rounded-xl border border-gray-100/90 shadow-2xs flex flex-col gap-1.5">
-                        <div class="flex items-center gap-1.5 flex-wrap">
-                            <span class="font-bold text-gray-900 cursor-pointer hover:text-orange-500 transition leading-none" onclick="window.openUserProfile('${window.escapeForBtn(c.creator)}', '${window.escapeForBtn(c.group)}')">${c.creator}</span>
-                            ${isCHost ? '<span class="bg-orange-500 text-white text-[8px] px-1 rounded font-black">主揪</span>' : ''}
-                            <span class="bg-amber-50 text-amber-700 border border-amber-200 text-[9px] px-1.5 py-0.2 rounded font-bold" title="${cLevelInfo.tierName} (Lv.${cLevelInfo.level})">${cLevelInfo.tierIcon} Lv.${cLevelInfo.level}</span>
-                            <span class="${cTheme.badge} text-[9px] px-1.5 py-0.2 rounded font-bold">${c.group} 團</span>
+                    <div class="text-xs bg-white p-2.5 rounded-xl border border-gray-100/90 shadow-2xs flex flex-col gap-1.5 group/cmt relative">
+                        <div class="flex items-center justify-between gap-1.5 flex-wrap">
+                            <div class="flex items-center gap-1.5 flex-wrap">
+                                <span class="font-bold text-gray-900 cursor-pointer hover:text-orange-500 transition leading-none" onclick="window.openUserProfile('${window.escapeForBtn(c.creator)}', '${window.escapeForBtn(c.group)}')">${c.creator}</span>
+                                ${isCHost ? '<span class="bg-orange-500 text-white text-[8px] px-1 rounded font-black">主揪</span>' : ''}
+                                <span class="bg-amber-50 text-amber-700 border border-amber-200 text-[9px] px-1.5 py-0.2 rounded font-bold" title="${cLevelInfo.tierName} (Lv.${cLevelInfo.level})">${cLevelInfo.tierIcon} Lv.${cLevelInfo.level}</span>
+                                <span class="${cTheme.badge} text-[9px] px-1.5 py-0.2 rounded font-bold">${c.group} 團</span>
+                            </div>
+                            <div class="flex items-center gap-1">
+                                <button onclick="window.openFeedCommentEditModal('${item.id}', ${cIdx})" class="text-gray-400 hover:text-blue-500 text-[10px] px-1.5 py-0.5 rounded hover:bg-blue-50 transition font-bold" title="編輯留言">
+                                    <i class="fa-solid fa-pen"></i>
+                                </button>
+                                <button onclick="window.deleteFeedCommentWithAuth('${item.id}', ${cIdx})" class="text-gray-400 hover:text-red-500 text-[10px] px-1.5 py-0.5 rounded hover:bg-red-50 transition font-bold" title="刪除留言">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button>
+                            </div>
                         </div>
                         ${c.text ? `<p class="text-gray-700 font-medium leading-relaxed break-words pl-1">${window.escapeHtml(c.text)}</p>` : ''}
                         ${cPhotos.length > 0 ? `
@@ -4911,8 +5215,8 @@
                 }
 
                 return `
-                <div class="rounded-2xl p-4 shadow-sm ${cardStyle} flex flex-col gap-3 transition hover:shadow-md">
-                    <!-- 卡片頂部：發文者身分與評價標籤 -->
+                <div class="rounded-2xl p-4 shadow-sm ${cardStyle} flex flex-col gap-3 transition hover:shadow-md relative">
+                    <!-- 卡片頂部：發文者身分與評價標籤與操作按鈕 -->
                     <div class="flex items-center justify-between gap-2 border-b border-gray-100/60 pb-3">
                         <div class="flex items-center gap-3 min-w-0 cursor-pointer" onclick="window.openUserProfile('${window.escapeForBtn(item.creator)}', '${window.escapeForBtn(item.group)}')">
                             ${userAvatarHtml}
@@ -4929,7 +5233,15 @@
                                 </div>
                             </div>
                         </div>
-                        ${badgeRating}
+                        <div class="flex items-center gap-1.5 shrink-0">
+                            ${badgeRating}
+                            <button onclick="window.openFeedItemEditModal('${item.id}')" class="w-7 h-7 rounded-lg bg-white border border-gray-200 hover:border-blue-400 text-gray-500 hover:text-blue-600 flex items-center justify-center text-xs shadow-2xs transition" title="編輯此評價">
+                                <i class="fa-solid fa-pen-to-square"></i>
+                            </button>
+                            <button onclick="window.deleteFeedItemWithAuth('${item.id}')" class="w-7 h-7 rounded-lg bg-white border border-gray-200 hover:border-red-400 text-gray-500 hover:text-red-600 flex items-center justify-center text-xs shadow-2xs transition" title="刪除此評價">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </div>
                     </div>
 
                     <!-- 卡片下半部：店家名稱、照片相簿與評語 -->
@@ -5036,7 +5348,15 @@
 
                 if (isMe) {
                     return `
-                    <div class="flex items-end justify-end gap-2 group">
+                    <div class="flex items-end justify-end gap-2 group/msg relative">
+                        <div class="flex items-center gap-1 opacity-0 group-hover/msg:opacity-100 transition mb-1 shrink-0">
+                            <button onclick="window.openChatMessageEditModal('${msg.id}')" class="text-gray-400 hover:text-blue-500 text-[11px] p-1 rounded hover:bg-gray-100 transition" title="編輯訊息">
+                                <i class="fa-solid fa-pen"></i>
+                            </button>
+                            <button onclick="window.deleteChatMessageWithAuth('${msg.id}')" class="text-gray-400 hover:text-red-500 text-[11px] p-1 rounded hover:bg-gray-100 transition" title="刪除訊息">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </div>
                         <span class="text-[10px] text-gray-400 font-medium mb-0.5">${timeStr}</span>
                         <div class="flex flex-col items-end max-w-[80%] sm:max-w-[70%]">
                             <div class="flex items-center gap-1.5 mb-1 flex-wrap justify-end">
@@ -5052,7 +5372,7 @@
                     </div>`;
                 } else {
                     return `
-                    <div class="flex items-end gap-2 group">
+                    <div class="flex items-end gap-2 group/msg relative">
                         ${avatarHtml}
                         <div class="flex flex-col items-start max-w-[80%] sm:max-w-[70%]">
                             <div class="flex items-center gap-1.5 mb-1 flex-wrap">
@@ -5066,6 +5386,14 @@
                             </div>
                         </div>
                         <span class="text-[10px] text-gray-400 font-medium mb-0.5">${timeStr}</span>
+                        <div class="flex items-center gap-1 opacity-0 group-hover/msg:opacity-100 transition mb-1 shrink-0">
+                            <button onclick="window.openChatMessageEditModal('${msg.id}')" class="text-gray-400 hover:text-blue-500 text-[11px] p-1 rounded hover:bg-gray-100 transition" title="主揪編輯訊息">
+                                <i class="fa-solid fa-pen"></i>
+                            </button>
+                            <button onclick="window.deleteChatMessageWithAuth('${msg.id}')" class="text-gray-400 hover:text-red-500 text-[11px] p-1 rounded hover:bg-gray-100 transition" title="主揪刪除訊息">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </div>
                     </div>`;
                 }
             }).join('');
