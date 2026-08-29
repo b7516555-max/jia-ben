@@ -3914,9 +3914,60 @@
             return '';
         };
 
+        const CITY_COORDS = {
+            '台北市': { lat: 25.0330, lng: 121.5654 },
+            '新北市': { lat: 25.0118, lng: 121.4658 },
+            '基隆市': { lat: 25.1276, lng: 121.7392 },
+            '桃園市': { lat: 24.9936, lng: 121.3010 },
+            '新竹縣': { lat: 24.8387, lng: 121.0177 },
+            '新竹市': { lat: 24.8138, lng: 120.9675 },
+            '苗栗縣': { lat: 24.5602, lng: 120.8214 },
+            '台中市': { lat: 24.1477, lng: 120.6736 },
+            '彰化縣': { lat: 24.0518, lng: 120.5161 },
+            '南投縣': { lat: 23.9609, lng: 120.9719 },
+            '雲林縣': { lat: 23.7092, lng: 120.4313 },
+            '嘉義縣': { lat: 23.4518, lng: 120.2555 },
+            '嘉義市': { lat: 23.4800, lng: 120.4491 },
+            '台南市': { lat: 22.9997, lng: 120.2270 },
+            '高雄市': { lat: 22.6273, lng: 120.3014 },
+            '屏東縣': { lat: 22.6762, lng: 120.4941 },
+            '宜蘭縣': { lat: 24.7021, lng: 121.7377 },
+            '花蓮縣': { lat: 23.9871, lng: 121.6016 },
+            '台東縣': { lat: 22.7583, lng: 121.1444 },
+            '澎湖縣': { lat: 23.5711, lng: 119.5793 },
+            '金門縣': { lat: 24.4493, lng: 118.3766 },
+            '連江縣': { lat: 26.1505, lng: 119.9499 },
+            '東京都': { lat: 35.6762, lng: 139.6503 },
+            '大阪府': { lat: 34.6937, lng: 135.5023 },
+            '京都府': { lat: 35.0116, lng: 135.7681 },
+            '北海道': { lat: 43.0642, lng: 141.3469 },
+            '沖繩縣': { lat: 26.2124, lng: 127.6809 },
+            '福岡縣': { lat: 33.5904, lng: 130.4017 },
+            '愛知縣': { lat: 35.1802, lng: 136.9066 },
+            '神奈川縣': { lat: 35.4478, lng: 139.6425 },
+            '埼玉縣': { lat: 35.8617, lng: 139.6455 },
+            '千葉縣': { lat: 35.6073, lng: 140.1063 },
+            '兵庫縣': { lat: 34.6913, lng: 135.1830 },
+            '廣島縣': { lat: 34.3853, lng: 132.4553 },
+            '首爾特別市': { lat: 37.5665, lng: 126.9780 },
+            '釜山廣域市': { lat: 35.1796, lng: 129.0756 },
+            '仁川廣域市': { lat: 37.4563, lng: 126.7052 },
+            '大邱廣域市': { lat: 35.8714, lng: 128.6014 },
+            '濟州特別自治道': { lat: 33.4996, lng: 126.5312 },
+            '紐約': { lat: 40.7128, lng: -74.0060 },
+            '洛杉磯': { lat: 34.0522, lng: -118.2437 },
+            '舊金山': { lat: 37.7749, lng: -122.4194 },
+            '西雅圖': { lat: 47.6062, lng: -122.3321 },
+            '芝加哥': { lat: 41.8781, lng: -87.6298 },
+            '拉斯維加斯': { lat: 36.1699, lng: -115.1398 },
+            '夏威夷': { lat: 21.3069, lng: -157.8583 }
+        };
+
         window.searchGooglePlaces = function(vT) { 
             let k = ""; let cId = "";
             if (!window.getSearchPriceRange(vT)) return;
+            let targetCoords = null;
+
             if (vT === 'explore') {
                 const rawK = document.getElementById('explore-keyword').value.trim();
                 const countryVal = document.getElementById('explore-country')?.value || 'all';
@@ -3924,14 +3975,18 @@
                 
                 let locationParts = [];
                 if (countryVal !== 'all') locationParts.push(countryVal);
-                if (cityVal !== 'all') locationParts.push(cityVal);
+                if (cityVal !== 'all') {
+                    locationParts.push(cityVal);
+                    if (CITY_COORDS[cityVal]) targetCoords = CITY_COORDS[cityVal];
+                } else if (countryVal !== 'all') {
+                    if (countryVal === '台灣') targetCoords = { lat: 23.6978, lng: 120.9605 };
+                    if (countryVal === '日本') targetCoords = { lat: 35.6762, lng: 139.6503 };
+                    if (countryVal === '韓國') targetCoords = { lat: 37.5665, lng: 126.9780 };
+                    if (countryVal === '美國') targetCoords = { lat: 37.0902, lng: -95.7129 };
+                }
                 
                 if (!rawK && locationParts.length === 0) {
                     return window.showCustomMsg("今天想吃點什麼呢？請輸入關鍵字或選擇國家縣市！");
-                }
-                
-                if (countryVal !== 'all' && cityVal === 'all') {
-                    return window.showCustomMsg("請先選擇地區（縣市）再搜尋！\n\n只選國家不選地區，搜尋結果可能不準確喔 🙏");
                 }
                 
                 k = [...locationParts, rawK || '餐廳'].join(' ');
@@ -3950,17 +4005,19 @@
                 }
                 document.getElementById('wheel-result').classList.add('hidden');
             }
-            if (navigator.geolocation) { 
+
+            // 若選擇特定地區，直接以該地區中心座標進行搜尋；否則使用本機 GPS 定位
+            if (targetCoords) {
+                executeGoogleSearch(targetCoords.lat, targetCoords.lng, k, '50000', vT);
+            } else if (navigator.geolocation) { 
                 navigator.geolocation.getCurrentPosition( 
                     (p) => { executeGoogleSearch(p.coords.latitude, p.coords.longitude, k, '50000', vT); }, 
                     (e) => { 
-                        window.showCustomMsg("⚠️ 無法獲取您的位置！\n\n系統暫時以「屏東」為中心。若您在外縣市，請直接在搜尋框加上縣市名（例如：「台北 火鍋」）即可跨區搜尋！");
                         executeGoogleSearch(22.7380, 120.4810, k, '50000', vT); 
                     }, 
                     { enableHighAccuracy: true, timeout: 5000 } 
                 ); 
             } else {
-                window.showCustomMsg("⚠️ 您的裝置不支援定位功能。");
                 executeGoogleSearch(22.7380, 120.4810, k, '50000', vT);
             }
         };
