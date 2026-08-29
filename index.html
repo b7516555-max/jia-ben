@@ -5291,13 +5291,13 @@
                         <!-- 留言附帶照片縮圖預覽 -->
                         <div id="feed-comment-previews-${item.id}" class="hidden flex gap-2 overflow-x-auto py-1"></div>
 
-                        <div class="flex items-center gap-1.5 mt-2">
+                        <div class="flex items-center gap-2 mt-2 w-full">
                             <input type="file" id="feed-comment-file-${item.id}" accept="image/*" multiple class="hidden" onchange="window.handleFeedCommentPhotoSelected('${item.id}', this)">
-                            <button type="button" onclick="document.getElementById('feed-comment-file-${item.id}').click()" class="w-8 h-8 rounded-xl bg-orange-50 hover:bg-orange-100 text-orange-500 border border-orange-200 flex items-center justify-center text-xs shrink-0 transition" title="附加照片 (最多3張)">
+                            <button type="button" onclick="document.getElementById('feed-comment-file-${item.id}').click()" class="w-9 h-9 rounded-xl bg-orange-50 hover:bg-orange-100 text-orange-500 border border-orange-200 flex items-center justify-center text-xs shrink-0 transition" title="附加照片 (最多3張)">
                                 <i class="fa-solid fa-camera"></i>
                             </button>
-                            <input type="text" id="feed-input-${item.id}" onkeypress="if(event.key==='Enter') window.addFeedComment('${item.id}')" placeholder="發布留言聊聊，也可附帶照片..." class="flex-1 px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:outline-none focus:border-blue-400 font-medium">
-                            <button id="feed-comment-btn-${item.id}" onclick="window.addFeedComment('${item.id}')" class="bg-blue-500 text-white text-xs font-bold px-3.5 py-1.5 rounded-xl shadow-xs hover:bg-blue-600 transition shrink-0">發布</button>
+                            <input type="text" id="feed-input-${item.id}" onkeypress="if(event.key==='Enter') window.addFeedComment('${item.id}')" placeholder="發布留言聊聊，也可附帶照片..." class="min-w-0 flex-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:outline-none focus:border-blue-400 font-medium">
+                            <button id="feed-comment-btn-${item.id}" onclick="window.addFeedComment('${item.id}')" class="bg-blue-500 text-white text-xs font-bold px-3 py-2 rounded-xl shadow-xs hover:bg-blue-600 active:scale-95 transition shrink-0 whitespace-nowrap">發布</button>
                         </div>
                     </div>
                 </div>`;
