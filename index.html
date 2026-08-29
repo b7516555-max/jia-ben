@@ -245,6 +245,38 @@
         </div>
     </div>
 
+    <!-- 🌟 忘記密碼聯絡主揪彈窗 (主揪 LINE ID: b7516555) -->
+    <div id="forgot-password-modal" class="hidden fixed inset-0 z-[130] flex items-center justify-center bg-black/60 modal-backdrop fade-in">
+        <div class="bg-white rounded-3xl p-6 w-11/12 max-w-sm shadow-2xl relative">
+            <button onclick="window.closeModal('forgot-password-modal')" class="absolute top-4 right-5 text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark text-xl"></i></button>
+            <div class="text-center mb-4">
+                <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl shadow-inner">
+                    <i class="fa-brands fa-line"></i>
+                </div>
+                <h3 class="text-lg font-bold text-gray-800">忘記登入密碼？</h3>
+                <p class="text-xs text-gray-500 mt-1">別擔心！請直接聯絡主揪人協助查詢或重設</p>
+            </div>
+            <div class="bg-emerald-50/70 p-4 rounded-2xl border border-emerald-100 mb-4 space-y-2">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-emerald-800"><i class="fa-solid fa-user-tie mr-1.5"></i>主揪負責人</span>
+                    <span class="text-xs font-extrabold text-gray-800">黃政誥</span>
+                </div>
+                <div class="flex items-center justify-between pt-1 border-t border-emerald-100">
+                    <span class="text-xs font-bold text-emerald-800"><i class="fa-brands fa-line mr-1.5 text-emerald-600"></i>主揪 LINE ID</span>
+                    <span class="text-sm font-black text-emerald-700 tracking-wider">b7516555</span>
+                </div>
+            </div>
+            <div class="space-y-2">
+                <button onclick="window.copyHostLineId()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3 rounded-xl shadow-md transition flex items-center justify-center gap-2 text-xs">
+                    <i class="fa-regular fa-copy text-sm"></i> 複製主揪 LINE ID (b7516555)
+                </button>
+                <a href="https://line.me/ti/p/~b7516555" target="_blank" class="w-full bg-[#00B900] hover:bg-[#009900] text-white font-bold py-3 rounded-xl shadow-md transition flex items-center justify-center gap-2 text-xs">
+                    <i class="fa-brands fa-line text-base"></i> 開啟 LINE 直接私訊主揪
+                </a>
+            </div>
+        </div>
+    </div>
+
     <!-- 🌟 全螢幕高畫質照片放大檢視 (Lightbox) -->
     <div id="image-lightbox-modal" class="hidden fixed inset-0 z-[200] flex items-center justify-center bg-black/90 modal-backdrop fade-in select-none" onclick="if(event.target === this) window.closeImageLightbox()">
         <!-- 頂部資訊與關閉按鈕 -->
@@ -455,27 +487,41 @@
         </div>
     </div>
 
-    <!-- 3. 身分記憶與註冊模態框 -->
+    <!-- 3. 身分記憶與註冊模態框 (附密碼登入與忘記密碼聯絡主揪) -->
     <div id="identity-modal" class="hidden fixed inset-0 z-[60] flex items-center justify-center bg-black/60 modal-backdrop fade-in">
-        <div class="bg-white rounded-3xl p-6 w-11/12 max-w-sm shadow-2xl relative modal-dialog">
+        <div class="bg-white rounded-3xl p-6 w-11/12 max-w-sm shadow-2xl relative modal-dialog max-h-[90vh] overflow-y-auto no-scrollbar">
             <button onclick="window.closeModal('identity-modal')" class="absolute top-4 right-5 text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark text-xl"></i></button>
             <div class="text-center mb-4">
-                <h2 class="text-lg font-bold text-gray-800">確認你的身分卡</h2>
-                <p class="text-gray-500 text-xs mt-1">為了讓大家認識你，請設定你的身分喔！</p>
+                <h2 class="text-lg font-bold text-gray-800">身分登入與建檔</h2>
+                <p class="text-gray-500 text-xs mt-1">請輸入你的專屬密碼以驗證或設定身分</p>
             </div>
             <div class="flex mb-4 bg-gray-100 rounded-xl p-1">
-                <button onclick="window.toggleIdTab('old')" id="tab-id-old" class="flex-1 py-2 bg-white shadow-sm rounded-lg text-sm font-bold text-orange-500 transition">老朋友報到</button>
-                <button onclick="window.toggleIdTab('new')" id="tab-id-new" class="flex-1 py-2 text-gray-500 rounded-lg text-sm font-bold transition hover:text-orange-400">我是新面孔</button>
+                <button onclick="window.toggleIdTab('old')" id="tab-id-old" class="flex-1 py-2 bg-white shadow-sm rounded-lg text-sm font-bold text-orange-500 transition">老朋友登入</button>
+                <button onclick="window.toggleIdTab('new')" id="tab-id-new" class="flex-1 py-2 text-gray-500 rounded-lg text-sm font-bold transition hover:text-orange-400">我是新朋友</button>
             </div>
-            <div id="form-id-old" class="space-y-4">
-                <div><label class="block text-xs font-bold text-gray-500 mb-1">你是哪團的？</label><select id="id-group" onchange="window.handleDropdownSync(this, 'group')" class="w-full px-3 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none text-sm font-bold text-gray-700"></select></div>
-                <div><label class="block text-xs font-bold text-gray-500 mb-1">你的名字</label><select id="id-creator" class="w-full px-3 py-3 bg-white border border-gray-200 rounded-xl focus:outline-none text-sm text-gray-700"></select></div>
+            <div id="form-id-old" class="space-y-3.5">
+                <div><label class="block text-xs font-bold text-gray-500 mb-1">你是哪團的？</label><select id="id-group" onchange="window.handleDropdownSync(this, 'group')" class="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none text-sm font-bold text-gray-700"></select></div>
+                <div><label class="block text-xs font-bold text-gray-500 mb-1">你的名字</label><select id="id-creator" class="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-xl focus:outline-none text-sm text-gray-700 font-bold"></select></div>
+                <div>
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="block text-xs font-bold text-gray-700"><i class="fa-solid fa-lock text-orange-500 mr-1"></i>個人登入密碼 *</label>
+                        <button type="button" onclick="window.openForgotPasswordModal()" class="text-[11px] font-bold text-emerald-600 hover:text-emerald-700 flex items-center gap-0.5">
+                            <i class="fa-brands fa-line text-xs"></i> 忘記密碼？聯絡主揪
+                        </button>
+                    </div>
+                    <input type="password" id="id-password-old" placeholder="首次登入請設定密碼，之後登入請輸入" class="w-full px-3 py-2.5 bg-orange-50/40 border border-orange-200 rounded-xl focus:outline-none focus:border-orange-400 text-sm font-bold tracking-wider">
+                    <p class="text-[10px] text-gray-400 mt-1">💡 若此帳號尚未設定過密碼，輸入後將自動綁定為您的專屬密碼。</p>
+                </div>
             </div>
-            <div id="form-id-new" class="space-y-4 hidden">
+            <div id="form-id-new" class="space-y-3.5 hidden">
                 <div class="bg-blue-50 p-3 rounded-xl border border-blue-100 mb-2"><p class="text-xs text-blue-700 font-bold"><i class="fa-solid fa-hand-wave mr-1"></i>歡迎加入！建檔後大家就會認識你囉！</p></div>
-                <div><label class="block text-xs font-bold text-gray-500 mb-1">你的名字 / 綽號 *</label><input type="text" id="new-id-name" placeholder="大家該怎麼稱呼你？" class="w-full px-3 py-3 border border-gray-200 rounded-xl focus:outline-none focus:border-orange-400 text-sm font-bold"></div>
-                <div><label class="block text-xs font-bold text-gray-500 mb-1">建立/選擇你的所屬群組 *</label><input type="text" id="new-id-group" placeholder="例如：羽球團、大學同學" class="w-full px-3 py-3 border border-gray-200 rounded-xl focus:outline-none focus:border-orange-400 text-sm font-bold"></div>
-                <div><label class="block text-xs font-bold text-gray-500 mb-1">是誰帶你來的？(引薦人) *</label><select id="new-id-inviter" class="w-full px-3 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none text-sm"></select></div>
+                <div><label class="block text-xs font-bold text-gray-500 mb-1">你的名字 / 綽號 *</label><input type="text" id="new-id-name" placeholder="大家該怎麼稱呼你？" class="w-full px-3 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:border-orange-400 text-sm font-bold"></div>
+                <div><label class="block text-xs font-bold text-gray-500 mb-1">建立/選擇你的所屬群組 *</label><input type="text" id="new-id-group" placeholder="例如：羽球團、大學同學" class="w-full px-3 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:border-orange-400 text-sm font-bold"></div>
+                <div><label class="block text-xs font-bold text-gray-500 mb-1">是誰帶你來的？(引薦人) *</label><select id="new-id-inviter" class="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none text-sm"></select></div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1"><i class="fa-solid fa-lock text-orange-500 mr-1"></i>設定你的專屬登入密碼 *</label>
+                    <input type="password" id="new-id-password" placeholder="請設定 4~16 位密碼" class="w-full px-3 py-2.5 bg-orange-50/40 border border-orange-200 rounded-xl focus:outline-none focus:border-orange-400 text-sm font-bold tracking-wider">
+                </div>
             </div>
             
             <div class="mt-3 border-t border-gray-100 pt-3">
@@ -514,7 +560,167 @@
                     <input type="text" id="id-bio" placeholder="例如：最愛麻辣鍋與居酒屋，歡迎揪我！(選填)" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-orange-400 text-xs font-bold">
                 </div>
             </div>
-            <button onclick="window.saveIdentity()" class="w-full bg-orange-500 text-white font-bold py-3.5 rounded-xl shadow-md hover:bg-orange-600 active:scale-95 transition mt-5">生成專屬身分卡</button>
+            <button onclick="window.saveIdentity()" class="w-full bg-orange-500 text-white font-bold py-3.5 rounded-xl shadow-md hover:bg-orange-600 active:scale-95 transition mt-5">確認並登入身分</button>
+        </div>
+    </div>
+
+    <!-- 🌟 全新：個人專屬後台與等級勳章管理 Modal -->
+    <div id="user-settings-modal" class="hidden fixed inset-0 z-[110] flex items-center justify-center bg-black/60 modal-backdrop fade-in">
+        <div class="bg-white rounded-3xl p-6 w-11/12 max-w-md shadow-2xl relative max-h-[90vh] overflow-y-auto no-scrollbar">
+            <button onclick="window.closeModal('user-settings-modal')" class="absolute top-4 right-5 text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark text-xl"></i></button>
+            <div class="text-center mb-4">
+                <div class="w-12 h-12 bg-orange-100 text-orange-500 rounded-full flex items-center justify-center mx-auto mb-2 text-xl shadow-xs"><i class="fa-solid fa-user-gear"></i></div>
+                <h2 class="text-lg font-bold text-gray-800">個人專屬後台</h2>
+                <p class="text-xs text-gray-400">管理您的大頭貼、個人資料、密碼與美食榮耀等級</p>
+            </div>
+
+            <!-- 🌟 60 級與 12 層專屬勳章成長卡片 -->
+            <div id="settings-level-card" class="bg-gradient-to-br from-amber-500 via-orange-500 to-rose-500 text-white p-4 rounded-2xl shadow-md mb-4 relative overflow-hidden">
+                <div class="flex items-center justify-between mb-2">
+                    <div class="flex items-center gap-2">
+                        <span id="settings-tier-badge" class="px-2.5 py-0.5 rounded-full bg-white/20 backdrop-blur-sm text-xs font-black tracking-wider border border-white/30">第 1 層 勳章</span>
+                        <span id="settings-level-num" class="text-xs font-bold text-yellow-200">Lv.1</span>
+                    </div>
+                    <span id="settings-rec-total" class="text-xs text-white/90 font-bold">累積 0 次貢獻</span>
+                </div>
+                <h3 id="settings-badge-title" class="text-lg font-extrabold tracking-wide mb-1 flex items-center gap-1.5">
+                    <span>🐣 美食探險</span>
+                </h3>
+                <p id="settings-level-sub" class="text-xs text-white/80 font-medium mb-3">當前等級稱號：美食新手</p>
+                
+                <!-- 進度條 -->
+                <div class="w-full bg-black/20 rounded-full h-2.5 p-0.5 overflow-hidden">
+                    <div id="settings-level-bar" class="bg-yellow-300 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+                </div>
+                <div class="flex justify-between items-center text-[10px] text-white/90 font-bold mt-1.5">
+                    <span id="settings-level-curr-text">目前進度: 0 次</span>
+                    <span id="settings-level-next-text">距離下一層勳章還需: 5 次</span>
+                </div>
+            </div>
+
+            <!-- 個人資料設定表單 -->
+            <div class="space-y-3.5 bg-gray-50/70 p-4 rounded-2xl border border-gray-100">
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 mb-1">所屬群組</label>
+                        <input type="text" id="settings-user-group" readonly class="w-full px-3 py-2 bg-gray-100 border border-gray-200 rounded-xl text-xs font-bold text-gray-600 cursor-not-allowed">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 mb-1">您的名稱</label>
+                        <input type="text" id="settings-user-name" readonly class="w-full px-3 py-2 bg-gray-100 border border-gray-200 rounded-xl text-xs font-bold text-gray-600 cursor-not-allowed">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1"><i class="fa-solid fa-key text-orange-500 mr-1"></i>修改個人登入密碼</label>
+                    <input type="password" id="settings-new-password" placeholder="若不修改請留空" class="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:border-orange-400 text-xs font-bold">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1"><i class="fa-brands fa-line text-emerald-500 mr-1"></i>LINE ID</label>
+                    <input type="text" id="settings-line-id" placeholder="例如：john_foodie" class="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:border-orange-400 text-xs font-bold">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1"><i class="fa-solid fa-quote-left text-orange-400 mr-1"></i>美食宣言 / 個人喜好</label>
+                    <input type="text" id="settings-bio" placeholder="最愛麻辣鍋與居酒屋..." class="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:border-orange-400 text-xs font-bold">
+                </div>
+
+                <!-- 大頭貼更換 -->
+                <div class="pt-2 border-t border-gray-200">
+                    <label class="block text-xs font-bold text-gray-700 mb-2"><i class="fa-solid fa-camera text-orange-500 mr-1"></i>更換大頭貼 (相片或人偶)</label>
+                    <input type="hidden" id="settings-avatar" value="host">
+                    <input type="hidden" id="settings-custom-avatar" value="">
+                    <input type="file" id="settings-custom-avatar-file" accept="image/*" class="hidden" onchange="window.handleSettingsCustomAvatarSelected(this)">
+                    
+                    <div class="flex items-center gap-3 mb-2 p-2.5 bg-white rounded-2xl border border-gray-200 shadow-2xs">
+                        <div id="settings-avatar-preview" class="w-12 h-12 rounded-full border-2 border-orange-400 shadow-sm shrink-0 overflow-hidden bg-white flex items-center justify-center"></div>
+                        <div class="min-w-0 flex-1">
+                            <p id="settings-avatar-status-label" class="text-xs font-bold text-gray-800">目前頭像</p>
+                            <div class="flex items-center gap-1.5 mt-1">
+                                <button type="button" onclick="document.getElementById('settings-custom-avatar-file').click()" class="px-2.5 py-1 bg-orange-50 border border-orange-200 text-orange-600 hover:bg-orange-100 rounded-lg text-[11px] font-bold shadow-2xs transition flex items-center gap-1">
+                                    <i class="fa-solid fa-camera"></i> 上傳照片
+                                </button>
+                                <button type="button" id="settings-clear-custom-avatar-btn" onclick="window.clearSettingsCustomAvatar()" class="hidden px-2 py-1 bg-gray-100 text-gray-600 hover:bg-gray-200 rounded-lg text-[11px] font-bold transition">
+                                    恢復人偶
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <p class="text-[11px] font-bold text-gray-400 mb-1">或挑選經典美食人偶：</p>
+                    <div id="settings-avatar-picker" class="grid grid-cols-6 gap-1.5"></div>
+                </div>
+            </div>
+
+            <div class="flex gap-2 mt-4">
+                <button type="button" onclick="window.openIdentityModal()" class="px-4 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl text-xs hover:bg-gray-200 transition">切換身分</button>
+                <button type="button" onclick="window.saveUserSettings()" class="flex-1 bg-orange-500 text-white font-bold py-3 rounded-xl shadow-md hover:bg-orange-600 active:scale-95 transition text-xs">儲存個人設定</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🌟 全新：美食好友個人名片 Modal (含 60 級與 12 層專屬勳章展示) -->
+    <div id="user-profile-modal" class="hidden fixed inset-0 z-[115] flex items-center justify-center bg-black/60 modal-backdrop fade-in">
+        <div class="bg-white rounded-3xl p-6 w-11/12 max-w-sm shadow-2xl relative overflow-hidden max-h-[90vh] overflow-y-auto no-scrollbar">
+            <button onclick="window.closeModal('user-profile-modal')" class="absolute top-4 right-5 text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark text-xl"></i></button>
+            <div class="text-center mb-3">
+                <div id="profile-avatar" class="w-16 h-16 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 text-white font-bold text-2xl flex items-center justify-center mx-auto mb-2 shadow-md border-2 border-white">
+                    <i class="fa-solid fa-user"></i>
+                </div>
+                <h2 id="profile-name" class="text-xl font-bold text-gray-900">用戶名稱</h2>
+                <div class="flex items-center justify-center gap-1.5 mt-1 flex-wrap">
+                    <span id="profile-group" class="bg-orange-100 text-orange-600 text-xs px-2.5 py-0.5 rounded-full font-bold">群組名稱</span>
+                    <span id="profile-inviter" class="text-xs text-gray-400 font-medium"></span>
+                </div>
+            </div>
+
+            <!-- 🌟 名片專屬等級勳章徽章展示 -->
+            <div id="profile-level-badge-box" class="bg-gradient-to-r from-amber-50 to-orange-50 p-2.5 rounded-2xl border border-amber-200/80 mb-3 text-center">
+                <div class="flex items-center justify-center gap-1.5 mb-0.5">
+                    <span id="profile-tier-badge" class="px-2 py-0.5 rounded-full bg-amber-500 text-white text-[10px] font-black tracking-wider shadow-2xs">第 1 層 勳章</span>
+                    <span id="profile-level-tag" class="text-xs font-black text-orange-600">Lv.1</span>
+                </div>
+                <p id="profile-badge-title" class="text-sm font-extrabold text-gray-800">🐣 美食探險</p>
+                <p id="profile-level-sub" class="text-[10px] text-gray-500 font-medium">美食新手 (累計 0 次口碑貢獻)</p>
+            </div>
+
+            <div id="profile-bio-box" class="bg-orange-50/60 p-3 rounded-2xl border border-orange-100 mb-3 text-center">
+                <p class="text-[10px] font-bold text-orange-600 mb-0.5"><i class="fa-solid fa-quote-left mr-1 opacity-60"></i>美食宣言</p>
+                <p id="profile-bio" class="text-xs text-gray-700 font-medium italic">「熱愛到處尋找隱藏版美食！」</p>
+            </div>
+
+            <div class="space-y-2 mb-3">
+                <div id="profile-line-box" class="bg-emerald-50 p-3 rounded-2xl border border-emerald-100 flex items-center justify-between gap-2">
+                    <div class="flex items-center gap-2 min-w-0">
+                        <i class="fa-brands fa-line text-emerald-600 text-xl shrink-0"></i>
+                        <div class="min-w-0">
+                            <p class="text-[10px] text-emerald-600 font-bold leading-none mb-0.5">LINE ID / 聯絡資訊</p>
+                            <p id="profile-line-id" class="text-xs font-bold text-gray-800 truncate">未提供 LINE ID</p>
+                        </div>
+                    </div>
+                    <button id="profile-copy-line-btn" onclick="window.copyProfileLineId()" class="bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold px-3 py-1.5 rounded-xl shadow-xs transition shrink-0">
+                        <i class="fa-regular fa-copy mr-1"></i>複製
+                    </button>
+                </div>
+                
+                <button onclick="window.sendWaveToUser()" class="w-full bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold py-2.5 rounded-xl shadow hover:from-orange-600 hover:to-amber-600 transition flex items-center justify-center gap-1.5 text-xs">
+                    <i class="fa-solid fa-hand-wave"></i> 揮手打招呼！(發送美食招呼)
+                </button>
+                <button id="profile-edit-avatar-btn" onclick="window.openUserSettingsModal()" class="w-full bg-blue-50 text-blue-600 hover:bg-blue-100 font-bold py-2.5 rounded-xl border border-blue-200 transition flex items-center justify-center gap-1.5 text-xs">
+                    <i class="fa-solid fa-user-gear"></i> 開啟個人專屬後台 / 更換人偶
+                </button>
+            </div>
+
+            <div>
+                <p class="text-xs font-bold text-gray-500 mb-2 flex items-center justify-between">
+                    <span><i class="fa-solid fa-utensils text-orange-400 mr-1"></i>推薦的口碑美食</span>
+                    <span id="profile-rec-count" class="text-[10px] text-gray-400 font-normal">0 間</span>
+                </p>
+                <div id="profile-rec-list" class="space-y-1.5 max-h-32 overflow-y-auto no-scrollbar">
+                    <!-- 推薦餐廳清單 -->
+                </div>
+            </div>
         </div>
     </div>
 
@@ -1006,7 +1212,7 @@
                     <h1 class="text-[16px] font-bold tracking-widest leading-none mt-1">找餐廳 • 揪團</h1>
                 </div>
                 <div class="flex items-center gap-1.5">
-                    <button id="header-avatar-btn" onclick="window.openIdentityModal()" class="w-10 h-10 rounded-full border-2 border-white/80 shadow-xs flex items-center justify-center bg-white/20 hover:scale-105 transition overflow-hidden p-0.5" title="切換身分與更換人偶">
+                    <button id="header-avatar-btn" onclick="window.openUserSettingsModal()" class="w-10 h-10 rounded-full border-2 border-white/80 shadow-xs flex items-center justify-center bg-white/20 hover:scale-105 transition overflow-hidden p-0.5" title="個人專屬後台與等級徽章">
                         <div id="header-avatar-icon" class="foodie-avatar foodie-avatar-host w-full h-full rounded-full"></div>
                     </button>
                     <button onclick="window.attemptAdminAccess('admin')" class="w-10 h-10 flex items-center justify-center bg-white/20 backdrop-blur-sm rounded-full transition hover:bg-white/30" title="主揪後台">
@@ -1316,9 +1522,10 @@
                                 <h3 class="text-sm md:text-base font-bold text-gray-800 flex items-center">
                                     <i class="fa-solid fa-list-check text-orange-500 mr-2"></i>全站紀錄總覽與管理
                                 </h3>
-                                <div class="flex gap-2">
+                                <div class="flex gap-1.5 flex-wrap">
                                     <button onclick="window.switchAdminSubTab('restaurants')" id="admin-subtab-res" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-orange-500 text-white shadow-sm transition">口袋店家 (<span id="admin-res-count">0</span>)</button>
                                     <button onclick="window.switchAdminSubTab('feed')" id="admin-subtab-feed" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-gray-100 text-gray-600 hover:bg-gray-200 transition">動態評價 (<span id="admin-feed-count">0</span>)</button>
+                                    <button onclick="window.switchAdminSubTab('members')" id="admin-subtab-members" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-gray-100 text-gray-600 hover:bg-gray-200 transition"><i class="fa-solid fa-key mr-1"></i>成員密碼 (<span id="admin-members-count">0</span>)</button>
                                 </div>
                             </div>
 
@@ -1327,6 +1534,18 @@
                             
                             <!-- 動態評價列表 -->
                             <div id="admin-data-list-feed" class="hidden space-y-2.5 max-h-96 overflow-y-auto pr-1"></div>
+
+                            <!-- 🌟 成員密碼管理列表 (主揪專屬管理，維護密碼，不包含成員私密個資) -->
+                            <div id="admin-data-list-members" class="hidden space-y-2.5 max-h-96 overflow-y-auto pr-1">
+                                <div class="bg-amber-50 p-3 rounded-2xl border border-amber-200 mb-3 text-xs text-amber-800 flex items-start gap-2">
+                                    <i class="fa-solid fa-shield-halved text-amber-600 text-base shrink-0 mt-0.5"></i>
+                                    <div>
+                                        <p class="font-bold">主揪專屬安全維護</p>
+                                        <p class="text-[11px] text-amber-700 leading-relaxed">當成員忘記個人登入密碼時，主揪可在此處查詢或重設成員密碼。此處僅顯示群組、姓名與密碼，保障隱私。</p>
+                                    </div>
+                                </div>
+                                <div id="admin-members-list-container" class="space-y-2"></div>
+                            </div>
                         </div>
 
                         <!-- 🌟 系統進階與密碼設定 (登入後台直接顯示) -->
@@ -1473,12 +1692,106 @@
         let db, auth, appId, currentUser = null;
         const GAS_API_URL = "https://script.google.com/macros/s/AKfycbwTg7lmireS-npCAzvDZVPVmI7u5jAFpslg7SNL59Ab3ulLOUr7cPB5wzIaTSyTUJpl/exec";
         window.restaurantData = []; window.feedData = []; window.partyData = [];
-        window.appConfig = { deleteCode: '850930', appUrl: '', groups: ['主揪', '玉泉', '屏東', '高雄', '台北', '老服', '社發'], creators: ['黃政誥'], membersMap: null }; 
-        window.myIdentity = { group: '', name: '' }; 
+        window.appConfig = { deleteCode: '850930', appUrl: '', groups: ['主揪', '玉泉', '屏東', '高雄', '台北', '老服', '社發'], creators: ['黃政誥'], membersMap: null, userPasswords: { '黃政誥': 'Bb19960930' } }; 
+        window.myIdentity = { group: '', name: '', password: '' }; 
 
         let pendingInteraction = null; let itemToDelete = null; let pendingPartyAction = null;
         let isAdminUnlocked = false; let previousTab = 'explore';  
         window.getAdminPassword = function() { return window.appConfig.adminPassword || "Bb19960930"; };
+
+        // 🌟 60 級與 12 層專屬美食勳章體系定義 (每 5 級進階一層勳章)
+        window.FOODIE_TIERS = [
+            { tier: 1, name: "美食探險", icon: "🐣", minExp: 0, minLvl: 1, maxLvl: 5, color: "from-amber-400 to-yellow-500", titles: ["美食新手", "菜單探索者", "巷口尋味生", "初飽旅人", "街坊老友"] },
+            { tier: 2, name: "美食悠遊者", icon: "🥢", minExp: 5, minLvl: 6, maxLvl: 10, color: "from-emerald-400 to-teal-500", titles: ["巷弄獵人", "排隊先鋒", "美味追蹤員", "夜市常客", "在地嚮導"] },
+            { tier: 3, name: "美食老饕客", icon: "🍲", minExp: 10, minLvl: 11, maxLvl: 15, color: "from-blue-400 to-indigo-500", titles: ["美食品鑑客", "資深挑嘴王", "鍋物專家", "炭火行家", "無肉不歡者"] },
+            { tier: 4, name: "美食領航員", icon: "🌟", minExp: 15, minLvl: 16, maxLvl: 20, color: "from-yellow-400 to-amber-500", titles: ["口碑引路人", "排隊雷達", "熱搜推薦官", "必比登探員", "聚餐核心"] },
+            { tier: 5, name: "美食獵人", icon: "🧭", minExp: 20, minLvl: 21, maxLvl: 25, color: "from-green-500 to-emerald-600", titles: ["無菜單獵人", "私廚追尋者", "隱密私房客", "預約困難戶", "古早味探險家"] },
+            { tier: 6, name: "美食狂熱者", icon: "🔥", minExp: 25, minLvl: 26, maxLvl: 30, color: "from-orange-500 to-red-500", titles: ["聚會發起人", "熱血乾杯王", "酒館掌門", "飯局指揮官", "派對靈魂"] },
+            { tier: 7, name: "美食鑑賞家", icon: "📜", minExp: 30, minLvl: 31, maxLvl: 35, color: "from-cyan-500 to-blue-600", titles: ["評鑑權威", "調味精算師", "火候大師", "名餚鑑賞家", "風味大法官"] },
+            { tier: 8, name: "美食掌門人", icon: "👑", minExp: 35, minLvl: 36, maxLvl: 40, color: "from-purple-500 to-indigo-600", titles: ["菜系宗師", "盛宴統御者", "宴客權柄", "星級品味家", "餐飲界巨頭"] },
+            { tier: 9, name: "美食摘星使", icon: "🌈", minExp: 40, minLvl: 41, maxLvl: 45, color: "from-amber-300 via-yellow-400 to-orange-500", titles: ["星級常客", "寰宇品鑑使", "美饌尋蹤官", "全球摘星客", "奢華盛宴主"] },
+            { tier: 10, name: "美食大宗師", icon: "🔮", minExp: 45, minLvl: 46, maxLvl: 50, color: "from-fuchsia-500 to-pink-600", titles: ["靈感主廚友", "味覺幻術師", "傳奇品評者", "神髓領會家", "極境食客"] },
+            { tier: 11, name: "美食傳奇", icon: "🏛️", minExp: 50, minLvl: 51, maxLvl: 55, color: "from-slate-700 to-gray-900", titles: ["殿堂鑑賞宗師", "饕餮化身", "神州第一舌", "食道傳奇", "萬席朝聖者"] },
+            { tier: 12, name: "美食至尊食神", icon: "🌌", minExp: 55, minLvl: 56, maxLvl: 60, color: "from-violet-600 via-purple-700 to-amber-400", titles: ["寰宇食神", "星際尋味者", "神級饕餮尊", "萬物嚐遍者", "終極至尊食神"] }
+        ];
+
+        // 計算用戶的美食貢獻值與對應的 60 級與 12 層勳章資訊
+        window.getUserLevel = function(userName) {
+            if (!userName) {
+                return { level: 1, tier: 1, tierName: "美食探險", tierIcon: "🐣", title: "美食新手", exp: 0, nextTierExp: 5, progressPercent: 0, color: "from-amber-400 to-yellow-500" };
+            }
+            // 累計貢獻次數：推薦店家數 + 撰寫心得數 + 揪團發起數
+            const recCount = (window.restaurantData || []).filter(r => r.creator === userName).length;
+            const feedCount = (window.feedData || []).filter(f => f.creator === userName && f.type !== 'system_welcome' && f.type !== 'tier_promotion').length;
+            const partyCount = (window.partyData || []).filter(p => p.creator === userName).length;
+            const totalExp = recCount + feedCount + partyCount;
+
+            // 等級 Level 1 ~ 60: 基礎 1 次 + totalExp，最高 60
+            const level = Math.min(60, Math.max(1, totalExp + 1));
+            
+            // 計算所屬層級 Tier 1 ~ 12 (每 5 級一層)
+            let tierIndex = Math.floor((level - 1) / 5);
+            if (tierIndex >= window.FOODIE_TIERS.length) tierIndex = window.FOODIE_TIERS.length - 1;
+            const tierObj = window.FOODIE_TIERS[tierIndex];
+
+            // 取得此層內的專屬子稱號 (0~4)
+            const subTitleIdx = (level - 1) % 5;
+            const title = tierObj.titles[subTitleIdx] || tierObj.titles[tierObj.titles.length - 1];
+
+            // 下一層解鎖門檻與進度計算
+            const nextTierExp = (tierIndex + 1) * 5;
+            const currentTierBaseExp = tierIndex * 5;
+            const expInCurrentTier = Math.max(0, totalExp - currentTierBaseExp);
+            const progressPercent = tierIndex === 11 && level >= 60 ? 100 : Math.min(100, Math.round((expInCurrentTier / 5) * 100));
+
+            return {
+                level: level,
+                tier: tierObj.tier,
+                tierName: tierObj.name,
+                tierIcon: tierObj.icon,
+                title: title,
+                exp: totalExp,
+                nextTierExp: nextTierExp,
+                progressPercent: progressPercent,
+                color: tierObj.color,
+                badgeFullLabel: `${tierObj.icon} ${tierObj.name} (Lv.${level})`
+            };
+        };
+
+        // 🌟 檢查並發布升階勳章全站公告
+        window.checkAndAnnounceTierPromotion = async function(userName, groupName) {
+            if (!userName) return;
+            try {
+                const lvlInfo = window.getUserLevel(userName);
+                // 檢查是否為剛好進階一層（即 level 為 6, 11, 16, 21, 26, 31, 36, 41, 46, 51, 56 等）
+                // 且動態牆尚未發布過此層級的公告
+                const promotionKey = `tier_promo_${userName}_tier_${lvlInfo.tier}`;
+                const alreadyAnnounced = (window.feedData || []).some(f => f.type === 'tier_promotion' && f.creator === userName && f.tier === lvlInfo.tier);
+                
+                if (!alreadyAnnounced && lvlInfo.tier > 1) {
+                    const promoDoc = {
+                        type: 'tier_promotion',
+                        creator: userName,
+                        group: groupName || window.myIdentity?.group || '好友',
+                        tier: lvlInfo.tier,
+                        tierName: lvlInfo.tierName,
+                        tierIcon: lvlInfo.tierIcon,
+                        level: lvlInfo.level,
+                        title: lvlInfo.title,
+                        timestamp: serverTimestamp ? serverTimestamp() : new Date()
+                    };
+
+                    if (db && currentUser) {
+                        await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'feed'), promoDoc);
+                    } else {
+                        window.feedData.unshift({ id: Date.now().toString(), ...promoDoc });
+                        window.renderFeed();
+                    }
+                }
+            } catch (err) {
+                console.warn("勳章升階公告廣播處理異常:", err);
+            }
+        };
 
         const FOOD_IMAGES = [
             "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=400&q=80",
@@ -1850,7 +2163,8 @@
                     appUrl: window.appConfig.appUrl || '',
                     groups: window.appConfig.groups || ['主揪'],
                     creators: window.appConfig.creators || ['黃政誥'],
-                    membersMap: window.appConfig.membersMap || { '主揪': ['黃政誥'] }
+                    membersMap: window.appConfig.membersMap || { '主揪': ['黃政誥'] },
+                    userPasswords: window.appConfig.userPasswords || { '黃政誥': 'Bb19960930' }
                 };
                 if (window.appConfig.id) {
                     await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'config', window.appConfig.id), payload);
@@ -1897,7 +2211,8 @@
                         appUrl: conf.appUrl || '', 
                         groups: conf.groups || ['主揪', '玉泉', '屏東', '高雄', '台北', '老服', '社發'], 
                         creators: conf.creators || ['黃政誥'], 
-                        membersMap: conf.membersMap || { '主揪': ['黃政誥'] } 
+                        membersMap: conf.membersMap || { '主揪': ['黃政誥'] },
+                        userPasswords: conf.userPasswords || { '黃政誥': 'Bb19960930' }
                     }; 
                 } else { 
                     try {
@@ -1989,30 +2304,59 @@
         window.switchAdminSubTab = function(tab) {
             const btnRes = document.getElementById('admin-subtab-res');
             const btnFeed = document.getElementById('admin-subtab-feed');
+            const btnMembers = document.getElementById('admin-subtab-members');
             const listRes = document.getElementById('admin-data-list-restaurants');
             const listFeed = document.getElementById('admin-data-list-feed');
+            const listMembers = document.getElementById('admin-data-list-members');
+
+            [btnRes, btnFeed, btnMembers].forEach(b => {
+                if (b) b.className = "px-3 py-1.5 rounded-xl text-xs font-bold bg-gray-100 text-gray-600 hover:bg-gray-200 transition";
+            });
+            [listRes, listFeed, listMembers].forEach(l => {
+                if (l) l.classList.add('hidden');
+            });
 
             if (tab === 'restaurants') {
-                btnRes.className = "px-3 py-1.5 rounded-xl text-xs font-bold bg-orange-500 text-white shadow-sm transition";
-                btnFeed.className = "px-3 py-1.5 rounded-xl text-xs font-bold bg-gray-100 text-gray-600 hover:bg-gray-200 transition";
-                listRes.classList.remove('hidden');
-                listFeed.classList.add('hidden');
-            } else {
-                btnFeed.className = "px-3 py-1.5 rounded-xl text-xs font-bold bg-orange-500 text-white shadow-sm transition";
-                btnRes.className = "px-3 py-1.5 rounded-xl text-xs font-bold bg-gray-100 text-gray-600 hover:bg-gray-200 transition";
-                listFeed.classList.remove('hidden');
-                listRes.classList.add('hidden');
+                if (btnRes) btnRes.className = "px-3 py-1.5 rounded-xl text-xs font-bold bg-orange-500 text-white shadow-sm transition";
+                if (listRes) listRes.classList.remove('hidden');
+            } else if (tab === 'feed') {
+                if (btnFeed) btnFeed.className = "px-3 py-1.5 rounded-xl text-xs font-bold bg-orange-500 text-white shadow-sm transition";
+                if (listFeed) listFeed.classList.remove('hidden');
+            } else if (tab === 'members') {
+                if (btnMembers) btnMembers.className = "px-3 py-1.5 rounded-xl text-xs font-bold bg-orange-500 text-white shadow-sm transition";
+                if (listMembers) listMembers.classList.remove('hidden');
             }
         };
 
         window.renderAdminDataList = function() {
             const resCountEl = document.getElementById('admin-res-count');
             const feedCountEl = document.getElementById('admin-feed-count');
+            const membersCountEl = document.getElementById('admin-members-count');
             const listRes = document.getElementById('admin-data-list-restaurants');
             const listFeed = document.getElementById('admin-data-list-feed');
+            const membersListContainer = document.getElementById('admin-members-list-container');
 
             if (resCountEl) resCountEl.textContent = window.restaurantData.length;
             if (feedCountEl) feedCountEl.textContent = window.feedData.length;
+
+            // 統計總成員
+            const membersList = [];
+            const membersMap = window.appConfig.membersMap || { '主揪': ['黃政誥'] };
+            const passMap = window.appConfig.userPasswords || { '黃政誥': 'Bb19960930' };
+
+            Object.entries(membersMap).forEach(([groupName, names]) => {
+                (names || []).forEach(name => {
+                    if (name && name !== '(無成員)') {
+                        membersList.push({
+                            name: name,
+                            group: groupName,
+                            password: passMap[name] || '(尚未設定密碼)'
+                        });
+                    }
+                });
+            });
+
+            if (membersCountEl) membersCountEl.textContent = membersList.length;
 
             if (listRes) {
                 if (window.restaurantData.length === 0) {
@@ -2055,6 +2399,41 @@
                                 </div>
                             </div>
                             <button onclick="window.deleteFeedItemInAdmin('${safeId}')" class="px-2.5 py-1 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg text-xs font-bold transition flex items-center gap-1 shrink-0 ml-2"><i class="fa-solid fa-trash text-[10px]"></i> 刪除</button>
+                        </div>`;
+                    }).join('');
+                }
+            }
+
+            // 🌟 渲染主揪專屬成員密碼列表
+            if (membersListContainer) {
+                if (membersList.length === 0) {
+                    membersListContainer.innerHTML = `<div class="text-center text-gray-400 py-6 text-xs font-medium">尚未建立任何成員資料</div>`;
+                } else {
+                    membersListContainer.innerHTML = membersList.map(m => {
+                        const lvlInfo = window.getUserLevel(m.name);
+                        const safeMName = window.escapeForBtn(m.name);
+                        return `
+                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-2xl border border-gray-100 hover:border-orange-200 transition">
+                            <div class="flex items-center gap-3 overflow-hidden min-w-0">
+                                <div class="w-8 h-8 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center font-bold text-xs shrink-0">
+                                    <i class="fa-solid fa-user"></i>
+                                </div>
+                                <div class="truncate">
+                                    <div class="flex items-center gap-1.5 flex-wrap">
+                                        <h4 class="text-xs font-bold text-gray-800 truncate">${m.name}</h4>
+                                        <span class="text-[9px] bg-orange-50 text-orange-600 border border-orange-200 px-1.5 py-0.2 rounded font-bold">${lvlInfo.badgeFullLabel}</span>
+                                    </div>
+                                    <p class="text-[10px] text-gray-400 truncate">${m.group} 團</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2 shrink-0 ml-2">
+                                <div class="bg-white px-2.5 py-1 rounded-xl border border-gray-200 text-xs font-mono font-bold text-gray-700 select-all">
+                                    <i class="fa-solid fa-key text-[10px] text-orange-400 mr-1"></i>${m.password}
+                                </div>
+                                <button onclick="window.adminResetMemberPassword('${safeMName}')" class="px-2.5 py-1 bg-amber-50 text-amber-700 hover:bg-amber-100 rounded-lg text-xs font-bold transition flex items-center gap-1">
+                                    <i class="fa-solid fa-rotate-right text-[10px]"></i> 重設
+                                </button>
+                            </div>
                         </div>`;
                     }).join('');
                 }
@@ -2273,16 +2652,68 @@
             }
         };
 
+        window.openForgotPasswordModal = function() {
+            document.getElementById('forgot-password-modal')?.classList.remove('hidden');
+        };
+
+        window.copyHostLineId = function() {
+            navigator.clipboard.writeText('b7516555').then(() => {
+                window.showCustomMsg("✅ 已複製主揪 LINE ID: b7516555\n\n可直接至 LINE 搜尋好友聯絡主揪！");
+            }).catch(() => {
+                window.showCustomMsg("主揪 LINE ID 為：b7516555");
+            });
+        };
+
+        window.adminResetMemberPassword = function(memberName) {
+            if (!memberName) return;
+            try { memberName = decodeURIComponent(memberName); } catch(e) {}
+            
+            window.showCustomPrompt(`為成員「${memberName}」設定新密碼：`, '輸入新密碼', async (newPass) => {
+                if (!newPass || !newPass.trim()) return;
+                const cleanPass = newPass.trim();
+                if (!window.appConfig.userPasswords) window.appConfig.userPasswords = {};
+                window.appConfig.userPasswords[memberName] = cleanPass;
+                
+                await window.saveConfigToCloud();
+                window.renderAdminDataList();
+                window.showCustomMsg(`✅ 已成功將「${memberName}」的登入密碼重設為：${cleanPass}`);
+            });
+        };
+
         window.saveIdentity = async function() {
             let isNew = !document.getElementById('form-id-new').classList.contains('hidden');
-            let nName = '', nGroup = '', nInviter = '';
+            let nName = '', nGroup = '', nInviter = '', nPassword = '';
             
+            if (!window.appConfig.userPasswords) window.appConfig.userPasswords = { '黃政誥': 'Bb19960930' };
+
             if(!isNew) {
-                nGroup = document.getElementById('id-group').value; nName = document.getElementById('id-creator').value;
+                nGroup = document.getElementById('id-group').value; 
+                nName = document.getElementById('id-creator').value;
+                nPassword = document.getElementById('id-password-old') ? document.getElementById('id-password-old').value.trim() : '';
                 if(!nName || nName === '(無成員)') return window.showCustomMsg("請選擇有效的名字喔！");
+                if(!nPassword) return window.showCustomMsg("請輸入您的個人登入密碼！\n(首次使用請直接設定，日後將用於身分驗證)");
+
+                // 檢查密碼
+                const existingPass = window.appConfig.userPasswords[nName];
+                if (existingPass) {
+                    if (existingPass !== nPassword) {
+                        return window.showCustomMsg("⚠️ 密碼不正確喔！\n\n若忘記密碼，請點擊「忘記密碼？聯絡主揪」由主揪黃政誥協助查詢或重設。");
+                    }
+                } else {
+                    // 首次綁定此成員的密碼
+                    window.appConfig.userPasswords[nName] = nPassword;
+                    await window.saveConfigToCloud();
+                }
             } else {
-                nName = document.getElementById('new-id-name').value.trim(); nGroup = document.getElementById('new-id-group').value.trim(); nInviter = document.getElementById('new-id-inviter').value;
+                nName = document.getElementById('new-id-name').value.trim(); 
+                nGroup = document.getElementById('new-id-group').value.trim(); 
+                nInviter = document.getElementById('new-id-inviter').value;
+                nPassword = document.getElementById('new-id-password') ? document.getElementById('new-id-password').value.trim() : '';
                 if(!nName || !nGroup) return window.showCustomMsg("請填寫你的名字與想建立的群組！");
+                if(!nPassword) return window.showCustomMsg("請為您的新帳號設定一組登入密碼！");
+                if(nPassword.length < 3) return window.showCustomMsg("密碼長度至少需 3 碼以上喔！");
+
+                window.appConfig.userPasswords[nName] = nPassword;
             }
 
             if (nName === '黃政誥' && nGroup !== '主揪') {
@@ -2319,7 +2750,8 @@
                 lineId: lineId, 
                 bio: bio, 
                 avatarId: avatarId,
-                customAvatarUrl: customAvatarUrl 
+                customAvatarUrl: customAvatarUrl,
+                password: nPassword
             };
             
             if(db && currentUser) {
@@ -2353,7 +2785,11 @@
                 window.renderFeed();
             }
             if (typeof window.updateHeaderAvatarBadge === 'function') window.updateHeaderAvatarBadge();
-            window.closeModal('identity-modal'); if(pendingPartyAction) { pendingPartyAction(); pendingPartyAction = null; } window.showCustomMsg(`設定完成！系統已記住你的身分：${window.myIdentity.group}的${window.myIdentity.name}。`);
+            window.closeModal('identity-modal'); 
+            if(pendingPartyAction) { pendingPartyAction(); pendingPartyAction = null; } 
+            
+            const lvl = window.getUserLevel(nName);
+            window.showCustomMsg(`✅ 登入成功！\n\n身分：${window.myIdentity.group} • ${window.myIdentity.name}\n當前美食榮耀：${lvl.badgeFullLabel} (${lvl.title})`);
         };
 
         let calcPeopleCount = 1;
@@ -3154,6 +3590,8 @@
                         }
                         window.renderFeed();
                         window.switchTab('feed');
+                        // 🌟 檢查是否晉階並發布公告
+                        window.checkAndAnnounceTierPromotion(c, g);
                     } else {
                         const restaurantItem = { ...pData, city: pData.city || "未分類", hours: "", category: "未分類", status: "想去", notes: n, group: g, creator: c, photoUrl: safePhoto || pData.photoUrl || '' };
                         syncToGoogleSheets('Restaurants', restaurantItem);
@@ -3170,6 +3608,8 @@
                         window.renderList();
                         if (typeof window.renderAdminDataList === 'function') window.renderAdminDataList();
                         window.showCustomMsg(`❤️ 「${pData.name}」已成功收進口袋名單！`);
+                        // 🌟 檢查是否晉階並發布公告
+                        window.checkAndAnnounceTierPromotion(c, g);
                     }
                 } catch (e) {
                     console.error("寫入錯誤:", e);
@@ -3351,6 +3791,18 @@
             document.getElementById('profile-bio').textContent = bio ? `「${bio}」` : '「無辣不歡，熱愛尋找高 C/P 值隱藏版美食！」';
             document.getElementById('profile-line-id').textContent = lineId ? lineId : '尚未設定 LINE ID';
 
+            // 🌟 顯示 60 級與 12 層勳章資訊
+            const lvlInfo = window.getUserLevel(userName);
+            const tierBadgeEl = document.getElementById('profile-tier-badge');
+            const levelTagEl = document.getElementById('profile-level-tag');
+            const badgeTitleEl = document.getElementById('profile-badge-title');
+            const levelSubEl = document.getElementById('profile-level-sub');
+
+            if (tierBadgeEl) tierBadgeEl.textContent = `第 ${lvlInfo.tier} 層 勳章`;
+            if (levelTagEl) levelTagEl.textContent = `Lv.${lvlInfo.level}`;
+            if (badgeTitleEl) badgeTitleEl.innerHTML = `${lvlInfo.tierIcon} ${lvlInfo.tierName}`;
+            if (levelSubEl) levelSubEl.textContent = `${lvlInfo.title} (累計 ${lvlInfo.exp} 次口碑貢獻)`;
+
             const copyBtn = document.getElementById('profile-copy-line-btn');
             if (copyBtn) {
                 copyBtn.setAttribute('data-line-id', lineId);
@@ -3374,27 +3826,174 @@
             modal.classList.remove('hidden');
         };
 
-        window.quickChangeAvatarFromProfile = function() {
-            const userName = currentProfileUser?.name || window.myIdentity?.name;
-            const groupName = currentProfileUser?.group || window.myIdentity?.group;
+        // 🌟 開啟個人專屬後台 Modal
+        window.openUserSettingsModal = function() {
+            if (!window.myIdentity || !window.myIdentity.name) {
+                return window.openIdentityModal();
+            }
+
             window.closeModal('user-profile-modal');
-            
-            // 開啟身分設定 Modal，並預先選擇目前人偶與自訂頭像
-            window.openIdentityModal();
-            const tabOld = document.getElementById('tab-id-old');
-            if (tabOld) window.toggleIdTab('old');
-            
-            const groupSelect = document.getElementById('id-group');
-            const creatorSelect = document.getElementById('id-creator');
-            if (groupSelect && groupName) {
-                groupSelect.value = groupName;
-                window.handleDropdownSync(groupSelect, 'group');
+
+            const userName = window.myIdentity.name;
+            const userGroup = window.myIdentity.group || '主揪';
+            const lvlInfo = window.getUserLevel(userName);
+
+            // 填充等級卡片
+            const tierBadge = document.getElementById('settings-tier-badge');
+            const lvlNum = document.getElementById('settings-level-num');
+            const recTotal = document.getElementById('settings-rec-total');
+            const badgeTitle = document.getElementById('settings-badge-title');
+            const lvlSub = document.getElementById('settings-level-sub');
+            const lvlBar = document.getElementById('settings-level-bar');
+            const lvlCurr = document.getElementById('settings-level-curr-text');
+            const lvlNext = document.getElementById('settings-level-next-text');
+
+            if (tierBadge) tierBadge.textContent = `第 ${lvlInfo.tier} 層 勳章`;
+            if (lvlNum) lvlNum.textContent = `Lv.${lvlInfo.level}`;
+            if (recTotal) recTotal.textContent = `累積 ${lvlInfo.exp} 次貢獻`;
+            if (badgeTitle) badgeTitle.innerHTML = `<span>${lvlInfo.tierIcon} ${lvlInfo.tierName}</span>`;
+            if (lvlSub) lvlSub.textContent = `當前等級稱號：${lvlInfo.title}`;
+            if (lvlBar) lvlBar.style.width = `${lvlInfo.progressPercent}%`;
+            if (lvlCurr) lvlCurr.textContent = `目前累積: ${lvlInfo.exp} 次`;
+            if (lvlNext) {
+                if (lvlInfo.tier >= 12 && lvlInfo.level >= 60) {
+                    lvlNext.textContent = '🌟 已登頂宇宙至尊食神！';
+                } else {
+                    const remain = Math.max(1, lvlInfo.nextTierExp - lvlInfo.exp);
+                    lvlNext.textContent = `距離第 ${lvlInfo.tier + 1} 層勳章還需: ${remain} 次`;
+                }
             }
-            if (creatorSelect && userName) {
-                creatorSelect.value = userName;
+
+            // 填充表單
+            if (document.getElementById('settings-user-group')) document.getElementById('settings-user-group').value = userGroup;
+            if (document.getElementById('settings-user-name')) document.getElementById('settings-user-name').value = userName;
+            if (document.getElementById('settings-new-password')) document.getElementById('settings-new-password').value = '';
+            if (document.getElementById('settings-line-id')) document.getElementById('settings-line-id').value = window.myIdentity.lineId || '';
+            if (document.getElementById('settings-bio')) document.getElementById('settings-bio').value = window.myIdentity.bio || '';
+
+            // 渲染後台的大頭貼選擇器
+            const avatarInfo = window.getAvatarInfo(window.myIdentity);
+            window.renderSettingsAvatarPicker(avatarInfo.avatarId, avatarInfo.customUrl);
+
+            document.getElementById('user-settings-modal')?.classList.remove('hidden');
+        };
+
+        window.renderSettingsAvatarPicker = function(selectedId = 'host', customUrl = '') {
+            const picker = document.getElementById('settings-avatar-picker');
+            const hiddenAvatar = document.getElementById('settings-avatar');
+            const hiddenCustom = document.getElementById('settings-custom-avatar');
+            const statusLabel = document.getElementById('settings-avatar-status-label');
+            const previewEl = document.getElementById('settings-avatar-preview');
+            const clearBtn = document.getElementById('settings-clear-custom-avatar-btn');
+
+            if (hiddenCustom) hiddenCustom.value = customUrl || '';
+
+            if (customUrl) {
+                if (hiddenAvatar) hiddenAvatar.value = 'custom';
+                if (statusLabel) statusLabel.innerHTML = '<span class="text-emerald-600 font-bold">自訂個人相片 ✨</span>';
+                if (previewEl) {
+                    previewEl.className = 'w-12 h-12 rounded-full border-2 border-orange-400 shadow-sm shrink-0 overflow-hidden bg-white flex items-center justify-center';
+                    previewEl.innerHTML = `<img src="${window.resolveReviewImage(customUrl)}" class="w-full h-full object-cover rounded-full">`;
+                }
+                if (clearBtn) clearBtn.classList.remove('hidden');
+            } else {
+                const safeId = FOODIE_AVATARS.some(a => a.id === selectedId) ? selectedId : 'host';
+                if (hiddenAvatar) hiddenAvatar.value = safeId;
+                const found = FOODIE_AVATARS.find(a => a.id === safeId);
+                if (statusLabel) statusLabel.textContent = `人偶：${found?.label || '活力主揪'}`;
+                if (previewEl) {
+                    previewEl.innerHTML = '';
+                    previewEl.className = `foodie-avatar foodie-avatar-${safeId} w-12 h-12 rounded-full border-2 border-orange-400 shadow-sm shrink-0`;
+                }
+                if (clearBtn) clearBtn.classList.add('hidden');
             }
-            const avatarInfo = window.getAvatarInfo({ creator: userName, name: userName });
-            window.renderAvatarPicker(avatarInfo.avatarId, avatarInfo.customUrl);
+
+            if (picker) {
+                const currentSafeId = FOODIE_AVATARS.some(a => a.id === selectedId) ? selectedId : 'host';
+                picker.innerHTML = FOODIE_AVATARS.map(a => `<button type="button" class="avatar-choice foodie-avatar foodie-avatar-${a.id} aspect-square rounded-xl border-2 border-transparent transition ${(!customUrl && a.id === currentSafeId) ? 'is-selected' : ''}" onclick="window.selectSettingsAvatar('${a.id}')" aria-label="${a.label}" title="${a.label}"></button>`).join('');
+            }
+        };
+
+        window.selectSettingsAvatar = function(id) {
+            window.renderSettingsAvatarPicker(id, '');
+        };
+
+        window.handleSettingsCustomAvatarSelected = async function(input) {
+            if (!input.files || input.files.length === 0) return;
+            const file = input.files[0];
+            try {
+                window.showCustomMsg("📸 正在優化您的大頭照...");
+                const compressedDataUrl = await window.compressImageFile(file, 600, 600, 0.85);
+                window.closeModal('custom-alert-modal');
+                window.renderSettingsAvatarPicker('custom', compressedDataUrl);
+            } catch (err) {
+                console.error("照片處理失敗:", err);
+                window.showCustomMsg("⚠️ 圖片處理失敗，請換一張照片試試。");
+            }
+        };
+
+        window.clearSettingsCustomAvatar = function() {
+            const fileInput = document.getElementById('settings-custom-avatar-file');
+            if (fileInput) fileInput.value = '';
+            const defaultId = window.getDefaultAvatarId(window.myIdentity?.name || '');
+            window.renderSettingsAvatarPicker(defaultId, '');
+        };
+
+        window.saveUserSettings = async function() {
+            if (!window.myIdentity || !window.myIdentity.name) return;
+            const userName = window.myIdentity.name;
+            const newPass = document.getElementById('settings-new-password')?.value.trim();
+            const newLineId = document.getElementById('settings-line-id')?.value.trim() || '';
+            const newBio = document.getElementById('settings-bio')?.value.trim() || '';
+            const avatarId = document.getElementById('settings-avatar')?.value || 'host';
+            let customAvatarUrl = document.getElementById('settings-custom-avatar')?.value.trim() || '';
+
+            if (newPass) {
+                if (newPass.length < 3) return window.showCustomMsg("新密碼長度至少需 3 碼以上喔！");
+                if (!window.appConfig.userPasswords) window.appConfig.userPasswords = {};
+                window.appConfig.userPasswords[userName] = newPass;
+                window.myIdentity.password = newPass;
+                await window.saveConfigToCloud();
+            }
+
+            if (customAvatarUrl && customAvatarUrl.startsWith('data:image')) {
+                try {
+                    const uploadRes = await window.uploadImageToDrive(customAvatarUrl, `avatar_${userName}_${Date.now()}.jpg`);
+                    if (uploadRes && (uploadRes.imageUrl || uploadRes.fileId)) {
+                        customAvatarUrl = uploadRes.imageUrl || window.getDriveImageUrl(uploadRes.fileId);
+                    }
+                } catch (e) {
+                    console.warn("頭像上傳 Google Drive 失敗，使用本機快取:", e);
+                }
+            }
+
+            window.myIdentity.lineId = newLineId;
+            window.myIdentity.bio = newBio;
+            window.myIdentity.avatarId = avatarId;
+            window.myIdentity.customAvatarUrl = customAvatarUrl;
+
+            if (db && currentUser) {
+                setDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'settings', 'profile'), window.myIdentity, { merge: true }).catch(()=>{});
+            }
+
+            // 更新動態牆上的大頭貼
+            const welcomeItems = window.feedData.filter(item => item.type === 'system_welcome' && item.creator === userName);
+            welcomeItems.forEach(item => {
+                item.avatarId = avatarId;
+                item.customAvatarUrl = customAvatarUrl;
+                if (db && currentUser && typeof item.id === 'string') {
+                    updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'feed', item.id), { avatarId, customAvatarUrl }).catch(()=>{});
+                }
+            });
+
+            window.updateHeaderAvatarBadge();
+            window.renderFeed();
+            window.closeModal('user-settings-modal');
+            window.showCustomMsg("✅ 個人資料與設定已成功更新！");
+        };
+
+        window.quickChangeAvatarFromProfile = function() {
+            window.openUserSettingsModal();
         };
 
         window.updateHeaderAvatarBadge = function() {
@@ -3753,7 +4352,57 @@
                     </div>`;
                 }
 
-                // 2. 🌟 聚會結束照片廣播卡片 (Party Recap)
+                // 2. 🌟 勳章升階全站榮耀廣播卡片 (Tier Promotion Broadcast)
+                if (item.type === 'tier_promotion') {
+                    const avatarInfo = window.getAvatarInfo({ creator: item.creator, name: item.creator });
+                    const avatarHtml = (avatarInfo.isCustom && avatarInfo.customUrl)
+                        ? `<div class="w-12 h-12 rounded-full shadow-md shrink-0 border-2 border-amber-300 overflow-hidden bg-white"><img src="${window.resolveReviewImage(avatarInfo.customUrl)}" class="w-full h-full object-cover rounded-full"></div>`
+                        : `<div class="foodie-avatar foodie-avatar-${avatarInfo.avatarId} w-12 h-12 rounded-full shadow-md shrink-0 border-2 border-amber-300"></div>`;
+
+                    return `
+                    <div class="rounded-3xl p-5 shadow-lg bg-gradient-to-br from-amber-400 via-orange-400 to-amber-500 text-white border-2 border-yellow-200 flex flex-col gap-3 relative overflow-hidden transform hover:-translate-y-0.5 transition duration-300">
+                        <div class="absolute -right-6 -bottom-6 text-white/10 text-9xl font-black pointer-events-none select-none">
+                            ${item.tierIcon || '👑'}
+                        </div>
+                        <div class="flex items-center justify-between gap-2 border-b border-white/30 pb-3 relative z-10">
+                            <div class="flex items-center gap-3 min-w-0">
+                                ${avatarHtml}
+                                <div class="min-w-0">
+                                    <div class="flex items-center gap-1.5 flex-wrap">
+                                        <span class="text-base font-black text-white truncate drop-shadow-xs">${item.creator}</span>
+                                        <span class="bg-yellow-300 text-amber-900 text-[10px] px-2 py-0.5 rounded-full font-black tracking-wider shadow-sm">榮耀晉階</span>
+                                    </div>
+                                    <p class="text-[11px] text-yellow-100 font-bold mt-0.5">${item.group} 團 • ${dateStr}</p>
+                                </div>
+                            </div>
+                            <span class="bg-white/25 backdrop-blur-sm text-white px-3 py-1 rounded-full font-black text-xs border border-white/40 shadow-xs shrink-0">
+                                第 ${item.tier} 層勳章 達成！
+                            </span>
+                        </div>
+
+                        <div class="bg-white/95 backdrop-blur-md p-4 rounded-2xl text-gray-900 shadow-md flex flex-col gap-2 relative z-10 border border-yellow-200">
+                            <div class="flex items-center gap-3">
+                                <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 text-white text-3xl flex items-center justify-center shadow-md shrink-0">
+                                    ${item.tierIcon || '🌟'}
+                                </div>
+                                <div class="min-w-0">
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-xs font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">Lv.${item.level}</span>
+                                        <span class="text-xs text-gray-400 font-bold">新解鎖稱號：${item.title}</span>
+                                    </div>
+                                    <h3 class="text-lg font-black text-gray-900 leading-snug mt-0.5 truncate">
+                                        【${item.tierName}】專屬勳章
+                                    </h3>
+                                </div>
+                            </div>
+                            <p class="text-xs text-gray-600 font-medium leading-relaxed bg-amber-50/50 p-2.5 rounded-xl border border-amber-100/60 mt-1">
+                                恭喜 <strong class="text-orange-600 font-black">${item.creator}</strong> 透過持續推薦優質餐廳與分享美食心得，實至名歸榮登 <strong class="text-orange-600 font-black">第 ${item.tier} 層【${item.tierName}】</strong> 榮耀寶座！🎉
+                            </p>
+                        </div>
+                    </div>`;
+                }
+
+                // 3. 🌟 聚會結束照片廣播卡片 (Party Recap)
                 if (item.type === 'party_recap') {
                     const joinedStr = Array.isArray(item.joined) && item.joined.length > 0 ? item.joined.join('、') : item.creator;
                     const theme = window.getGroupColorTheme(item.group);
@@ -3810,10 +4459,11 @@
                     </div>`;
                 }
 
-                // 3. 一般評價動態卡片 (依群組提供專屬色彩外框與樣式)
+                // 4. 一般評價動態卡片 (依群組提供專屬色彩外框與樣式)
                 const isHost = item.creator === '黃政誥' || item.group === '主揪';
                 const isGood = item.rating === 'good';
                 const theme = window.getGroupColorTheme(item.group);
+                const userLevelInfo = window.getUserLevel(item.creator);
                 
                 const likes = Array.isArray(item.likes) ? item.likes : [];
                 const isLiked = window.myIdentity && likes.includes(window.myIdentity.name);
@@ -3901,6 +4551,7 @@
                                 <div class="flex items-center gap-1.5 flex-wrap">
                                     <span class="text-sm font-bold text-gray-900 truncate leading-none hover:text-orange-500 transition">${item.creator}</span>
                                     ${isHost ? '<span class="bg-orange-500 text-white text-[9px] px-1.5 py-0.5 rounded font-black tracking-wider shadow-xs">主揪</span>' : ''}
+                                    <span class="bg-amber-50 text-amber-700 border border-amber-200 text-[9px] px-1.5 py-0.2 rounded font-bold">${userLevelInfo.tierIcon} Lv.${userLevelInfo.level}</span>
                                 </div>
                                 <div class="flex items-center gap-1.5 text-[11px] text-gray-400 mt-1">
                                     <span class="${theme.badge} px-2 py-0.5 rounded-md font-bold text-[10px]">${item.group} 團</span>
