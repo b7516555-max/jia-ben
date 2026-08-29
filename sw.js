@@ -1,4 +1,4 @@
-const CACHE_NAME = 'together-eat-shell-v43';
+const CACHE_NAME = 'together-eat-shell-v44';
 const APP_SHELL = [
   './', 
   './index.html', 

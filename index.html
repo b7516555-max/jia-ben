@@ -149,16 +149,15 @@
             /* 美食動態牆與口袋名單手機版特別樣式 */
             #feed-container {
                 grid-template-columns: minmax(0, 1fr) !important;
-                grid-auto-rows: max-content !important;
-                align-items: start !important;
+                grid-auto-rows: auto !important;
+                align-items: stretch !important;
                 align-content: start !important;
                 gap: 1rem !important;
                 min-height: 0 !important;
             }
             #feed-container > .feed-welcome-card {
                 height: auto !important;
-                min-height: 5.5rem !important;
-                align-self: start !important;
+                align-self: stretch !important;
             }
             #party-container { grid-template-columns: 1fr !important; gap: 1rem !important; }
             #list-container { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 0.75rem !important; }
@@ -1603,7 +1602,7 @@
                             </div>
                         </div>
                     </div>
-                    <div id="feed-container" class="flex-1 overflow-y-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 p-4 md:p-6 pb-6 items-start content-start"></div>
+                    <div id="feed-container" class="flex-1 overflow-y-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 p-4 md:p-6 pb-6 items-stretch content-start"></div>
                 </div>
 
                 <!-- 🌟 視圖 3.5: 留言板／聊天群組 (Chat Room) -->
