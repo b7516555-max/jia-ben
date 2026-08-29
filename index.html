@@ -1073,6 +1073,14 @@
             <div id="reviews-list" class="flex-1 overflow-y-auto p-4 space-y-3">
                 <p class="text-center text-gray-400 text-sm py-6">載入中...</p>
             </div>
+            <!-- 底部：引導查看全部 Google 評論按鈕 -->
+            <div class="p-3 bg-gray-50 border-t border-gray-100 flex flex-col items-center gap-1.5 shrink-0">
+                <a id="reviews-maps-btn" href="#" target="_blank" rel="noopener noreferrer" class="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2 shadow-xs transition">
+                    <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                    <span>在 Google 地圖查看全部評論</span>
+                </a>
+                <p class="text-[10px] text-gray-400">※ Google API 官方限制僅回傳精選前 5 則，點擊上方按鈕可看全部</p>
+            </div>
         </div>
     </div>
 
@@ -6142,6 +6150,7 @@
                 window._currentPlaceRating = rating;
                 window._currentPlaceReviewCount = reviews;
                 window._currentPlaceName = data.name;
+                window._currentPlaceId = place.place_id || data.placeId || '';
                 
                 if (detailRatingEl) {
                     if (rating > 0) {
@@ -6205,9 +6214,17 @@
                 return window.showCustomMsg('此店家目前尚無 Google 評論資料。');
             }
 
-            // 更新標題區域
+            // 更新標題與外部按鈕連結
             document.getElementById('reviews-count-badge').textContent = `${totalCount} 則評價`;
             document.getElementById('reviews-avg-score').textContent = parseFloat(avgRating).toFixed(1);
+            
+            const mapsBtn = document.getElementById('reviews-maps-btn');
+            if (mapsBtn) {
+                const pId = window._currentPlaceId;
+                mapsBtn.href = pId
+                    ? `https://www.google.com/maps/place/?q=place_id:${pId}`
+                    : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(placeName)}`;
+            }
 
             // 星星顯示
             let starsHtml = '';
