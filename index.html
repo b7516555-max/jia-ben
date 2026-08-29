@@ -4543,30 +4543,108 @@
             const el = document.getElementById(`feed-comments-${feedId}`);
             if (el) el.classList.toggle('hidden');
         };
+        const feedCommentPhotosMap = {}; // { feedId: [base64/url, ...] }
+
+        window.handleFeedCommentPhotoSelected = async function(feedId, input) {
+            if (!input.files || input.files.length === 0) return;
+            if (!feedCommentPhotosMap[feedId]) feedCommentPhotosMap[feedId] = [];
+            
+            const remaining = 3 - feedCommentPhotosMap[feedId].length;
+            if (remaining <= 0) return window.showCustomMsg("每則留言最多可附帶 3 張照片喔！");
+
+            const files = Array.from(input.files).slice(0, remaining);
+            try {
+                for (const f of files) {
+                    if (feedCommentPhotosMap[feedId].length >= 3) break;
+                    const compressed = await window.compressImageFile(f, 1200, 1200, 0.8);
+                    feedCommentPhotosMap[feedId].push(compressed);
+                }
+                window.renderFeedCommentPhotoPreviews(feedId);
+            } catch (err) {
+                console.error("留言照片處理失敗:", err);
+                window.showCustomMsg("照片處理失敗，請重試。");
+            } finally {
+                input.value = '';
+            }
+        };
+
+        window.renderFeedCommentPhotoPreviews = function(feedId) {
+            const container = document.getElementById(`feed-comment-previews-${feedId}`);
+            if (!container) return;
+            const photos = feedCommentPhotosMap[feedId] || [];
+            if (photos.length === 0) {
+                container.innerHTML = '';
+                container.classList.add('hidden');
+                return;
+            }
+            container.classList.remove('hidden');
+            container.innerHTML = photos.map((p, idx) => `
+                <div class="relative w-14 h-14 rounded-lg overflow-hidden border border-orange-200 shadow-2xs group bg-gray-100 shrink-0">
+                    <img src="${window.resolveReviewImage(p)}" class="w-full h-full object-cover">
+                    <button type="button" onclick="window.removeFeedCommentPhoto('${feedId}', ${idx})" class="absolute top-0.5 right-0.5 bg-black/60 hover:bg-red-500 text-white w-4 h-4 rounded-full flex items-center justify-center text-[10px] shadow transition" title="移除此照片">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+            `).join('');
+        };
+
+        window.removeFeedCommentPhoto = function(feedId, index) {
+            if (feedCommentPhotosMap[feedId] && index >= 0 && index < feedCommentPhotosMap[feedId].length) {
+                feedCommentPhotosMap[feedId].splice(index, 1);
+                window.renderFeedCommentPhotoPreviews(feedId);
+            }
+        };
 
         window.addFeedComment = function(feedId) {
             const input = document.getElementById(`feed-input-${feedId}`);
+            const btn = document.getElementById(`feed-comment-btn-${feedId}`);
+            const originalBtnHtml = btn ? btn.innerHTML : '發布';
             const text = input ? input.value.trim() : '';
-            if (!text) return;
+            const pendingPhotos = feedCommentPhotosMap[feedId] || [];
+            if (!text && pendingPhotos.length === 0) return;
 
             window.requireIdentity(async () => {
                 const item = window.feedData.find(f => f.id === feedId);
                 if (!item) return;
                 if (!Array.isArray(item.comments)) item.comments = [];
 
+                if (btn) { btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>'; btn.disabled = true; }
+
+                const finalCommentPhotos = [];
+                if (pendingPhotos.length > 0) {
+                    for (let i = 0; i < pendingPhotos.length; i++) {
+                        let p = pendingPhotos[i];
+                        if (p.startsWith('data:image')) {
+                            try {
+                                const uploadRes = await window.uploadImageToDrive(p, `comment_${feedId}_${Date.now()}_${i}.jpg`);
+                                if (uploadRes && (uploadRes.imageUrl || uploadRes.fileId)) {
+                                    p = uploadRes.imageUrl || window.getDriveImageUrl(uploadRes.fileId);
+                                }
+                            } catch (uploadErr) {
+                                console.warn("留言照片上傳 Drive 失敗:", uploadErr);
+                            }
+                        }
+                        finalCommentPhotos.push(p);
+                    }
+                }
+
                 const commentObj = {
                     creator: window.myIdentity.name,
                     group: window.myIdentity.group,
                     text: text,
+                    photos: finalCommentPhotos,
+                    photoUrl: finalCommentPhotos.length > 0 ? finalCommentPhotos[0] : '',
                     timestamp: new Date().toISOString()
                 };
 
                 item.comments.push(commentObj);
                 if (input) input.value = '';
+                delete feedCommentPhotosMap[feedId];
 
                 if (db && currentUser) {
                     await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'feed', feedId), { comments: item.comments });
                 }
+                if (btn) { btn.innerHTML = originalBtnHtml; btn.disabled = false; }
                 window.renderFeed();
             });
         };
@@ -4732,15 +4810,27 @@
                     const cLevelInfo = window.getUserLevel(c.creator);
                     const cTheme = window.getGroupColorTheme(c.group);
                     const isCHost = c.creator === '黃政誥' || c.group === '主揪';
+                    const cPhotos = Array.isArray(c.photos) && c.photos.length > 0
+                        ? c.photos
+                        : (c.photoUrl ? [c.photoUrl] : []);
+
                     return `
-                    <div class="text-xs bg-white p-2.5 rounded-xl border border-gray-100/90 shadow-2xs flex flex-col gap-1">
+                    <div class="text-xs bg-white p-2.5 rounded-xl border border-gray-100/90 shadow-2xs flex flex-col gap-1.5">
                         <div class="flex items-center gap-1.5 flex-wrap">
                             <span class="font-bold text-gray-900 cursor-pointer hover:text-orange-500 transition leading-none" onclick="window.openUserProfile('${window.escapeForBtn(c.creator)}', '${window.escapeForBtn(c.group)}')">${c.creator}</span>
                             ${isCHost ? '<span class="bg-orange-500 text-white text-[8px] px-1 rounded font-black">主揪</span>' : ''}
                             <span class="bg-amber-50 text-amber-700 border border-amber-200 text-[9px] px-1.5 py-0.2 rounded font-bold" title="${cLevelInfo.tierName} (Lv.${cLevelInfo.level})">${cLevelInfo.tierIcon} Lv.${cLevelInfo.level}</span>
                             <span class="${cTheme.badge} text-[9px] px-1.5 py-0.2 rounded font-bold">${c.group} 團</span>
                         </div>
-                        <p class="text-gray-700 font-medium leading-relaxed break-words pl-1">${window.escapeHtml(c.text)}</p>
+                        ${c.text ? `<p class="text-gray-700 font-medium leading-relaxed break-words pl-1">${window.escapeHtml(c.text)}</p>` : ''}
+                        ${cPhotos.length > 0 ? `
+                        <div class="flex gap-1.5 mt-0.5 overflow-x-auto no-scrollbar py-0.5">
+                            ${cPhotos.map(cp => `
+                                <div class="w-16 h-16 rounded-lg overflow-hidden border border-gray-200 shrink-0 cursor-zoom-in group relative bg-gray-100" onclick="window.openCustomPhotoPreview('${window.escapeForBtn(cp)}')">
+                                    <img src="${window.resolveReviewImage(cp)}" class="w-full h-full object-cover group-hover:scale-105 transition">
+                                </div>
+                            `).join('')}
+                        </div>` : ''}
                     </div>`;
                 }).join('');
                 
@@ -4872,12 +4962,20 @@
 
                     <!-- 展開的留言討論區塊 -->
                     <div id="feed-comments-${item.id}" class="${comments.length > 0 ? '' : 'hidden'} bg-white/80 p-3 rounded-xl border border-gray-100 space-y-2 mt-1">
-                        <div class="space-y-1.5 max-h-36 overflow-y-auto no-scrollbar">
+                        <div class="space-y-1.5 max-h-48 overflow-y-auto no-scrollbar">
                             ${commentsHtml || '<p class="text-[11px] text-gray-400 text-center py-1">還沒有留言，快來搶頭香吧！</p>'}
                         </div>
+                        
+                        <!-- 留言附帶照片縮圖預覽 -->
+                        <div id="feed-comment-previews-${item.id}" class="hidden flex gap-2 overflow-x-auto py-1"></div>
+
                         <div class="flex items-center gap-1.5 mt-2">
-                            <input type="text" id="feed-input-${item.id}" onkeypress="if(event.key==='Enter') window.addFeedComment('${item.id}')" placeholder="發布留言聊聊..." class="flex-1 px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:outline-none focus:border-blue-400 font-medium">
-                            <button onclick="window.addFeedComment('${item.id}')" class="bg-blue-500 text-white text-xs font-bold px-3 py-1.5 rounded-xl shadow-xs hover:bg-blue-600 transition">發布</button>
+                            <input type="file" id="feed-comment-file-${item.id}" accept="image/*" multiple class="hidden" onchange="window.handleFeedCommentPhotoSelected('${item.id}', this)">
+                            <button type="button" onclick="document.getElementById('feed-comment-file-${item.id}').click()" class="w-8 h-8 rounded-xl bg-orange-50 hover:bg-orange-100 text-orange-500 border border-orange-200 flex items-center justify-center text-xs shrink-0 transition" title="附加照片 (最多3張)">
+                                <i class="fa-solid fa-camera"></i>
+                            </button>
+                            <input type="text" id="feed-input-${item.id}" onkeypress="if(event.key==='Enter') window.addFeedComment('${item.id}')" placeholder="發布留言聊聊，也可附帶照片..." class="flex-1 px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:outline-none focus:border-blue-400 font-medium">
+                            <button id="feed-comment-btn-${item.id}" onclick="window.addFeedComment('${item.id}')" class="bg-blue-500 text-white text-xs font-bold px-3.5 py-1.5 rounded-xl shadow-xs hover:bg-blue-600 transition shrink-0">發布</button>
                         </div>
                     </div>
                 </div>`;
@@ -5597,6 +5695,18 @@
             const title = item.restaurantName || item.partyTitle || '美食照片';
             window.currentLightboxPhotos = photos.map(p => window.resolveReviewImage(p, title));
             window.currentLightboxIndex = Math.max(0, Math.min(photoIndex || 0, photos.length - 1));
+            window.currentLightboxTitle = title;
+
+            window.renderLightboxPhoto();
+            const modal = document.getElementById('image-lightbox-modal');
+            if (modal) modal.classList.remove('hidden');
+        };
+
+        window.openCustomPhotoPreview = function(photoUrl, title = '留言照片') {
+            if (!photoUrl) return;
+            const fullUrl = window.resolveReviewImage(photoUrl, title);
+            window.currentLightboxPhotos = [fullUrl];
+            window.currentLightboxIndex = 0;
             window.currentLightboxTitle = title;
 
             window.renderLightboxPhoto();
