@@ -499,32 +499,38 @@
         </div>
     </div>
 
-    <!-- 3. 身分記憶與註冊模態框 (附密碼登入與忘記密碼聯絡主揪) -->
+    <!-- 3. 身分記憶與註冊模態框 (老朋友僅需輸入密碼直接帶入，新朋友填寫建檔) -->
     <div id="identity-modal" class="hidden fixed inset-0 z-[60] flex items-center justify-center bg-black/60 modal-backdrop fade-in">
         <div class="bg-white rounded-3xl p-6 w-11/12 max-w-sm shadow-2xl relative modal-dialog max-h-[90vh] overflow-y-auto no-scrollbar">
             <button onclick="window.closeModal('identity-modal')" class="absolute top-4 right-5 text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark text-xl"></i></button>
             <div class="text-center mb-4">
+                <div class="w-12 h-12 bg-orange-100 text-orange-500 rounded-full flex items-center justify-center mx-auto mb-2 text-xl shadow-xs"><i class="fa-solid fa-key"></i></div>
                 <h2 class="text-lg font-bold text-gray-800">身分登入與建檔</h2>
-                <p class="text-gray-500 text-xs mt-1">請輸入你的專屬密碼以驗證或設定身分</p>
+                <p class="text-gray-500 text-xs mt-1">老朋友直接輸入專屬密碼，自動帶入所有資料！</p>
             </div>
             <div class="flex mb-4 bg-gray-100 rounded-xl p-1">
-                <button onclick="window.toggleIdTab('old')" id="tab-id-old" class="flex-1 py-2 bg-white shadow-sm rounded-lg text-sm font-bold text-orange-500 transition">老朋友登入</button>
+                <button onclick="window.toggleIdTab('old')" id="tab-id-old" class="flex-1 py-2 bg-white shadow-sm rounded-lg text-sm font-bold text-orange-500 transition">我是老朋友</button>
                 <button onclick="window.toggleIdTab('new')" id="tab-id-new" class="flex-1 py-2 text-gray-500 rounded-lg text-sm font-bold transition hover:text-orange-400">我是新朋友</button>
             </div>
-            <div id="form-id-old" class="space-y-3.5">
-                <div><label class="block text-xs font-bold text-gray-500 mb-1">你是哪團的？</label><select id="id-group" onchange="window.handleDropdownSync(this, 'group')" class="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none text-sm font-bold text-gray-700"></select></div>
-                <div><label class="block text-xs font-bold text-gray-500 mb-1">你的名字</label><select id="id-creator" onchange="window.syncIdentityFormPreview(this.value)" class="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-xl focus:outline-none text-sm text-gray-700 font-bold"></select></div>
+            
+            <!-- 🌟 老朋友登入：僅顯示密碼輸入欄位 -->
+            <div id="form-id-old" class="space-y-4">
+                <div class="bg-amber-50/80 p-3.5 rounded-2xl border border-amber-200/70 text-center">
+                    <p class="text-xs font-bold text-amber-800"><i class="fa-solid fa-sparkles text-amber-500 mr-1"></i>歡迎回來！</p>
+                    <p class="text-[11px] text-amber-600 mt-1">請輸入您的個人專屬密碼，系統將立即識別身分並自動帶入您的大頭貼、LINE ID 與個人檔案。</p>
+                </div>
                 <div>
-                    <div class="flex items-center justify-between mb-1">
-                        <label class="block text-xs font-bold text-gray-700"><i class="fa-solid fa-lock text-orange-500 mr-1"></i>個人登入密碼 *</label>
+                    <div class="flex items-center justify-between mb-1.5">
+                        <label class="block text-xs font-bold text-gray-700"><i class="fa-solid fa-lock text-orange-500 mr-1"></i>個人專屬密碼 *</label>
                         <button type="button" onclick="window.openForgotPasswordModal()" class="text-[11px] font-bold text-emerald-600 hover:text-emerald-700 flex items-center gap-0.5">
-                            <i class="fa-brands fa-line text-xs"></i> 忘記密碼？聯絡主揪
+                            <i class="fa-brands fa-line text-xs"></i> 忘記密碼？
                         </button>
                     </div>
-                    <input type="password" id="id-password-old" placeholder="首次登入請設定密碼，之後登入請輸入" class="w-full px-3 py-2.5 bg-orange-50/40 border border-orange-200 rounded-xl focus:outline-none focus:border-orange-400 text-sm font-bold tracking-wider">
-                    <p class="text-[10px] text-gray-400 mt-1">💡 若此帳號尚未設定過密碼，輸入後將自動綁定為您的專屬密碼。</p>
+                    <input type="password" id="id-password-only" placeholder="請輸入您的登入密碼" class="w-full px-4 py-3 bg-orange-50/40 border border-orange-200 rounded-2xl focus:outline-none focus:border-orange-500 text-sm font-bold tracking-wider" onkeypress="if(event.key === 'Enter') window.saveIdentity()">
                 </div>
             </div>
+
+            <!-- 🌟 新朋友建檔：填寫群組、姓名、引薦人、密碼、頭像、LINE ID -->
             <div id="form-id-new" class="space-y-3.5 hidden">
                 <div class="bg-blue-50 p-3 rounded-xl border border-blue-100 mb-2"><p class="text-xs text-blue-700 font-bold"><i class="fa-solid fa-hand-wave mr-1"></i>歡迎加入！建檔後大家就會認識你囉！</p></div>
                 <div><label class="block text-xs font-bold text-gray-500 mb-1">你的名字 / 綽號 *</label><input type="text" id="new-id-name" placeholder="大家該怎麼稱呼你？" class="w-full px-3 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:border-orange-400 text-sm font-bold"></div>
@@ -541,46 +547,48 @@
                 <div><label class="block text-xs font-bold text-gray-500 mb-1">是誰帶你來的？(引薦人) *</label><select id="new-id-inviter" class="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none text-sm"></select></div>
                 <div>
                     <label class="block text-xs font-bold text-gray-700 mb-1"><i class="fa-solid fa-lock text-orange-500 mr-1"></i>設定你的專屬登入密碼 *</label>
-                    <input type="password" id="new-id-password" placeholder="請設定 4~16 位密碼" class="w-full px-3 py-2.5 bg-orange-50/40 border border-orange-200 rounded-xl focus:outline-none focus:border-orange-400 text-sm font-bold tracking-wider">
-                </div>
-            </div>
-            
-            <div class="mt-3 border-t border-gray-100 pt-3">
-                <label class="block text-xs font-bold text-gray-600 mb-1.5"><i class="fa-solid fa-face-smile text-orange-500 mr-1"></i>個人大頭貼 (選擇人偶 或 上傳自訂照片)</label>
-                <input type="hidden" id="id-avatar" value="host">
-                <input type="hidden" id="id-custom-avatar" value="">
-                <input type="file" id="id-custom-avatar-file" accept="image/*" class="hidden" onchange="window.handleCustomAvatarSelected(this)">
-                
-                <div class="flex items-center gap-2 mb-2 p-2 bg-orange-50/50 rounded-2xl border border-orange-100">
-                    <div id="id-current-avatar-preview" class="w-12 h-12 rounded-full border-2 border-orange-400 shadow-sm shrink-0 overflow-hidden bg-white flex items-center justify-center">
-                        <div id="id-avatar-preview-inner" class="foodie-avatar foodie-avatar-host w-full h-full rounded-full"></div>
-                    </div>
-                    <div class="min-w-0 flex-1">
-                        <p id="id-avatar-status-label" class="text-xs font-bold text-gray-800">目前頭像：活力主揪</p>
-                        <div class="flex items-center gap-1.5 mt-1">
-                            <button type="button" onclick="document.getElementById('id-custom-avatar-file').click()" class="px-2.5 py-1 bg-white border border-orange-200 text-orange-600 hover:bg-orange-100 rounded-lg text-[11px] font-bold shadow-2xs transition flex items-center gap-1">
-                                <i class="fa-solid fa-camera"></i> 上傳自己的照片
-                            </button>
-                            <button type="button" id="id-clear-custom-avatar-btn" onclick="window.clearCustomAvatar()" class="hidden px-2 py-1 bg-gray-100 text-gray-600 hover:bg-gray-200 rounded-lg text-[11px] font-bold transition">
-                                恢復人偶
-                            </button>
-                        </div>
-                    </div>
+                    <input type="password" id="new-id-password" placeholder="請設定 3 位以上密碼 (不可與他人重複)" class="w-full px-3 py-2.5 bg-orange-50/40 border border-orange-200 rounded-xl focus:outline-none focus:border-orange-400 text-sm font-bold tracking-wider">
                 </div>
 
-                <p class="text-[11px] font-bold text-gray-400 mb-1">或挑選經典美食人偶：</p>
-                <div id="avatar-picker" class="grid grid-cols-6 gap-1.5" aria-label="美食人偶選擇"></div>
-            </div>
-            <div class="mt-3 border-t border-gray-100 pt-3 space-y-3">
-                <div>
-                    <label class="block text-xs font-bold text-gray-500 mb-1"><i class="fa-brands fa-line text-emerald-500 mr-1"></i>你的 LINE ID (交流加好友用，可空白)</label>
-                    <input type="text" id="id-line-id" placeholder="例如：john_foodie (選填)" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-orange-400 text-xs font-bold">
+                <div class="mt-3 border-t border-gray-100 pt-3">
+                    <label class="block text-xs font-bold text-gray-600 mb-1.5"><i class="fa-solid fa-face-smile text-orange-500 mr-1"></i>個人大頭貼 (選擇人偶 或 上傳自訂照片)</label>
+                    <input type="hidden" id="id-avatar" value="host">
+                    <input type="hidden" id="id-custom-avatar" value="">
+                    <input type="file" id="id-custom-avatar-file" accept="image/*" class="hidden" onchange="window.handleCustomAvatarSelected(this)">
+                    
+                    <div class="flex items-center gap-2 mb-2 p-2 bg-orange-50/50 rounded-2xl border border-orange-100">
+                        <div id="id-current-avatar-preview" class="w-12 h-12 rounded-full border-2 border-orange-400 shadow-sm shrink-0 overflow-hidden bg-white flex items-center justify-center">
+                            <div id="id-avatar-preview-inner" class="foodie-avatar foodie-avatar-host w-full h-full rounded-full"></div>
+                        </div>
+                        <div class="min-w-0 flex-1">
+                            <p id="id-avatar-status-label" class="text-xs font-bold text-gray-800">目前頭像：活力主揪</p>
+                            <div class="flex items-center gap-1.5 mt-1">
+                                <button type="button" onclick="document.getElementById('id-custom-avatar-file').click()" class="px-2.5 py-1 bg-white border border-orange-200 text-orange-600 hover:bg-orange-100 rounded-lg text-[11px] font-bold shadow-2xs transition flex items-center gap-1">
+                                    <i class="fa-solid fa-camera"></i> 上傳照片
+                                </button>
+                                <button type="button" id="id-clear-custom-avatar-btn" onclick="window.clearCustomAvatar()" class="hidden px-2 py-1 bg-gray-100 text-gray-600 hover:bg-gray-200 rounded-lg text-[11px] font-bold transition">
+                                    恢復人偶
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <p class="text-[11px] font-bold text-gray-400 mb-1">或挑選經典美食人偶：</p>
+                    <div id="avatar-picker" class="grid grid-cols-6 gap-1.5" aria-label="美食人偶選擇"></div>
                 </div>
-                <div>
-                    <label class="block text-xs font-bold text-gray-500 mb-1"><i class="fa-solid fa-quote-left text-orange-400 mr-1"></i>美食宣言 / 喜好標籤 (可空白)</label>
-                    <input type="text" id="id-bio" placeholder="例如：最愛麻辣鍋與居酒屋，歡迎揪我！(選填)" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-orange-400 text-xs font-bold">
+
+                <div class="mt-3 border-t border-gray-100 pt-3 space-y-3">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 mb-1"><i class="fa-brands fa-line text-emerald-500 mr-1"></i>你的 LINE ID (交流加好友用，可空白)</label>
+                        <input type="text" id="id-line-id" placeholder="例如：john_foodie (選填)" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-orange-400 text-xs font-bold">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 mb-1"><i class="fa-solid fa-quote-left text-orange-400 mr-1"></i>美食宣言 / 喜好標籤 (可空白)</label>
+                        <input type="text" id="id-bio" placeholder="例如：最愛麻辣鍋與居酒屋，歡迎揪我！(選填)" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-orange-400 text-xs font-bold">
+                    </div>
                 </div>
             </div>
+
             <button onclick="window.saveIdentity()" class="w-full bg-orange-500 text-white font-bold py-3.5 rounded-xl shadow-md hover:bg-orange-600 active:scale-95 transition mt-5">確認並登入身分</button>
         </div>
     </div>
@@ -3124,15 +3132,16 @@
         };
         window.openIdentityModal = function() {
             updateConfigDropdowns();
-            const currentName = document.getElementById('id-creator')?.value || window.myIdentity?.name || '';
-            if (currentName && currentName !== '(無成員)') {
-                window.syncIdentityFormPreview(currentName);
-            } else {
-                const avatarId = window.myIdentity?.avatarId || window.getDefaultAvatarId('');
-                const customAvatarUrl = window.myIdentity?.customAvatarUrl || '';
-                window.renderAvatarPicker(avatarId, customAvatarUrl);
-            }
+            window.toggleIdTab('old');
+            const passInput = document.getElementById('id-password-only');
+            if (passInput) passInput.value = '';
+            const newPassInput = document.getElementById('new-id-password');
+            if (newPassInput) newPassInput.value = '';
             document.getElementById('identity-modal').classList.remove('hidden');
+            setTimeout(() => {
+                const p = document.getElementById('id-password-only');
+                if (p && !p.offsetParent === false) p.focus();
+            }, 150);
         };
 
         window.syncIdentityFormPreview = function(memberName) {
@@ -3334,29 +3343,31 @@
             if (!window.appConfig.userPasswords) window.appConfig.userPasswords = { '黃政誥': 'Bb19960930' };
 
             if(!isNew) {
-                nGroup = document.getElementById('id-group').value; 
-                nName = document.getElementById('id-creator').value;
-                nPassword = document.getElementById('id-password-old') ? document.getElementById('id-password-old').value.trim() : '';
-                if(!nName || nName === '(無成員)') return window.showCustomMsg("請選擇有效的名字喔！");
-                if(!nPassword) return window.showCustomMsg("請輸入您的個人登入密碼！\n(首次使用請直接設定，日後換裝置輸入即可自動帶入資料)");
+                // 🌟 老朋友登入：直接透過單一密碼欄位識別用戶！
+                nPassword = document.getElementById('id-password-only') ? document.getElementById('id-password-only').value.trim() : '';
+                if(!nPassword) return window.showCustomMsg("請輸入您的個人登入密碼！\n\n若忘記密碼，可點擊「忘記密碼？」聯絡主揪協助。");
 
-                // 檢查密碼
-                const existingPass = window.appConfig.userPasswords[nName];
-                if (existingPass) {
-                    if (existingPass !== nPassword) {
-                        return window.showCustomMsg("⚠️ 密碼不正確喔！\n\n若忘記密碼，請點擊「忘記密碼？聯絡主揪」由主揪黃政誥協助查詢或重設。");
-                    }
-                } else {
-                    // 🌟 首次綁定此成員的密碼：檢查是否與其他成員的密碼重複！
-                    const passEntries = Object.entries(window.appConfig.userPasswords || {});
-                    const duplicateUser = passEntries.find(([user, pass]) => user !== nName && pass === nPassword);
-                    if (duplicateUser) {
-                        return window.showCustomMsg(`⚠️ 抱歉！此密碼已被其他成員使用。\n\n為了保障每位好友的個人資料安全，不能設定跟別人一樣的密碼，請換一組專屬的新密碼！`);
-                    }
-                    window.appConfig.userPasswords[nName] = nPassword;
-                    await window.saveConfigToCloud();
+                const passEntries = Object.entries(window.appConfig.userPasswords || {});
+                const matched = passEntries.find(([user, pass]) => pass === nPassword);
+
+                if (!matched) {
+                    return window.showCustomMsg("⚠️ 密碼不正確或找不到對應的帳號！\n\n請確認密碼是否正確，或是切換至「我是新朋友」進行建檔。若忘記密碼，請點擊「忘記密碼？」由主揪協助查詢。");
                 }
+
+                nName = matched[0];
+
+                // 由 membersMap 尋找該成員所屬群組
+                if (window.appConfig.membersMap) {
+                    for (const [grp, members] of Object.entries(window.appConfig.membersMap)) {
+                        if (Array.isArray(members) && members.includes(nName)) {
+                            nGroup = grp;
+                            break;
+                        }
+                    }
+                }
+                if (!nGroup) nGroup = (nName === '黃政誥') ? '主揪' : (window.appConfig.groups?.[0] || '玉泉');
             } else {
+                // 🌟 新朋友建檔
                 nName = document.getElementById('new-id-name').value.trim(); 
                 nGroup = document.getElementById('new-id-group').value.trim(); 
                 nInviter = document.getElementById('new-id-inviter').value;
@@ -3377,26 +3388,20 @@
 
             if (nName === '黃政誥' && nGroup !== '主揪') {
                 document.getElementById('id-group').value = '主揪';
-                if(!isNew) window.handleDropdownSync(document.getElementById('id-creator'), 'creator');
                 return window.showCustomMsg("⚠️ 「黃政誥」的專屬群組必須是「主揪」喔！");
             }
             if (nGroup === '主揪' && nName !== '黃政誥') {
-                document.getElementById('id-creator').value = '黃政誥';
-                if(!isNew) window.handleDropdownSync(document.getElementById('id-group'), 'group');
                 return window.showCustomMsg("⚠️ 「主揪」是專屬群組，只有黃政誥可以使用喔！");
             }
 
             // 🌟 跨裝置與登入自動帶入：優先使用雲端已存的大頭貼、LINE ID、個人宣言
             const savedCloudProfile = (window.appConfig.memberAvatars && window.appConfig.memberAvatars[nName]) || {};
             
-            let lineId = document.getElementById('id-line-id') ? document.getElementById('id-line-id').value.trim() : '';
-            if (!lineId && savedCloudProfile.lineId) lineId = savedCloudProfile.lineId;
+            let lineId = isNew ? (document.getElementById('id-line-id')?.value.trim() || '') : (savedCloudProfile.lineId || '');
+            let bio = isNew ? (document.getElementById('id-bio')?.value.trim() || '') : (savedCloudProfile.bio || '');
             
-            let bio = document.getElementById('id-bio') ? document.getElementById('id-bio').value.trim() : '';
-            if (!bio && savedCloudProfile.bio) bio = savedCloudProfile.bio;
-            
-            let avatarId = document.getElementById('id-avatar')?.value;
-            let customAvatarUrl = document.getElementById('id-custom-avatar') ? document.getElementById('id-custom-avatar').value.trim() : '';
+            let avatarId = isNew ? document.getElementById('id-avatar')?.value : (savedCloudProfile.avatarId || '');
+            let customAvatarUrl = isNew ? (document.getElementById('id-custom-avatar')?.value.trim() || '') : (savedCloudProfile.customAvatarUrl || '');
             
             if (!customAvatarUrl && savedCloudProfile.customAvatarUrl) {
                 customAvatarUrl = savedCloudProfile.customAvatarUrl;
@@ -3487,7 +3492,7 @@
             if(pendingPartyAction) { pendingPartyAction(); pendingPartyAction = null; } 
             
             const lvl = window.getUserLevel(nName);
-            window.showCustomMsg(`✅ 登入成功！已為您自動帶入大頭貼與個人資料！\n\n身分：${window.myIdentity.group} • ${window.myIdentity.name}\n當前美食榮耀：${lvl.badgeFullLabel} (${lvl.title})`);
+            window.showCustomMsg(`✅ 登入成功！歡迎回來，${window.myIdentity.name}！\n\n已為您自動帶入所屬群組【${window.myIdentity.group}】與個人大頭貼。\n當前美食榮耀：${lvl.badgeFullLabel} (${lvl.title})`);
         };
 
         let calcPeopleCount = 1;
