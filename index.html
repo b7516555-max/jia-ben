@@ -5064,6 +5064,94 @@
         // 🌟 美食動態牆多圖管理 (最多 5 張照片)
         let currentFeedEditPhotos = []; // array of strings (urls or base64 data)
 
+        window.openFeedPhotoEditModal = function(feedId) {
+            const item = (window.feedData || []).find(f => f.id === feedId);
+            if (!item) return;
+
+            window.requireIdentity(() => {
+                const myName = window.myIdentity?.name;
+                const isAuthor = myName === item.creator;
+
+                const proceed = () => {
+                    document.getElementById('feed-photo-edit-id').value = feedId;
+                    const subEl = document.getElementById('feed-photo-edit-sub');
+                    if (subEl) subEl.textContent = `為「${item.restaurantName || item.partyTitle || '動態'}」事後補充或更換照片 (最多 5 張)`;
+                    
+                    const existingPhotos = Array.isArray(item.photos) && item.photos.length > 0 
+                        ? item.photos.filter(p => !!p).slice(0, 5) 
+                        : (item.photoUrl ? [item.photoUrl] : []);
+                    
+                    currentFeedEditPhotos = [...existingPhotos];
+                    window.renderFeedEditPhotosGrid();
+                    document.getElementById('feed-photo-edit-modal').classList.remove('hidden');
+                };
+
+                if (isAuthor) {
+                    proceed();
+                } else {
+                    window.requireAdminAuthForAction(`您正在以主揪身分補充/更換 ${item.creator} 的動態照片`, proceed);
+                }
+            });
+        };
+
+        window.clearAllFeedEditPhotos = function() {
+            currentFeedEditPhotos = [];
+            window.renderFeedEditPhotosGrid();
+        };
+
+        window.saveFeedPhotoEdit = async function() {
+            const feedId = document.getElementById('feed-photo-edit-id')?.value;
+            if (!feedId) return;
+            const item = (window.feedData || []).find(f => f.id === feedId);
+            if (!item) return;
+
+            const saveBtn = document.getElementById('feed-photo-save-btn');
+            if (saveBtn) {
+                saveBtn.disabled = true;
+                saveBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i>上傳儲存中...';
+            }
+
+            try {
+                let finalPhotos = [];
+                for (let i = 0; i < currentFeedEditPhotos.length; i++) {
+                    let photo = currentFeedEditPhotos[i];
+                    if (photo && photo.startsWith('data:image')) {
+                        try {
+                            const uploadRes = await window.uploadImageToDrive(photo, `feed_${feedId}_photo_${i + 1}_${Date.now()}.jpg`);
+                            if (uploadRes && (uploadRes.imageUrl || uploadRes.fileId)) {
+                                photo = uploadRes.imageUrl || window.getDriveImageUrl(uploadRes.fileId);
+                            }
+                        } catch (e) {
+                            console.warn("照片上傳 Google Drive 失敗，使用本機 Base64 快取:", e);
+                        }
+                    }
+                    if (photo) finalPhotos.push(photo);
+                }
+
+                item.photos = finalPhotos;
+                item.photoUrl = finalPhotos.length > 0 ? finalPhotos[0] : '';
+
+                if (db && currentUser && typeof item.id === 'string') {
+                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'feed', item.id), {
+                        photos: item.photos,
+                        photoUrl: item.photoUrl
+                    });
+                }
+
+                window.renderFeed();
+                window.closeModal('feed-photo-edit-modal');
+                window.showCustomMsg("✅ 照片已成功更新！");
+            } catch (err) {
+                console.error("更新動態照片失敗:", err);
+                window.showCustomMsg("⚠️ 儲存照片失敗，請稍後再試。");
+            } finally {
+                if (saveBtn) {
+                    saveBtn.disabled = false;
+                    saveBtn.innerHTML = '<i class="fa-solid fa-check mr-1"></i>儲存更新照片';
+                }
+            }
+        };
+
         window.renderFeedEditPhotosGrid = function() {
             const grid = document.getElementById('feed-edit-photos-grid');
             const countBadge = document.getElementById('feed-photo-count-badge');
