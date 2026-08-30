@@ -4883,15 +4883,20 @@
 
         window.confirmInteraction = async function() {
             if(!pendingInteraction) return; 
-            const n = document.getElementById('int-notes').value; 
+            const n = (document.getElementById('int-notes').value || '').trim(); 
             const rV = document.getElementById('int-rating-value').value;
             const btn = document.getElementById('btn-confirm-int');
             const originalBtnHtml = btn ? btn.innerHTML : '發布';
 
+            const pType = pendingInteraction.type;
+            // 🌟 評價防呆驗證：不可無憑無據發布評價，必須填寫留言內容
+            if (pType === 'review' && !n) {
+                return window.showCustomMsg("⚠️ 請填寫評價心得與留言喔！\n\n不可無憑無據留下評價，請至少分享一句您的用餐體驗或推薦心得 🙏");
+            }
+
             window.requireIdentity(async () => {
                 const g = window.myIdentity.group; 
                 const c = window.myIdentity.name;
-                const pType = pendingInteraction.type;
                 const pData = { ...pendingInteraction.placeData };
                 
                 const finalPhotos = [];
@@ -5561,6 +5566,10 @@
             const newRating = document.getElementById('feed-item-edit-rating')?.value || 'good';
             const item = window.feedData.find(f => f.id === feedId);
             if (!item) return window.closeModal('feed-item-edit-modal');
+
+            if (!newContent) {
+                return window.showCustomMsg("⚠️ 請填寫評價心得與留言喔！\n\n不可無憑無據留下評價，請至少分享一句您的用餐體驗或推薦心得 🙏");
+            }
 
             const btn = document.getElementById('feed-item-save-btn');
             if (btn) { btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i>儲存中...'; btn.disabled = true; }
