@@ -1052,6 +1052,42 @@
                     <label class="block text-xs font-bold text-gray-600 mb-1">地點在哪？ *</label>
                     <input type="text" id="party-location" required class="w-full px-3 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:border-orange-400 text-sm break-anywhere" placeholder="輸入餐廳名稱、地名或 Google Maps 網址">
                 </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1.5"><i class="fa-solid fa-image text-orange-500 mr-1"></i>活動封面照片 (選填)</label>
+                    <input type="hidden" id="party-cover-photo">
+                    <input type="file" id="party-cover-file" accept="image/*" class="hidden" onchange="window.handlePhotoSelected(this, 'party-cover')">
+                    
+                    <div id="party-cover-photo-preview-wrap" class="relative w-full h-32 rounded-2xl overflow-hidden border-2 border-dashed border-gray-200 bg-gray-50 flex flex-col items-center justify-center group cursor-pointer hover:border-orange-400 transition" onclick="document.getElementById('party-cover-file').click()">
+                        <img id="party-cover-photo-img" src="" class="hidden w-full h-full object-cover">
+                        
+                        <div id="party-cover-photo-placeholder" class="flex flex-col items-center justify-center p-3 text-center">
+                            <div class="w-9 h-9 rounded-full bg-orange-100 text-orange-500 flex items-center justify-center mb-1 shadow-sm group-hover:scale-110 transition">
+                                <i class="fa-solid fa-camera text-base"></i>
+                            </div>
+                            <span class="text-xs font-bold text-gray-700">拍照 / 選擇封面照片</span>
+                            <span class="text-[10px] text-gray-400 mt-0.5">聚會成立後大家也能隨時補放或更換</span>
+                        </div>
+
+                        <div id="party-cover-photo-actions" class="hidden absolute inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button type="button" onclick="event.stopPropagation(); document.getElementById('party-cover-file').click();" class="px-3 py-1.5 bg-white text-gray-800 text-xs font-bold rounded-xl shadow hover:bg-orange-50 hover:text-orange-600 transition flex items-center gap-1">
+                                <i class="fa-solid fa-camera"></i> 更換照片
+                            </button>
+                            <button type="button" onclick="event.stopPropagation(); window.clearPhoto('party-cover');" class="px-3 py-1.5 bg-red-500 text-white text-xs font-bold rounded-xl shadow hover:bg-red-600 transition flex items-center gap-1">
+                                <i class="fa-solid fa-trash-can"></i> 移除
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="mt-1 text-right">
+                        <button type="button" onclick="document.getElementById('party-cover-url-box').classList.toggle('hidden')" class="text-[11px] text-gray-400 hover:text-orange-500 font-semibold underline">
+                            <i class="fa-solid fa-link mr-0.5"></i> 或貼上圖片網址
+                        </button>
+                    </div>
+                    <div id="party-cover-url-box" class="hidden mt-1">
+                        <input type="url" id="party-cover-photo-url-input" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:border-orange-400 focus:outline-none text-xs text-gray-600" placeholder="貼上 https://... 圖片網址" oninput="window.handlePhotoUrlInput('party-cover', this.value)">
+                    </div>
+                </div>
+
                 <div class="bg-orange-50 p-3 rounded-xl border border-orange-100">
                     <label class="block text-xs font-bold text-orange-600 mb-1"><i class="fa-solid fa-check-to-slot mr-1"></i>活動/食物投票選項 (逗號分隔)</label>
                     <input type="text" id="party-options" required class="w-full px-3 py-2 border border-orange-200 rounded-lg focus:outline-none text-sm" placeholder="例如：火鍋, 烤肉, 叫披薩">
@@ -1067,6 +1103,93 @@
                     </div>
                 </div>
                 <button type="submit" id="btn-submit-party" class="w-full bg-orange-500 text-white font-bold py-3.5 rounded-xl shadow-md hover:bg-orange-600 transition mt-2 min-h-[44px]">正式發布邀請</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- 6.5 編輯聚會活動模態框 (所有人皆有權限可編輯與補封面照) -->
+    <div id="edit-party-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 modal-backdrop fade-in">
+        <div class="bg-white rounded-3xl p-6 w-11/12 max-w-md shadow-2xl relative max-h-[90vh] overflow-y-auto no-scrollbar modal-dialog">
+            <button onclick="window.closeModal('edit-party-modal')" class="absolute top-4 right-5 text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark text-xl"></i></button>
+            <div class="text-center mb-5">
+                <h2 class="text-xl font-bold text-orange-500"><i class="fa-solid fa-pen-to-square mr-2"></i>編輯活動資訊</h2>
+                <p class="text-xs text-gray-400 mt-1">可修改主題、時間地點、選項或補充封面照片</p>
+            </div>
+            <form onsubmit="window.savePartyEdit(event)" class="space-y-4">
+                <input type="hidden" id="edit-party-id">
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 mb-1">聚會主題 *</label>
+                    <input type="text" id="edit-party-title" required class="w-full px-3 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:border-orange-400 text-sm" placeholder="例如：期中考後狂歡！">
+                </div>
+                <div class="party-datetime-grid">
+                    <div class="min-w-0 w-full">
+                        <label class="block text-xs font-bold text-gray-600 mb-1">日期 *</label>
+                        <input type="date" id="edit-party-date" required class="w-full min-w-0 block px-3 py-2 bg-white border border-gray-200 rounded-xl focus:outline-none focus:border-orange-400 text-sm">
+                    </div>
+                    <div class="min-w-0 w-full">
+                        <label class="block text-xs font-bold text-gray-600 mb-1">時間 *</label>
+                        <input type="time" id="edit-party-time" required class="w-full min-w-0 block px-3 py-2 bg-white border border-gray-200 rounded-xl focus:outline-none focus:border-orange-400 text-sm">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 mb-1">地點在哪？ *</label>
+                    <input type="text" id="edit-party-location" required class="w-full px-3 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:border-orange-400 text-sm break-anywhere" placeholder="輸入餐廳名稱、地名或 Google Maps 網址">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1.5"><i class="fa-solid fa-image text-orange-500 mr-1"></i>活動封面照片 (選填/補放)</label>
+                    <input type="hidden" id="edit-party-cover-photo">
+                    <input type="file" id="edit-party-cover-file" accept="image/*" class="hidden" onchange="window.handlePhotoSelected(this, 'edit-party-cover')">
+                    
+                    <div id="edit-party-cover-photo-preview-wrap" class="relative w-full h-32 rounded-2xl overflow-hidden border-2 border-dashed border-gray-200 bg-gray-50 flex flex-col items-center justify-center group cursor-pointer hover:border-orange-400 transition" onclick="document.getElementById('edit-party-cover-file').click()">
+                        <img id="edit-party-cover-photo-img" src="" class="hidden w-full h-full object-cover">
+                        
+                        <div id="edit-party-cover-photo-placeholder" class="flex flex-col items-center justify-center p-3 text-center">
+                            <div class="w-9 h-9 rounded-full bg-orange-100 text-orange-500 flex items-center justify-center mb-1 shadow-sm group-hover:scale-110 transition">
+                                <i class="fa-solid fa-camera text-base"></i>
+                            </div>
+                            <span class="text-xs font-bold text-gray-700">拍照 / 選擇封面照片</span>
+                            <span class="text-[10px] text-gray-400 mt-0.5">點擊拍照、選相簿或更換</span>
+                        </div>
+
+                        <div id="edit-party-cover-photo-actions" class="hidden absolute inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button type="button" onclick="event.stopPropagation(); document.getElementById('edit-party-cover-file').click();" class="px-3 py-1.5 bg-white text-gray-800 text-xs font-bold rounded-xl shadow hover:bg-orange-50 hover:text-orange-600 transition flex items-center gap-1">
+                                <i class="fa-solid fa-camera"></i> 更換照片
+                            </button>
+                            <button type="button" onclick="event.stopPropagation(); window.clearPhoto('edit-party-cover');" class="px-3 py-1.5 bg-red-500 text-white text-xs font-bold rounded-xl shadow hover:bg-red-600 transition flex items-center gap-1">
+                                <i class="fa-solid fa-trash-can"></i> 移除
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="mt-1 text-right">
+                        <button type="button" onclick="document.getElementById('edit-party-cover-url-box').classList.toggle('hidden')" class="text-[11px] text-gray-400 hover:text-orange-500 font-semibold underline">
+                            <i class="fa-solid fa-link mr-0.5"></i> 或貼上圖片網址
+                        </button>
+                    </div>
+                    <div id="edit-party-cover-url-box" class="hidden mt-1">
+                        <input type="url" id="edit-party-cover-photo-url-input" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:border-orange-400 focus:outline-none text-xs text-gray-600" placeholder="貼上 https://... 圖片網址" oninput="window.handlePhotoUrlInput('edit-party-cover', this.value)">
+                    </div>
+                </div>
+
+                <div class="bg-orange-50 p-3 rounded-xl border border-orange-100">
+                    <label class="block text-xs font-bold text-orange-600 mb-1"><i class="fa-solid fa-check-to-slot mr-1"></i>活動/食物投票選項 (逗號分隔)</label>
+                    <input type="text" id="edit-party-options" required class="w-full px-3 py-2 border border-orange-200 rounded-lg focus:outline-none text-sm" placeholder="例如：火鍋, 烤肉, 叫披薩">
+                </div>
+                <div class="bg-blue-50 p-3 rounded-xl border border-blue-100">
+                    <label class="block text-xs font-bold text-blue-600 mb-1"><i class="fa-solid fa-calculator mr-1"></i>分帳計算方式 *</label>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <select id="edit-party-cost-mode" class="w-full min-w-0 px-2 py-1.5 bg-white border border-blue-200 rounded-lg text-xs focus:outline-none min-h-[38px]">
+                            <option value="split">總費用均攤 (AA)</option>
+                            <option value="fixed">每人固定收費</option>
+                        </select>
+                        <input type="number" id="edit-party-cost-amount" required class="w-full min-w-0 px-2 py-1.5 bg-white border border-blue-200 rounded-lg text-xs focus:outline-none min-h-[38px]" placeholder="輸入總費用">
+                    </div>
+                </div>
+                <div class="flex gap-2">
+                    <button type="button" onclick="window.closeModal('edit-party-modal')" class="flex-1 bg-gray-100 text-gray-600 font-bold py-3 rounded-xl hover:bg-gray-200 transition text-xs">取消</button>
+                    <button type="submit" id="btn-save-party-edit" class="flex-1 bg-orange-500 text-white font-bold py-3 rounded-xl shadow-md hover:bg-orange-600 transition text-xs">儲存修改</button>
+                </div>
             </form>
         </div>
     </div>
@@ -2391,36 +2514,52 @@
         };
 
         window.setPhotoUploaderValue = function(prefix, url) {
-            const hiddenInput = document.getElementById(
-                prefix === 'edit-res' ? 'edit-res-photo' : 
-                (prefix === 'int-photo' ? 'int-photo-url' : 
-                (prefix === 'party-recap' ? 'party-recap-photo' : 
-                (prefix === 'feed-photo-edit' ? 'feed-photo-edit-url' : 'input-photo')))
-            );
-            const imgEl = document.getElementById(
-                prefix === 'edit-res' ? 'edit-res-photo-img' : 
-                (prefix === 'int-photo' ? 'int-photo-img' : 
-                (prefix === 'party-recap' ? 'party-recap-img' : 
-                (prefix === 'feed-photo-edit' ? 'feed-photo-edit-img' : 'admin-add-img')))
-            );
-            const placeholderEl = document.getElementById(
-                prefix === 'edit-res' ? 'edit-res-photo-placeholder' : 
-                (prefix === 'int-photo' ? 'int-photo-placeholder' : 
-                (prefix === 'party-recap' ? 'party-recap-placeholder' : 
-                (prefix === 'feed-photo-edit' ? 'feed-photo-edit-placeholder' : null)))
-            );
-            const actionsEl = document.getElementById(
-                prefix === 'edit-res' ? 'edit-res-photo-actions' : 
-                (prefix === 'int-photo' ? 'int-photo-actions' : 
-                (prefix === 'party-recap' ? 'party-recap-actions' : null))
-            );
+            const hiddenIdMap = {
+                'edit-res': 'edit-res-photo',
+                'int-photo': 'int-photo-url',
+                'party-recap': 'party-recap-photo',
+                'party-cover': 'party-cover-photo',
+                'edit-party-cover': 'edit-party-cover-photo',
+                'feed-photo-edit': 'feed-photo-edit-url'
+            };
+            const imgIdMap = {
+                'edit-res': 'edit-res-photo-img',
+                'int-photo': 'int-photo-img',
+                'party-recap': 'party-recap-img',
+                'party-cover': 'party-cover-photo-img',
+                'edit-party-cover': 'edit-party-cover-photo-img',
+                'feed-photo-edit': 'feed-photo-edit-img'
+            };
+            const placeholderIdMap = {
+                'edit-res': 'edit-res-photo-placeholder',
+                'int-photo': 'int-photo-placeholder',
+                'party-recap': 'party-recap-placeholder',
+                'party-cover': 'party-cover-photo-placeholder',
+                'edit-party-cover': 'edit-party-cover-photo-placeholder',
+                'feed-photo-edit': 'feed-photo-edit-placeholder'
+            };
+            const actionsIdMap = {
+                'edit-res': 'edit-res-photo-actions',
+                'int-photo': 'int-photo-actions',
+                'party-recap': 'party-recap-actions',
+                'party-cover': 'party-cover-photo-actions',
+                'edit-party-cover': 'edit-party-cover-photo-actions'
+            };
+            const urlInputIdMap = {
+                'edit-res': 'edit-res-photo-url-input',
+                'int-photo': 'int-photo-url-input',
+                'party-recap': 'party-recap-photo-url-input',
+                'party-cover': 'party-cover-photo-url-input',
+                'edit-party-cover': 'edit-party-cover-photo-url-input',
+                'feed-photo-edit': 'feed-photo-edit-url-input'
+            };
+
+            const hiddenInput = document.getElementById(hiddenIdMap[prefix] || 'input-photo');
+            const imgEl = document.getElementById(imgIdMap[prefix] || 'admin-add-img');
+            const placeholderEl = document.getElementById(placeholderIdMap[prefix] || null);
+            const actionsEl = document.getElementById(actionsIdMap[prefix] || null);
             const thumbEl = document.getElementById('admin-add-photo-thumb');
-            const urlInputEl = document.getElementById(
-                prefix === 'edit-res' ? 'edit-res-photo-url-input' : 
-                (prefix === 'int-photo' ? 'int-photo-url-input' : 
-                (prefix === 'party-recap' ? 'party-recap-photo-url-input' : 
-                (prefix === 'feed-photo-edit' ? 'feed-photo-edit-url-input' : 'admin-add-url-input')))
-            );
+            const urlInputEl = document.getElementById(urlInputIdMap[prefix] || 'admin-add-url-input');
 
             if (hiddenInput) hiddenInput.value = url || '';
             if (urlInputEl && (!url || url.startsWith('http'))) urlInputEl.value = url || '';
@@ -2440,12 +2579,15 @@
 
         window.clearPhoto = function(prefix) {
             window.setPhotoUploaderValue(prefix, '');
-            const fileInput = document.getElementById(
-                prefix === 'edit-res' ? 'edit-res-file' : 
-                (prefix === 'int-photo' ? 'int-photo-file' : 
-                (prefix === 'party-recap' ? 'party-recap-file' : 
-                (prefix === 'feed-photo-edit' ? 'feed-photo-edit-file' : 'input-photo-file')))
-            );
+            const fileIdMap = {
+                'edit-res': 'edit-res-file',
+                'int-photo': 'int-photo-file',
+                'party-recap': 'party-recap-file',
+                'party-cover': 'party-cover-file',
+                'edit-party-cover': 'edit-party-cover-file',
+                'feed-photo-edit': 'feed-photo-edit-file'
+            };
+            const fileInput = document.getElementById(fileIdMap[prefix] || 'input-photo-file');
             if (fileInput) fileInput.value = '';
         };
 
@@ -3770,12 +3912,25 @@
             if(optionsArray.length === 0) { if (btn) { btn.innerHTML = '正式發布邀請'; btn.disabled = false; } return window.showCustomMsg("至少要提供一個選項喔！"); } 
             
             window.requireIdentity(async () => {
+                let coverPhoto = document.getElementById('party-cover-photo')?.value.trim() || '';
+                if (coverPhoto && coverPhoto.startsWith('data:image')) {
+                    try {
+                        const uploadRes = await window.uploadImageToDrive(coverPhoto, `party_cover_${Date.now()}.jpg`);
+                        if (uploadRes && (uploadRes.imageUrl || uploadRes.fileId)) {
+                            coverPhoto = uploadRes.imageUrl || window.getDriveImageUrl(uploadRes.fileId);
+                        }
+                    } catch (e) {
+                        console.warn("聚會封面照片上傳 Google Drive 失敗，使用本機快取:", e);
+                    }
+                }
+
                 const newParty = { 
                     title: document.getElementById('party-title')?.value || '', 
                     date: document.getElementById('party-date')?.value || '', 
                     time: document.getElementById('party-time')?.value || '', 
                     location: document.getElementById('party-location')?.value || '', 
                     group: window.myIdentity.group, 
+                    coverPhoto: coverPhoto,
                     options: optionsArray, 
                     costMode: document.getElementById('party-cost-mode')?.value || 'split', 
                     amount: parseFloat(document.getElementById('party-cost-amount')?.value) || 0, 
@@ -3786,10 +3941,89 @@
                 try { 
                     if (db && currentUser) { await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'parties'), { ...newParty, timestamp: serverTimestamp() }); } 
                     else { window.partyData.unshift({ id: Date.now().toString(), ...newParty }); window.renderParties(); } 
-                    window.closeModal('create-party-modal'); document.getElementById('create-party-modal')?.querySelector('form')?.reset(); 
+                    window.closeModal('create-party-modal'); 
+                    document.getElementById('create-party-modal')?.querySelector('form')?.reset(); 
+                    window.clearPhoto('party-cover');
                     window.showCustomMsg('✨ 聚會邀請已發布！快去發 Line 叫大家投票！'); 
                 } catch (err) { window.showCustomMsg('發布失敗。'); } finally { if (btn) { btn.innerHTML = '正式發布邀請'; btn.disabled = false; } } 
             });
+        };
+
+        // 🌟 編輯聚會活動 (每個人都有權限可編輯與補封面照片)
+        window.openEditPartyModal = function(pid) {
+            const party = (window.partyData || []).find(p => p.id === pid);
+            if (!party) return;
+
+            window.requireIdentity(() => {
+                document.getElementById('edit-party-id').value = pid;
+                document.getElementById('edit-party-title').value = party.title || '';
+                document.getElementById('edit-party-date').value = party.date || '';
+                document.getElementById('edit-party-time').value = party.time || '';
+                document.getElementById('edit-party-location').value = party.location || '';
+                document.getElementById('edit-party-options').value = Array.isArray(party.options) ? party.options.join(', ') : (party.options || '');
+                document.getElementById('edit-party-cost-mode').value = party.costMode || 'split';
+                document.getElementById('edit-party-cost-amount').value = party.amount || 0;
+
+                window.setPhotoUploaderValue('edit-party-cover', party.coverPhoto || '');
+                document.getElementById('edit-party-modal').classList.remove('hidden');
+            });
+        };
+
+        window.savePartyEdit = async function(e) {
+            if (e && e.preventDefault) e.preventDefault();
+            const pid = document.getElementById('edit-party-id')?.value;
+            if (!pid) return;
+            const party = (window.partyData || []).find(p => p.id === pid);
+            if (!party) return;
+
+            const btn = document.getElementById('btn-save-party-edit');
+            const origText = btn ? btn.innerHTML : '儲存修改';
+            if (btn) { btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> 儲存中...'; btn.disabled = true; }
+
+            const optionsInput = document.getElementById('edit-party-options');
+            const optionsArray = optionsInput ? optionsInput.value.split(',').map(s => s.trim()).filter(s => s) : [];
+            if(optionsArray.length === 0) { 
+                if (btn) { btn.innerHTML = origText; btn.disabled = false; } 
+                return window.showCustomMsg("至少要提供一個選項喔！"); 
+            }
+
+            let coverPhoto = document.getElementById('edit-party-cover-photo')?.value.trim() || '';
+            if (coverPhoto && coverPhoto.startsWith('data:image')) {
+                try {
+                    const uploadRes = await window.uploadImageToDrive(coverPhoto, `party_cover_${pid}_${Date.now()}.jpg`);
+                    if (uploadRes && (uploadRes.imageUrl || uploadRes.fileId)) {
+                        coverPhoto = uploadRes.imageUrl || window.getDriveImageUrl(uploadRes.fileId);
+                    }
+                } catch (err) {
+                    console.warn("封面照片上傳 Google Drive 失敗，使用本機快取:", err);
+                }
+            }
+
+            const updatedData = {
+                title: document.getElementById('edit-party-title')?.value || party.title,
+                date: document.getElementById('edit-party-date')?.value || party.date,
+                time: document.getElementById('edit-party-time')?.value || party.time,
+                location: document.getElementById('edit-party-location')?.value || party.location,
+                options: optionsArray,
+                coverPhoto: coverPhoto,
+                costMode: document.getElementById('edit-party-cost-mode')?.value || party.costMode || 'split',
+                amount: parseFloat(document.getElementById('edit-party-cost-amount')?.value) || 0
+            };
+
+            try {
+                Object.assign(party, updatedData);
+                if (db && currentUser && typeof party.id === 'string') {
+                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'parties', pid), updatedData);
+                }
+                window.renderParties();
+                window.closeModal('edit-party-modal');
+                window.showCustomMsg('✅ 活動資訊與封面已成功更新！');
+            } catch (err) {
+                console.error("更新活動失敗:", err);
+                window.showCustomMsg('⚠️ 儲存活動失敗，請稍後重試。');
+            } finally {
+                if (btn) { btn.innerHTML = origText; btn.disabled = false; }
+            }
         };
         
         window.renderParties = function() {
@@ -3801,11 +4035,35 @@
                 const optionsHtml = p.options.map(opt => { const count = voteCounts[opt]; const percent = totalVotes > 0 ? (count / totalVotes) * 100 : 0; const isMyVote = (p.votes && p.votes[window.myIdentity.name] === opt); return `<button onclick="window.voteParty('${p.id}', decodeURIComponent('${window.escapeForBtn(opt)}'))" class="w-full relative overflow-hidden border ${isMyVote ? "border-orange-400 text-orange-600 bg-orange-50 shadow-inner" : "border-gray-200 text-gray-600 hover:border-orange-200 bg-white"} rounded-xl py-2.5 px-4 text-left transition text-sm flex justify-between items-center group mb-2"><div class="vote-bar" style="width: ${percent}%"></div><span class="relative z-10 font-bold ${isMyVote ? 'text-orange-600' : ''}">${isMyVote ? '<i class="fa-solid fa-circle-check mr-1.5"></i>' : ''}${opt}</span><span class="relative z-10 text-xs font-bold ${isMyVote ? 'text-orange-500' : 'text-gray-400 group-hover:text-orange-400'}">${count} 票</span></button>`; }).join('');
                 const appUrl = window.appConfig.appUrl || window.location.href;
                 const lineText = `🔥 【揪團通知】${p.title}\n📅 時間: ${p.date} ${p.time}\n📍 地點: ${p.location}\n---\n👇 趕快開啟「呷奔 Jia ben」投票＋報名：\n${appUrl}`;
+                
+                // 封面照片區塊 (若無封面則顯示優雅簡約標頭)
+                const coverPhotoHtml = p.coverPhoto ? `
+                <div class="relative w-full h-40 sm:h-44 rounded-2xl overflow-hidden mb-3.5 group bg-gray-100 shadow-2xs">
+                    <img src="${window.resolveReviewImage(p.coverPhoto, p.title)}" onerror="this.onerror=null; this.src=window.getFallbackImage('${window.escapeForBtn(p.title)}');" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20"></div>
+                    <button onclick="window.openEditPartyModal('${p.id}')" class="absolute top-2.5 right-2.5 bg-black/60 hover:bg-black/80 text-white text-[11px] font-bold px-2.5 py-1 rounded-xl backdrop-blur-xs shadow transition flex items-center gap-1 z-10">
+                        <i class="fa-solid fa-camera"></i> 換封面/編輯
+                    </button>
+                </div>` : '';
+
                 return `
                 <div class="restaurant-card soft-card bg-white rounded-[24px] border ${p.creator === '黃政誥' ? 'border-orange-200 host-highlight' : 'border-gray-100'} p-5 relative overflow-hidden h-full flex flex-col transition">
-                    ${p.creator === '黃政誥' ? '<div class="absolute top-0 right-0 w-20 h-20 bg-gradient-to-bl from-orange-200 to-transparent rounded-bl-full opacity-30"></div><span class="absolute top-3 right-3 bg-orange-500 text-white text-[9px] px-2 py-0.5 rounded shadow-sm font-bold tracking-widest"><i class="fa-solid fa-crown mr-1"></i>主揪邀請</span>' : `<span class="absolute top-3 right-3 bg-gray-100 text-gray-500 text-[9px] px-2 py-0.5 rounded shadow-sm font-bold tracking-widest">${p.group} 團</span>`}
-                    <h3 class="text-xl font-bold text-gray-800 mb-2 pr-20 leading-tight">${p.title}</h3><div class="space-y-1.5 mb-5 text-sm font-medium text-gray-600"><p class="flex items-center"><i class="fa-regular fa-calendar text-orange-400 w-5 text-center mr-1"></i> ${p.date} (${p.time})</p>
-                    <div class="flex items-center gap-1.5 min-w-0" style="overflow-wrap: anywhere; word-break: break-word; max-width: 100%;"><i class="fa-solid fa-location-dot text-orange-400 w-5 text-center shrink-0"></i> <div class="min-w-0 flex-1 break-anywhere">${window.formatLocationDisplay(p.location)}</div></div></div>
+                    ${coverPhotoHtml}
+                    <div class="flex items-start justify-between gap-2 mb-2">
+                        <div class="flex-1 min-w-0">
+                            <h3 class="text-xl font-bold text-gray-800 leading-tight">${p.title}</h3>
+                        </div>
+                        <div class="flex items-center gap-1 shrink-0">
+                            <button onclick="window.openEditPartyModal('${p.id}')" class="text-gray-400 hover:text-orange-600 hover:bg-orange-50 p-1.5 rounded-lg transition" title="編輯活動資訊 / 補封面照片">
+                                <i class="fa-solid fa-pen-to-square text-sm"></i>
+                            </button>
+                            ${p.creator === '黃政誥' ? '<span class="bg-orange-500 text-white text-[9px] px-2 py-0.5 rounded shadow-sm font-bold tracking-widest"><i class="fa-solid fa-crown mr-1"></i>主揪邀請</span>' : `<span class="bg-gray-100 text-gray-500 text-[9px] px-2 py-0.5 rounded shadow-sm font-bold tracking-widest">${p.group} 團</span>`}
+                        </div>
+                    </div>
+                    <div class="space-y-1.5 mb-4 text-sm font-medium text-gray-600">
+                        <p class="flex items-center"><i class="fa-regular fa-calendar text-orange-400 w-5 text-center mr-1"></i> ${p.date} (${p.time})</p>
+                        <div class="flex items-center gap-1.5 min-w-0" style="overflow-wrap: anywhere; word-break: break-word; max-width: 100%;"><i class="fa-solid fa-location-dot text-orange-400 w-5 text-center shrink-0"></i> <div class="min-w-0 flex-1 break-anywhere">${window.formatLocationDisplay(p.location)}</div></div>
+                    </div>
                     <div class="bg-gray-50 p-4 rounded-2xl border border-gray-100 mb-4 flex-1"><div class="flex justify-between items-center mb-3"><p class="text-xs font-bold text-gray-500"><i class="fa-solid fa-check-to-slot mr-1 text-blue-500"></i>大家想做什麼？ (點擊投票)</p><span class="text-[10px] text-gray-400 bg-white px-2 py-0.5 border border-gray-200 rounded-full">總共 ${totalVotes} 票</span></div>${optionsHtml}</div>
                     <div class="flex flex-col gap-2 mt-auto pt-4 border-t border-gray-100">
                         <div class="flex items-center justify-between gap-2">
