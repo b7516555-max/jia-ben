@@ -4924,37 +4924,53 @@
 
                 try {
                     if(pType === 'review') {
-                        const cityVal = pData.city || extractCity(pData.name + " " + (pData.formatted_address || ""));
-                        const countryVal = pData.country || window.getCountryFromCity(cityVal);
+                        const cityVal = pData.city || extractCity(pData.name + " " + (pData.formatted_address || "")) || '未分類';
+                        const countryVal = pData.country || window.getCountryFromCity(cityVal) || '台灣';
                         const primaryPhoto = finalPhotos.length > 0 ? finalPhotos[0] : '';
+                        const validRating = (rV === 'bad' || rV === 'good') ? rV : (rV ? String(rV) : 'good');
+                        
                         const reviewItem = { 
-                            restaurantName: pData.name, 
-                            group: g, 
-                            creator: c, 
-                            rating: rV, 
+                            restaurantName: pData.name || '美食好店', 
+                            group: g || window.myIdentity?.group || '好友', 
+                            creator: c || window.myIdentity?.name || '朋友', 
+                            rating: validRating, 
                             content: n, 
                             city: cityVal, 
                             country: countryVal, 
                             placeId: pData.placeId || '', 
-                            mapLink: pData.mapLink || '', 
-                            lat: pData.lat || null, 
-                            lng: pData.lng || null, 
-                            photoUrl: primaryPhoto, 
-                            photos: finalPhotos 
+                            mapLink: pData.mapLink || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(pData.name || '美食')}`, 
+                            lat: (typeof pData.lat === 'number' && !isNaN(pData.lat)) ? pData.lat : null, 
+                            lng: (typeof pData.lng === 'number' && !isNaN(pData.lng)) ? pData.lng : null, 
+                            photoUrl: primaryPhoto || '', 
+                            photos: Array.isArray(finalPhotos) ? finalPhotos : [] 
                         };
-                        syncToGoogleSheets('Feed', reviewItem);
+
+                        try { syncToGoogleSheets('Feed', reviewItem); } catch(sheetErr) { console.warn("Google Sheets 備份異常 (忽略):", sheetErr); }
+
+                        let savedToCloud = false;
                         if(db && currentUser) {
-                            await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'feed'), { ...reviewItem, timestamp: serverTimestamp() });
-                            window.showCustomMsg(`✅ 評價已成功發布！(${finalPhotos.length > 0 ? `附帶 ${finalPhotos.length} 張照片` : '無照片'})`);
-                        } else {
-                            window.feedData.unshift({ id: Date.now().toString(), ...reviewItem, timestamp: {seconds: Date.now()/1000} });
-                            window.renderFeed();
-                            window.showCustomMsg(`✅ 評價已存入並同步！`);
+                            try {
+                                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'feed'), { ...reviewItem, timestamp: serverTimestamp() });
+                                savedToCloud = true;
+                            } catch(cloudErr) {
+                                console.warn("Firebase 儲存失敗，轉為本機快取與展示同步:", cloudErr);
+                            }
                         }
+
+                        if (!savedToCloud) {
+                            window.feedData.unshift({ id: Date.now().toString(), ...reviewItem, timestamp: { seconds: Date.now()/1000 } });
+                        }
+
                         window.renderFeed();
                         window.switchTab('feed');
+                        window.showCustomMsg(`✅ 評價已成功發布！(${finalPhotos.length > 0 ? `附帶 ${finalPhotos.length} 張照片` : '無照片'})`);
+                        
                         // 🌟 檢查是否晉階並發布公告
-                        window.checkAndAnnounceTierPromotion(c, g);
+                        try {
+                            window.checkAndAnnounceTierPromotion(c, g);
+                        } catch(promoErr) {
+                            console.warn("升階檢查異常 (忽略):", promoErr);
+                        }
                     } else {
                         // 🌟 自動阻擋重複新增店家（全域比對是否已被其他成員或自己新增過）
                         const normName = (pData.name || '').toLowerCase().replace(/\s+/g, '');
@@ -4971,17 +4987,32 @@
                         }
 
                         const restaurantItem = { ...pData, city: pData.city || "未分類", hours: "", category: "未分類", status: "想去", notes: n, group: g, creator: c, photoUrl: pData.photoUrl || '' };
-                        syncToGoogleSheets('Restaurants', restaurantItem);
+                        try { syncToGoogleSheets('Restaurants', restaurantItem); } catch(sheetErr) { console.warn("Google Sheets 備份異常 (忽略):", sheetErr); }
+
+                        let savedResToCloud = false;
                         if(db && currentUser) {
-                            await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'restaurants'), { ...restaurantItem, timestamp: serverTimestamp() });
+                            try {
+                                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'restaurants'), { ...restaurantItem, timestamp: serverTimestamp() });
+                                savedResToCloud = true;
+                            } catch(cloudErr) {
+                                console.warn("Firebase 儲存失敗，轉為本機快取與展示同步:", cloudErr);
+                            }
                         }
-                        const tempId = Date.now().toString();
-                        window.restaurantData.unshift({ id: tempId, ...restaurantItem, timestamp: {seconds: Date.now()/1000} });
+                        
+                        if (!savedResToCloud) {
+                            const tempId = Date.now().toString();
+                            window.restaurantData.unshift({ id: tempId, ...restaurantItem, timestamp: { seconds: Date.now()/1000 } });
+                        }
+
                         window.renderList();
                         if (typeof window.renderAdminDataList === 'function') window.renderAdminDataList();
                         window.showCustomMsg(`❤️ 「${pData.name}」已成功收進口袋名單！`);
                         // 🌟 檢查是否晉階並發布公告
-                        window.checkAndAnnounceTierPromotion(c, g);
+                        try {
+                            window.checkAndAnnounceTierPromotion(c, g);
+                        } catch(promoErr) {
+                            console.warn("升階檢查異常 (忽略):", promoErr);
+                        }
                     }
                 } catch (e) {
                     console.error("寫入錯誤:", e);
