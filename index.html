@@ -4389,13 +4389,6 @@
                 });
             }
             
-            window.initInteraction = function(type, pDStr) {
-                const pD = typeof pDStr === 'string' ? JSON.parse(pDStr) : pDStr;
-                pendingInteraction = { type: type, placeData: pD };
-                // Open interaction modal directly – no admin/identity gating needed
-                openInteractionModal();
-            };
-
             res = res.sort((a, b) => {
                 if (a.openStatus !== b.openStatus) return b.openStatus - a.openStatus; 
                 if (vT === 'explore' || vT === 'random') return (b.rating || 0) - (a.rating || 0); 
@@ -4690,9 +4683,8 @@
         window.initInteraction = function(type, pDStr) {
             const pD = typeof pDStr === 'string' ? JSON.parse(pDStr) : pDStr;
             pendingInteraction = { type: type, placeData: pD };
-            // Open interaction modal directly – no admin/identity gating needed
+            // All members may open the review/save dialog; submission still records their member identity.
             openInteractionModal();
-        };
         };
         window.selectIntRating = function(v) { document.getElementById('int-rating-value').value = v; const bG = document.getElementById('btn-rating-good'); const bB = document.getElementById('btn-rating-bad'); if(v === 'good') { bG.classList.add('bg-emerald-50','border-emerald-400','text-emerald-600'); bB.classList.remove('bg-red-50','border-red-400','text-red-600'); } else { bB.classList.add('bg-red-50','border-red-400','text-red-600'); bG.classList.remove('bg-emerald-50','border-emerald-400','text-emerald-600'); } };
         
