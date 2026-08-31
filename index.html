@@ -940,11 +940,8 @@
             <div class="space-y-4">
                 <div id="interaction-rating-section">
                     <label class="block text-xs font-bold text-gray-500 mb-2">吃完的真實感受？ *</label>
-                    <div class="flex gap-2">
-                        <button type="button" onclick="window.selectIntRating('good')" id="btn-rating-good" class="flex-1 py-2.5 border border-gray-200 rounded-xl text-gray-500 hover:bg-emerald-50 hover:border-emerald-400 hover:text-emerald-600 transition font-bold"><i class="fa-solid fa-face-laugh-squint mr-1 text-emerald-500"></i>推爆</button>
-                        <button type="button" onclick="window.selectIntRating('bad')" id="btn-rating-bad" class="flex-1 py-2.5 border border-gray-200 rounded-xl text-gray-500 hover:bg-red-50 hover:border-red-400 hover:text-red-600 transition font-bold"><i class="fa-solid fa-face-dizzy mr-1 text-red-500"></i>避雷</button>
-                    </div>
-                    <input type="hidden" id="int-rating-value">
+                    <div id="int-rating-options" class="grid grid-cols-2 sm:grid-cols-4 gap-2"></div>
+                    <input type="hidden" id="int-rating-value" value="good">
                 </div>
 
                 <!-- 🌟 評價照片上傳區塊：直接支援最多 5 張照片 (拍照/相簿多選與縮圖預覽) -->
@@ -1415,14 +1412,7 @@
                                 <span class="text-[10px] text-orange-500 font-bold">動態牆同步</span>
                             </label>
                             <input type="hidden" id="input-review-rating-value" value="good">
-                            <div class="grid grid-cols-2 gap-2">
-                                <button type="button" id="input-btn-rating-good" onclick="window.selectInputReviewRating('good')" class="flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 border-emerald-400 bg-emerald-50 text-emerald-600 font-bold text-xs shadow-2xs transition">
-                                    <i class="fa-solid fa-thumbs-up text-sm"></i> 推爆好店
-                                </button>
-                                <button type="button" id="input-btn-rating-bad" onclick="window.selectInputReviewRating('bad')" class="flex items-center justify-center gap-2 py-2.5 rounded-xl border border-gray-200 bg-white text-gray-400 font-bold text-xs transition">
-                                    <i class="fa-solid fa-thumbs-down text-sm"></i> 避雷提醒
-                                </button>
-                            </div>
+                            <div id="input-review-rating-options" class="grid grid-cols-2 sm:grid-cols-4 gap-2"></div>
                         </div>
 
                         <div>
@@ -1482,14 +1472,7 @@
                 <div>
                     <label class="block text-xs font-bold text-gray-700 mb-1.5">用餐體驗評分</label>
                     <input type="hidden" id="feed-item-edit-rating" value="good">
-                    <div class="grid grid-cols-2 gap-2">
-                        <button type="button" id="feed-edit-btn-good" onclick="window.selectFeedEditRating('good')" class="flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 border-emerald-400 bg-emerald-50 text-emerald-600 font-bold text-xs shadow-2xs transition">
-                            <i class="fa-solid fa-thumbs-up text-sm"></i> 推爆好店
-                        </button>
-                        <button type="button" id="feed-edit-btn-bad" onclick="window.selectFeedEditRating('bad')" class="flex items-center justify-center gap-2 py-2.5 rounded-xl border border-gray-200 bg-white text-gray-400 font-bold text-xs transition">
-                            <i class="fa-solid fa-thumbs-down text-sm"></i> 避雷提醒
-                        </button>
-                    </div>
+                    <div id="feed-edit-rating-options" class="grid grid-cols-2 sm:grid-cols-4 gap-2"></div>
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-gray-700 mb-1">評語心得 / 必點特色</label>
@@ -2207,6 +2190,32 @@
         window.restaurantData = []; window.feedData = []; window.partyData = []; window.chatData = [];
         window.appConfig = { deleteCode: '850930', appUrl: '', groups: ['主揪', '玉泉', '屏東', '高雄', '台北', '老服', '社發'], creators: ['黃政誥'], membersMap: null, userPasswords: { '黃政誥': 'Bb19960930' }, memberAvatars: {} }; 
         window.myIdentity = { group: '', name: '', password: '' }; 
+
+        window.REVIEW_RATING_LEVELS = [
+            { id: 'good', label: '推爆', icon: 'fa-fire', selected: 'border-emerald-500 bg-emerald-50 text-emerald-700', badge: 'bg-emerald-500 text-white' },
+            { id: 'tasty', label: '好吃', icon: 'fa-face-grin-hearts', selected: 'border-green-500 bg-green-50 text-green-700', badge: 'bg-green-500 text-white' },
+            { id: 'nice', label: '不錯', icon: 'fa-thumbs-up', selected: 'border-lime-500 bg-lime-50 text-lime-700', badge: 'bg-lime-500 text-white' },
+            { id: 'fair', label: '尚可', icon: 'fa-face-meh', selected: 'border-amber-400 bg-amber-50 text-amber-700', badge: 'bg-amber-400 text-white' },
+            { id: 'poor', label: '頗差', icon: 'fa-face-frown', selected: 'border-orange-500 bg-orange-50 text-orange-700', badge: 'bg-orange-500 text-white' },
+            { id: 'awful', label: '難吃', icon: 'fa-face-grimace', selected: 'border-red-500 bg-red-50 text-red-700', badge: 'bg-red-500 text-white' },
+            { id: 'bad', label: '避雷', icon: 'fa-triangle-exclamation', selected: 'border-rose-600 bg-rose-50 text-rose-700', badge: 'bg-rose-600 text-white' }
+        ];
+        window.getReviewRatingMeta = function(value) {
+            return window.REVIEW_RATING_LEVELS.find(level => level.id === value) || window.REVIEW_RATING_LEVELS[0];
+        };
+        window.isValidReviewRating = function(value) {
+            return window.REVIEW_RATING_LEVELS.some(level => level.id === value);
+        };
+        window.renderReviewRatingChoices = function(containerId, handlerName, selectedValue) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            const selected = window.getReviewRatingMeta(selectedValue).id;
+            container.innerHTML = window.REVIEW_RATING_LEVELS.map(level => {
+                const active = level.id === selected;
+                const stateClass = active ? `border-2 ${level.selected} shadow-2xs` : 'border border-gray-200 bg-white text-gray-500 hover:border-gray-300';
+                return `<button type="button" onclick="window.${handlerName}('${level.id}')" class="min-h-[42px] px-2 py-2 rounded-xl font-bold text-xs transition flex items-center justify-center gap-1.5 ${stateClass}" aria-pressed="${active}"><i class="fa-solid ${level.icon}"></i>${level.label}</button>`;
+            }).join('');
+        };
 
         let pendingInteraction = null; let itemToDelete = null; let pendingPartyAction = null;
         let isAdminUnlocked = false; let previousTab = 'explore';  
@@ -3143,11 +3152,11 @@
                 } else {
                     listFeed.innerHTML = window.feedData.map(f => {
                         const safeId = window.escapeForBtn(f.id || '');
-                        const isLike = f.rating === 'like' || f.rating === '推' || f.rating === '超推' || f.rating === 1;
+                        const adminRatingMeta = window.getReviewRatingMeta(f.rating);
                         return `
                         <div class="flex items-center justify-between p-3 bg-gray-50 rounded-2xl border border-gray-100 hover:border-orange-200 transition">
                             <div class="flex items-center gap-3 overflow-hidden">
-                                <div class="w-8 h-8 rounded-xl ${isLike ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'} flex items-center justify-center font-bold text-xs shrink-0"><i class="fa-solid ${isLike ? 'fa-thumbs-up' : 'fa-thumbs-down'}"></i></div>
+                                <div class="w-8 h-8 rounded-xl ${adminRatingMeta.badge} flex items-center justify-center font-bold text-xs shrink-0" title="${adminRatingMeta.label}"><i class="fa-solid ${adminRatingMeta.icon}"></i></div>
                                 <div class="truncate">
                                     <h4 class="text-xs font-bold text-gray-800 truncate">${f.restaurantName || '好店評價'}</h4>
                                     <p class="text-[10px] text-gray-400 truncate">${f.creator || '好友'} (${f.group || '社群'})：${f.content || '無評語'}</p>
@@ -4738,7 +4747,11 @@
                 openInteractionModal();
             });
         };
-        window.selectIntRating = function(v) { document.getElementById('int-rating-value').value = v; const bG = document.getElementById('btn-rating-good'); const bB = document.getElementById('btn-rating-bad'); if(v === 'good') { bG.classList.add('bg-emerald-50','border-emerald-400','text-emerald-600'); bB.classList.remove('bg-red-50','border-red-400','text-red-600'); } else { bB.classList.add('bg-red-50','border-red-400','text-red-600'); bG.classList.remove('bg-emerald-50','border-emerald-400','text-emerald-600'); } };
+        window.selectIntRating = function(v) {
+            const selected = window.getReviewRatingMeta(v).id;
+            document.getElementById('int-rating-value').value = selected;
+            window.renderReviewRatingChoices('int-rating-options', 'selectIntRating', selected);
+        };
         
         let currentIntPhotos = []; // array of strings (urls or base64 data)
 
@@ -4946,8 +4959,8 @@
             if (pType === 'review' && !n) {
                 return window.showCustomMsg("⚠️ 請填寫評價心得與留言喔！\n\n不可無憑無據留下評價，請至少分享一句您的用餐體驗或推薦心得 🙏");
             }
-            if (pType === 'review' && rV !== 'good' && rV !== 'bad') {
-                return window.showCustomMsg('⚠️ 請選擇「推爆」或「避雷」後再發布評價。');
+            if (pType === 'review' && !window.isValidReviewRating(rV)) {
+                return window.showCustomMsg('⚠️ 請先選擇一個評價等級再發布。');
             }
 
             window.requireIdentity(async () => {
@@ -4983,7 +4996,7 @@
                         const cityVal = pData.city || extractCity(pData.name + " " + (pData.formatted_address || "")) || '未分類';
                         const countryVal = pData.country || window.getCountryFromCity(cityVal) || '台灣';
                         const primaryPhoto = finalPhotos.length > 0 ? finalPhotos[0] : '';
-                        const validRating = (rV === 'bad' || rV === 'good') ? rV : (rV ? String(rV) : 'good');
+                        const validRating = window.getReviewRatingMeta(rV).id;
                         
                         const reviewItem = { 
                             restaurantName: pData.name || '美食好店', 
@@ -5636,7 +5649,7 @@
                     document.getElementById('feed-item-edit-id').value = feedId;
                     document.getElementById('feed-item-edit-sub').textContent = `正在編輯「${item.restaurantName || item.partyTitle || '動態'}」的評價`;
                     document.getElementById('feed-item-edit-content').value = item.content || '';
-                    window.selectFeedEditRating(item.rating === 'bad' ? 'bad' : 'good');
+                    window.selectFeedEditRating(window.getReviewRatingMeta(item.rating).id);
                     document.getElementById('feed-item-edit-modal').classList.remove('hidden');
                 };
 
@@ -5649,16 +5662,9 @@
         };
 
         window.selectFeedEditRating = function(r) {
-            document.getElementById('feed-item-edit-rating').value = r;
-            const bG = document.getElementById('feed-edit-btn-good');
-            const bB = document.getElementById('feed-edit-btn-bad');
-            if (r === 'good') {
-                bG.className = 'flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 border-emerald-400 bg-emerald-50 text-emerald-600 font-bold text-xs shadow-2xs transition';
-                bB.className = 'flex items-center justify-center gap-2 py-2.5 rounded-xl border border-gray-200 bg-white text-gray-400 font-bold text-xs transition';
-            } else {
-                bB.className = 'flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 border-rose-400 bg-rose-50 text-rose-600 font-bold text-xs shadow-2xs transition';
-                bG.className = 'flex items-center justify-center gap-2 py-2.5 rounded-xl border border-gray-200 bg-white text-gray-400 font-bold text-xs transition';
-            }
+            const selected = window.getReviewRatingMeta(r).id;
+            document.getElementById('feed-item-edit-rating').value = selected;
+            window.renderReviewRatingChoices('feed-edit-rating-options', 'selectFeedEditRating', selected);
         };
 
         window.saveFeedItemEdit = async function() {
@@ -5670,6 +5676,9 @@
 
             if (!newContent) {
                 return window.showCustomMsg("⚠️ 請填寫評價心得與留言喔！\n\n不可無憑無據留下評價，請至少分享一句您的用餐體驗或推薦心得 🙏");
+            }
+            if (!window.isValidReviewRating(newRating)) {
+                return window.showCustomMsg('⚠️ 請先選擇一個評價等級。');
             }
 
             const btn = document.getElementById('feed-item-save-btn');
@@ -6273,7 +6282,7 @@
 
                 // 4. 一般評價動態卡片 (依群組提供專屬色彩外框與樣式)
                 const isHost = item.creator === '黃政誥' || item.group === '主揪';
-                const isGood = item.rating === 'good';
+                const ratingMeta = window.getReviewRatingMeta(item.rating);
                 const theme = window.getGroupColorTheme(item.group);
                 const userLevelInfo = window.getUserLevel(item.creator);
                 
@@ -6318,9 +6327,7 @@
                     </div>`;
                 }).join('');
                 
-                const badgeRating = isGood 
-                    ? `<span class="inline-flex items-center gap-1 bg-emerald-500 text-white px-2.5 py-1 rounded-full font-bold text-[11px] shadow-sm shrink-0"><i class="fa-solid fa-thumbs-up text-[10px]"></i> 推爆</span>` 
-                    : `<span class="inline-flex items-center gap-1 bg-rose-500 text-white px-2.5 py-1 rounded-full font-bold text-[11px] shadow-sm shrink-0"><i class="fa-solid fa-thumbs-down text-[10px]"></i> 避雷</span>`;
+                const badgeRating = `<span class="inline-flex items-center gap-1 ${ratingMeta.badge} px-2.5 py-1 rounded-full font-bold text-[11px] shadow-sm shrink-0"><i class="fa-solid ${ratingMeta.icon} text-[10px]"></i> ${ratingMeta.label}</span>`;
 
                 const cardStyle = `${theme.border} ${theme.bg}`;
                 const avatarInfo = window.getAvatarInfo({ creator: item.creator, ...item });
@@ -7263,18 +7270,10 @@
         };
 
         window.selectInputReviewRating = function(rating) {
+            const selected = window.getReviewRatingMeta(rating).id;
             const valInput = document.getElementById('input-review-rating-value');
-            if (valInput) valInput.value = rating;
-            const btnGood = document.getElementById('input-btn-rating-good');
-            const btnBad = document.getElementById('input-btn-rating-bad');
-
-            if (rating === 'good') {
-                if (btnGood) btnGood.className = "flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 border-emerald-400 bg-emerald-50 text-emerald-600 font-bold text-xs shadow-2xs transition";
-                if (btnBad) btnBad.className = "flex items-center justify-center gap-2 py-2.5 rounded-xl border border-gray-200 bg-white text-gray-400 font-bold text-xs transition";
-            } else {
-                if (btnGood) btnGood.className = "flex items-center justify-center gap-2 py-2.5 rounded-xl border border-gray-200 bg-white text-gray-400 font-bold text-xs transition";
-                if (btnBad) btnBad.className = "flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 border-rose-400 bg-rose-50 text-rose-600 font-bold text-xs shadow-2xs transition";
-            }
+            if (valInput) valInput.value = selected;
+            window.renderReviewRatingChoices('input-review-rating-options', 'selectInputReviewRating', selected);
         };
 
         window.renderInputReviewPhotosGrid = function() {
@@ -7487,8 +7486,8 @@
                 const reviewNotes = document.getElementById('input-review-notes')?.value.trim() || '';
                 const reviewRating = document.getElementById('input-review-rating-value')?.value || 'good';
                 const wantsReview = isAddReviewExpanded || Boolean(reviewNotes) || inputReviewPhotos.length > 0;
-                if (wantsReview && reviewRating !== 'good' && reviewRating !== 'bad') {
-                    return window.showCustomMsg('⚠️ 請選擇「推爆好店」或「避雷提醒」後再發布評價。');
+                if (wantsReview && !window.isValidReviewRating(reviewRating)) {
+                    return window.showCustomMsg('⚠️ 請先選擇一個評價等級再發布。');
                 }
                 if (wantsReview && !reviewNotes) {
                     return window.showCustomMsg('⚠️ 請填寫評價心得後再發布，正向與負面評價都需要文字說明。');
@@ -7629,7 +7628,7 @@
 
                 window.closeModal('add-restaurant-modal');
                 window.showCustomMsg(duplicateRestaurant
-                    ? `✅ 已成功發布「${nameVal}」的${reviewRating === 'bad' ? '避雷' : '推爆'}評價！`
+                    ? `✅ 已成功發布「${nameVal}」的${window.getReviewRatingMeta(reviewRating).label}評價！`
                     : `✨ 太棒了！「${nameVal}」已成功存入口袋名單${wantsReview ? '，評價也已同步發布至動態牆！' : '。'}`);
                 document.getElementById('add-form')?.reset(); 
                 inputReviewPhotos = [];
