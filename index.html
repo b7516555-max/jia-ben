@@ -4867,7 +4867,7 @@
         }
 
         async function syncToGoogleSheets(sheetName, data) {
-            if (!GAS_API_URL) return;
+            if (!GAS_API_URL) return false;
             try {
                 await fetch(GAS_API_URL, {
                     method: 'POST',
@@ -4875,8 +4875,10 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ action: 'add', sheetName: sheetName, data: data })
                 });
+                return true;
             } catch (e) {
                 console.error("Sheets Sync Error:", e);
+                return false;
             }
         }
 
@@ -4941,27 +4943,41 @@
                             lat: (typeof pData.lat === 'number' && !isNaN(pData.lat)) ? pData.lat : null, 
                             lng: (typeof pData.lng === 'number' && !isNaN(pData.lng)) ? pData.lng : null, 
                             photoUrl: primaryPhoto || '', 
-                            photos: Array.isArray(finalPhotos) ? finalPhotos : [] 
+                            photos: Array.isArray(finalPhotos) ? finalPhotos : [],
+                            avatarId: window.myIdentity?.avatarId || '',
+                            customAvatarUrl: window.myIdentity?.customAvatarUrl || ''
                         };
 
-                        try { syncToGoogleSheets('Feed', reviewItem); } catch(sheetErr) { console.warn("Google Sheets 備份異常 (忽略):", sheetErr); }
-
                         let savedToCloud = false;
+                        let cloudError = null;
                         if(db && currentUser) {
                             try {
                                 await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'feed'), { ...reviewItem, timestamp: serverTimestamp() });
                                 savedToCloud = true;
                             } catch(cloudErr) {
-                                console.warn("Firebase 儲存失敗，轉為本機快取與展示同步:", cloudErr);
+                                cloudError = cloudErr;
+                                console.warn("Firebase 儲存失敗，改由 Google Sheets 持久化備援:", cloudErr);
                             }
                         }
 
+                        // Google Sheets 是跨帳號持久化備援；一般成員即使被 Firestore 規則拒絕也能留下評價。
+                        const savedToSheet = await syncToGoogleSheets('Feed', reviewItem);
+                        if (!savedToCloud && !savedToSheet) {
+                            throw cloudError || new Error('No review persistence channel is available');
+                        }
+
                         if (!savedToCloud) {
+                            if (!Array.isArray(window.feedData)) window.feedData = [];
                             window.feedData.unshift({ id: Date.now().toString(), ...reviewItem, timestamp: { seconds: Date.now()/1000 } });
                         }
 
-                        window.renderFeed();
-                        window.switchTab('feed');
+                        // 畫面更新失敗不應把已完成的雲端儲存誤報為「儲存失敗」。
+                        try {
+                            window.renderFeed();
+                            window.switchTab('feed');
+                        } catch(renderErr) {
+                            console.warn("評價已保存，但動態牆即時更新失敗；等待即時同步重新載入:", renderErr);
+                        }
                         window.showCustomMsg(`✅ 評價已成功發布！(${finalPhotos.length > 0 ? `附帶 ${finalPhotos.length} 張照片` : '無照片'})`);
                         
                         // 🌟 檢查是否晉階並發布公告
