@@ -7468,6 +7468,11 @@
 
         window.submitForm = async function(e) {
             if (e && e.preventDefault) e.preventDefault();
+            if (!window.isMemberSignedIn()) {
+                window.requireIdentity(() => window.submitForm());
+                return;
+            }
+
             const btn = document.getElementById('submit-btn'); 
             const originalText = btn ? btn.innerHTML : '存入口袋名單'; 
             if (btn) { btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> 寫入中...'; btn.disabled = true; }
@@ -7479,7 +7484,17 @@
                     return window.showCustomMsg("請輸入餐廳店名喔！");
                 }
 
-                // 🌟 自動阻擋重複新增店家（全域比對是否已被其他成員或自己新增過）
+                const reviewNotes = document.getElementById('input-review-notes')?.value.trim() || '';
+                const reviewRating = document.getElementById('input-review-rating-value')?.value || 'good';
+                const wantsReview = isAddReviewExpanded || Boolean(reviewNotes) || inputReviewPhotos.length > 0;
+                if (wantsReview && reviewRating !== 'good' && reviewRating !== 'bad') {
+                    return window.showCustomMsg('⚠️ 請選擇「推爆好店」或「避雷提醒」後再發布評價。');
+                }
+                if (wantsReview && !reviewNotes) {
+                    return window.showCustomMsg('⚠️ 請填寫評價心得後再發布，正向與負面評價都需要文字說明。');
+                }
+
+                // 已存在的店家仍可直接新增評價，只阻擋重複建立店家資料。
                 const normName = nameVal.toLowerCase().replace(/\s+/g, '');
                 const duplicateRestaurant = (window.restaurantData || []).find(r => {
                     if (!r.name) return false;
@@ -7487,7 +7502,7 @@
                     return rNorm === normName || r.name === nameVal;
                 });
 
-                if (duplicateRestaurant) {
+                if (duplicateRestaurant && !wantsReview) {
                     if (btn) { btn.innerHTML = originalText; btn.disabled = false; }
                     const adderGroup = duplicateRestaurant.group || '其他';
                     const adderName = duplicateRestaurant.creator || '朋友';
@@ -7498,10 +7513,8 @@
                 let cityVal = document.getElementById('input-city').value;
                 if (!cityVal) cityVal = "台北市";
 
-                let groupVal = document.getElementById('input-group').value;
-                let creatorVal = document.getElementById('input-creator').value;
-                if (!groupVal || groupVal === '(無成員)') groupVal = (window.appConfig && window.appConfig.groups && window.appConfig.groups[0]) || "未分類";
-                if (!creatorVal || creatorVal === '(無成員)') creatorVal = "黃政誥";
+                const groupVal = window.myIdentity.group || '未分類';
+                const creatorVal = window.myIdentity.name;
 
                 let mapLink = document.getElementById('input-map').value.trim();
                 if (!mapLink) {
@@ -7523,45 +7536,37 @@
 
                 const newDoc = {
                     name: nameVal,
-                    country: countryVal,
-                    city: cityVal, 
+                    country: duplicateRestaurant?.country || countryVal,
+                    city: duplicateRestaurant?.city || cityVal,
                     hours: "", 
-                    mapLink: mapLink, 
-                    category: categoryVal, 
+                    mapLink: duplicateRestaurant?.mapLink || mapLink,
+                    category: duplicateRestaurant?.category || categoryVal,
                     status: "想去", 
                     notes: "",
                     lat: latVal, 
                     lng: lngVal, 
-                    placeId: placeIdVal, 
+                    placeId: duplicateRestaurant?.placeId || placeIdVal,
                     rating: ratingVal, 
                     photoUrl: window.isGoogleMapsPhotoUrl(photoVal) ? "" : photoVal,
                     group: groupVal, 
                     creator: creatorVal 
                 };
                 
-                syncToGoogleSheets('Restaurants', newDoc);
-                
-                if (db && currentUser) { 
-                    try {
-                        await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'restaurants'), { ...newDoc, timestamp: serverTimestamp() }); 
-                    } catch(dbErr) {
-                        console.error("Firestore write error:", dbErr);
+                if (!duplicateRestaurant) {
+                    await syncToGoogleSheets('Restaurants', newDoc);
+                    if (db && currentUser) {
+                        try {
+                            await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'restaurants'), { ...newDoc, timestamp: serverTimestamp() });
+                        } catch(dbErr) {
+                            console.error("Firestore write error:", dbErr);
+                        }
                     }
-                } 
-                
-                const tempId = Date.now().toString();
-                const existingIdx = window.restaurantData.findIndex(r => r.name === newDoc.name && r.creator === newDoc.creator && r.group === newDoc.group);
-                if (existingIdx >= 0) {
-                    window.restaurantData.splice(existingIdx, 1);
+                    const tempId = Date.now().toString();
+                    window.restaurantData.unshift({ id: tempId, ...newDoc, timestamp: { seconds: Date.now() / 1000 } });
                 }
-                // 🌟 最新新增的餐廳排序在最上方
-                window.restaurantData.unshift({ id: tempId, ...newDoc, timestamp: { seconds: Date.now() / 1000 } });
 
                 // 🌟 如果有展開「同步新增評價」
-                const reviewNotes = document.getElementById('input-review-notes')?.value.trim() || '';
-                const reviewRating = document.getElementById('input-review-rating-value')?.value || 'good';
-                
-                if (isAddReviewExpanded || reviewNotes || inputReviewPhotos.length > 0) {
+                if (wantsReview) {
                     const finalReviewPhotos = [];
                     if (inputReviewPhotos.length > 0) {
                         if (btn) btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-2"></i> 上傳評價照片中 (${inputReviewPhotos.length} 張)...`;
@@ -7587,28 +7592,45 @@
                         group: groupVal,
                         creator: creatorVal,
                         rating: reviewRating,
-                        content: reviewNotes || `推薦了這家美味口袋好店：${nameVal}！`,
-                        city: cityVal,
-                        country: countryVal,
-                        placeId: placeIdVal,
-                        mapLink: mapLink,
+                        content: reviewNotes,
+                        city: newDoc.city,
+                        country: newDoc.country,
+                        placeId: newDoc.placeId,
+                        mapLink: newDoc.mapLink,
                         lat: latVal,
                         lng: lngVal,
                         photoUrl: primaryPhoto,
-                        photos: finalReviewPhotos
+                        photos: finalReviewPhotos,
+                        avatarId: window.getAvatarInfo(window.myIdentity).avatarId || '',
+                        customAvatarUrl: window.getAvatarInfo(window.myIdentity).customUrl || ''
                     };
 
-                    syncToGoogleSheets('Feed', reviewItem);
+                    let savedReviewToCloud = false;
+                    let reviewCloudError = null;
                     if (db && currentUser) {
-                        await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'feed'), { ...reviewItem, timestamp: serverTimestamp() });
-                    } else {
+                        try {
+                            await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'feed'), { ...reviewItem, timestamp: serverTimestamp() });
+                            savedReviewToCloud = true;
+                        } catch (cloudErr) {
+                            reviewCloudError = cloudErr;
+                            console.warn('內嵌評價 Firebase 寫入失敗，改用 Google Sheets 備援:', cloudErr);
+                        }
+                    }
+                    const savedReviewToSheet = await syncToGoogleSheets('Feed', reviewItem);
+                    if (!savedReviewToCloud && !savedReviewToSheet) {
+                        throw reviewCloudError || new Error('無可用的評價保存管道');
+                    }
+                    if (!savedReviewToCloud) {
+                        if (!Array.isArray(window.feedData)) window.feedData = [];
                         window.feedData.unshift({ id: Date.now().toString(), ...reviewItem, timestamp: { seconds: Date.now() / 1000 } });
                     }
-                    window.renderFeed();
+                    try { window.renderFeed(); } catch (renderErr) { console.warn('評價已保存，等待動態牆同步:', renderErr); }
                 }
 
                 window.closeModal('add-restaurant-modal');
-                window.showCustomMsg(`✨ 太棒了！「${nameVal}」已成功存入口袋名單${(isAddReviewExpanded || reviewNotes || inputReviewPhotos.length > 0) ? '，評價也已同步發布至動態牆！' : '。'}`); 
+                window.showCustomMsg(duplicateRestaurant
+                    ? `✅ 已成功發布「${nameVal}」的${reviewRating === 'bad' ? '避雷' : '推爆'}評價！`
+                    : `✨ 太棒了！「${nameVal}」已成功存入口袋名單${wantsReview ? '，評價也已同步發布至動態牆！' : '。'}`);
                 document.getElementById('add-form')?.reset(); 
                 inputReviewPhotos = [];
                 isAddReviewExpanded = false;
