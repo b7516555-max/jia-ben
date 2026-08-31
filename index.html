@@ -4937,7 +4937,9 @@
                 await fetch(GAS_API_URL, {
                     method: 'POST',
                     mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/json' },
+                    // no-cors 僅允許 simple request headers。使用 application/json
+                    // 會讓一般成員在 Firestore 備援至 GAS 時直接觸發 TypeError。
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                     body: JSON.stringify({ action: 'add', sheetName: sheetName, data: data })
                 });
                 return true;
@@ -4988,8 +4990,6 @@
                 }
 
                 if (btn) { btn.innerHTML = originalBtnHtml; btn.disabled = false; }
-                window.closeModal('interaction-modal');
-                pendingInteraction = null;
 
                 try {
                     if(pType === 'review') {
@@ -5046,6 +5046,8 @@
                         } catch(renderErr) {
                             console.warn("評價已保存，但動態牆即時更新失敗；等待即時同步重新載入:", renderErr);
                         }
+                        window.closeModal('interaction-modal');
+                        pendingInteraction = null;
                         window.showCustomMsg(`✅ 評價已成功發布！(${finalPhotos.length > 0 ? `附帶 ${finalPhotos.length} 張照片` : '無照片'})`);
                         
                         // 🌟 檢查是否晉階並發布公告
@@ -5089,6 +5091,8 @@
 
                         window.renderList();
                         if (typeof window.renderAdminDataList === 'function') window.renderAdminDataList();
+                        window.closeModal('interaction-modal');
+                        pendingInteraction = null;
                         window.showCustomMsg(`❤️ 「${pData.name}」已成功收進口袋名單！`);
                         // 🌟 檢查是否晉階並發布公告
                         try {
@@ -5099,7 +5103,8 @@
                     }
                 } catch (e) {
                     console.error("寫入錯誤:", e);
-                    window.showCustomMsg('❌ 儲存失敗！請檢查連線。');
+                    const errorDetail = e && e.message ? `\n\n錯誤原因：${e.message}` : '';
+                    window.showCustomMsg(`❌ 評價儲存失敗，請稍後再試。${errorDetail}`);
                 }
             });
         };
