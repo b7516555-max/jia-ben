@@ -173,6 +173,23 @@
             #explore-results-container, #nearby-container { grid-template-columns: 1fr !important; gap: 1rem !important; }
         }
         @media (min-width: 768px) { .tab-btn.active { background-color: #fff7ed; border-radius: 1rem; } }
+        @media (min-width: 768px) {
+            /* 動態卡片內容高度不同；每列按最高內容自然撐開，避免卡片跨列重疊。 */
+            #feed-container {
+                grid-auto-flow: row !important;
+                grid-auto-rows: max-content !important;
+                align-items: start !important;
+                align-content: start !important;
+            }
+            #feed-container > * {
+                min-width: 0 !important;
+                width: 100% !important;
+                height: auto !important;
+                min-height: 0 !important;
+                align-self: start !important;
+                position: relative !important;
+            }
+        }
         .tab-btn.active i { transform: scale(1.15); transition: 0.3s; }
         .fade-in { animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
@@ -3396,13 +3413,23 @@
             const total = [...String(name)].reduce((sum, char) => sum + char.codePointAt(0), 0);
             return FOODIE_AVATARS[total % FOODIE_AVATARS.length].id;
         };
+        window.getUsableCustomAvatarUrl = function(value) {
+            if (typeof value !== 'string') return '';
+            const normalized = value.trim();
+            if (!normalized || /^(?:null|undefined|custom)$/i.test(normalized)) return '';
+            if (/^data:image\//i.test(normalized)) return normalized;
+            if (/^https?:\/\//i.test(normalized)) return normalized;
+            if (/^[a-zA-Z0-9_-]{20,}$/.test(normalized)) return normalized;
+            return '';
+        };
         window.getAvatarInfo = function(item = {}) {
             // 回傳 { isCustom: boolean, customUrl: string, avatarId: string }
             const targetName = item.creator || item.name || '';
             
             // 1. 如果傳入的物件本身就有指定
-            if (item.customAvatarUrl) {
-                return { isCustom: true, customUrl: item.customAvatarUrl, avatarId: 'custom' };
+            const itemCustomAvatar = window.getUsableCustomAvatarUrl(item.customAvatarUrl);
+            if (itemCustomAvatar) {
+                return { isCustom: true, customUrl: itemCustomAvatar, avatarId: 'custom' };
             }
             if (item.avatarId && FOODIE_AVATARS.some(a => a.id === item.avatarId)) {
                 return { isCustom: false, customUrl: '', avatarId: item.avatarId };
@@ -3410,8 +3437,9 @@
 
             // 2. 如果是當前使用者本人的身分
             if (window.myIdentity?.name === targetName) {
-                if (window.myIdentity.customAvatarUrl) {
-                    return { isCustom: true, customUrl: window.myIdentity.customAvatarUrl, avatarId: 'custom' };
+                const identityCustomAvatar = window.getUsableCustomAvatarUrl(window.myIdentity.customAvatarUrl);
+                if (identityCustomAvatar) {
+                    return { isCustom: true, customUrl: identityCustomAvatar, avatarId: 'custom' };
                 }
                 if (window.myIdentity.avatarId && FOODIE_AVATARS.some(a => a.id === window.myIdentity.avatarId)) {
                     return { isCustom: false, customUrl: '', avatarId: window.myIdentity.avatarId };
@@ -3421,8 +3449,9 @@
             // 3. 從全域雲端設定的 memberAvatars 中尋找 (跨裝置、所有用戶即時共享)
             if (targetName && window.appConfig?.memberAvatars && window.appConfig.memberAvatars[targetName]) {
                 const confAvatar = window.appConfig.memberAvatars[targetName];
-                if (confAvatar.customAvatarUrl) {
-                    return { isCustom: true, customUrl: confAvatar.customAvatarUrl, avatarId: 'custom' };
+                const configuredCustomAvatar = window.getUsableCustomAvatarUrl(confAvatar.customAvatarUrl);
+                if (configuredCustomAvatar) {
+                    return { isCustom: true, customUrl: configuredCustomAvatar, avatarId: 'custom' };
                 }
                 if (confAvatar.avatarId && FOODIE_AVATARS.some(a => a.id === confAvatar.avatarId)) {
                     return { isCustom: false, customUrl: '', avatarId: confAvatar.avatarId };
@@ -3433,8 +3462,9 @@
             if (targetName && Array.isArray(window.feedData)) {
                 const foundWelcome = window.feedData.find(f => f.creator === targetName && (f.customAvatarUrl || f.avatarId));
                 if (foundWelcome) {
-                    if (foundWelcome.customAvatarUrl) {
-                        return { isCustom: true, customUrl: foundWelcome.customAvatarUrl, avatarId: 'custom' };
+                    const historicalCustomAvatar = window.getUsableCustomAvatarUrl(foundWelcome.customAvatarUrl);
+                    if (historicalCustomAvatar) {
+                        return { isCustom: true, customUrl: historicalCustomAvatar, avatarId: 'custom' };
                     }
                     if (foundWelcome.avatarId && FOODIE_AVATARS.some(a => a.id === foundWelcome.avatarId)) {
                         return { isCustom: false, customUrl: '', avatarId: foundWelcome.avatarId };
