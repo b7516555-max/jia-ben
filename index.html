@@ -4388,6 +4388,13 @@
                     return true;
                 });
             }
+            
+            window.initInteraction = function(type, pDStr) {
+                const pD = typeof pDStr === 'string' ? JSON.parse(pDStr) : pDStr;
+                pendingInteraction = { type: type, placeData: pD };
+                // Open interaction modal directly – no admin/identity gating needed
+                openInteractionModal();
+            };
 
             res = res.sort((a, b) => {
                 if (a.openStatus !== b.openStatus) return b.openStatus - a.openStatus; 
@@ -4680,12 +4687,12 @@
             window.initInteraction('review', placeData);
         };
 
-        window.initInteraction = function(type, pDStr) { 
+        window.initInteraction = function(type, pDStr) {
             const pD = typeof pDStr === 'string' ? JSON.parse(pDStr) : pDStr;
-            pendingInteraction = { type: type, placeData: pD }; 
-            window.requireIdentity(() => {
-                openInteractionModal();
-            });
+            pendingInteraction = { type: type, placeData: pD };
+            // Open interaction modal directly – no admin/identity gating needed
+            openInteractionModal();
+        };
         };
         window.selectIntRating = function(v) { document.getElementById('int-rating-value').value = v; const bG = document.getElementById('btn-rating-good'); const bB = document.getElementById('btn-rating-bad'); if(v === 'good') { bG.classList.add('bg-emerald-50','border-emerald-400','text-emerald-600'); bB.classList.remove('bg-red-50','border-red-400','text-red-600'); } else { bB.classList.add('bg-red-50','border-red-400','text-red-600'); bG.classList.remove('bg-emerald-50','border-emerald-400','text-emerald-600'); } };
         
