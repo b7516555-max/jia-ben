@@ -3381,8 +3381,17 @@
             window.shareToLine(encodeURIComponent(text));
         };
 
+        window.isMemberSignedIn = function() {
+            return Boolean(window.myIdentity && typeof window.myIdentity.name === 'string' && window.myIdentity.name.trim());
+        };
         window.requireIdentity = function(callback) {
-            if (window.myIdentity.name !== '') { callback(); } else { pendingPartyAction = callback; updateConfigDropdowns(); window.renderAvatarPicker('host'); document.getElementById('identity-modal').classList.remove('hidden'); }
+            if (window.isMemberSignedIn()) {
+                return callback();
+            }
+            pendingPartyAction = callback;
+            updateConfigDropdowns();
+            window.renderAvatarPicker(window.getDefaultAvatarId('新朋友'));
+            document.getElementById('identity-modal').classList.remove('hidden');
         };
         window.openIdentityModal = function() {
             updateConfigDropdowns();
@@ -4717,10 +4726,17 @@
         };
 
         window.initInteraction = function(type, pDStr) {
-            const pD = typeof pDStr === 'string' ? JSON.parse(pDStr) : pDStr;
-            pendingInteraction = { type: type, placeData: pD };
-            // All members may open the review/save dialog; submission still records their member identity.
-            openInteractionModal();
+            let pD;
+            try {
+                pD = typeof pDStr === 'string' ? JSON.parse(pDStr) : pDStr;
+            } catch (parseErr) {
+                console.error('評價店家資料解析失敗:', parseErr);
+                return window.showCustomMsg('⚠️ 無法讀取店家資料，請重新開啟店家後再試一次。');
+            }
+            window.requireIdentity(() => {
+                pendingInteraction = { type: type, placeData: pD || {} };
+                openInteractionModal();
+            });
         };
         window.selectIntRating = function(v) { document.getElementById('int-rating-value').value = v; const bG = document.getElementById('btn-rating-good'); const bB = document.getElementById('btn-rating-bad'); if(v === 'good') { bG.classList.add('bg-emerald-50','border-emerald-400','text-emerald-600'); bB.classList.remove('bg-red-50','border-red-400','text-red-600'); } else { bB.classList.add('bg-red-50','border-red-400','text-red-600'); bG.classList.remove('bg-emerald-50','border-emerald-400','text-emerald-600'); } };
         
@@ -4929,6 +4945,9 @@
             // 🌟 評價防呆驗證：不可無憑無據發布評價，必須填寫留言內容
             if (pType === 'review' && !n) {
                 return window.showCustomMsg("⚠️ 請填寫評價心得與留言喔！\n\n不可無憑無據留下評價，請至少分享一句您的用餐體驗或推薦心得 🙏");
+            }
+            if (pType === 'review' && rV !== 'good' && rV !== 'bad') {
+                return window.showCustomMsg('⚠️ 請選擇「推爆」或「避雷」後再發布評價。');
             }
 
             window.requireIdentity(async () => {
