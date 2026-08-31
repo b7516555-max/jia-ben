@@ -162,6 +162,9 @@
                 margin-bottom: 0 !important;
                 position: relative !important;
                 flex-shrink: 0 !important;
+                align-self: stretch !important;
+                box-sizing: border-box !important;
+                transform: none !important;
             }
             #feed-container > .feed-welcome-card {
                 height: auto !important;
@@ -174,20 +177,22 @@
         }
         @media (min-width: 768px) { .tab-btn.active { background-color: #fff7ed; border-radius: 1rem; } }
         @media (min-width: 768px) {
-            /* 動態卡片內容高度不同；每列按最高內容自然撐開，避免卡片跨列重疊。 */
+            /* 同一橫排以最高卡片為列高，所有欄位等高且不跨列。 */
             #feed-container {
                 grid-auto-flow: row !important;
-                grid-auto-rows: max-content !important;
-                align-items: start !important;
+                grid-auto-rows: auto !important;
+                align-items: stretch !important;
                 align-content: start !important;
             }
             #feed-container > * {
                 min-width: 0 !important;
                 width: 100% !important;
-                height: auto !important;
-                min-height: 0 !important;
-                align-self: start !important;
+                height: 100% !important;
+                min-height: 100% !important;
+                align-self: stretch !important;
                 position: relative !important;
+                box-sizing: border-box !important;
+                transform: none !important;
             }
         }
         .tab-btn.active i { transform: scale(1.15); transition: 0.3s; }
