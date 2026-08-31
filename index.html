@@ -180,20 +180,25 @@
             /* 同一橫排以最高卡片為列高，所有欄位等高且不跨列。 */
             #feed-container {
                 grid-auto-flow: row !important;
-                grid-auto-rows: auto !important;
+                /* 每一列先以該列最大內容高度定軌，避免圖片或字型載入後壓到下一列。 */
+                grid-auto-rows: max-content !important;
                 align-items: stretch !important;
                 align-content: start !important;
+                overflow-anchor: none;
             }
             #feed-container > * {
                 min-width: 0 !important;
                 width: 100% !important;
-                /* auto 高度參與 Grid 列高計算；禁止百分比高度造成循環壓縮。 */
+                /* 由內容撐開列高，再由 Grid 將同列卡片拉齊。 */
                 height: auto !important;
-                min-height: auto !important;
+                min-height: max-content !important;
                 align-self: stretch !important;
                 position: relative !important;
                 box-sizing: border-box !important;
                 transform: none !important;
+            }
+            #feed-container > * img {
+                max-width: 100%;
             }
         }
         .tab-btn.active i { transform: scale(1.15); transition: 0.3s; }
