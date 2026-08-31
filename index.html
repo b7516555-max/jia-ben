@@ -14,6 +14,9 @@
 
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Color+Emoji&display=swap" rel="stylesheet">
     <!-- 🌟 Google Maps API (強制綁定台灣地區語系) -->
     <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBdg7-gSShN3uf3vtF8vVbl4u_7FzWGejc&libraries=places&language=zh-TW&region=TW"></script>
     <script>
@@ -45,7 +48,7 @@
         }
 
         body {
-            font-family: 'PingFang TC', '微軟正黑體', sans-serif;
+            font-family: 'Noto Color Emoji', 'Apple Color Emoji', 'Segoe UI Emoji', 'PingFang TC', '微軟正黑體', sans-serif;
             background:
                 radial-gradient(circle at top left, rgba(251, 191, 36, 0.16) 0%, transparent 24%),
                 radial-gradient(circle at bottom right, rgba(249, 115, 22, 0.12) 0%, transparent 20%),
@@ -56,6 +59,13 @@
         input, select, textarea, button {
             box-sizing: border-box;
             max-width: 100%;
+            font-family: inherit;
+        }
+
+        /* 聊天與使用者輸入內容強制採用彩色 Emoji 字型，避免顯示成空白方框。 */
+        .emoji-text {
+            font-family: 'Noto Color Emoji', 'Apple Color Emoji', 'Segoe UI Emoji', 'PingFang TC', '微軟正黑體', sans-serif;
+            font-variant-emoji: emoji;
         }
 
         /* iOS Safari / WebKit 與 Android 日期時間輸入框防撐破與自適應外框 */
@@ -1913,7 +1923,7 @@
                     <div class="bg-white p-2.5 sm:p-3 border-t border-gray-100 shadow-[0_-4px_16px_rgba(0,0,0,0.03)] z-10">
                         <form onsubmit="window.sendChatMessage(event)" class="max-w-3xl mx-auto flex items-center gap-2">
                             <div class="flex-1 relative flex items-center bg-gray-50 border border-gray-200 rounded-2xl px-3 py-1.5 focus-within:border-orange-400 focus-within:bg-white transition">
-                                <input type="text" id="chat-input-text" placeholder="說點什麼吧… (隨時暢所欲言)" class="w-full bg-transparent text-xs sm:text-sm text-gray-800 placeholder-gray-400 focus:outline-none py-1" autocomplete="off">
+                                <input type="text" id="chat-input-text" placeholder="說點什麼吧… (隨時暢所欲言)" class="emoji-text w-full bg-transparent text-xs sm:text-sm text-gray-800 placeholder-gray-400 focus:outline-none py-1" autocomplete="off">
                             </div>
                             <button type="submit" id="chat-send-btn" class="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold px-4 py-2.5 rounded-2xl shadow-sm hover:shadow transition flex items-center gap-1.5 text-xs sm:text-sm shrink-0">
                                 <span>送出</span>
@@ -6571,7 +6581,7 @@
                                 ${window.formatGroupBadgeHtml(msg.group)}
                                 <span class="text-xs font-bold text-gray-700">${msg.creator}</span>
                             </div>
-                            <div class="bg-gradient-to-r from-orange-500 to-amber-500 text-white px-4 py-2.5 rounded-2xl rounded-tr-xs text-xs sm:text-sm font-medium shadow-xs break-words text-left leading-relaxed">
+                            <div class="emoji-text bg-gradient-to-r from-orange-500 to-amber-500 text-white px-4 py-2.5 rounded-2xl rounded-tr-xs text-xs sm:text-sm font-medium shadow-xs break-words text-left leading-relaxed">
                                 ${window.escapeHtml(msg.text)}
                             </div>
                         </div>
@@ -6588,7 +6598,7 @@
                                 <span class="bg-amber-50 text-amber-700 border border-amber-200 text-[9px] px-1.5 py-0.2 rounded font-bold" title="${lvlInfo.tierName} (Lv.${lvlInfo.level})">${lvlInfo.tierIcon} Lv.${lvlInfo.level}</span>
                                 ${window.formatGroupBadgeHtml(msg.group)}
                             </div>
-                            <div class="bg-white text-gray-800 border border-gray-200/80 px-4 py-2.5 rounded-2xl rounded-tl-xs text-xs sm:text-sm font-medium shadow-xs break-words leading-relaxed">
+                            <div class="emoji-text bg-white text-gray-800 border border-gray-200/80 px-4 py-2.5 rounded-2xl rounded-tl-xs text-xs sm:text-sm font-medium shadow-xs break-words leading-relaxed">
                                 ${window.escapeHtml(msg.text)}
                             </div>
                         </div>
