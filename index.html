@@ -4149,6 +4149,26 @@
             '美國': ['不限地區', '紐約', '洛杉磯', '舊金山', '西雅圖', '芝加哥', '拉斯維加斯', '夏威夷']
         };
 
+        // 從店名或地址安全辨識縣市；所有評價、搜尋與動態牆共用。
+        function extractCity(value) {
+            const text = String(value || '').replace(/臺/g, '台');
+            if (!text) return '';
+            const aliases = {
+                'New York': '紐約', 'Los Angeles': '洛杉磯', 'San Francisco': '舊金山',
+                'Seattle': '西雅圖', 'Chicago': '芝加哥', 'Las Vegas': '拉斯維加斯',
+                'Honolulu': '夏威夷', '서울특별시': '首爾特別市', '부산광역시': '釜山廣域市',
+                '인천광역시': '仁川廣域市', '대구광역시': '大邱廣域市', '제주특별자치도': '濟州特別自治道'
+            };
+            const alias = Object.keys(aliases).find(name => text.toLowerCase().includes(name.toLowerCase()));
+            if (alias) return aliases[alias];
+            const knownCities = Object.values(CITIES_BY_COUNTRY)
+                .flat()
+                .filter(city => city && !city.startsWith('不限'))
+                .sort((a, b) => b.length - a.length);
+            return knownCities.find(city => text.includes(city.replace(/臺/g, '台'))) || '';
+        }
+        window.extractCity = extractCity;
+
         window.setSelectValueWithFallback = function(selectEl, value) {
             if (!selectEl || !value) return false;
             if (!Array.from(selectEl.options).some(option => option.value === value)) selectEl.add(new Option(value, value));
