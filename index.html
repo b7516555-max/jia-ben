@@ -187,8 +187,9 @@
             #feed-container > * {
                 min-width: 0 !important;
                 width: 100% !important;
-                height: 100% !important;
-                min-height: 100% !important;
+                /* auto 高度參與 Grid 列高計算；禁止百分比高度造成循環壓縮。 */
+                height: auto !important;
+                min-height: auto !important;
                 align-self: stretch !important;
                 position: relative !important;
                 box-sizing: border-box !important;
