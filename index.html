@@ -2089,7 +2089,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp, doc, setDoc, getDoc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp, doc, setDoc, getDoc, getDocs, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         let deferredPrompt;
         const isInstalledApp = () => window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
@@ -4177,9 +4177,13 @@
             };
 
             window.jiaPlacesData = window.jiaPlacesData || [];
-            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'jiaPlaces'), (snap) => {
+            const jiaPlacesRef = collection(db, 'artifacts', appId, 'public', 'data', 'jiaPlaces');
+            getDocs(jiaPlacesRef).then(snap => {
                 window.jiaPlacesData = snap.docs.map(item => ({ jiaPlaceId: item.id, ...item.data() }));
-            }, handleSyncError);
+            }).catch(error => console.error('jiaPlaces 首次讀取失敗:', error));
+            onSnapshot(jiaPlacesRef, (snap) => {
+                window.jiaPlacesData = snap.docs.map(item => ({ jiaPlaceId: item.id, ...item.data() }));
+            }, error => console.error('jiaPlaces 即時同步失敗:', error));
             if (window.JiaPlaces) window.JiaPlaces.configureFirebase({
                 load: async () => window.jiaPlacesData || [],
                 commercialSearch: async () => [],
