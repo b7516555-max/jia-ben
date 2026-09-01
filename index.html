@@ -17,8 +17,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Color+Emoji&display=swap" rel="stylesheet">
-    <!-- 🌟 Google Maps API (強制綁定台灣地區語系) -->
-    <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD4h7JSPE9gRA3IV7ZauTgheGGSX9m0yCw&libraries=places&language=zh-TW&region=TW"></script>
+    <!-- OpenStreetMap / Nominatim 地點搜尋相容層（無需付費金鑰） -->
+    <script src="./osm-adapter.js?v=3"></script>
     <script>
         window.enterApp = function() {
             var intro = document.getElementById('intro-screen');
@@ -936,7 +936,7 @@
             </div>
             <div id="quick-review-search-wrap" class="relative">
                 <label class="block text-xs font-bold text-gray-600 mb-1.5">搜尋店家名稱</label>
-                <input id="quick-review-name" type="text" autocomplete="off" oninput="window.quickReviewPlaceData=null; window.searchQuickReviewPlace(this.value)" placeholder="例如：煦咖啡、附近拉麵店" class="w-full px-4 py-3 bg-orange-50/50 border border-orange-100 rounded-xl focus:outline-none focus:border-orange-400 text-sm font-bold text-gray-800">
+                <input id="quick-review-name" type="text" autocomplete="off" oninput="window.quickReviewPlaceData=null; document.getElementById('quick-review-suggestions').classList.add('hidden')" onkeydown="if(event.key==='Enter'){event.preventDefault(); window.searchQuickReviewPlace(this.value)}" placeholder="輸入店名後按 Enter 搜尋" class="w-full px-4 py-3 bg-orange-50/50 border border-orange-100 rounded-xl focus:outline-none focus:border-orange-400 text-sm font-bold text-gray-800">
                 <div id="quick-review-suggestions" class="hidden absolute z-20 left-0 right-0 top-full mt-1 max-h-52 overflow-y-auto bg-white border border-gray-100 rounded-2xl shadow-2xl"></div>
             </div>
             <p id="quick-review-status" class="text-[11px] text-gray-400 mt-2 min-h-[1rem]">找不到時也可以直接輸入店名發布評價。</p>
@@ -1085,7 +1085,7 @@
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-gray-600 mb-1">地點在哪？ *</label>
-                    <input type="text" id="party-location" required class="w-full px-3 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:border-orange-400 text-sm break-anywhere" placeholder="輸入餐廳名稱、地名或 Google Maps 網址">
+                    <input type="text" id="party-location" required class="w-full px-3 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:border-orange-400 text-sm break-anywhere" placeholder="輸入餐廳名稱、地名或 OpenStreetMap 網址">
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-gray-700 mb-1.5"><i class="fa-solid fa-image text-orange-500 mr-1"></i>活動封面照片 (選填)</label>
@@ -1168,7 +1168,7 @@
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-gray-600 mb-1">地點在哪？ *</label>
-                    <input type="text" id="edit-party-location" required class="w-full px-3 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:border-orange-400 text-sm break-anywhere" placeholder="輸入餐廳名稱、地名或 Google Maps 網址">
+                    <input type="text" id="edit-party-location" required class="w-full px-3 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:border-orange-400 text-sm break-anywhere" placeholder="輸入餐廳名稱、地名或 OpenStreetMap 網址">
                 </div>
 
                 <div>
@@ -1272,7 +1272,7 @@
             </div>
             
             <div class="p-4 md:p-5 overflow-y-auto no-scrollbar flex-1 bg-gray-50 space-y-3">
-                <!-- 🌟 Google 地圖評分與平均消費單價醒目標籤列 -->
+                <!-- 店家評分與平均消費單價標籤列 -->
                 <div class="flex items-center gap-2 flex-wrap">
                     <span id="detail-rating" onclick="window.showGoogleReviews()" class="text-orange-500 font-bold text-xs md:text-sm bg-orange-50 px-2.5 py-1 md:px-3 md:py-1.5 rounded-xl border border-orange-100 flex items-center shadow-2xs cursor-pointer hover:bg-orange-100 transition">
                         <i class="fa-solid fa-star mr-1 text-amber-400"></i> 4.5
@@ -1290,7 +1290,7 @@
                 <div class="bg-white p-3.5 rounded-2xl border border-gray-100 shadow-2xs">
                     <p class="text-xs font-bold text-gray-500 mb-2"><i class="fa-solid fa-circle-info mr-1"></i>店家基本資訊</p>
                     <div id="detail-place-info" class="space-y-1.5 text-xs sm:text-sm text-gray-600">
-                        <p class="text-xs text-gray-400"><i class="fa-solid fa-spinner fa-spin mr-1.5"></i>正在讀取 Google 店家資訊...</p>
+                        <p class="text-xs text-gray-400"><i class="fa-solid fa-spinner fa-spin mr-1.5"></i>正在讀取 OpenStreetMap 店家資訊...</p>
                     </div>
                     <details id="detail-hours-wrap" class="hidden mt-2 pt-2 border-t border-gray-100">
                         <summary class="text-xs font-bold text-gray-500 cursor-pointer select-none">查看每週營業時間</summary>
@@ -1299,7 +1299,7 @@
                 </div>
                 
                 <div class="grid grid-cols-2 gap-2.5 pt-1">
-                    <a id="detail-nav-btn" href="#" target="_blank" class="col-span-2 text-center bg-blue-500 text-white py-2.5 md:py-3 rounded-xl font-bold hover:bg-blue-600 transition shadow-sm tracking-wide flex items-center justify-center gap-2 text-sm"><i class="fa-solid fa-map-location-dot"></i> Google 地圖導航</a>
+                    <a id="detail-nav-btn" href="#" target="_blank" rel="noopener noreferrer" class="col-span-2 text-center bg-blue-500 text-white py-2.5 md:py-3 rounded-xl font-bold hover:bg-blue-600 transition shadow-sm tracking-wide flex items-center justify-center gap-2 text-sm"><i class="fa-solid fa-map-location-dot"></i> OpenStreetMap 地圖</a>
                     
                     <button id="detail-review-btn" class="bg-white text-gray-700 font-bold py-2.5 md:py-3 rounded-xl border border-gray-200 hover:bg-gray-50 transition shadow-sm flex items-center justify-center gap-2 text-xs sm:text-sm"><i class="fa-solid fa-comment-dots text-orange-400"></i> 寫評價</button>
                     
@@ -1309,13 +1309,13 @@
         </div>
     </div>
 
-    <!-- 🌟 Google 評論彈出視窗 (Reviews Modal) -->
+    <!-- 店家評分摘要視窗 -->
     <div id="google-reviews-modal" class="hidden fixed inset-0 z-[110] flex items-center justify-center bg-black/60 modal-backdrop fade-in">
         <div class="bg-white rounded-3xl w-11/12 max-w-lg shadow-2xl relative max-h-[85vh] flex flex-col overflow-hidden">
             <div class="flex items-center justify-between p-5 pb-3 border-b border-gray-100">
                 <div class="flex items-center gap-2">
-                    <i class="fa-brands fa-google text-blue-500 text-lg"></i>
-                    <h3 class="text-base font-extrabold text-gray-800">Google 評論</h3>
+                    <i class="fa-solid fa-map-location-dot text-blue-500 text-lg"></i>
+                    <h3 class="text-base font-extrabold text-gray-800">店家評分摘要</h3>
                     <span id="reviews-count-badge" class="bg-orange-100 text-orange-600 text-[10px] px-2 py-0.5 rounded-full font-bold"></span>
                 </div>
                 <button onclick="window.closeModal('google-reviews-modal')" class="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500 transition">
@@ -1332,13 +1332,13 @@
             <div id="reviews-list" class="flex-1 overflow-y-auto p-4 space-y-3">
                 <p class="text-center text-gray-400 text-sm py-6">載入中...</p>
             </div>
-            <!-- 底部：引導查看全部 Google 評論按鈕 -->
+            <!-- 底部：開啟 OSM 地點按鈕 -->
             <div class="p-3 bg-gray-50 border-t border-gray-100 flex flex-col items-center gap-1.5 shrink-0">
                 <a id="reviews-maps-btn" href="#" target="_blank" rel="noopener noreferrer" class="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2 shadow-xs transition">
                     <i class="fa-solid fa-arrow-up-right-from-square"></i>
-                    <span>在 Google 地圖查看全部評論</span>
+                    <span>在 OpenStreetMap 查看地點</span>
                 </a>
-                <p class="text-[10px] text-gray-400">※ Google API 官方限制僅回傳精選前 5 則，點擊上方按鈕可看全部</p>
+                <p class="text-[10px] text-gray-400">※ OpenStreetMap 提供協作地圖資料，不提供商業評分或評論內容。</p>
             </div>
         </div>
     </div>
@@ -1356,7 +1356,7 @@
             <form id="add-form" onsubmit="window.submitForm(event)">
                 <div class="relative w-full mb-4" id="admin-search-wrapper">
                     <label class="block text-xs font-bold text-orange-500 mb-1.5"><i class="fa-solid fa-wand-magic-sparkles mr-1"></i>智慧搜尋店名</label>
-                    <input type="text" id="input-name" required autocomplete="off" class="w-full px-4 py-3 bg-orange-50/50 border border-orange-100 rounded-xl focus:ring-2 focus:ring-orange-300 text-gray-800 font-bold text-sm" placeholder="輸入店名搜尋..." oninput="window.smartPlaceSelected=false; window.adminSearchPlace(this.value)" onfocus="window.adminSearchPlace(this.value)">
+                    <input type="text" id="input-name" required autocomplete="off" class="w-full px-4 py-3 bg-orange-50/50 border border-orange-100 rounded-xl focus:ring-2 focus:ring-orange-300 text-gray-800 font-bold text-sm" placeholder="輸入店名後按 Enter 搜尋..." oninput="window.smartPlaceSelected=false; document.getElementById('admin-autocomplete-list').classList.add('hidden')" onkeydown="if(event.key==='Enter'){event.preventDefault(); window.adminSearchPlace(this.value)}">
                     <div id="admin-autocomplete-list" class="hidden absolute z-50 w-full bg-white border border-gray-100 shadow-2xl rounded-2xl mt-1 max-h-48 overflow-y-auto top-full left-0"></div>
                     <p id="smart-place-match-status" class="hidden text-[10px] font-bold mt-1.5 px-1"></p>
                 </div>
@@ -1397,8 +1397,8 @@
                         <div class="flex flex-col justify-center">
                             <label class="block text-[10px] text-gray-400 mb-1 font-bold"><i class="fa-solid fa-map-location-dot text-orange-500 mr-1"></i>店家照片來源</label>
                             <div class="flex items-center gap-2 bg-white px-3 py-2 border border-gray-200 rounded-xl text-xs text-gray-600 font-medium shadow-2xs">
-                                <i class="fa-brands fa-google text-orange-500 text-sm shrink-0"></i>
-                                <span class="text-[11px] text-gray-600">系統將自動配對 Google Maps 官方照片</span>
+                                <i class="fa-solid fa-camera text-orange-500 text-sm shrink-0"></i>
+                                <span class="text-[11px] text-gray-600">可自行上傳店家照片；OpenStreetMap 不提供商業照片</span>
                             </div>
                         </div>
                     </div>
@@ -2117,7 +2117,7 @@
             const feedContainer = document.getElementById('feed-container');
             if (feedContainer) {
                 feedContainer.addEventListener('click', (event) => {
-                    const restaurantLink = event.target.closest('a[href*="google.com/maps/search"]');
+                    const restaurantLink = event.target.closest('a[href*="openstreetmap.org/search"], a[href*="google.com/maps/search"]');
                     if (!restaurantLink || !feedContainer.contains(restaurantLink)) return;
                     event.preventDefault();
                     window.openRestaurantDetailByName(window.escapeForBtn(restaurantLink.textContent.trim()));
@@ -2190,14 +2190,6 @@
             } else {
                 window.openInstallGuide(isIOSDevice() ? 'ios' : 'android');
             }
-        };
-
-        const originalConsoleError = console.error;
-        console.error = function(...args) {
-            if (args[0] && typeof args[0] === 'string' && args[0].includes('LegacyApiNotActivatedMapError')) {
-                setTimeout(() => window.showCustomMsg("⚠️ Google 地圖 API 權限未開通！\n\n主揪請注意：系統偵測到您尚未啟用經典版的「Places API」。\n\n👉 請至 Google Cloud Console 搜尋並啟用「Places API」（注意：請勿選帶有 (New) 字樣的版本）。\n啟用後請等待 3~5 分鐘讓系統同步，即可正常運作！"), 800);
-            }
-            originalConsoleError.apply(console, args);
         };
 
         let db, auth, appId, currentUser = null;
@@ -2388,6 +2380,10 @@
 
         window.escapeForBtn = function(str) { return str ? encodeURIComponent(String(str)) : ''; };
 
+        window.getOsmSearchUrl = function(query) {
+            return `https://www.openstreetmap.org/search?query=${encodeURIComponent(String(query || '').trim())}`;
+        };
+
         // HTML 特殊字元跳脫防 XSS
         window.escapeHtml = function(str) {
             if (str === null || str === undefined) return '';
@@ -2412,7 +2408,7 @@
             }
         };
 
-        // 格式化地點顯示：長 URL 轉為「📍 查看地點 (Google Maps)」，一般文字則保留文字並附帶地圖搜尋連結
+        // 格式化地點顯示：保留舊地圖連結，新搜尋統一使用 OpenStreetMap。
         window.formatLocationDisplay = function(locationStr) {
             if (!locationStr) {
                 return '<span class="text-gray-400">未指定地點</span>';
@@ -2420,11 +2416,11 @@
             const loc = String(locationStr).trim();
             if (window.isValidUrl(loc)) {
                 const targetUrl = loc.startsWith('http') ? loc : `https://${loc}`;
-                const isGMap = /maps\.(google|app\.goo\.gl)|goo\.gl\/maps/i.test(loc);
-                const labelText = isGMap ? '📍 查看地點 (Google Maps)' : '📍 查看地點連結';
+                const isMap = /openstreetmap\.org|maps\.(google|app\.goo\.gl)|goo\.gl\/maps/i.test(loc);
+                const labelText = isMap ? '📍 查看地點' : '📍 查看地點連結';
                 return `<a href="${window.escapeHtml(targetUrl)}" target="_blank" rel="noopener noreferrer" class="text-blue-500 hover:text-blue-700 transition font-bold underline inline-flex items-center gap-1.5 break-anywhere" title="點擊開啟地圖或地點連結"><span>${window.escapeHtml(labelText)}</span> <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i></a>`;
             } else {
-                const searchUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(loc)}`;
+                const searchUrl = window.getOsmSearchUrl(loc);
                 return `<a href="${searchUrl}" target="_blank" rel="noopener noreferrer" class="text-blue-500 hover:text-blue-700 transition font-bold inline-block break-anywhere" title="點擊導航">${window.escapeHtml(loc)}</a>`;
             }
         };
@@ -2788,7 +2784,12 @@
                 };
 
                 if (placeId) {
-                    service.getDetails({ placeId: placeId, fields: ['opening_hours', 'business_status', 'photos'] }, applyResult);
+                    service.getDetails({ placeId: placeId, fields: ['opening_hours', 'business_status', 'photos'] }, (place, status) => {
+                        if (status === 'OK' && place) return applyResult(place, status);
+                        service.textSearch({ query: `${city || ''} ${name}` }, (results, searchStatus) => {
+                            applyResult(results && results[0], searchStatus);
+                        });
+                    });
                 } else {
                     service.textSearch({ query: `${city || ''} ${name}` }, (results, status) => {
                         if (status === 'OK' && results && results[0]) {
@@ -4338,7 +4339,7 @@
                 
                 k = [...locationParts, rawK || '餐廳'].join(' ');
                 cId = 'explore-results-container'; 
-                document.getElementById(cId).innerHTML = `<div class="text-center text-orange-400 py-10 col-span-full"><i class="fa-brands fa-google fa-bounce text-4xl mb-3"></i><p class="font-bold tracking-widest text-sm mt-2">為您搜尋 ${k} ...</p></div>`; 
+                document.getElementById(cId).innerHTML = `<div class="text-center text-orange-400 py-10 col-span-full"><i class="fa-solid fa-map-location-dot fa-bounce text-4xl mb-3"></i><p class="font-bold tracking-widest text-sm mt-2">透過 OpenStreetMap 搜尋 ${window.escapeHtml(k)} ...</p></div>`;
             } else {
                 k = document.getElementById('radar-keyword').value; if(!k.trim()) k = "餐廳"; cId = 'nearby-container';
                 const spinBtn = document.getElementById('radar-spin-btn');
@@ -4384,7 +4385,7 @@
                 return null;
             }
 
-            // 將用戶自訂的金額（NT$）轉換為 Google Maps 價位級距 (0: 免費, 1: <200, 2: 200~500, 3: 500~1000, 4: >1000)
+            // 將用戶自訂的金額（NT$）轉換為既有價位級距。
             const dollarToLevel = (dollars, isMax = false) => {
                 if (dollars === null) return null;
                 if (dollars <= 0) return 0;
@@ -4440,9 +4441,6 @@
                     new google.maps.places.PlacesService(document.createElement('div')).textSearch(request, (res, status) => { 
                         if (status === 'OK' && res.length > 0) { 
                             handleGoogleResults(res, vT, lat, lng); 
-                        } else if (status === 'REQUEST_DENIED') {
-                            window.showCustomMsg("⚠️ Google 地圖 API 權限錯誤！\n\n目前將暫時切換至展示模式。");
-                            useFallback(vT, lat, lng);
                         } else { 
                             displayNoResults(vT); 
                         } 
@@ -4682,7 +4680,7 @@
             window.currentRandomPlaceName = p.name;
             let rawImg = p.photos && p.photos.length > 0 ? p.photos[0].getUrl({maxWidth: 600}) : '';
             let img = window.getSafeImage(rawImg, p.name);
-            const mUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.name + ' ' + p.formatted_address)}`;
+            const mUrl = p.url || window.getOsmSearchUrl(`${p.name} ${p.formatted_address || ''}`);
             const cStr = extractCity(p.formatted_address);
             const openStatusInfo = window.computeOpeningStatus(p);
 
@@ -4736,12 +4734,13 @@
             const statusEl = document.getElementById('quick-review-status');
             if (!keyword.trim()) { list.classList.add('hidden'); statusEl.textContent = '找不到時也可以直接輸入店名發布評價。'; return; }
             if (typeof google === 'undefined' || !google.maps?.places) { statusEl.textContent = '智慧搜尋目前無法使用，可直接以輸入的店名繼續。'; return; }
+            statusEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i>正在搜尋 OpenStreetMap…';
             new google.maps.places.AutocompleteService().getPlacePredictions({ input: keyword }, (predictions, status) => {
                 if (status === 'OK' && predictions?.length) {
                     list.innerHTML = predictions.map(place => `<button type="button" onclick="window.selectQuickReviewPlace('${place.place_id}')" class="w-full text-left p-3 border-b border-gray-50 hover:bg-orange-50 transition"><span class="block text-sm font-bold text-gray-800">${window.escapeHtml(place.structured_formatting.main_text)}</span><span class="block text-[10px] text-gray-400 mt-0.5">${window.escapeHtml(place.structured_formatting.secondary_text || '')}</span></button>`).join('');
                     list.classList.remove('hidden'); statusEl.textContent = '請從建議中選擇正確店家。';
                 } else {
-                    list.classList.add('hidden'); statusEl.textContent = 'Google 找不到這間店，仍可直接使用目前輸入的店名。';
+                    list.classList.add('hidden'); statusEl.textContent = 'OpenStreetMap 找不到這間店，仍可直接使用目前輸入的店名。';
                 }
             });
         };
@@ -4764,7 +4763,7 @@
         window.continueQuickReview = function() {
             const typedName = document.getElementById('quick-review-name').value.trim();
             if (!typedName) return window.showCustomMsg('請先輸入想評價的店家名稱。');
-            const placeData = window.quickReviewPlaceData || { name: typedName, mapLink: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(typedName)}`, city: '未分類', country: '' };
+            const placeData = window.quickReviewPlaceData || { name: typedName, mapLink: window.getOsmSearchUrl(typedName), city: '未分類', country: '' };
             window.closeModal('quick-review-modal');
             window.initInteraction('review', placeData);
         };
@@ -4905,7 +4904,7 @@
                                 <p class="text-xs font-bold text-gray-800 truncate">${r.name}</p>
                                 <p class="text-[10px] text-gray-400 truncate">${r.city || '美食好店'} | ⭐ ${r.rating || '推薦'}</p>
                             </div>
-                            <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(r.name)}" target="_blank" class="text-orange-500 hover:text-orange-600 text-xs px-2 py-1 bg-orange-50 rounded-lg shrink-0 font-bold">
+                            <a href="${window.getOsmSearchUrl(r.name)}" target="_blank" rel="noopener noreferrer" class="text-orange-500 hover:text-orange-600 text-xs px-2 py-1 bg-orange-50 rounded-lg shrink-0 font-bold">
                                 地圖 <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i>
                             </a>
                         </div>
@@ -5042,7 +5041,7 @@
                             city: cityVal, 
                             country: countryVal, 
                             placeId: pData.placeId || '', 
-                            mapLink: pData.mapLink || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(pData.name || '美食')}`, 
+                            mapLink: pData.mapLink || window.getOsmSearchUrl(pData.name || '美食'),
                             lat: (typeof pData.lat === 'number' && !isNaN(pData.lat)) ? pData.lat : null, 
                             lng: (typeof pData.lng === 'number' && !isNaN(pData.lng)) ? pData.lng : null, 
                             photoUrl: primaryPhoto || '', 
@@ -6463,7 +6462,7 @@
 
                     <!-- 卡片下半部：店家名稱、照片相簿與評語 -->
                     <div class="bg-white/90 backdrop-blur-sm p-3.5 rounded-xl border border-gray-100/80 shadow-xs flex flex-col gap-2">
-                        <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.restaurantName)}" target="_blank" class="text-sm font-bold text-blue-600 hover:text-blue-700 flex items-center flex-wrap gap-1.5 transition break-all leading-snug">
+                        <a href="${window.getOsmSearchUrl(item.restaurantName)}" target="_blank" rel="noopener noreferrer" class="text-sm font-bold text-blue-600 hover:text-blue-700 flex items-center flex-wrap gap-1.5 transition break-all leading-snug">
                             <i class="fa-solid fa-location-dot text-orange-500 shrink-0"></i>
                             <span>${item.restaurantName}</span>
                             ${feedLocTag ? `<span class="inline-flex items-center text-[10px] font-bold text-orange-600 bg-orange-50 px-2 py-0.5 rounded-md border border-orange-100 shrink-0 ml-0.5"><i class="fa-solid fa-earth-asia mr-1 text-[9px] text-orange-400"></i>${feedLocTag}</span>` : ''}
@@ -6677,7 +6676,7 @@
 
             const matches = window.restaurantData.filter(item => item.name === name);
             const restaurant = matches[0] || {};
-            const mUrl = restaurant.mapLink || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(name)}`;
+            const mUrl = restaurant.mapLink || window.getOsmSearchUrl(name);
             const recommenders = [];
             matches.forEach(item => {
                 if (!recommenders.some(rec => rec.group === item.group && rec.creator === item.creator)) {
@@ -6705,7 +6704,7 @@
         };
 
         // 🌟 全新升級：口袋名單的「相簿風格」與「點擊展開詳情視窗」
-        // 🌟 口袋名單渲染 (支援自動非同步補抓 Google Maps 真實圖片)
+        // 口袋名單渲染（OSM 不提供商業照片，優先顯示使用者上傳圖片）
         window.renderList = function() {
             const container = document.getElementById('list-container');
             const countryVal = document.getElementById('list-country')?.value || 'all';
@@ -6753,43 +6752,7 @@
 
             const groupedArr = Array.from(groupedMap.values());
 
-            // 店家照片與營業狀態一律自 Google Maps 同步
-            groupedArr.forEach(item => {
-                const safeNameStr = window.escapeForBtn(item.name);
-                window.fetchRestaurantOpenStatus(item.placeId, item.name, item.city, (statusObj) => {
-                    const badgeContainer = document.getElementById(`list-status-${safeNameStr}`);
-                    if (badgeContainer && statusObj && statusObj.badgeHtml) {
-                        badgeContainer.innerHTML = statusObj.badgeHtml;
-                    }
-                });
-
-                if (typeof google !== 'undefined' && google.maps && google.maps.places) {
-                    try {
-                        const service = new google.maps.places.PlacesService(document.createElement('div'));
-                        const request = item.placeId ? { placeId: item.placeId, fields: ['photos', 'opening_hours', 'business_status'] } : null;
-                        const applyPhoto = (results, status) => {
-                            const place = Array.isArray(results) ? results[0] : results;
-                            if (status === 'OK' && place) {
-                                if (place.photos && place.photos.length > 0) {
-                                    const realPhotoUrl = place.photos[0].getUrl({ maxWidth: 600 });
-                                    item.photoUrl = realPhotoUrl;
-                                    const cardImgEl = document.getElementById(`list-img-${safeNameStr}`);
-                                    if (cardImgEl) cardImgEl.src = realPhotoUrl;
-                                }
-                                const statusObj = window.computeOpeningStatus(place);
-                                const badgeContainer = document.getElementById(`list-status-${safeNameStr}`);
-                                if (badgeContainer && statusObj && statusObj.badgeHtml) {
-                                    badgeContainer.innerHTML = statusObj.badgeHtml;
-                                }
-                            }
-                        };
-                        if (request) service.getDetails(request, applyPhoto);
-                        else service.textSearch({ query: `${item.city || ''} ${item.name}` }, (results, status) => {
-                            applyPhoto(results, status);
-                        });
-                    } catch(e){}
-                }
-            });
+            // 公開 Nominatim 不允許在清單渲染時批次查詢；店家詳細資料僅在使用者主動點開時讀取。
 
             container.innerHTML = groupedArr.map(i => {
                 const isH = i.recommenders.some(rec => rec.creator === '黃政誥');
@@ -6861,7 +6824,7 @@
             window.loadPlaceDetails(data);
             
             const navBtn = document.getElementById('detail-nav-btn');
-            if (navBtn) navBtn.href = data.mUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(data.name)}`;
+            if (navBtn) navBtn.href = data.mUrl || window.getOsmSearchUrl(data.name);
 
             const reviewBtn = document.getElementById('detail-review-btn');
             if (reviewBtn) {
@@ -6940,12 +6903,12 @@
             const infoEl = document.getElementById('detail-place-info');
             const hoursWrap = document.getElementById('detail-hours-wrap');
             const hoursEl = document.getElementById('detail-hours');
-            infoEl.innerHTML = '<p class="text-xs text-gray-400"><i class="fa-solid fa-spinner fa-spin mr-1.5"></i>正在讀取 Google 店家資訊...</p>';
+            infoEl.innerHTML = '<p class="text-xs text-gray-400"><i class="fa-solid fa-spinner fa-spin mr-1.5"></i>正在讀取 OpenStreetMap 店家資訊...</p>';
             hoursWrap.classList.add('hidden');
             hoursEl.innerHTML = '';
 
             if (typeof google === 'undefined' || !google.maps || !google.maps.places) {
-                infoEl.innerHTML = '<p class="text-xs text-gray-400">Google 店家資訊目前無法讀取。</p>';
+                infoEl.innerHTML = '<p class="text-xs text-gray-400">OpenStreetMap 店家資訊目前無法讀取。</p>';
                 return;
             }
 
@@ -6953,7 +6916,7 @@
             const fields = ['name', 'formatted_address', 'formatted_phone_number', 'opening_hours', 'price_level', 'website', 'business_status', 'photos', 'rating', 'user_ratings_total', 'reviews'];
             const showDetails = (place, status) => {
                 if (status !== 'OK' || !place) {
-                    infoEl.innerHTML = '<p class="text-xs text-gray-400">Google 尚未提供這間店的詳細資訊。</p>';
+                    infoEl.innerHTML = '<p class="text-xs text-gray-400">OpenStreetMap 尚未提供這間店的詳細資訊。</p>';
                     return;
                 }
                 if (place.photos && place.photos.length) {
@@ -6962,12 +6925,12 @@
                     detailImage.src = place.photos[0].getUrl({ maxWidth: 800 });
                 }
 
-                // 🌟 Google Maps 評分與評論數更新 — 點擊可顯示評論彈窗
+                // 保留既有歷史評分顯示；OSM 本身不提供商業評分。
                 const rating = place.rating || data.rating || 0;
                 const reviews = place.user_ratings_total || data.reviews || 0;
                 const detailRatingEl = document.getElementById('detail-rating');
                 
-                // 儲存 Google 評論資料供彈窗使用
+                // 儲存既有評分摘要資料供彈窗使用。
                 window._currentGoogleReviews = place.reviews || [];
                 window._currentPlaceRating = rating;
                 window._currentPlaceReviewCount = reviews;
@@ -6976,13 +6939,13 @@
                 
                 if (detailRatingEl) {
                     if (rating > 0) {
-                        detailRatingEl.innerHTML = `<i class="fa-solid fa-star mr-1 text-amber-400"></i> ${parseFloat(rating).toFixed(1)} <span class="text-gray-500 text-xs ml-1 font-normal">(${reviews} 則 Google 評價) <i class="fa-solid fa-chevron-right text-[10px] ml-0.5"></i></span>`;
+                        detailRatingEl.innerHTML = `<i class="fa-solid fa-star mr-1 text-amber-400"></i> ${parseFloat(rating).toFixed(1)} <span class="text-gray-500 text-xs ml-1 font-normal">(${reviews} 則歷史評價)</span>`;
                     } else {
                         detailRatingEl.innerHTML = `<span class="text-gray-400 text-xs">暫無評分</span>`;
                     }
                 }
 
-                // 🌟 Google Maps 平均單價 / 價位等級更新
+                // 平均單價 / 價位等級更新
                 const priceLabels = ['免費', '$（平價 · 約 $100~200）', '$$（中等 · 約 $200~500）', '$$$（偏高 · 約 $500~1000）', '$$$$（高價 · 約 $1000+）'];
                 const priceDesc = Number.isInteger(place.price_level) ? priceLabels[place.price_level] : (Number.isInteger(data.price_level) ? priceLabels[data.price_level] : '未提供');
                 const priceTextEl = document.getElementById('detail-price-text');
@@ -7016,7 +6979,12 @@
             };
 
             if (data.placeId) {
-                service.getDetails({ placeId: data.placeId, fields: fields }, showDetails);
+                service.getDetails({ placeId: data.placeId, fields: fields }, (place, status) => {
+                    if (status === 'OK' && place) return showDetails(place, status);
+                    service.textSearch({ query: `${data.city || ''} ${data.name}` }, (results, searchStatus) => {
+                        showDetails(results && results[0], searchStatus);
+                    });
+                });
             } else {
                 service.textSearch({ query: `${data.city || ''} ${data.name}` }, (results, status) => {
                     if (status !== 'OK' || !results || !results[0]) return showDetails(null, status);
@@ -7025,7 +6993,7 @@
             }
         };
 
-        // 🌟 顯示 Google 評論彈窗
+        // 顯示店家評分摘要彈窗
         window.showGoogleReviews = function() {
             const reviewsData = window._currentGoogleReviews || [];
             const avgRating = window._currentPlaceRating || 0;
@@ -7033,7 +7001,7 @@
             const placeName = window._currentPlaceName || '';
 
             if (!avgRating && reviewsData.length === 0) {
-                return window.showCustomMsg('此店家目前尚無 Google 評論資料。');
+                return window.showCustomMsg('OpenStreetMap 不提供商業評論；可查看本系統好友留下的評價。');
             }
 
             // 更新標題與外部按鈕連結
@@ -7044,8 +7012,8 @@
             if (mapsBtn) {
                 const pId = window._currentPlaceId;
                 mapsBtn.href = pId
-                    ? `https://www.google.com/maps/place/?q=place_id:${pId}`
-                    : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(placeName)}`;
+                    ? (String(pId).startsWith('osm:') ? `https://www.openstreetmap.org/${String(pId).slice(4, 5) === 'N' ? 'node' : String(pId).slice(4, 5) === 'W' ? 'way' : 'relation'}/${String(pId).slice(5)}` : window.getOsmSearchUrl(placeName))
+                    : window.getOsmSearchUrl(placeName);
             }
 
             // 星星顯示
@@ -7079,7 +7047,7 @@
                 listEl.innerHTML = `<div class="text-center py-8">
                     <i class="fa-solid fa-star text-4xl text-amber-300 mb-3 opacity-40"></i>
                     <p class="text-sm font-bold text-gray-500">此店家有 ${totalCount} 則評價</p>
-                    <p class="text-xs text-gray-400 mt-1">Google 僅提供最具參考性的前 5 筆評論摘要</p>
+                    <p class="text-xs text-gray-400 mt-1">OpenStreetMap 提供地圖資料，不提供商業評論內容</p>
                 </div>`;
             } else {
                 listEl.innerHTML = reviewsData
@@ -7557,7 +7525,7 @@
 
                 let mapLink = document.getElementById('input-map').value.trim();
                 if (!mapLink) {
-                    mapLink = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(cityVal + ' ' + nameVal)}`;
+                    mapLink = window.getOsmSearchUrl(`${cityVal} ${nameVal}`);
                 } else if (!mapLink.startsWith('http://') && !mapLink.startsWith('https://')) {
                     mapLink = 'https://' + mapLink;
                 }
@@ -7692,11 +7660,11 @@
             const list = document.getElementById('admin-autocomplete-list'); if(!k.trim()) return list.classList.add('hidden');
             if (typeof google !== 'undefined' && google.maps && google.maps.places) {
                 try {
+                    const matchStatus = document.getElementById('smart-place-match-status');
+                    if (matchStatus) { matchStatus.className = 'text-[10px] font-bold mt-1.5 px-1 text-blue-600'; matchStatus.textContent = '正在搜尋 OpenStreetMap…'; }
                     new google.maps.places.AutocompleteService().getPlacePredictions({ input: k }, (p, s) => {
                         if (s === 'OK' && p) { 
                             list.innerHTML = p.map(x => `<div onclick="window.selectAdminPlace('${x.place_id}')" class="p-4 border-b border-gray-50 text-sm font-bold text-gray-700 cursor-pointer hover:bg-orange-50 transition">${window.escapeHtml(x.structured_formatting.main_text)} <span class="text-[10px] text-gray-400 font-normal ml-2">${window.escapeHtml(x.structured_formatting.secondary_text)}</span></div>`).join(''); list.classList.remove('hidden');
-                        } else if (s === 'REQUEST_DENIED') {
-                            window.showCustomMsg("⚠️ 智慧建檔功能受限！\n請確認 Google Cloud 中是否啟用了經典版的「Places API」，而非「Places API (New)」。");
                         } else {
                             list.classList.add('hidden');
                             const matchStatus = document.getElementById('smart-place-match-status');
@@ -7727,10 +7695,10 @@
                             const matchStatus = document.getElementById('smart-place-match-status');
                             if (matchStatus) {
                                 matchStatus.className = `text-[10px] font-bold mt-1.5 px-1 ${category === '未分類' ? 'text-amber-600' : 'text-emerald-600'}`;
-                                matchStatus.textContent = category === '未分類' ? '已找到店家並帶入國家、縣市；Google 未提供明確類型，請手動確認分類。' : `已自動配對：${region.country || '國家未提供'}・${region.city || '縣市未提供'}・${category}`;
+                                matchStatus.textContent = category === '未分類' ? '已找到店家並帶入國家、縣市；OSM 未提供明確類型，請手動確認分類。' : `已自動配對：${region.country || '國家未提供'}・${region.city || '縣市未提供'}・${category}`;
                             }
                             if (p.photos && p.photos.length > 0) {
-                                // Google 照片 URL 是臨時值，保留 placeId 以便每次即時取圖。
+                                // OSM 不提供商業店家照片，保留使用者自行上傳的照片。
                                 document.getElementById('input-photo').value = '';
                             }
                         } else {
@@ -7862,5 +7830,6 @@
             if(!document.getElementById('view-list').classList.contains('hidden')) window.renderList(); if(!document.getElementById('view-party').classList.contains('hidden')) window.renderParties(); if(!document.getElementById('view-feed').classList.contains('hidden')) window.renderFeed();
         }
     </script>
+    <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer" class="fixed bottom-1 right-2 z-30 rounded bg-white/80 px-1.5 py-0.5 text-[9px] text-gray-500 shadow-sm backdrop-blur" title="OpenStreetMap 資料授權">© OpenStreetMap contributors</a>
 </body>
 </html>
