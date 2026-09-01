@@ -2881,8 +2881,44 @@
             }
         };
 
+        function decodeJiaFirestoreValue(value) {
+            if (!value || typeof value !== 'object') return value;
+            if ('stringValue' in value) return value.stringValue;
+            if ('integerValue' in value) return Number(value.integerValue);
+            if ('doubleValue' in value) return Number(value.doubleValue);
+            if ('booleanValue' in value) return value.booleanValue;
+            if ('nullValue' in value) return null;
+            if ('arrayValue' in value) return (value.arrayValue.values || []).map(decodeJiaFirestoreValue);
+            if ('mapValue' in value) return Object.fromEntries(Object.entries(value.mapValue.fields || {}).map(([key, item]) => [key, decodeJiaFirestoreValue(item)]));
+            return null;
+        }
+        async function hydrateJiaPlacesNow() {
+            const token = await currentUser.getIdToken();
+            const url = `https://firestore.googleapis.com/v1/projects/${appId}/databases/(default)/documents/artifacts/${appId}/public/data/jiaPlaces?pageSize=100`;
+            const response = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+            if (!response.ok) throw new Error(`Firebase REST ${response.status}`);
+            const payload = await response.json();
+            window.jiaPlacesData = (payload.documents || []).map(item => ({ jiaPlaceId: item.name.split('/').pop(), ...Object.fromEntries(Object.entries(item.fields || {}).map(([key, value]) => [key, decodeJiaFirestoreValue(value)])) }));
+            return window.jiaPlacesData;
+        }
+        async function saveExternalJiaPlace(place) {
+            const provider = String(place._provider || 'external'), sourceId = String(place.place_id || `${place.name}:${place.formatted_address || ''}`);
+            const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(`${provider}:${sourceId}`));
+            const id = `jia_${[...new Uint8Array(digest)].map(v => v.toString(16).padStart(2, '0')).join('').slice(0, 20)}`;
+            const lat = Number(place.geometry?.location?.lat?.() ?? place.lat), lng = Number(place.geometry?.location?.lng?.() ?? place.lng);
+            const record = { jiaPlaceId:id, name:place.name||'未命名店家', normalizedName:String(place.name||'').normalize('NFKC').toLowerCase().replace(/\s+/g,''), address:place.formatted_address||'', city:'', district:'', country:'', location:Number.isFinite(lat)&&Number.isFinite(lng)?{lat,lng}:null, categories:place.types||[], phone:place.formatted_phone_number||'', website:place.website||'', source:provider, sourceIds:{google:'',osm:['nominatim','overpass'].includes(provider)?sourceId:'',foursquare:provider==='foursquare'?sourceId:'',here:provider==='here'?sourceId:'',geoapify:provider==='geoapify'?sourceId:''}, legacyGooglePlaceId:'', status:'needs_review', needsReview:true, photos:[], mapLink:place.url||'', reviewCount:0, favoriteCount:0, createdAt:new Date().toISOString(), updatedAt:new Date().toISOString() };
+            await setDoc(doc(db,'artifacts',appId,'public','data','jiaPlaces',id),record,{merge:true}); return record;
+        }
+        function setupJiaPlacesBridge() {
+            window.jiaPlacesData = window.jiaPlacesData || [];
+            hydrateJiaPlacesNow().catch(error => console.error('jiaPlaces REST 讀取失敗:', error));
+            onSnapshot(collection(db,'artifacts',appId,'public','data','jiaPlaces'), snap => { if(!snap.empty) window.jiaPlacesData=snap.docs.map(item=>({jiaPlaceId:item.id,...item.data()})); }, error => console.error('jiaPlaces 同步失敗:',error));
+            window.JiaPlaces?.configureFirebase({ load:async()=>window.jiaPlacesData?.length?window.jiaPlacesData:hydrateJiaPlacesNow(), commercialSearch:async()=>[], save:saveExternalJiaPlace });
+        }
+
         function startRealtimeSync() {
             if (!currentUser) return;
+            setupJiaPlacesBridge();
             
             const handleSyncError = (err) => {
                 console.error("即時同步錯誤:", err);
@@ -4176,6 +4212,7 @@
                 '인천광역시': '仁川廣域市', '대구광역시': '大邱廣域市', '제주특별자치도': '濟州特別自治道'
             };
 
+            if (false) { // Legacy misplaced bridge block; intentionally disabled.
             window.jiaPlacesData = window.jiaPlacesData || [];
             const jiaPlacesRef = collection(db, 'artifacts', appId, 'public', 'data', 'jiaPlaces');
             const decodeFirestoreValue = value => {
@@ -4224,6 +4261,7 @@
                     return record;
                 }
             });
+            }
             const alias = Object.keys(aliases).find(name => text.toLowerCase().includes(name.toLowerCase()));
             if (alias) return aliases[alias];
             const knownCities = Object.values(CITIES_BY_COUNTRY)
