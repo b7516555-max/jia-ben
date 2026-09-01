@@ -1,8 +1,8 @@
-const CACHE_NAME = 'together-eat-shell-v81';
+const CACHE_NAME = 'together-eat-shell-v82';
 const APP_SHELL = [
   './', 
   './index.html', 
-  './osm-adapter.js?v=3',
+  './osm-adapter.js?v=4',
   './manifest.webmanifest',
   './assets/avatars/host.png',
   './assets/avatars/explorer.png',

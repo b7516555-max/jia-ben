@@ -11,6 +11,16 @@
 
     const memoryCache = new Map();
     const placeCache = new Map();
+    let firebaseBridge = null;
+    let firebasePlaces = [];
+    const quota = {
+        foursquare: { safeLimit: 450, period: 'month', used: 0 },
+        here: { safeLimit: 900, period: 'day', used: 0 },
+        geoapify: { safeLimit: 2700, period: 'day', used: 0 },
+        nominatim: { safeLimit: 1, period: 'second', used: 0 },
+        overpass: { safeLimit: 1, period: 'second', used: 0 }
+    };
+    const metrics = { searches: 0, firebaseHits: 0, externalCalls: 0, secondSearchApiZero: 0, providers: {} };
     let requestChain = Promise.resolve();
     let lastRequestAt = 0;
 
@@ -145,6 +155,7 @@
             types: mapPlaceTypes(item),
             _osmRaw: item
         };
+        place._provider = String(item._provider || (String(item.place_id || '').startsWith('overpass-') ? 'overpass' : 'nominatim'));
         placeCache.set(placeId, place);
         return place;
     }
@@ -204,7 +215,7 @@
         return task;
     }
 
-    async function searchPlaces(request) {
+    async function searchOsm(request) {
         const query = String(request?.query || request?.input || '').trim();
         if (!query) return [];
         const params = new URLSearchParams({
@@ -237,6 +248,57 @@
         const merged = [...filteredNearby, ...nominatimPlaces];
         return [...new Map(merged.map(place => [place.place_id, place])).values()].slice(0, config.resultLimit);
     }
+
+    function normalizeText(value) { return String(value || '').normalize('NFKC').toLowerCase().replace(/[\s\-－_・·,，.。()（）【】\[\]]+/g, ''); }
+    function localPlace(row) {
+        const lat = Number(row.location?.lat), lng = Number(row.location?.lng);
+        const place = { name: row.name, place_id: row.jiaPlaceId, jiaPlaceId: row.jiaPlaceId, formatted_address: [row.address,row.district,row.city].filter(Boolean).join(' '),
+            geometry: { location: { lat: () => lat, lng: () => lng } }, url: row.mapLink || (Number.isFinite(lat) ? `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}` : ''),
+            website: row.website || '', formatted_phone_number: row.phone || '', opening_hours: row.openingHours || null, rating: row.rating || 0, photos: row.photos || [], types: row.categories || [],
+            address_components: [], _provider: 'firebase', _firebaseRaw: row };
+        placeCache.set(place.place_id, place); return place;
+    }
+    function searchFirebase(request) {
+        const raw = String(request?.query || request?.input || '');
+        const q = normalizeText(raw.replace(/附近|餐廳|美食|好吃的|台灣|臺灣/g, ''));
+        const location = request?.location, lat = Number(typeof location?.lat === 'function' ? location.lat() : location?.lat), lng = Number(typeof location?.lng === 'function' ? location.lng() : location?.lng);
+        const distance = row => {
+            const rlat=Number(row.location?.lat), rlng=Number(row.location?.lng); if(![lat,lng,rlat,rlng].every(Number.isFinite))return Infinity;
+            const rad=x=>x*Math.PI/180, dLat=rad(rlat-lat),dLng=rad(rlng-lng),a=Math.sin(dLat/2)**2+Math.cos(rad(lat))*Math.cos(rad(rlat))*Math.sin(dLng/2)**2;return 6371*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+        };
+        const textMatches = row => !q || normalizeText(`${row.name} ${row.address} ${row.city} ${row.district} ${(row.categories||[]).join(' ')}`).includes(q) || q.includes(normalizeText(row.name));
+        const rows = firebasePlaces.filter(textMatches).map(row => ({row,dist:distance(row)}));
+        for (const radius of [3,10,30]) { const nearby=rows.filter(x=>x.dist<=radius).sort((a,b)=>a.dist-b.dist); if(nearby.length)return nearby.slice(0,10).map(x=>localPlace(x.row)); }
+        return rows.sort((a,b)=>a.dist-b.dist).slice(0,10).map(x=>localPlace(x.row));
+    }
+    async function commercialFallback(provider, request) {
+        const state = quota[provider];
+        if (!firebaseBridge?.commercialSearch || state.used >= state.safeLimit) return [];
+        state.used += 1; metrics.externalCalls += 1; metrics.providers[provider] = (metrics.providers[provider] || 0) + 1;
+        try { return (await firebaseBridge.commercialSearch(provider, request) || []).map(item => ({ ...item, _provider: provider })); } catch (_) { return []; }
+    }
+    async function searchPlaces(request) {
+        metrics.searches += 1;
+        if (firebaseBridge?.load) { try { firebasePlaces = await firebaseBridge.load(); } catch (_) {} }
+        const local = searchFirebase(request);
+        if (local.length) { metrics.firebaseHits += 1; metrics.secondSearchApiZero += 1; return local; }
+        let combined = [];
+        for (const provider of ['foursquare','here','geoapify']) {
+            const rows = await commercialFallback(provider, request); combined.push(...rows);
+            if (combined.length >= Number(request?.desiredResults || 5)) return combined;
+        }
+        metrics.externalCalls += 1; metrics.providers.osm = (metrics.providers.osm || 0) + 1;
+        return [...combined, ...(await searchOsm(request))].slice(0, config.resultLimit);
+    }
+
+    async function selectPlace(place) {
+        if (!place || place._provider === 'firebase' || !firebaseBridge?.save) return place;
+        const saved = await firebaseBridge.save(place);
+        if (saved) { firebasePlaces = [...firebasePlaces.filter(x => x.jiaPlaceId !== saved.jiaPlaceId), saved]; return localPlace(saved); }
+        return place;
+    }
+
+    function configureFirebase(bridge) { firebaseBridge = bridge || null; }
 
     async function lookupPlace(placeId) {
         if (placeCache.has(placeId)) return placeCache.get(placeId);
@@ -309,7 +371,8 @@
         }
     }
 
-    window.OSMPlaces = { searchPlaces, lookupPlace, config };
+    window.JiaPlaces = { searchPlaces, lookupPlace, selectPlace, configureFirebase, searchFirebase, quota, metrics, config, PlacesService, AutocompleteService, LatLng };
+    window.OSMPlaces = window.JiaPlaces;
     window.google = window.google || {};
     window.google.maps = {
         LatLng,

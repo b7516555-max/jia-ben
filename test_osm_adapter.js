@@ -20,7 +20,7 @@ require('./osm-adapter.js');
 (async () => {
     const results = await window.OSMPlaces.searchPlaces({
         query: '餐廳',
-        location: new window.google.maps.LatLng(22.7380, 120.4810),
+        location: new window.JiaPlaces.LatLng(22.7380, 120.4810),
         radius: 50000
     });
     if (!results.length) throw new Error('OSM/Overpass returned no restaurants');

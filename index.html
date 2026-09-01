@@ -18,7 +18,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Color+Emoji&display=swap" rel="stylesheet">
     <!-- OpenStreetMap / Nominatim 地點搜尋相容層（無需付費金鑰） -->
-    <script src="./osm-adapter.js?v=3"></script>
+    <script src="./osm-adapter.js?v=4"></script>
     <script>
         window.enterApp = function() {
             var intro = document.getElementById('intro-screen');
@@ -4175,6 +4175,30 @@
                 'Honolulu': '夏威夷', '서울특별시': '首爾特別市', '부산광역시': '釜山廣域市',
                 '인천광역시': '仁川廣域市', '대구광역시': '大邱廣域市', '제주특별자치도': '濟州特別自治道'
             };
+
+            window.jiaPlacesData = window.jiaPlacesData || [];
+            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'jiaPlaces'), (snap) => {
+                window.jiaPlacesData = snap.docs.map(item => ({ jiaPlaceId: item.id, ...item.data() }));
+            }, handleSyncError);
+            if (window.JiaPlaces) window.JiaPlaces.configureFirebase({
+                load: async () => window.jiaPlacesData || [],
+                commercialSearch: async () => [],
+                save: async (place) => {
+                    const provider = String(place._provider || 'external');
+                    const sourceId = String(place.place_id || `${place.name}:${place.formatted_address || ''}`);
+                    const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(`${provider}:${sourceId}`));
+                    const id = `jia_${[...new Uint8Array(digest)].map(v => v.toString(16).padStart(2, '0')).join('').slice(0, 20)}`;
+                    const lat = Number(place.geometry?.location?.lat?.() ?? place.lat), lng = Number(place.geometry?.location?.lng?.() ?? place.lng);
+                    const record = { jiaPlaceId: id, name: place.name || '未命名店家', normalizedName: String(place.name || '').normalize('NFKC').toLowerCase().replace(/\s+/g, ''),
+                        address: place.formatted_address || '', city: '', district: '', country: '', location: Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : null,
+                        categories: place.types || [], phone: place.formatted_phone_number || '', website: place.website || '', openingHours: place.opening_hours || null,
+                        source: provider, sourceIds: { google: '', osm: provider === 'nominatim' || provider === 'overpass' ? sourceId : '', foursquare: provider === 'foursquare' ? sourceId : '', here: provider === 'here' ? sourceId : '', geoapify: provider === 'geoapify' ? sourceId : '' },
+                        legacyGooglePlaceId: '', status: 'needs_review', needsReview: true, photos: [], mapLink: place.url || '', reviewCount: 0, favoriteCount: 0,
+                        createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+                    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'jiaPlaces', id), record, { merge: true });
+                    return record;
+                }
+            });
             const alias = Object.keys(aliases).find(name => text.toLowerCase().includes(name.toLowerCase()));
             if (alias) return aliases[alias];
             const knownCities = Object.values(CITIES_BY_COUNTRY)
@@ -4750,6 +4774,7 @@
             statusEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i>正在讀取店家資料…';
             new google.maps.places.PlacesService(document.createElement('div')).getDetails({ placeId, fields: ['name','place_id','url','geometry','formatted_address','address_components','types'] }, (place, status) => {
                 if (status !== 'OK' || !place) { window.quickReviewPlaceData = null; statusEl.textContent = '讀不到完整資料，仍可直接以店名繼續評價。'; return; }
+                window.JiaPlaces?.selectPlace(place).catch(error => console.warn('店家回寫失敗:', error));
                 const region = window.getPlaceRegion(place);
                 window.quickReviewPlaceData = {
                     name: place.name || document.getElementById('quick-review-name').value.trim(), placeId: place.place_id || placeId,
@@ -7680,6 +7705,7 @@
             if (typeof google !== 'undefined' && google.maps && google.maps.places) {
                 try {
                     new google.maps.places.PlacesService(document.createElement('div')).getDetails({ placeId: id, fields: ['name','url','geometry','rating','place_id','photos','address_components','formatted_address','types'] }, (p, s) => {
+                        if (s === 'OK' && p) window.JiaPlaces?.selectPlace(p).catch(error => console.warn('店家回寫失敗:', error));
                         if (s === 'OK') {
                             document.getElementById('input-name').value = p.name || ''; document.getElementById('input-map').value = p.url || '';
                             if(p.geometry) { document.getElementById('input-lat').value = p.geometry.location.lat(); document.getElementById('input-lng').value = p.geometry.location.lng(); }
