@@ -126,6 +126,11 @@ function doPost(e) {
       const uploadRes = uploadReviewPhoto(contents.base64Data, contents.mimeType, contents.fileName);
       return jsonResponse(uploadRes);
     }
+
+    // Jia-ben Place Enrichment proxy. API keys only live in Script Properties.
+    if (action === 'enrich_place') {
+      return jsonResponse(handlePlaceEnrichmentProxy(contents));
+    }
     
     const sheetName = contents.sheetName || 'Restaurants';
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
@@ -199,4 +204,60 @@ function handleApiRead(params) {
 function jsonResponse(data) {
   return ContentService.createTextOutput(JSON.stringify(data))
     .setMimeType(ContentService.MimeType.JSON);
+}
+
+function handlePlaceEnrichmentProxy(request) {
+  const provider = String(request.provider || '').toLowerCase();
+  const properties = PropertiesService.getScriptProperties();
+  const keyNames = { foursquare: 'FOURSQUARE_API_KEY', here: 'HERE_API_KEY', geoapify: 'GEOAPIFY_API_KEY' };
+  const safeLimits = { foursquare: 450, here: 900, geoapify: 2700 };
+  if (!keyNames[provider]) return { status: 'unsupported_provider', provider: provider };
+  const apiKey = properties.getProperty(keyNames[provider]);
+  if (!apiKey) return { status: 'disabled_no_key', provider: provider };
+  const place = request.place || {}, lat = Number(place.location && place.location.lat), lng = Number(place.location && place.location.lng);
+  if (!place.name || !isFinite(lat) || !isFinite(lng)) return { status: 'invalid_place', provider: provider };
+  const period = provider === 'foursquare' ? Utilities.formatDate(new Date(), 'Asia/Taipei', 'yyyy-MM') : Utilities.formatDate(new Date(), 'Asia/Taipei', 'yyyy-MM-dd');
+  const usageKey = 'JIA_USAGE_' + provider.toUpperCase() + '_' + period;
+  const used = Number(properties.getProperty(usageKey) || 0);
+  if (used >= safeLimits[provider]) return { status: 'quota_stop', provider: provider, used: used, safeLimit: safeLimits[provider] };
+  try {
+    var result = provider === 'foursquare' ? fetchFoursquareEnrichment_(apiKey, place) : provider === 'here' ? fetchHereEnrichment_(apiKey, place) : fetchGeoapifyEnrichment_(apiKey, place);
+    properties.setProperty(usageKey, String(used + 1));
+    return result || { status: 'no_match', provider: provider };
+  } catch (error) {
+    console.error('Enrichment proxy error (' + provider + '):', error);
+    return { status: 'provider_error', provider: provider, message: String(error) };
+  }
+}
+
+function fetchFoursquareEnrichment_(apiKey, place) {
+  const params = { query: place.name, ll: place.location.lat + ',' + place.location.lng, radius: 500, limit: 3 };
+  const url = 'https://places-api.foursquare.com/places/search?' + toQueryString_(params);
+  const response = UrlFetchApp.fetch(url, { muteHttpExceptions: true, headers: { Authorization: 'Bearer ' + apiKey, 'X-Places-Api-Version': '2025-06-17', Accept: 'application/json' } });
+  if (response.getResponseCode() !== 200) throw new Error('Foursquare HTTP ' + response.getResponseCode());
+  const payload = JSON.parse(response.getContentText()), item = (payload.results || payload.places || [])[0];
+  if (!item) return null;
+  const location = item.location || {}, geocodes = item.geocodes && (item.geocodes.main || item.geocodes.drop_off) || {};
+  return { status: 'success', provider: 'foursquare', sourceId: item.fsq_place_id || item.fsq_id || item.id || '', name: item.name || '', address: location.formatted_address || [location.address, location.locality, location.region].filter(Boolean).join(', '), phone: item.tel || '', website: item.website || '', openingHours: item.hours || null, priceLevel: item.price || null, rating: Number(item.rating) || null, ratingCount: item.stats && item.stats.total_ratings || null, externalPhotos: [] , location: { lat: Number(geocodes.latitude), lng: Number(geocodes.longitude) } };
+}
+
+function fetchHereEnrichment_(apiKey, place) {
+  const params = { at: place.location.lat + ',' + place.location.lng, q: place.name, limit: 3, apiKey: apiKey, lang: 'zh-TW' };
+  const response = UrlFetchApp.fetch('https://discover.search.hereapi.com/v1/discover?' + toQueryString_(params), { muteHttpExceptions: true });
+  if (response.getResponseCode() !== 200) throw new Error('HERE HTTP ' + response.getResponseCode());
+  const item = (JSON.parse(response.getContentText()).items || [])[0]; if (!item) return null;
+  const contacts = item.contacts || [], phone = contacts.flatMap(function(x){return x.phone || [];})[0], web = contacts.flatMap(function(x){return x.www || [];})[0];
+  return { status:'success', provider:'here', sourceId:item.id || '', name:item.title || '', address:item.address && item.address.label || '', phone:phone && phone.value || '', website:web && web.value || '', openingHours:item.openingHours || null, priceLevel:null, externalPhotos:[], location:{lat:Number(item.position && item.position.lat),lng:Number(item.position && item.position.lng)} };
+}
+
+function fetchGeoapifyEnrichment_(apiKey, place) {
+  const params = { categories:'catering.restaurant,catering.cafe,catering.fast_food', filter:'circle:' + place.location.lng + ',' + place.location.lat + ',500', bias:'proximity:' + place.location.lng + ',' + place.location.lat, name:place.name, limit:3, lang:'zh', apiKey:apiKey };
+  const response = UrlFetchApp.fetch('https://api.geoapify.com/v2/places?' + toQueryString_(params), { muteHttpExceptions:true });
+  if (response.getResponseCode() !== 200) throw new Error('Geoapify HTTP ' + response.getResponseCode());
+  const feature = (JSON.parse(response.getContentText()).features || [])[0]; if (!feature) return null; const p = feature.properties || {}, coordinates = feature.geometry && feature.geometry.coordinates || [];
+  return { status:'success', provider:'geoapify', sourceId:p.place_id || '', name:p.name || '', address:p.formatted || '', phone:p.contact && p.contact.phone || '', website:p.website || p.contact && p.contact.website || '', openingHours:p.opening_hours || null, priceLevel:null, externalPhotos:[], location:{lat:Number(coordinates[1]),lng:Number(coordinates[0])} };
+}
+
+function toQueryString_(params) {
+  return Object.keys(params).filter(function(key){ return params[key] !== '' && params[key] !== null && params[key] !== undefined; }).map(function(key){ return encodeURIComponent(key) + '=' + encodeURIComponent(params[key]); }).join('&');
 }

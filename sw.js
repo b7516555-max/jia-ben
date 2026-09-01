@@ -1,8 +1,18 @@
-const CACHE_NAME = 'together-eat-shell-v85';
+const CACHE_NAME = 'together-eat-shell-v86';
 const APP_SHELL = [
   './', 
   './index.html', 
   './osm-adapter.js?v=4',
+  './src/utils/imageSafety.js?v=1',
+  './src/utils/placeMatch.js?v=1',
+  './src/services/quotaManager.js?v=1',
+  './src/services/enrichment.js?v=1',
+  './src/providers/nominatimAdapter.js?v=1',
+  './src/providers/osmAdapter.js?v=1',
+  './src/providers/foursquareAdapter.js?v=1',
+  './src/providers/hereAdapter.js?v=1',
+  './src/providers/geoapifyAdapter.js?v=1',
+  './assets/place-placeholder.svg',
   './manifest.webmanifest',
   './assets/avatars/host.png',
   './assets/avatars/explorer.png',

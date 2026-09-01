@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Jia-ben Place",
+  "type": "object",
+  "required": ["jiaPlaceId", "name", "normalizedName", "communityStats", "missingFields"],
+  "properties": {
+    "jiaPlaceId": { "type": "string", "pattern": "^jia_" },
+    "name": { "type": "string" },
+    "normalizedName": { "type": "string" },
+    "location": { "type": ["object", "null"], "properties": { "lat": { "type": "number" }, "lng": { "type": "number" } } },
+    "photos": { "type": "array", "items": { "type": "string" } },
+    "communityPhotos": { "type": "array", "items": { "type": "string" } },
+    "externalPhotos": { "type": "array", "items": { "type": "string" } },
+    "legacyMedia": { "type": "object", "properties": { "googlePhotos": { "type": "array", "items": { "type": "string" } } } },
+    "communityStats": { "type": "object", "required": ["ratingAverage", "ratingCount", "averageSpend", "spendCount", "photoCount"] },
+    "externalRatings": { "type": "object" },
+    "missingFields": { "type": "array", "items": { "enum": ["photo", "address", "phone", "website", "openingHours", "price"] } },
+    "enrichment": { "type": "object", "properties": { "lastCheckedAt": { "type": ["string", "null"] }, "version": { "type": "integer" } } }
+  }
+}

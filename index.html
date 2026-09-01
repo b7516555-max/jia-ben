@@ -19,6 +19,15 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Color+Emoji&display=swap" rel="stylesheet">
     <!-- OpenStreetMap / Nominatim 地點搜尋相容層（無需付費金鑰） -->
     <script src="./osm-adapter.js?v=4"></script>
+    <script src="./src/utils/imageSafety.js?v=1"></script>
+    <script src="./src/utils/placeMatch.js?v=1"></script>
+    <script src="./src/services/quotaManager.js?v=1"></script>
+    <script src="./src/providers/nominatimAdapter.js?v=1"></script>
+    <script src="./src/providers/osmAdapter.js?v=1"></script>
+    <script src="./src/providers/foursquareAdapter.js?v=1"></script>
+    <script src="./src/providers/hereAdapter.js?v=1"></script>
+    <script src="./src/providers/geoapifyAdapter.js?v=1"></script>
+    <script src="./src/services/enrichment.js?v=1"></script>
     <script>
         window.enterApp = function() {
             var intro = document.getElementById('intro-screen');
@@ -983,6 +992,10 @@
                     <label class="block text-xs font-bold text-gray-500 mb-1">心得內容</label>
                     <textarea id="int-notes" rows="3" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-orange-400 text-sm" placeholder="必點什麼？氣氛好嗎？"></textarea>
                 </div>
+                <div id="int-spend-wrap">
+                    <label class="block text-xs font-bold text-gray-500 mb-1">本次每人約消費（選填）</label>
+                    <div class="flex items-center gap-2"><span class="text-sm font-bold text-gray-500">NT$</span><input id="int-spend" type="number" min="1" max="100000" step="1" inputmode="numeric" class="flex-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-orange-400 text-sm" placeholder="例如 350"></div>
+                </div>
                 <button onclick="window.confirmInteraction()" id="btn-confirm-int" class="w-full bg-gray-800 text-white font-bold py-3.5 rounded-xl shadow-md hover:bg-gray-900 active:scale-95 transition mt-2 min-h-[44px] flex items-center justify-center">發布</button>
             </div>
         </div>
@@ -1256,6 +1269,7 @@
             
             <div class="h-44 md:h-56 relative w-full shrink-0">
                 <img id="detail-img" src="" class="w-full h-full object-cover">
+                <span id="detail-image-label" class="hidden absolute top-3 left-3 bg-black/60 text-white text-[10px] font-bold px-2 py-1 rounded-full">示意圖片</span>
                 <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-black/30"></div>
                 
                 <!-- 頂部照片覆蓋按鈕列：新增店家、編輯店家、移除店家 -->
@@ -2194,6 +2208,7 @@
 
         let db, auth, appId, currentUser = null;
         const GAS_API_URL = "https://script.google.com/macros/s/AKfycbwTg7lmireS-npCAzvDZVPVmI7u5jAFpslg7SNL59Ab3ulLOUr7cPB5wzIaTSyTUJpl/exec";
+        window.JIA_ENRICHMENT_PROXY_URL = GAS_API_URL;
         window.restaurantData = []; window.feedData = []; window.partyData = []; window.chatData = [];
         window.appConfig = { deleteCode: '850930', appUrl: '', groups: ['主揪', '玉泉', '屏東', '高雄', '台北', '老服', '社發'], creators: ['黃政誥'], membersMap: null, userPasswords: { '黃政誥': 'Bb19960930' }, memberAvatars: {} }; 
         window.myIdentity = { group: '', name: '', password: '' }; 
@@ -2375,7 +2390,10 @@
 
         window.isGoogleMapsPhotoUrl = function(url) {
             if (!url || typeof url !== 'string') return false;
-            return /(?:maps\.googleapis\.com\/maps\/api\/place\/photo|googleusercontent\.com|ggpht\.com|lh\d+\.google)/i.test(url);
+            if (window.imageSafety?.isBlockedLegacyGoogleImage) {
+                return window.imageSafety.isBlockedLegacyGoogleImage(url);
+            }
+            return /(?:maps\.googleapis\.com|places\.googleapis\.com|\/maps\/api\/place\/photo|photo_reference)/i.test(url);
         };
 
         window.escapeForBtn = function(str) { return str ? encodeURIComponent(String(str)) : ''; };
@@ -2914,6 +2932,16 @@
             hydrateJiaPlacesNow().catch(error => console.error('jiaPlaces REST 讀取失敗:', error));
             onSnapshot(collection(db,'artifacts',appId,'public','data','jiaPlaces'), snap => { if(!snap.empty) window.jiaPlacesData=snap.docs.map(item=>({jiaPlaceId:item.id,...item.data()})); }, error => console.error('jiaPlaces 同步失敗:',error));
             window.JiaPlaces?.configureFirebase({ load:async()=>window.jiaPlacesData?.length?window.jiaPlacesData:hydrateJiaPlacesNow(), commercialSearch:async()=>[], save:saveExternalJiaPlace });
+            window.JiaQuotaManager?.configure({
+                get: async id => { const snap = await getDoc(doc(db,'artifacts',appId,'public','data','placesApiUsage',id)); return snap.exists() ? snap.data() : { used: 0 }; },
+                set: async (id, value) => setDoc(doc(db,'artifacts',appId,'public','data','placesApiUsage',id), value, { merge: true })
+            });
+            window.JiaEnrichment?.configure({
+                save: async place => {
+                    await setDoc(doc(db,'artifacts',appId,'public','data','jiaPlaces',place.jiaPlaceId), place, { merge: true });
+                    window.jiaPlacesData = [...(window.jiaPlacesData||[]).filter(item=>item.jiaPlaceId!==place.jiaPlaceId), place];
+                }
+            });
         }
 
         function startRealtimeSync() {
@@ -4841,6 +4869,7 @@
                 const region = window.getPlaceRegion(place);
                 window.quickReviewPlaceData = {
                     name: place.name || document.getElementById('quick-review-name').value.trim(), placeId: place.place_id || placeId,
+                    jiaPlaceId: place.jiaPlaceId || (String(place.place_id||'').startsWith('jia_') ? place.place_id : ''),
                     mapLink: place.url || '', formatted_address: place.formatted_address || '', country: region.country || '', city: region.city || '',
                     lat: place.geometry?.location?.lat(), lng: place.geometry?.location?.lng()
                 };
@@ -5047,6 +5076,8 @@
             document.getElementById('interaction-rating-section').classList.toggle('hidden', isS); 
             document.getElementById('btn-confirm-int').innerHTML = isS ? '收進口袋名單' : '發布至動態牆'; 
             document.getElementById('int-notes').value = ''; 
+            document.getElementById('int-spend').value = '';
+            document.getElementById('int-spend-wrap').classList.toggle('hidden', isS);
             currentIntPhotos = [];
             window.renderIntPhotosGrid();
             window.selectIntRating('good'); 
@@ -5075,6 +5106,8 @@
             if(!pendingInteraction) return; 
             const n = (document.getElementById('int-notes').value || '').trim(); 
             const rV = document.getElementById('int-rating-value').value;
+            const spendRaw = (document.getElementById('int-spend').value || '').trim();
+            const perPersonSpend = spendRaw ? Number(spendRaw) : null;
             const btn = document.getElementById('btn-confirm-int');
             const originalBtnHtml = btn ? btn.innerHTML : '發布';
 
@@ -5085,6 +5118,9 @@
             }
             if (pType === 'review' && !window.isValidReviewRating(rV)) {
                 return window.showCustomMsg('⚠️ 請先選擇一個評價等級再發布。');
+            }
+            if (pType === 'review' && spendRaw && (!Number.isInteger(perPersonSpend) || perPersonSpend < 1 || perPersonSpend > 100000)) {
+                return window.showCustomMsg('⚠️ 請確認輸入的是每人平均消費金額。');
             }
 
             window.requireIdentity(async () => {
@@ -5119,12 +5155,18 @@
                         const countryVal = pData.country || window.getCountryFromCity(cityVal) || '台灣';
                         const primaryPhoto = finalPhotos.length > 0 ? finalPhotos[0] : '';
                         const validRating = window.getReviewRatingMeta(rV).id;
+                        const ratingNumeric = ({ good:5, tasty:4.5, nice:4, fair:3, poor:2, awful:1.5, bad:1 })[validRating] || null;
+                        const relatedJiaPlace = (window.jiaPlacesData||[]).find(item=>item.jiaPlaceId===pData.jiaPlaceId)
+                            || (window.jiaPlacesData||[]).find(item=>String(item.normalizedName||'')===String(pData.name||'').normalize('NFKC').toLowerCase().replace(/\s+/g,''));
                         
                         const reviewItem = { 
                             restaurantName: pData.name || '美食好店', 
                             group: g || window.myIdentity?.group || '好友', 
                             creator: c || window.myIdentity?.name || '朋友', 
                             rating: validRating, 
+                            ratingNumeric: ratingNumeric,
+                            perPersonSpend: perPersonSpend,
+                            jiaPlaceId: relatedJiaPlace?.jiaPlaceId || '',
                             content: n, 
                             city: cityVal, 
                             country: countryVal, 
@@ -5137,6 +5179,13 @@
                             avatarId: window.myIdentity?.avatarId || '',
                             customAvatarUrl: window.myIdentity?.customAvatarUrl || ''
                         };
+
+                        if (relatedJiaPlace?.jiaPlaceId && db && currentUser) {
+                            const stats=relatedJiaPlace.communityStats||{},oldRatingCount=Number(stats.ratingCount||0),oldSpendCount=Number(stats.spendCount||0);
+                            const communityPhotos=window.imageSafety.filterSafeImages([...(relatedJiaPlace.communityPhotos||[]),...finalPhotos]);
+                            const nextStats={ratingAverage:ratingNumeric?Number((((Number(stats.ratingAverage||0)*oldRatingCount)+ratingNumeric)/(oldRatingCount+1)).toFixed(2)):stats.ratingAverage||null,ratingCount:oldRatingCount+(ratingNumeric?1:0),averageSpend:perPersonSpend?Math.round(((Number(stats.averageSpend||0)*oldSpendCount)+perPersonSpend)/(oldSpendCount+1)):stats.averageSpend||null,spendCount:oldSpendCount+(perPersonSpend?1:0),photoCount:new Set(communityPhotos).size};
+                            await setDoc(doc(db,'artifacts',appId,'public','data','jiaPlaces',relatedJiaPlace.jiaPlaceId),{communityStats:nextStats,communityPhotos:communityPhotos,updatedAt:new Date().toISOString()},{merge:true});
+                        }
 
                         let savedToCloud = false;
                         let cloudError = null;
@@ -6753,7 +6802,7 @@
             });
         };
 
-        window.openRestaurantDetailByName = function(nameOrEncoded) {
+        window.openRestaurantDetailByName = async function(nameOrEncoded) {
             let name = nameOrEncoded || '';
             try {
                 if (typeof name === 'string' && name.includes('%')) {
@@ -6764,6 +6813,12 @@
 
             const matches = window.restaurantData.filter(item => item.name === name);
             const restaurant = matches[0] || {};
+            let jiaPlace = (window.jiaPlacesData || []).find(item => item.jiaPlaceId === restaurant.jiaPlaceId)
+                || (window.jiaPlacesData || []).find(item => String(item.normalizedName || '').toLowerCase() === String(name).normalize('NFKC').toLowerCase().replace(/\s+/g,''));
+            if (jiaPlace && window.JiaEnrichment) {
+                try { jiaPlace = (await window.JiaEnrichment.enrichPlace(jiaPlace)).place || jiaPlace; }
+                catch (error) { console.warn('店家資料補充失敗，使用現有資料:', error); }
+            }
             const mUrl = restaurant.mapLink || window.getOsmSearchUrl(name);
             const recommenders = [];
             matches.forEach(item => {
@@ -6778,12 +6833,14 @@
             const appUrl = window.appConfig.appUrl || window.location.href;
             const detailData = {
                 name: name,
-                img: window.isGoogleMapsPhotoUrl(restaurant.photoUrl) ? window.getFallbackImage(name) : window.getSafeImage(restaurant.photoUrl, name),
-                city: restaurant.city || '未分類',
-                mUrl: mUrl,
+                img: jiaPlace ? window.imageSafety.selectImage(jiaPlace, './assets/place-placeholder.svg').url : (window.isGoogleMapsPhotoUrl(restaurant.photoUrl) ? './assets/place-placeholder.svg' : window.getSafeImage(restaurant.photoUrl, name)),
+                imageIsPlaceholder: jiaPlace ? window.imageSafety.selectImage(jiaPlace, './assets/place-placeholder.svg').isPlaceholder : false,
+                city: jiaPlace?.city || restaurant.city || '',
+                mUrl: jiaPlace?.mapLink || mUrl,
                 placeId: restaurant.placeId || '',
+                jiaPlace: jiaPlace || null,
                 tags: tags,
-                ratingHtml: generateRatingHtml(restaurant.rating, restaurant.reviews),
+                ratingHtml: jiaPlace?.communityStats?.ratingCount ? `<i class="fa-solid fa-star mr-1 text-amber-400"></i> Jia-ben ${Number(jiaPlace.communityStats.ratingAverage).toFixed(1)} <span class="text-gray-500 text-xs ml-1 font-normal">(${jiaPlace.communityStats.ratingCount} 則)</span>` : '<span class="text-gray-400 text-xs">暫無 Jia-ben 評分</span>',
                 lineText: window.escapeForBtn(`這家看起來不錯，要約一下嗎？\n${name}\n🗺️ 地圖: ${mUrl}\n---\n來自「呷奔 Jia ben」\n${appUrl}`),
                 pDataStr: window.escapeForBtn(JSON.stringify({ name: name })),
                 safeNameStr: safeNameStr
@@ -6845,22 +6902,27 @@
             container.innerHTML = groupedArr.map(i => {
                 const isH = i.recommenders.some(rec => rec.creator === '黃政誥');
                 const safeNameStr = window.escapeForBtn(i.name);
-                let displayImg = (!i.photoUrl || i.photoUrl.includes('unsplash.com') || window.isGoogleMapsPhotoUrl(i.photoUrl))
-                    ? window.getFallbackImage(i.name)
-                    : window.getSafeImage(i.photoUrl, i.name);
+                const listJiaPlace = (window.jiaPlacesData || []).find(place => place.jiaPlaceId === i.jiaPlaceId)
+                    || (window.jiaPlacesData || []).find(place => String(place.normalizedName || '').toLowerCase() === String(i.name || '').normalize('NFKC').toLowerCase().replace(/\s+/g,''));
+                const selectedImage = window.imageSafety.selectImage({
+                    ...(listJiaPlace || {}),
+                    legacyRestaurantPhotos: [i.photoUrl].filter(Boolean)
+                }, './assets/place-placeholder.svg');
+                const displayImg = selectedImage.url;
 
                 const cachedStatus = window.placeOpenStatusCache[i.placeId || i.name];
                 const initialBadgeHtml = (cachedStatus && cachedStatus.badgeHtml) ? cachedStatus.badgeHtml : '';
 
                 return `
                 <div class="restaurant-card bg-white rounded-2xl shadow-sm border ${isH ? 'border-orange-200' : 'border-gray-100'} overflow-hidden relative cursor-pointer group h-48 md:h-56 lg:h-64" onclick="window.openRestaurantDetailByName('${safeNameStr}')">
-                    <img id="list-img-${safeNameStr}" src="${displayImg}" onerror="this.onerror=null; this.src=window.getFallbackImage('${safeNameStr}');" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110">
+                    <img id="list-img-${safeNameStr}" src="${displayImg}" onerror="this.onerror=null; this.src='./assets/place-placeholder.svg';" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110">
                     <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent"></div>
+                    ${selectedImage.isPlaceholder ? '<span class="absolute top-2.5 right-2.5 z-20 bg-white/90 text-gray-700 text-[10px] px-2 py-1 rounded-full font-bold border border-gray-200">示意圖片</span>' : ''}
                     <div class="absolute top-2.5 left-2.5 z-10 flex items-center gap-1">
                         <span class="bg-black/50 backdrop-blur-md text-white text-[10px] px-2 py-0.5 rounded-full font-bold tracking-widest border border-white/20">${i.city || '未分類'}</span>
                         ${isH ? '<span class="bg-orange-500/90 backdrop-blur-sm text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full shadow-sm"><i class="fa-solid fa-crown text-[9px]"></i></span>' : ''}
                     </div>
-                    <div id="list-status-${safeNameStr}" class="absolute top-2.5 right-2.5 z-10 flex items-center gap-1">
+                    <div id="list-status-${safeNameStr}" class="absolute ${selectedImage.isPlaceholder ? 'top-10' : 'top-2.5'} right-2.5 z-10 flex items-center gap-1">
                         ${initialBadgeHtml}
                     </div>
                     <div class="absolute bottom-0 left-0 right-0 p-3 md:p-4 z-10">
@@ -6896,6 +6958,8 @@
                 detailImgEl.src = data.img || window.getFallbackImage(data.name);
                 detailImgEl.onerror = function() { this.onerror = null; this.src = window.getFallbackImage(data.name); };
             }
+            const imageLabel = document.getElementById('detail-image-label');
+            if (imageLabel) imageLabel.classList.toggle('hidden', !data.imageIsPlaceholder);
 
             const detailCityEl = document.getElementById('detail-city');
             if (detailCityEl) detailCityEl.textContent = data.city || '未分類';
@@ -6994,6 +7058,31 @@
             infoEl.innerHTML = '<p class="text-xs text-gray-400"><i class="fa-solid fa-spinner fa-spin mr-1.5"></i>正在讀取 OpenStreetMap 店家資訊...</p>';
             hoursWrap.classList.add('hidden');
             hoursEl.innerHTML = '';
+
+            if (data.jiaPlace) {
+                const place = data.jiaPlace, rows = [];
+                if (place.openingHours) rows.push(`<p class="flex items-start"><i class="fa-solid fa-clock text-gray-400 w-5 mt-0.5"></i><span>營業時間：${window.escapeHtml(typeof place.openingHours === 'string' ? place.openingHours : '請展開下方詳細時段')}</span></p>`);
+                if (place.phone) rows.push(`<p class="flex items-start"><i class="fa-solid fa-phone text-gray-400 w-5 mt-0.5"></i><a href="tel:${String(place.phone).replace(/[^\d+]/g,'')}" class="text-blue-600 font-bold">${window.escapeHtml(place.phone)}</a></p>`);
+                if (place.website) rows.push(`<p class="flex items-start"><i class="fa-solid fa-globe text-gray-400 w-5 mt-0.5"></i><a href="${window.escapeHtml(place.website)}" target="_blank" rel="noopener noreferrer" class="text-blue-600 font-bold break-all">官方網站</a></p>`);
+                if (place.address) rows.push(`<p class="flex items-start"><i class="fa-solid fa-location-dot text-gray-400 w-5 mt-0.5"></i><span>${window.escapeHtml(place.address)}</span></p>`);
+                const sources = [...new Set(['Jia-ben', place.source === 'nominatim' || place.source === 'overpass' ? 'OpenStreetMap' : '', ...Object.keys(place.sourceIds||{}).filter(key=>place.sourceIds[key]&&key!=='google')].filter(Boolean))];
+                rows.push(`<p class="flex items-start"><i class="fa-solid fa-database text-gray-400 w-5 mt-0.5"></i><span>資料來源：${window.escapeHtml(sources.join(' · '))}</span></p>`);
+                if (rows.length === 1) rows.unshift('<p class="text-gray-400">部分店家資料尚待補充</p>');
+                infoEl.innerHTML = rows.join('');
+                const priceBadge = document.getElementById('detail-price-badge'), priceText = document.getElementById('detail-price-text');
+                const spend = Number(place.communityStats?.averageSpend), spendCount = Number(place.communityStats?.spendCount || 0);
+                if (priceBadge) priceBadge.classList.toggle('hidden', !(spend > 0 || place.priceLevel));
+                if (priceText && spend > 0) priceText.textContent = `Jia-ben 平均每人約 NT$${Math.round(spend)}（${spendCount} 筆）`;
+                else if (priceText && place.priceLevel) priceText.textContent = `外部價格等級：${window.escapeHtml(String(place.priceLevel))}`;
+                const hours = Array.isArray(place.openingHours?.weekday_text) ? place.openingHours.weekday_text : [];
+                if (hours.length) { hoursEl.innerHTML = hours.map(line=>`<p>${window.escapeHtml(line)}</p>`).join(''); hoursWrap.classList.remove('hidden'); }
+                window._currentGoogleReviews = [];
+                window._currentPlaceRating = Number(place.communityStats?.ratingAverage || 0);
+                window._currentPlaceReviewCount = Number(place.communityStats?.ratingCount || 0);
+                window._currentPlaceName = place.name;
+                window._currentPlaceId = place.sourceIds?.osm || '';
+                return;
+            }
 
             if (typeof google === 'undefined' || !google.maps || !google.maps.places) {
                 infoEl.innerHTML = '<p class="text-xs text-gray-400">OpenStreetMap 店家資訊目前無法讀取。</p>';

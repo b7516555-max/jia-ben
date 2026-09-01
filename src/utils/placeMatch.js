@@ -1,0 +1,7 @@
+(function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;if(root)root.JiaPlaceMatch=api;})(typeof window!=='undefined'?window:null,function(){
+  const normalizeName=value=>String(value||'').normalize('NFKC').toLowerCase().replace(/[\s\-－_・·,，.。()（）【】\[\]]+/g,'');
+  function similarity(a,b){a=normalizeName(a);b=normalizeName(b);if(!a||!b)return 0;if(a===b)return 1;if(a.includes(b)||b.includes(a))return Math.min(a.length,b.length)/Math.max(a.length,b.length);const x=new Set(a),y=new Set(b),n=[...x].filter(c=>y.has(c)).length;return 2*n/(x.size+y.size||1);}
+  function distanceMeters(a,b){const lat1=Number(a?.lat??a?.latitude),lng1=Number(a?.lng??a?.longitude),lat2=Number(b?.lat??b?.latitude),lng2=Number(b?.lng??b?.longitude);if(![lat1,lng1,lat2,lng2].every(Number.isFinite))return Infinity;const r=x=>x*Math.PI/180,dLat=r(lat2-lat1),dLng=r(lng2-lng1),q=Math.sin(dLat/2)**2+Math.cos(r(lat1))*Math.cos(r(lat2))*Math.sin(dLng/2)**2;return 6371000*2*Math.atan2(Math.sqrt(q),Math.sqrt(1-q));}
+  function acceptable(place,candidate){const nameSimilarity=similarity(place?.name,candidate?.name),distance=distanceMeters(place?.location||place,candidate?.location||candidate);return {nameSimilarity,distance,accepted:(distance<=150&&nameSimilarity>=.55)||(distance<=400&&nameSimilarity>=.78)};}
+  return {normalizeName,similarity,distanceMeters,acceptable};
+});

@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" role="img" aria-labelledby="title desc">
+  <title id="title">示意圖片</title><desc id="desc">尚待補充店家照片</desc>
+  <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff7ed"/><stop offset="1" stop-color="#ffedd5"/></linearGradient></defs>
+  <rect width="800" height="500" rx="36" fill="url(#g)"/><circle cx="400" cy="210" r="82" fill="#fb923c" opacity=".16"/>
+  <path d="M360 236h80l-9 54h-62zM375 198h50l12 38h-74z" fill="#f97316"/><text x="400" y="355" text-anchor="middle" font-family="sans-serif" font-size="34" font-weight="700" fill="#9a3412">示意圖片</text>
+</svg>
