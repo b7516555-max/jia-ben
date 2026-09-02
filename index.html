@@ -28,6 +28,9 @@
     <script src="./src/providers/hereAdapter.js?v=1"></script>
     <script src="./src/providers/geoapifyAdapter.js?v=1"></script>
     <script src="./src/services/enrichment.js?v=1"></script>
+    <script src="./src/services/smartSearch.js?v=1"></script>
+    <script src="./src/services/smartWheel.js?v=1"></script>
+    <script src="./src/components/restaurantCard.js?v=1"></script>
     <script>
         window.enterApp = function() {
             var intro = document.getElementById('intro-screen');
@@ -1818,21 +1821,45 @@
                 <div id="view-nearby" class="hidden fade-in h-full flex flex-col relative w-full overflow-hidden">
                     <!-- 頂部精簡搜尋與預算列（電腦版放大，手機版維持緊湊） -->
                     <div class="bg-white px-3 py-2 md:py-3 shadow-2xs z-10 border-b border-gray-100 flex flex-col items-center shrink-0">
-                        <div id="nearby-search-box" class="w-full max-w-lg">
-                            <div class="flex items-center gap-1.5 md:gap-3">
+                        <div id="nearby-search-box" class="w-full max-w-xl">
+                            <!-- 第一行：關鍵字輸入 + 轉動輪盤 + 幫我決定 -->
+                            <div class="flex items-center gap-1.5 md:gap-2">
                                 <div class="flex-1 relative">
-                                    <input type="text" id="radar-keyword" placeholder="想找什麼？(可留空直接抽)" class="w-full pl-3 pr-2 py-1.5 md:py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none text-gray-800 text-xs md:text-base font-medium" onkeypress="if(event.key === 'Enter') window.searchGooglePlaces('radar')">
+                                    <input type="text" id="radar-keyword" placeholder="想找什麼？(可留空直接抽)" class="w-full pl-3 pr-2 py-1.5 md:py-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none text-gray-800 text-xs md:text-sm font-medium" onkeypress="if(event.key === 'Enter') window.searchGooglePlaces('radar')">
                                 </div>
-                                <div class="desktop-radar-price flex items-center bg-gray-50 border border-gray-200 rounded-xl px-2 md:px-3 py-1 md:py-2 shrink-0">
-                                    <span class="text-[10px] md:text-sm text-gray-400 font-bold mr-0.5">$</span>
-                                    <input type="number" id="radar-price-min" placeholder="低" min="0" step="50" class="w-8 sm:w-12 md:w-16 bg-transparent text-[11px] md:text-sm font-bold text-gray-800 focus:outline-none placeholder:text-gray-300" onkeypress="if(event.key === 'Enter') window.searchGooglePlaces('radar')">
-                                    <span class="text-gray-300 mx-0.5 md:mx-1 text-[10px] md:text-sm">~</span>
-                                    <span class="text-[10px] md:text-sm text-gray-400 font-bold mr-0.5">$</span>
-                                    <input type="number" id="radar-price-max" placeholder="高" min="0" step="50" class="w-8 sm:w-12 md:w-16 bg-transparent text-[11px] md:text-sm font-bold text-gray-800 focus:outline-none placeholder:text-gray-300" onkeypress="if(event.key === 'Enter') window.searchGooglePlaces('radar')">
-                                </div>
-                                <button id="radar-spin-btn" onclick="window.searchGooglePlaces('radar')" class="bg-gradient-to-r from-amber-500 to-orange-500 text-white px-3 md:px-5 py-1.5 md:py-2.5 rounded-xl shadow-xs font-bold text-xs md:text-sm hover:from-amber-600 hover:to-orange-600 transition whitespace-nowrap shrink-0">
-                                    <i class="fa-solid fa-play mr-1"></i>開抽
+                                <button id="radar-quick-decide-btn" type="button" onclick="window.quickDecidePlace()" class="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white px-2.5 md:px-3.5 py-1.5 md:py-2 rounded-xl shadow-xs font-bold text-xs md:text-sm transition whitespace-nowrap shrink-0 flex items-center gap-1" title="免轉輪盤，直接依智慧加權推薦 1 間">
+                                    <i class="fa-solid fa-bolt"></i><span>幫我決定</span>
                                 </button>
+                                <button id="radar-spin-btn" onclick="window.searchGooglePlaces('radar')" class="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white px-3 md:px-4 py-1.5 md:py-2 rounded-xl shadow-xs font-bold text-xs md:text-sm transition whitespace-nowrap shrink-0 flex items-center gap-1">
+                                    <i class="fa-solid fa-play"></i><span>開抽</span>
+                                </button>
+                            </div>
+
+                            <!-- 第二行：三合一極簡篩選器 (距離、預算、分類) -->
+                            <div class="grid grid-cols-3 gap-1.5 mt-2">
+                                <select id="radar-filter-distance" class="bg-gray-50 border border-gray-200 rounded-xl px-2 py-1 text-[11px] font-bold text-gray-700 focus:outline-none cursor-pointer">
+                                    <option value="all">📍 不限距離</option>
+                                    <option value="1">📍 1 公里內</option>
+                                    <option value="3" selected>📍 3 公里內</option>
+                                    <option value="5">📍 5 公里內</option>
+                                    <option value="10">📍 10 公里內</option>
+                                </select>
+                                <select id="radar-filter-budget" class="bg-gray-50 border border-gray-200 rounded-xl px-2 py-1 text-[11px] font-bold text-gray-700 focus:outline-none cursor-pointer">
+                                    <option value="all" selected>💰 不限預算</option>
+                                    <option value="under200">💰 200 元以內</option>
+                                    <option value="200to400">💰 200~400 元</option>
+                                    <option value="400to800">💰 400~800 元</option>
+                                    <option value="above800">💰 800 元以上</option>
+                                </select>
+                                <select id="radar-filter-category" class="bg-gray-50 border border-gray-200 rounded-xl px-2 py-1 text-[11px] font-bold text-gray-700 focus:outline-none cursor-pointer">
+                                    <option value="all" selected>🍽️ 全部料理</option>
+                                    <option value="拉麵">🍜 拉麵</option>
+                                    <option value="火鍋">🍲 火鍋</option>
+                                    <option value="燒肉">🥩 燒肉</option>
+                                    <option value="咖啡">☕ 咖啡/甜點</option>
+                                    <option value="早午餐">🥪 早餐/早午餐</option>
+                                    <option value="壽司">🍣 壽司/日料</option>
+                                </select>
                             </div>
                         </div>
                     </div>
@@ -4427,7 +4454,6 @@
         };
 
         window.searchGooglePlaces = function(vT) { 
-            let k = ""; let cId = "";
             if (!window.getSearchPriceRange(vT)) return;
             let targetCoords = null;
 
@@ -4435,53 +4461,166 @@
                 const rawK = document.getElementById('explore-keyword').value.trim();
                 const countryVal = document.getElementById('explore-country')?.value || 'all';
                 const cityVal = document.getElementById('explore-city')?.value || 'all';
+                const cId = 'explore-results-container'; 
                 
+                // 優先使用 Firebase jiaPlaces + SmartSearch 智慧搜尋 (0 外部 API 呼叫)
+                if (window.jiaPlacesData && window.jiaPlacesData.length > 0 && window.JiaSmartSearch) {
+                    const priceRange = window.getSearchPriceRange('explore');
+                    const searchOpts = {
+                        query: rawK,
+                        country: countryVal !== 'all' ? countryVal : null,
+                        city: cityVal !== 'all' && !cityVal.startsWith('不限') ? cityVal : null,
+                        minPrice: priceRange?.minDollars,
+                        maxPrice: priceRange?.maxDollars,
+                        limit: 30
+                    };
+
+                    const executeLocalSmartSearch = (userLoc) => {
+                        searchOpts.userLocation = userLoc;
+                        const results = window.JiaSmartSearch.search(window.jiaPlacesData, searchOpts);
+                        if (results.length > 0) {
+                            document.getElementById(cId).innerHTML = results.map(r => window.JiaRestaurantCard.render(r.place, { distanceKm: r.distanceKm })).join('');
+                        } else {
+                            displayNoResults('explore');
+                        }
+                    };
+
+                    if (navigator.geolocation) {
+                        navigator.geolocation.getCurrentPosition(
+                            (p) => executeLocalSmartSearch({ lat: p.coords.latitude, lng: p.coords.longitude }),
+                            () => executeLocalSmartSearch(null),
+                            { enableHighAccuracy: false, timeout: 3000 }
+                        );
+                    } else {
+                        executeLocalSmartSearch(null);
+                    }
+                    return;
+                }
+
                 let locationParts = [];
                 if (countryVal !== 'all') locationParts.push(countryVal);
                 if (cityVal !== 'all') {
                     locationParts.push(cityVal);
                     if (CITY_COORDS[cityVal]) targetCoords = CITY_COORDS[cityVal];
-                } else if (countryVal !== 'all') {
-                    if (countryVal === '台灣') targetCoords = { lat: 23.6978, lng: 120.9605 };
-                    if (countryVal === '日本') targetCoords = { lat: 35.6762, lng: 139.6503 };
-                    if (countryVal === '韓國') targetCoords = { lat: 37.5665, lng: 126.9780 };
-                    if (countryVal === '美國') targetCoords = { lat: 37.0902, lng: -95.7129 };
                 }
-                
-                if (!rawK && locationParts.length === 0) {
-                    return window.showCustomMsg("今天想吃點什麼呢？請輸入關鍵字或選擇國家縣市！");
-                }
-                
-                k = [...locationParts, rawK || '餐廳'].join(' ');
-                cId = 'explore-results-container'; 
-                document.getElementById(cId).innerHTML = `<div class="text-center text-orange-400 py-10 col-span-full"><i class="fa-solid fa-map-location-dot fa-bounce text-4xl mb-3"></i><p class="font-bold tracking-widest text-sm mt-2">透過 OpenStreetMap 搜尋 ${window.escapeHtml(k)} ...</p></div>`;
+                const k = [...locationParts, rawK || '餐廳'].join(' ');
+                document.getElementById(cId).innerHTML = `<div class="text-center text-orange-400 py-10 col-span-full"><i class="fa-solid fa-map-location-dot fa-bounce text-4xl mb-3"></i><p class="font-bold tracking-widest text-sm mt-2">搜尋 ${window.escapeHtml(k)} ...</p></div>`;
             } else {
-                k = document.getElementById('radar-keyword').value; if(!k.trim()) k = "餐廳"; cId = 'nearby-container';
+                const k = document.getElementById('radar-keyword').value;
                 const spinBtn = document.getElementById('radar-spin-btn');
                 const centerBtn = document.getElementById('wheel-center-spin-btn');
-                if (spinBtn) { spinBtn.disabled = true; spinBtn.classList.add('opacity-60'); spinBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i>召集附近好店'; }
+                if (spinBtn) { spinBtn.disabled = true; spinBtn.classList.add('opacity-60'); spinBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i>召集中'; }
                 if (centerBtn) { centerBtn.disabled = true; centerBtn.classList.remove('jelly-pulse'); centerBtn.classList.add('scale-95', 'opacity-80'); }
                 const statusEl = document.getElementById('wheel-status');
                 if (statusEl) {
                     statusEl.classList.remove('hidden');
-                    statusEl.innerHTML = '<i class="fa-solid fa-location-crosshairs fa-beat mr-1 text-orange-500"></i>正在尋找符合條件的附近餐廳…';
+                    statusEl.innerHTML = '<i class="fa-solid fa-location-crosshairs fa-beat mr-1 text-orange-500"></i>正在為您精心挑選推薦候選店家…';
                 }
                 document.getElementById('wheel-result').classList.add('hidden');
+
+                // 輪盤候選池嚴格使用 Firebase 資料庫店家 (0 外部 API 呼叫)
+                if (window.jiaPlacesData && window.jiaPlacesData.length > 0 && window.JiaSmartWheel) {
+                    const distFilter = document.getElementById('radar-filter-distance')?.value || '3';
+                    const budgetFilter = document.getElementById('radar-filter-budget')?.value || 'all';
+                    const catFilter = document.getElementById('radar-filter-category')?.value || 'all';
+                    
+                    const spinWithLoc = (userLoc) => {
+                        const context = {
+                            userLocation: userLoc,
+                            maxDistanceKm: distFilter !== 'all' ? Number(distFilter) : 100,
+                            budgetRange: budgetFilter,
+                            category: catFilter !== 'all' ? catFilter : (k ? k.trim() : 'all')
+                        };
+                        const candidates = window.JiaSmartWheel.getWheelCandidates(window.jiaPlacesData, context);
+                        if (candidates.length > 0) {
+                            window.spinRadarWheel(candidates, context);
+                        } else {
+                            displayNoResults('radar');
+                        }
+                    };
+
+                    if (navigator.geolocation) {
+                        navigator.geolocation.getCurrentPosition(
+                            (p) => spinWithLoc({ lat: p.coords.latitude, lng: p.coords.longitude }),
+                            () => spinWithLoc({ lat: 25.0330, lng: 121.5654 }),
+                            { enableHighAccuracy: false, timeout: 3000 }
+                        );
+                    } else {
+                        spinWithLoc({ lat: 25.0330, lng: 121.5654 });
+                    }
+                    return;
+                }
             }
 
+            const searchK = vT === 'explore' ? ([document.getElementById('explore-country')?.value, document.getElementById('explore-city')?.value, document.getElementById('explore-keyword')?.value].filter(Boolean).join(' ') || '餐廳') : (document.getElementById('radar-keyword')?.value || '餐廳');
             // 若選擇特定地區，直接以該地區中心座標進行搜尋；否則使用本機 GPS 定位
             if (targetCoords) {
-                executeGoogleSearch(targetCoords.lat, targetCoords.lng, k, '50000', vT);
+                executeGoogleSearch(targetCoords.lat, targetCoords.lng, searchK, '50000', vT);
             } else if (navigator.geolocation) { 
                 navigator.geolocation.getCurrentPosition( 
-                    (p) => { executeGoogleSearch(p.coords.latitude, p.coords.longitude, k, '50000', vT); }, 
+                    (p) => { executeGoogleSearch(p.coords.latitude, p.coords.longitude, searchK, '50000', vT); }, 
                     (e) => { 
-                        executeGoogleSearch(22.7380, 120.4810, k, '50000', vT); 
+                        executeGoogleSearch(22.7380, 120.4810, searchK, '50000', vT); 
                     }, 
                     { enableHighAccuracy: true, timeout: 5000 } 
                 ); 
             } else {
-                executeGoogleSearch(22.7380, 120.4810, k, '50000', vT);
+                executeGoogleSearch(22.7380, 120.4810, searchK, '50000', vT);
+            }
+        };
+
+        // 🌟 幫我決定快速推薦入口 (0 輪盤等待，直接推薦 1 間 + 換一間)
+        window.quickDecidePlace = function() {
+            if (!window.jiaPlacesData || window.jiaPlacesData.length === 0 || !window.JiaSmartWheel) {
+                return window.showCustomMsg("目前尚無餐廳資料可供推薦。");
+            }
+
+            const distFilter = document.getElementById('radar-filter-distance')?.value || '3';
+            const budgetFilter = document.getElementById('radar-filter-budget')?.value || 'all';
+            const catFilter = document.getElementById('radar-filter-category')?.value || 'all';
+            const k = document.getElementById('radar-keyword')?.value || '';
+
+            const executeQuickDecide = (userLoc) => {
+                const context = {
+                    userLocation: userLoc,
+                    maxDistanceKm: distFilter !== 'all' ? Number(distFilter) : 100,
+                    budgetRange: budgetFilter,
+                    category: catFilter !== 'all' ? catFilter : (k ? k.trim() : 'all')
+                };
+
+                const winner = window.JiaSmartWheel.selectWeightedWinner(window.jiaPlacesData, context);
+                if (!winner) return displayNoResults('radar');
+
+                const resultEl = document.getElementById('wheel-result');
+                const statusEl = document.getElementById('wheel-status');
+                if (statusEl) statusEl.classList.add('hidden');
+
+                let distKm = null;
+                if (userLoc && Number.isFinite(winner.location?.lat) && Number.isFinite(winner.location?.lng)) {
+                    distKm = window.JiaSmartWheel.calculateDistanceKm(userLoc.lat, userLoc.lng, Number(winner.location.lat), Number(winner.location.lng));
+                }
+
+                resultEl.innerHTML = `
+                <div class="space-y-2">
+                    <div class="flex items-center justify-between px-1">
+                        <span class="text-xs font-black text-emerald-600 flex items-center gap-1"><i class="fa-solid fa-bolt text-amber-500"></i> 智慧速決推薦</span>
+                        <button type="button" onclick="window.quickDecidePlace()" class="text-xs text-orange-600 hover:text-orange-700 font-bold flex items-center gap-1 bg-orange-50 px-2.5 py-1 rounded-lg border border-orange-200">
+                            <i class="fa-solid fa-rotate-right"></i> 換一間
+                        </button>
+                    </div>
+                    ${window.JiaRestaurantCard ? window.JiaRestaurantCard.renderWheelWinner(winner, { distanceKm: distKm }) : generateWheelPlaceCardHtml(winner)}
+                </div>`;
+                resultEl.classList.remove('hidden');
+            };
+
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (p) => executeQuickDecide({ lat: p.coords.latitude, lng: p.coords.longitude }),
+                    () => executeQuickDecide({ lat: 25.0330, lng: 121.5654 }),
+                    { enableHighAccuracy: false, timeout: 3000 }
+                );
+            } else {
+                executeQuickDecide({ lat: 25.0330, lng: 121.5654 });
             }
         };
         
@@ -4687,7 +4826,7 @@
                 ctx.restore();
             });
         };
-        window.spinRadarWheel = function(places) {
+        window.spinRadarWheel = function(places, context = {}) {
             const canvas = document.getElementById('restaurant-wheel');
             const statusEl = document.getElementById('wheel-status');
             const resultEl = document.getElementById('wheel-result');
@@ -4695,7 +4834,19 @@
             const centerBtn = document.getElementById('wheel-center-spin-btn');
             if (!canvas || !places.length) return;
             window.drawRadarWheel(places);
-            const selectedIndex = Math.floor(Math.random() * places.length);
+            
+            // 依智慧推薦加權計算選取優勝店家
+            let winner = null;
+            let selectedIndex = 0;
+            if (window.JiaSmartWheel) {
+                winner = window.JiaSmartWheel.selectWeightedWinner(places, context);
+                selectedIndex = places.findIndex(p => p.jiaPlaceId === winner?.jiaPlaceId || p.name === winner?.name);
+                if (selectedIndex === -1) selectedIndex = 0;
+            } else {
+                selectedIndex = Math.floor(Math.random() * places.length);
+                winner = places[selectedIndex];
+            }
+
             const segmentDegrees = 360 / places.length;
             const finalRotation = 360 * (6 + Math.floor(Math.random() * 3)) - (selectedIndex * segmentDegrees + segmentDegrees / 2);
             canvas.style.transition = 'none'; canvas.style.transform = 'rotate(0deg)'; void canvas.offsetWidth;
@@ -4707,9 +4858,14 @@
             }
             statusEl.innerHTML = '<i class="fa-solid fa-dice fa-bounce mr-1 text-orange-500"></i>輪盤飛速旋轉中，看看今天的緣分是哪一家…';
             setTimeout(() => {
-                const winner = places[selectedIndex];
                 if (statusEl) statusEl.classList.add('hidden');
-                resultEl.innerHTML = `<div class="flex items-center justify-between mb-1 px-1"><span class="text-[11px] font-extrabold text-orange-600"><i class="fa-solid fa-crown text-amber-500 mr-1"></i>今天就吃「${window.escapeHtml(winner.name)}」</span><span class="text-[10px] text-gray-400">命運推薦</span></div>${generateWheelPlaceCardHtml(winner)}`;
+                let distKm = null;
+                const userLoc = context.userLocation;
+                if (userLoc && Number.isFinite(winner.location?.lat) && Number.isFinite(winner.location?.lng)) {
+                    distKm = window.JiaSmartWheel?.calculateDistanceKm ? window.JiaSmartWheel.calculateDistanceKm(userLoc.lat, userLoc.lng, Number(winner.location.lat), Number(winner.location.lng)) : null;
+                }
+                const cardMarkup = window.JiaRestaurantCard ? window.JiaRestaurantCard.renderWheelWinner(winner, { distanceKm: distKm }) : generateWheelPlaceCardHtml(winner);
+                resultEl.innerHTML = `<div class="flex items-center justify-between mb-1 px-1"><span class="text-[11px] font-extrabold text-orange-600"><i class="fa-solid fa-crown text-amber-500 mr-1"></i>今天就吃「${window.escapeHtml(winner.name)}」</span><span class="text-[10px] text-gray-400">命運推薦</span></div>${cardMarkup}`;
                 resultEl.classList.remove('hidden');
                 if (btn) { btn.disabled = false; btn.classList.remove('opacity-60'); btn.innerHTML = '<i class="fa-solid fa-rotate mr-1"></i>再轉一次'; }
                 if (centerBtn) {
@@ -4743,7 +4899,10 @@
         }
 
         function generatePlaceCardHtml(p) { 
-            let rawImg = p.photos && p.photos.length > 0 ? p.photos[0].getUrl({maxWidth: 500}) : '';
+            if (window.JiaRestaurantCard) {
+                return window.JiaRestaurantCard.render(p, { distanceKm: p.dist });
+            }
+            let rawImg = p.photos && p.photos.length > 0 ? (typeof p.photos[0] === 'string' ? p.photos[0] : (p.photos[0].getUrl ? p.photos[0].getUrl({maxWidth: 500}) : '')) : '';
             let img = window.getSafeImage(rawImg, p.name);
             const safeNameStr = window.escapeForBtn(p.name);
             const openStatusInfo = window.computeOpeningStatus(p);
@@ -4762,7 +4921,10 @@
         }
 
         function generateWheelPlaceCardHtml(p) {
-            let rawImg = p.photos && p.photos.length > 0 ? p.photos[0].getUrl({maxWidth: 600}) : '';
+            if (window.JiaRestaurantCard) {
+                return window.JiaRestaurantCard.renderWheelWinner(p, { distanceKm: p.dist });
+            }
+            let rawImg = p.photos && p.photos.length > 0 ? (typeof p.photos[0] === 'string' ? p.photos[0] : (p.photos[0].getUrl ? p.photos[0].getUrl({maxWidth: 600}) : '')) : '';
             let img = window.getSafeImage(rawImg, p.name);
             const safeNameStr = window.escapeForBtn(p.name);
             const openStatusInfo = window.computeOpeningStatus(p);
@@ -4773,7 +4935,7 @@
             <div class="restaurant-card bg-white rounded-2xl md:rounded-3xl shadow-xl border border-orange-100/90 overflow-hidden cursor-pointer group hover:border-orange-300 transition flex flex-col md:flex-row items-stretch md:min-h-[220px]" onclick="window.openRestaurantDetailByName('${safeNameStr}')">
                 <div class="relative h-28 sm:h-32 md:h-auto md:w-56 shrink-0 overflow-hidden">
                     <img src="${img}" onerror="this.onerror=null; this.src=window.getFallbackImage('${safeNameStr}');" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105">
-                    <div class="absolute top-2.5 left-2.5 bg-black/65 backdrop-blur-xs text-white text-[10px] md:text-xs px-2 md:px-3 py-0.5 md:py-1 rounded-full font-bold tracking-wider shadow-sm"><i class="fa-solid fa-location-arrow mr-1 text-orange-400"></i>${p.dist.toFixed(1)} km</div>
+                    <div class="absolute top-2.5 left-2.5 bg-black/65 backdrop-blur-xs text-white text-[10px] md:text-xs px-2 md:px-3 py-0.5 md:py-1 rounded-full font-bold tracking-wider shadow-sm"><i class="fa-solid fa-location-arrow mr-1 text-orange-400"></i>${(p.dist||0).toFixed(1)} km</div>
                 </div>
                 <div class="p-3.5 md:p-5 flex-1 flex flex-col justify-between min-w-0 bg-white">
                     <div>
@@ -6900,10 +7062,22 @@
             // 公開 Nominatim 不允許在清單渲染時批次查詢；店家詳細資料僅在使用者主動點開時讀取。
 
             container.innerHTML = groupedArr.map(i => {
-                const isH = i.recommenders.some(rec => rec.creator === '黃政誥');
                 const safeNameStr = window.escapeForBtn(i.name);
                 const listJiaPlace = (window.jiaPlacesData || []).find(place => place.jiaPlaceId === i.jiaPlaceId)
                     || (window.jiaPlacesData || []).find(place => String(place.normalizedName || '').toLowerCase() === String(i.name || '').normalize('NFKC').toLowerCase().replace(/\s+/g,''));
+                
+                if (window.JiaRestaurantCard) {
+                    return window.JiaRestaurantCard.render({
+                        ...(listJiaPlace || {}),
+                        name: i.name,
+                        address: i.address || (i.city ? `${i.city} ${i.district || ''}` : ''),
+                        city: i.city || listJiaPlace?.city,
+                        coverPhoto: i.photoUrl || listJiaPlace?.coverPhoto,
+                        categories: i.category ? [i.category] : listJiaPlace?.categories
+                    }, { recommenders: i.recommenders });
+                }
+
+                const isH = i.recommenders.some(rec => rec.creator === '黃政誥');
                 const selectedImage = window.imageSafety.selectImage({
                     ...(listJiaPlace || {}),
                     legacyRestaurantPhotos: [i.photoUrl].filter(Boolean)
