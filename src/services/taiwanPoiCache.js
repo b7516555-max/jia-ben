@@ -51,6 +51,10 @@
       city: normAddr.city || raw.city || '',
       district: normAddr.district || raw.district || '',
       location: (raw.location && Number.isFinite(raw.location.lat) && Number.isFinite(raw.location.lng)) ? raw.location : null,
+      phone: normPhone.formatted || rawPhone || '',
+      openingHours: raw.openingHours || '',
+      website: raw.website || '',
+      menuUrl: raw.menuUrl || '',
       businessStatus: raw.businessStatus || '營業中',
       categories: Array.isArray(raw.categories) ? raw.categories : (raw.category ? [raw.category] : ['餐飲業']),
       sourceMetadata: {

@@ -62,13 +62,20 @@
     return 6371000 * 2 * Math.atan2(Math.sqrt(q), Math.sqrt(1 - q));
   }
 
+  const NON_BRANCH_WORDS = new Set(['麵店', '飯店', '小吃店', '飲料店', '冰品店', '咖啡店', '早餐店', '快餐店', '火鍋店', '便當店', '素食店', '肉圓店', '包子店', '排骨店', '雞排店', '水餃店', '壽司店', '燒肉店']);
+
   /**
    * Extract branch indicator if present (e.g. "屏東店", "高雄建國店", "信義分店")
    */
   function extractBranchSuffix(name) {
     if (!name) return '';
-    const match = String(name).match(/([^\s()（）]+(?:店|分店|門市|門營|旗艦店|壹號店|二號店))$/);
-    return match ? match[1] : '';
+    const match = String(name).match(/(?:[（(]|\s|[-－/])([^\s()（）\-_/]+(?:店|分店|門市|門營|旗艦店|總店|創始店|壹號店|二號店|直營店|加盟店))[)）]?$/) ||
+                  String(name).match(/([^\s()（）\-_/]+(?:分店|旗艦店|直營店|加盟店|創始店|總店))$/) ||
+                  String(name).match(/((?:台北|新北|桃園|台中|台南|高雄|基隆|新竹|嘉義|屏東|宜蘭|花蓮|台東|彰化|南投|雲林|苗栗|澎湖|金門|連江|和平|大安|信義|中山|中正|大雅|文化|垂楊|四維|林森|海豐|七賢|成功|建國)[^\s()（）\-_/]*店)$/);
+    if (!match) return '';
+    const cand = match[1];
+    if (NON_BRANCH_WORDS.has(cand)) return '';
+    return cand;
   }
 
   /**
@@ -82,15 +89,15 @@
     const addrNormalizer = root?.JiaTaiwanAddressNormalizer || require('../utils/taiwanAddressNormalizer.js');
     const phoneNormalizer = root?.JiaTaiwanPhoneNormalizer || require('../utils/taiwanPhoneNormalizer.js');
 
-    const nameA = String(target.name || '').trim();
-    const nameB = String(candidate.name || '').trim();
+    const nameA = String(target.officialName || target.businessName || target.name || '').trim();
+    const nameB = String(candidate.officialName || candidate.companyName || candidate.businessName || candidate.name || '').trim();
     const normA = addrNormalizer.standardizeChars(nameA).toLowerCase().replace(/[\s\-_・·,，.。()（）[\]【】:：]+/g, '');
     const normB = addrNormalizer.standardizeChars(nameB).toLowerCase().replace(/[\s\-_・·,，.。()（）[\]【】:：]+/g, '');
 
     // Branch separation check: If one has branch "屏東店" and other has "高雄店", strictly reject merge!
     const branchA = extractBranchSuffix(nameA);
     const branchB = extractBranchSuffix(nameB);
-    if (branchA && branchB && branchA !== branchB) {
+    if (branchA && branchB && branchA !== branchB && !branchA.includes(branchB) && !branchB.includes(branchA)) {
       return {
         confidence: 0.20,
         matchType: 'reject',
@@ -139,16 +146,20 @@
     }
 
     // 5. Name Similarity
+    const isGenericA = isGenericName(nameA);
+    const isGenericB = isGenericName(nameB);
+    const isGeneric = isGenericA || isGenericB;
+
     let nameSim = 0;
     if (normA && normB) {
       if (normA === normB) {
         nameSim = 1.0;
-        score += 0.45;
+        score += isGeneric ? 0.40 : 0.78;
         matchSignals.push('Exact Name Match');
       } else if (normA.includes(normB) || normB.includes(normA)) {
         const ratio = Math.min(normA.length, normB.length) / Math.max(normA.length, normB.length);
         nameSim = Math.max(ratio, 0.85);
-        score += (0.45 * nameSim);
+        score += (isGeneric ? 0.35 : 0.65) * nameSim;
         matchSignals.push(`Partial Name Match (${(nameSim * 100).toFixed(0)}%)`);
       }
     }
@@ -162,10 +173,9 @@
     if (normAddrA.city && normAddrB.city) {
       isSameCity = (normAddrA.city === normAddrB.city);
       if (isSameCity) {
-        score += 0.10;
+        score += 0.16;
         matchSignals.push(`Same City: ${normAddrA.city}`);
       } else {
-        // Different cities: apply severe penalty unless strong ID matches
         score -= 0.50;
         matchSignals.push(`Different Cities: ${normAddrA.city} vs ${normAddrB.city}`);
       }
@@ -197,21 +207,21 @@
     // 7. GPS Distance Signal
     const dist = distanceMeters(target, candidate);
     if (dist !== null) {
-      if (dist <= 30) {
+      if (dist <= 50) {
         score += 0.40;
         matchSignals.push(`Close GPS (${dist.toFixed(0)}m)`);
-      } else if (dist <= 150) {
+      } else if (dist <= 300) {
         score += 0.25;
         matchSignals.push(`Nearby GPS (${dist.toFixed(0)}m)`);
-      } else if (dist > 1000) {
-        // More than 1km away: severe penalty
+      } else if (dist > 15000) {
+        // Far away across municipalities
         score -= 0.45;
         matchSignals.push(`Far GPS Distance (${(dist / 1000).toFixed(1)}km)`);
       }
     }
 
     // 8. Generic Name Penalty Guard
-    if (isGenericName(nameA) || isGenericName(nameB)) {
+    if (isGeneric) {
       if (!hasExactBid && !hasExactFid && !hasExactPhone && (dist === null || dist > 100)) {
         score = Math.min(score, 0.65);
         matchSignals.push('Generic store name penalty applied (Requires exact phone/ID or close GPS to match)');
