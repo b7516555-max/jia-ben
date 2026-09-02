@@ -1,6 +1,6 @@
 /**
- * 檔案：Code.gs
- * 說明：Google Apps Script 伺服器代碼 & Google Sheets 資料庫 API & Google Drive 照片上傳
+ * 檔案：Code.gs / 程式碼.js
+ * 說明：Google Apps Script 伺服器代碼 & Google Sheets 資料庫 API & Google Drive 照片上傳 & Multi-Provider Enrichment Proxy
  * Google 試算表 ID: 1lNOBRQJTnbdtOnAbTv1C4An1_1MQOaoRSW-mmxOCgYY
  */
 
@@ -206,32 +206,114 @@ function jsonResponse(data) {
     .setMimeType(ContentService.MimeType.JSON);
 }
 
+/**
+ * Multi-Provider Place Enrichment Proxy
+ * Strictly checks quotas and script property keys for all providers.
+ */
 function handlePlaceEnrichmentProxy(request) {
   const provider = String(request.provider || '').toLowerCase();
   const properties = PropertiesService.getScriptProperties();
-  const keyNames = { foursquare: 'FOURSQUARE_API_KEY', here: 'HERE_API_KEY', geoapify: 'GEOAPIFY_API_KEY' };
-  const safeLimits = { foursquare: 450, here: 900, geoapify: 2700 };
-  if (!keyNames[provider]) return { status: 'unsupported_provider', provider: provider };
-  const apiKey = properties.getProperty(keyNames[provider]);
-  if (!apiKey) return { status: 'disabled_no_key', provider: provider };
-  const place = request.place || {}, lat = Number(place.location && place.location.lat), lng = Number(place.location && place.location.lng);
-  if (!place.name || !isFinite(lat) || !isFinite(lng)) return { status: 'invalid_place', provider: provider };
-  const period = provider === 'foursquare' ? Utilities.formatDate(new Date(), 'Asia/Taipei', 'yyyy-MM') : Utilities.formatDate(new Date(), 'Asia/Taipei', 'yyyy-MM-dd');
-  const usageKey = 'JIA_USAGE_' + provider.toUpperCase() + '_' + period;
+
+  // Yelp is strictly disabled due to billing policy
+  if (provider === 'yelp') {
+    return { status: 'disabled_billing_required', provider: 'yelp', message: 'Yelp is disabled due to billing requirement policy' };
+  }
+
+  // Taiwan Open Data pass-through
+  if (provider === 'taiwan_open_data' || provider === 'taiwanopendata') {
+    const place = request.place || {};
+    return {
+      status: 'success',
+      provider: 'taiwan_open_data',
+      name: place.name || '',
+      address: place.address || '',
+      city: place.city || '',
+      category: place.category || '餐飲業'
+    };
+  }
+
+  const keyNames = {
+    foursquare: 'FOURSQUARE_API_KEY',
+    here: 'HERE_API_KEY',
+    geoapify: 'GEOAPIFY_API_KEY',
+    hotpepper: 'HOTPEPPER_API_KEY',
+    kakao_local: 'KAKAO_REST_API_KEY',
+    kakao: 'KAKAO_REST_API_KEY',
+    naver_local: 'NAVER_CLIENT_ID',
+    naver_blog: 'NAVER_CLIENT_ID'
+  };
+
+  const safeLimits = {
+    foursquare: 450,
+    here: 900,
+    geoapify: 2700,
+    hotpepper: 9000,
+    kakao_local: 250000,
+    kakao: 250000,
+    naver_local: 20000,
+    naver_blog: 20000
+  };
+
+  const normalizedProvider = provider === 'kakao' ? 'kakao_local' : provider;
+
+  if (!keyNames[normalizedProvider]) {
+    return { status: 'unsupported_provider', provider: provider };
+  }
+
+  const apiKey = properties.getProperty(keyNames[normalizedProvider]);
+  if (!apiKey) {
+    return { status: 'disabled_no_key', provider: normalizedProvider };
+  }
+
+  const place = request.place || {};
+  if (!place.name) {
+    return { status: 'invalid_place', provider: normalizedProvider };
+  }
+
+  const period = normalizedProvider === 'foursquare' ? Utilities.formatDate(new Date(), 'Asia/Taipei', 'yyyy-MM') : Utilities.formatDate(new Date(), 'Asia/Taipei', 'yyyy-MM-dd');
+  const usageKey = 'JIA_USAGE_' + normalizedProvider.toUpperCase() + '_' + period;
   const used = Number(properties.getProperty(usageKey) || 0);
-  if (used >= safeLimits[provider]) return { status: 'quota_stop', provider: provider, used: used, safeLimit: safeLimits[provider] };
+
+  if (used >= (safeLimits[normalizedProvider] || 1000)) {
+    return { status: 'quota_stop', provider: normalizedProvider, used: used, safeLimit: safeLimits[normalizedProvider] };
+  }
+
   try {
-    var result = provider === 'foursquare' ? fetchFoursquareEnrichment_(apiKey, place) : provider === 'here' ? fetchHereEnrichment_(apiKey, place) : fetchGeoapifyEnrichment_(apiKey, place);
+    let result = null;
+    if (normalizedProvider === 'foursquare') {
+      result = fetchFoursquareEnrichment_(apiKey, place);
+    } else if (normalizedProvider === 'here') {
+      result = fetchHereEnrichment_(apiKey, place);
+    } else if (normalizedProvider === 'geoapify') {
+      result = fetchGeoapifyEnrichment_(apiKey, place);
+    } else if (normalizedProvider === 'hotpepper') {
+      result = fetchHotPepperEnrichment_(apiKey, place);
+    } else if (normalizedProvider === 'kakao_local') {
+      result = fetchKakaoEnrichment_(apiKey, place);
+    } else if (normalizedProvider === 'naver_local') {
+      const secret = properties.getProperty('NAVER_CLIENT_SECRET') || '';
+      result = fetchNaverLocalEnrichment_(apiKey, secret, place);
+    } else if (normalizedProvider === 'naver_blog') {
+      const secret = properties.getProperty('NAVER_CLIENT_SECRET') || '';
+      result = fetchNaverBlogEnrichment_(apiKey, secret, place);
+    }
+
     properties.setProperty(usageKey, String(used + 1));
-    return result || { status: 'no_match', provider: provider };
+    return result || { status: 'no_match', provider: normalizedProvider };
   } catch (error) {
-    console.error('Enrichment proxy error (' + provider + '):', error);
-    return { status: 'provider_error', provider: provider, message: String(error) };
+    console.error('Enrichment proxy error (' + normalizedProvider + '):', error);
+    return { status: 'provider_error', provider: normalizedProvider, message: String(error) };
   }
 }
 
 function fetchFoursquareEnrichment_(apiKey, place) {
-  const params = { query: place.name, ll: place.location.lat + ',' + place.location.lng, radius: 500, limit: 3 };
+  const lat = Number(place.location && place.location.lat);
+  const lng = Number(place.location && place.location.lng);
+  const params = { query: place.name, limit: 3 };
+  if (isFinite(lat) && isFinite(lng)) {
+    params.ll = lat + ',' + lng;
+    params.radius = 500;
+  }
   const url = 'https://places-api.foursquare.com/places/search?' + toQueryString_(params);
   const response = UrlFetchApp.fetch(url, { muteHttpExceptions: true, headers: { Authorization: 'Bearer ' + apiKey, 'X-Places-Api-Version': '2025-06-17', Accept: 'application/json' } });
   if (response.getResponseCode() !== 200) throw new Error('Foursquare HTTP ' + response.getResponseCode());
@@ -242,7 +324,12 @@ function fetchFoursquareEnrichment_(apiKey, place) {
 }
 
 function fetchHereEnrichment_(apiKey, place) {
-  const params = { at: place.location.lat + ',' + place.location.lng, q: place.name, limit: 3, apiKey: apiKey, lang: 'zh-TW' };
+  const lat = Number(place.location && place.location.lat);
+  const lng = Number(place.location && place.location.lng);
+  const params = { q: place.name, limit: 3, apiKey: apiKey, lang: 'zh-TW' };
+  if (isFinite(lat) && isFinite(lng)) {
+    params.at = lat + ',' + lng;
+  }
   const response = UrlFetchApp.fetch('https://discover.search.hereapi.com/v1/discover?' + toQueryString_(params), { muteHttpExceptions: true });
   if (response.getResponseCode() !== 200) throw new Error('HERE HTTP ' + response.getResponseCode());
   const item = (JSON.parse(response.getContentText()).items || [])[0]; if (!item) return null;
@@ -251,11 +338,105 @@ function fetchHereEnrichment_(apiKey, place) {
 }
 
 function fetchGeoapifyEnrichment_(apiKey, place) {
-  const params = { categories:'catering.restaurant,catering.cafe,catering.fast_food', filter:'circle:' + place.location.lng + ',' + place.location.lat + ',500', bias:'proximity:' + place.location.lng + ',' + place.location.lat, name:place.name, limit:3, lang:'zh', apiKey:apiKey };
+  const lat = Number(place.location && place.location.lat);
+  const lng = Number(place.location && place.location.lng);
+  const params = { categories:'catering.restaurant,catering.cafe,catering.fast_food', name:place.name, limit:3, lang:'zh', apiKey:apiKey };
+  if (isFinite(lat) && isFinite(lng)) {
+    params.filter = 'circle:' + lng + ',' + lat + ',500';
+    params.bias = 'proximity:' + lng + ',' + lat;
+  }
   const response = UrlFetchApp.fetch('https://api.geoapify.com/v2/places?' + toQueryString_(params), { muteHttpExceptions:true });
   if (response.getResponseCode() !== 200) throw new Error('Geoapify HTTP ' + response.getResponseCode());
   const feature = (JSON.parse(response.getContentText()).features || [])[0]; if (!feature) return null; const p = feature.properties || {}, coordinates = feature.geometry && feature.geometry.coordinates || [];
   return { status:'success', provider:'geoapify', sourceId:p.place_id || '', name:p.name || '', address:p.formatted || '', phone:p.contact && p.contact.phone || '', website:p.website || p.contact && p.contact.website || '', openingHours:p.opening_hours || null, priceLevel:null, externalPhotos:[], location:{lat:Number(coordinates[1]),lng:Number(coordinates[0])} };
+}
+
+function fetchHotPepperEnrichment_(apiKey, place) {
+  const params = { key: apiKey, name_any: place.name, count: 3, format: 'json' };
+  const lat = Number(place.location && place.location.lat);
+  const lng = Number(place.location && place.location.lng);
+  if (isFinite(lat) && isFinite(lng)) {
+    params.lat = lat;
+    params.lng = lng;
+    params.range = 3;
+  }
+  const url = 'https://webservice.recruit.co.jp/hotpepper/gourmet/v1/?' + toQueryString_(params);
+  const response = UrlFetchApp.fetch(url, { muteHttpExceptions: true });
+  if (response.getResponseCode() !== 200) throw new Error('HotPepper HTTP ' + response.getResponseCode());
+  const payload = JSON.parse(response.getContentText());
+  const shop = payload.results && payload.results.shop && payload.results.shop[0];
+  if (!shop) return null;
+  return {
+    status: 'success',
+    provider: 'hotpepper',
+    shop: shop
+  };
+}
+
+function fetchKakaoEnrichment_(apiKey, place) {
+  const params = { query: place.name, size: 3, category_group_code: 'FD6' }; // FD6 is restaurant in Kakao Local
+  const lat = Number(place.location && place.location.lat);
+  const lng = Number(place.location && place.location.lng);
+  if (isFinite(lat) && isFinite(lng)) {
+    params.x = lng;
+    params.y = lat;
+    params.radius = 1000;
+  }
+  const url = 'https://dapi.kakao.com/v2/local/search/keyword.json?' + toQueryString_(params);
+  const response = UrlFetchApp.fetch(url, {
+    muteHttpExceptions: true,
+    headers: { Authorization: 'KakaoAK ' + apiKey }
+  });
+  if (response.getResponseCode() !== 200) throw new Error('Kakao HTTP ' + response.getResponseCode());
+  const payload = JSON.parse(response.getContentText());
+  const doc = payload.documents && payload.documents[0];
+  if (!doc) return null;
+  return {
+    status: 'success',
+    provider: 'kakao_local',
+    document: doc
+  };
+}
+
+function fetchNaverLocalEnrichment_(clientId, clientSecret, place) {
+  const params = { query: place.name, display: 3, start: 1, sort: 'random' };
+  const url = 'https://openapi.naver.com/v1/search/local.json?' + toQueryString_(params);
+  const response = UrlFetchApp.fetch(url, {
+    muteHttpExceptions: true,
+    headers: {
+      'X-Naver-Client-Id': clientId,
+      'X-Naver-Client-Secret': clientSecret
+    }
+  });
+  if (response.getResponseCode() !== 200) throw new Error('Naver Local HTTP ' + response.getResponseCode());
+  const payload = JSON.parse(response.getContentText());
+  const item = payload.items && payload.items[0];
+  if (!item) return null;
+  return {
+    status: 'success',
+    provider: 'naver_local',
+    item: item
+  };
+}
+
+function fetchNaverBlogEnrichment_(clientId, clientSecret, place) {
+  const params = { query: place.name, display: 5, start: 1, sort: 'sim' };
+  const url = 'https://openapi.naver.com/v1/search/blog.json?' + toQueryString_(params);
+  const response = UrlFetchApp.fetch(url, {
+    muteHttpExceptions: true,
+    headers: {
+      'X-Naver-Client-Id': clientId,
+      'X-Naver-Client-Secret': clientSecret
+    }
+  });
+  if (response.getResponseCode() !== 200) throw new Error('Naver Blog HTTP ' + response.getResponseCode());
+  const payload = JSON.parse(response.getContentText());
+  return {
+    status: 'success',
+    provider: 'naver_blog',
+    items: payload.items || [],
+    total: payload.total || 0
+  };
 }
 
 function toQueryString_(params) {

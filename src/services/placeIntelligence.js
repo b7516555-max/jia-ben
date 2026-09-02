@@ -1,13 +1,14 @@
 /**
- * Jia-ben Place Intelligence Layer 5.0 (src/services/placeIntelligence.js)
+ * Jia-ben Place Intelligence Layer 5.2 (src/services/placeIntelligence.js)
+ * TW / US / JP / KR Multi-Provider Place + Review Resolver Engine
  * 
  * 核心功能：
- * 1. 跨來源公開店家情資探索 (Jia-ben -> Legacy -> OSM -> Foursquare -> Web Search/Schema.org)
- * 2. 信心度引擎 (Confidence Engine: 0.90+ Auto-fill, 0.80~0.89 Review, <0.80 Reject)
- * 3. 餐廳與分店錯配保護 (Branch-aware & GPS Vicinity Match)
- * 4. 外部媒體/照片順序管控 (Real > Community > Web Approved > AI Fallback)
- * 5. 表單自動帶入輔助 (Auto Place Info Assist，不直接覆寫 Canonical)
- * 6. 零商業 API 濫用與快取保護 (Request Budget, 10~30 分鐘短快取，7~30 天情資快取)
+ * 1. 跨國多 Provider 智慧情資分派 (CountryProviderRouter: TW, US, JP, KR)
+ * 2. 跨來源實體識別引擎 (PlaceIdentityResolver: Confidence >= 0.93 Auto-match, 0.85~0.929 Review, <0.85 Reject)
+ * 3. 獨立評論模型與防錯配機制 (ReviewResolver: Jia-ben 評分獨立，第三方評論保留 Attribution)
+ * 4. 食記與外部探索整合 (DiscoveryResolver: Naver Blog 食記, 官網, 社群, 菜單)
+ * 5. 通用常規店名防偽安全守護 (Generic Name Guard: 避免 "大同"、"Cafe" 誤配)
+ * 6. 零商業 API 濫用與快取保護 (Request Budget, QuotaManager, 0 Google Calls)
  */
 (function(root, factory) {
     const api = factory(root);
@@ -113,7 +114,6 @@
     function parseSchemaJsonLd(jsonLd) {
         if (!jsonLd || typeof jsonLd !== 'object') return null;
         
-        // 支援 @graph 陣列結構
         const entities = Array.isArray(jsonLd['@graph']) ? jsonLd['@graph'] : (Array.isArray(jsonLd) ? jsonLd : [jsonLd]);
         const foodEntity = entities.find(e => {
             const type = String(e?.['@type'] || '').toLowerCase();
@@ -163,12 +163,174 @@
     }
 
     /**
-     * 執行自動情資探索 (Auto Place Info Assist Lookup)
-     * 遵循搜尋順序：Jia-ben Existing Data -> Legacy Records -> OSM/Nominatim -> Foursquare -> Stopped
+     * 執行多 Provider 餐廳實體解析 (Multi-Provider Place + Review Resolver - Phase 5.2)
      * 
-     * @param {Object} place - 目標店家資料 (jiaPlace 或簡化物件)
-     * @param {Object} options - 探索參數
-     * @returns {Promise<Object>} 探索結果與自動帶入欄位
+     * @param {Object} query - 查詢條件 { name, country, city, address, location }
+     * @param {Object} options - 選項
+     * @returns {Promise<Object>} 解析結果包含 candidates, matchedCanonical, trace
+     */
+    async function resolveMultiProviderPlace(query, options = {}) {
+        if (!query || !query.name) {
+            return {
+                status: 'invalid_query',
+                candidates: [],
+                existingMatch: null,
+                trace: []
+            };
+        }
+
+        const countryRouter = root?.JiaCountryRouter;
+        const idResolver = root?.JiaPlaceIdentityResolver;
+        const reviewResolver = root?.JiaReviewResolver;
+        const discoveryResolver = root?.JiaDiscoveryResolver;
+        const quotaManager = root?.JiaQuotaManager;
+
+        const country = countryRouter ? countryRouter.normalizeCountryCode(query.country) : 'TW';
+        const name = String(query.name).trim();
+        const trace = [];
+
+        trace.push({ step: 'init', country, queryName: name });
+
+        // 1. 優先檢查現有 Jia-ben 資料庫 (0 external call)
+        const existingJiaPlaces = root?.jiaPlacesData || [];
+        const existingMatchCandidate = existingJiaPlaces.find(p => {
+            if (idResolver) {
+                const evalRes = idResolver.evaluateMatch(query, p, { country });
+                return evalRes.canAutoMerge || evalRes.acceptable;
+            }
+            return p.name === name;
+        });
+
+        if (existingMatchCandidate) {
+            trace.push({
+                provider: 'Jia-ben',
+                result: 'high_confidence_match',
+                jiaPlaceId: existingMatchCandidate.jiaPlaceId
+            });
+            return {
+                status: 'existing_match',
+                existingMatch: existingMatchCandidate,
+                candidates: [{
+                    name: existingMatchCandidate.name,
+                    address: existingMatchCandidate.address,
+                    phone: existingMatchCandidate.phone,
+                    category: existingMatchCandidate.categories?.[0] || existingMatchCandidate.category || '',
+                    sources: ['Jia-ben'],
+                    sourceIds: existingMatchCandidate.sourceIds || {},
+                    confidence: 0.99,
+                    isExistingJiaPlace: true,
+                    jiaPlaceId: existingMatchCandidate.jiaPlaceId
+                }],
+                trace
+            };
+        }
+
+        trace.push({ provider: 'Jia-ben', result: 'no_match' });
+
+        // 2. 取得國家專屬 Provider 流水線
+        const pipeline = countryRouter ? countryRouter.getCountryPipeline(country) : [{ id: 'osm', status: 'enabled' }];
+        const collectedCandidates = [];
+        let resolvedReviews = reviewResolver ? reviewResolver.createReviewModel({}) : {};
+        let resolvedDiscovery = discoveryResolver ? discoveryResolver.createDiscoveryModel({}) : {};
+        const fieldSources = {};
+
+        for (const stage of pipeline) {
+            if (!stage.canExecute) {
+                trace.push({ provider: stage.id, status: stage.status, action: 'skipped' });
+                continue;
+            }
+
+            // Quota 檢查
+            if (quotaManager && !(await quotaManager.canConsume(stage.id))) {
+                trace.push({ provider: stage.id, status: 'quota_exhausted', action: 'skipped' });
+                continue;
+            }
+
+            const adapter = root?.JiaProviderAdapters?.[stage.id] || root?.JiaProviderAdapters?.[stage.id === 'taiwan_open_data' ? 'taiwanOpenData' : (stage.id === 'kakao_local' ? 'kakaoLocal' : (stage.id === 'naver_local' ? 'naverLocal' : (stage.id === 'naver_blog' ? 'naverBlog' : stage.id)))];
+
+            if (!adapter || typeof adapter.search !== 'function' && typeof adapter.searchArticles !== 'function') {
+                trace.push({ provider: stage.id, status: 'adapter_not_ready' });
+                continue;
+            }
+
+            try {
+                if (stage.id === 'naver_blog' && typeof adapter.searchArticles === 'function') {
+                    const blogRes = await adapter.searchArticles(query);
+                    if (blogRes && blogRes.articles?.length > 0) {
+                        blogRes.articles.forEach(art => {
+                            if (discoveryResolver) discoveryResolver.addFoodArticle(resolvedDiscovery, art);
+                        });
+                        if (reviewResolver) {
+                            reviewResolver.attachExternalReview(resolvedReviews, 'naver_blog', { articleCount: blogRes.totalCount }, 0.95);
+                        }
+                        trace.push({ provider: 'naver_blog', status: 'success', articles: blogRes.articles.length });
+                    }
+                    continue;
+                }
+
+                const res = await adapter.search(query);
+                if (res && res.name) {
+                    const matchEval = idResolver ? idResolver.evaluateMatch(query, res, { country }) : { confidence: 0.90, acceptable: true };
+                    trace.push({
+                        provider: stage.id,
+                        status: 'matched',
+                        confidence: matchEval.confidence,
+                        signals: matchEval.matchSignals
+                    });
+
+                    if (matchEval.acceptable) {
+                        collectedCandidates.push({
+                            ...res,
+                            match: matchEval
+                        });
+                    }
+                } else {
+                    trace.push({ provider: stage.id, status: 'no_result' });
+                }
+            } catch (err) {
+                trace.push({ provider: stage.id, status: 'error', error: err.toString() });
+            }
+        }
+
+        // 3. 合併多 Provider 候選清單
+        const finalCandidates = [];
+        if (collectedCandidates.length > 0) {
+            // Group by physical identity
+            const topCandidate = collectedCandidates[0];
+            const sources = [...new Set(collectedCandidates.map(c => c.provider || c.source))];
+            
+            // Build canonical candidate
+            const canonicalCandidate = {
+                name: topCandidate.name || query.name,
+                address: collectedCandidates.find(c => c.address)?.address || query.address || '',
+                phone: collectedCandidates.find(c => c.phone)?.phone || '',
+                category: mapToControlledCategory(collectedCandidates.find(c => c.category || c.genre)?.category || collectedCandidates.find(c => c.category || c.genre)?.genre) || '未分類',
+                location: collectedCandidates.find(c => c.location && c.location.lat)?.location || query.location || null,
+                country,
+                sources,
+                sourceIds: Object.fromEntries(collectedCandidates.filter(c => c.provider && c.sourceId).map(c => [c.provider, c.sourceId])),
+                confidence: topCandidate.match?.confidence || 0.90,
+                externalReviews: resolvedReviews,
+                discovery: resolvedDiscovery,
+                fieldSources: {
+                    name: topCandidate.provider || 'input',
+                    address: collectedCandidates.find(c => c.address)?.provider || 'input',
+                    phone: collectedCandidates.find(c => c.phone)?.provider || 'input'
+                }
+            };
+            finalCandidates.push(canonicalCandidate);
+        }
+
+        return {
+            status: finalCandidates.length > 0 ? 'success' : 'no_match',
+            candidates: finalCandidates,
+            existingMatch: null,
+            trace
+        };
+    }
+
+    /**
+     * 執行自動情資探索 (Auto Place Info Assist Lookup - Backward compatible with Layer 5.0)
      */
     async function discoverPlaceInfo(place, options = {}) {
         if (!place || !place.name) {
@@ -184,7 +346,6 @@
         const jiaPlaceId = place.jiaPlaceId || place.id || name;
         const cacheKey = `disc_${jiaPlaceId}_${(place.city || '')}`;
 
-        // 1. 快取檢查 (10~30 分鐘內重複查詢直接重用)
         const now = Date.now();
         if (!options.force && discoveryCache.has(cacheKey)) {
             const cached = discoveryCache.get(cacheKey);
@@ -193,169 +354,82 @@
             }
         }
 
-        // 2. 請求去重 (Request Deduplication / 防連點)
         if (inFlightLookups.has(cacheKey)) {
             return await inFlightLookups.get(cacheKey);
         }
 
         const lookupPromise = (async () => {
-            const result = {
+            const multiRes = await resolveMultiProviderPlace(place, options);
+
+            if (multiRes.status === 'existing_match' && multiRes.existingMatch) {
+                const em = multiRes.existingMatch;
+                return {
+                    status: 'success',
+                    confidence: 0.98,
+                    sources: ['Jia-ben'],
+                    autofill: {
+                        address: em.address || '',
+                        phone: em.phone || '',
+                        category: em.categories?.[0] || em.category || '',
+                        openingHours: em.openingHours || '',
+                        website: em.website || ''
+                    },
+                    provenance: {
+                        address: 'Jia-ben',
+                        phone: 'Jia-ben',
+                        category: 'Jia-ben'
+                    },
+                    message: '已從 Jia-ben 資料庫載入現有資料'
+                };
+            }
+
+            if (multiRes.candidates.length > 0) {
+                const cand = multiRes.candidates[0];
+                return {
+                    status: 'success',
+                    confidence: cand.confidence,
+                    sources: cand.sources,
+                    autofill: {
+                        address: cand.address || undefined,
+                        phone: cand.phone || undefined,
+                        category: cand.category || undefined,
+                        location: cand.location || undefined
+                    },
+                    externalReviews: cand.externalReviews,
+                    discovery: cand.discovery,
+                    provenance: cand.fieldSources,
+                    message: `已自動尋獲 ${Object.keys(cand.fieldSources).length} 項店家公開資訊`
+                };
+            }
+
+            // Fallback to legacy discovery if needed
+            const legacyList = root?.restaurantData || [];
+            const legacyMatch = legacyList.find(r => r.name === name);
+            if (legacyMatch) {
+                return {
+                    status: 'success',
+                    confidence: 0.92,
+                    sources: ['Jia-ben 口袋名單'],
+                    autofill: {
+                        address: legacyMatch.address || undefined,
+                        category: mapToControlledCategory(legacyMatch.category) || undefined
+                    },
+                    provenance: {
+                        address: 'Jia-ben 口袋名單',
+                        category: 'Jia-ben 口袋名單'
+                    },
+                    message: '已從口袋名單載入資料'
+                };
+            }
+
+            return {
                 status: 'no_match',
-                confidence: 0,
-                matchSource: null,
-                sources: [],
+                confidence: 0.50,
                 autofill: {},
-                discoveredFields: {},
-                officialSocial: {},
-                menuUrl: null,
-                externalArticles: [],
-                externalMedia: { photos: [], coverCandidate: null },
-                provenance: {}
+                sources: [],
+                provenance: {},
+                message: '暫時找不到可靠的公開店家資訊，你仍可以手動補充。'
             };
-
-            const matchEngine = root?.JiaPlaceMatch || (typeof require === 'function' ? require('../utils/placeMatch.js') : null);
-
-            // -------------------------------------------------------------
-            // Step 1: Firebase / Local Jia-ben Existing canonical places
-            // -------------------------------------------------------------
-            const existingJiaPlaces = root?.jiaPlacesData || [];
-            const localCanonical = existingJiaPlaces.find(p => 
-                (p.jiaPlaceId && p.jiaPlaceId === place.jiaPlaceId) ||
-                (p.name === name) ||
-                (matchEngine && matchEngine.acceptable(place, p).accepted)
-            );
-
-            if (localCanonical) {
-                if (localCanonical.address) {
-                    result.autofill.address = localCanonical.address;
-                    result.provenance.address = 'Jia-ben';
-                }
-                if (localCanonical.phone) {
-                    result.autofill.phone = localCanonical.phone;
-                    result.provenance.phone = 'Jia-ben';
-                }
-                if (localCanonical.categories && localCanonical.categories[0]) {
-                    result.autofill.category = localCanonical.categories[0];
-                    result.provenance.category = 'Jia-ben';
-                }
-                if (localCanonical.openingHours) {
-                    result.autofill.openingHours = typeof localCanonical.openingHours === 'string' ? localCanonical.openingHours : '詳見每週營業時間';
-                    result.provenance.openingHours = 'Jia-ben';
-                }
-                if (localCanonical.website) {
-                    result.autofill.website = localCanonical.website;
-                    result.provenance.website = 'Jia-ben';
-                }
-            }
-
-            // -------------------------------------------------------------
-            // Step 2: Legacy Jia-ben Records (restaurantData / feedData)
-            // -------------------------------------------------------------
-            if (!result.autofill.address || !result.autofill.category) {
-                const legacyList = root?.restaurantData || [];
-                const legacyMatch = legacyList.find(r => r.name === name || (matchEngine && matchEngine.similarity(r.name, name) >= 0.95));
-                if (legacyMatch) {
-                    if (!result.autofill.category && legacyMatch.category) {
-                        const mappedCat = mapToControlledCategory(legacyMatch.category);
-                        if (mappedCat) {
-                            result.autofill.category = mappedCat;
-                            result.provenance.category = 'Jia-ben 口袋名單';
-                        }
-                    }
-                    if (!result.autofill.address && legacyMatch.address) {
-                        result.autofill.address = legacyMatch.address;
-                        result.provenance.address = 'Jia-ben 口袋名單';
-                    }
-                }
-            }
-
-            // -------------------------------------------------------------
-            // Step 3: OSM / Nominatim Adapter (Throttled & GPS vicinity matched)
-            // -------------------------------------------------------------
-            const needsMoreFields = !result.autofill.address || !result.autofill.phone || !result.autofill.category || !result.autofill.openingHours;
-            
-            if (needsMoreFields && root?.JiaProviderAdapters?.nominatim) {
-                try {
-                    const osmResult = await root.JiaProviderAdapters.nominatim.search(place);
-                    if (osmResult && osmResult.match && osmResult.match.confidence >= 0.85) {
-                        result.confidence = Math.max(result.confidence, osmResult.match.confidence);
-                        result.sources.push('OSM/Nominatim');
-
-                        if (!result.autofill.address && osmResult.address) {
-                            result.autofill.address = osmResult.address;
-                            result.provenance.address = 'OpenStreetMap';
-                        }
-                        if (!result.autofill.phone && osmResult.phone) {
-                            const phoneCheck = root?.JiaCommunity?.validateAndNormalizePhone ? root.JiaCommunity.validateAndNormalizePhone(osmResult.phone) : { valid: true, normalized: osmResult.phone };
-                            if (phoneCheck.valid) {
-                                result.autofill.phone = phoneCheck.normalized;
-                                result.provenance.phone = 'OpenStreetMap';
-                            }
-                        }
-                        if (!result.autofill.openingHours && osmResult.openingHours) {
-                            result.autofill.openingHours = osmResult.openingHours;
-                            result.provenance.openingHours = 'OpenStreetMap';
-                        }
-                        if (!result.autofill.website && osmResult.website) {
-                            result.autofill.website = osmResult.website;
-                            result.provenance.website = 'OpenStreetMap';
-                        }
-                    }
-                } catch (osmErr) {
-                    console.warn('[PlaceIntelligence] OSM lookup failed:', osmErr);
-                }
-            }
-
-            // -------------------------------------------------------------
-            // Step 4: Foursquare Search-only (If missing phone/category/hours)
-            // -------------------------------------------------------------
-            if ((!result.autofill.phone || !result.autofill.category) && root?.JiaProviderAdapters?.foursquare) {
-                try {
-                    if (root.JiaQuotaManager && (await root.JiaQuotaManager.canConsume('foursquare'))) {
-                        const fsResult = await root.JiaProviderAdapters.foursquare.search(place, ['phone', 'category', 'address']);
-                        if (fsResult && (fsResult.status === 'matched' || fsResult.name)) {
-                            result.sources.push('Foursquare');
-                            if (!result.autofill.phone && fsResult.phone) {
-                                const phoneCheck = root?.JiaCommunity?.validateAndNormalizePhone ? root.JiaCommunity.validateAndNormalizePhone(fsResult.phone) : { valid: true, normalized: fsResult.phone };
-                                if (phoneCheck.valid) {
-                                    result.autofill.phone = phoneCheck.normalized;
-                                    result.provenance.phone = 'Foursquare';
-                                }
-                            }
-                            if (!result.autofill.category && fsResult.category) {
-                                const mappedCat = mapToControlledCategory(fsResult.category);
-                                if (mappedCat) {
-                                    result.autofill.category = mappedCat;
-                                    result.provenance.category = 'Foursquare';
-                                }
-                            }
-                            if (!result.autofill.address && fsResult.address) {
-                                const addrCheck = root?.JiaCommunity?.validateAddress ? root.JiaCommunity.validateAddress(fsResult.address) : { valid: true, normalized: fsResult.address };
-                                result.autofill.address = addrCheck.valid ? addrCheck.normalized : fsResult.address;
-                                result.provenance.address = 'Foursquare';
-                            }
-                        }
-                    }
-                } catch (fsErr) {
-                    console.warn('[PlaceIntelligence] Foursquare lookup failed:', fsErr);
-                }
-            }
-
-            // -------------------------------------------------------------
-            // Compute Overall Confidence & Success Status
-            // -------------------------------------------------------------
-            const foundFieldCount = Object.keys(result.autofill).length;
-            if (foundFieldCount > 0) {
-                result.status = 'success';
-                result.confidence = Math.max(result.confidence, foundFieldCount >= 3 ? 0.95 : 0.90);
-                result.message = `已自動尋獲 ${foundFieldCount} 項店家公開資訊`;
-            } else {
-                result.status = 'no_match';
-                result.confidence = 0.50;
-                result.message = '暫時找不到可靠的公開店家資訊，你仍可以手動補充。';
-            }
-
-            return result;
         })();
 
         inFlightLookups.set(cacheKey, lookupPromise);
@@ -401,15 +475,10 @@
 
     /**
      * 統一店家詳情資料正規化 (Single Source of Truth for Place Detail View)
-     * 整合：Canonical Place, Community Stats, Web Intelligence, Contribution Field Overrides, Legacy Fields
-     * 
-     * @param {Object} place - 店家物件
-     * @returns {Object} 正規化後的完整欄位資料
      */
     function normalizePlaceDetailData(place = {}) {
         if (!place) return null;
 
-        // 1. 地區與地址嚴格區分 (禁止把 city/district 偽裝成完整 street address)
         const city = place.city || '';
         const district = place.district || '';
         const rawAddress = place.address || place.formatted_address || '';
@@ -417,14 +486,15 @@
         const address = isFullAddress ? rawAddress.trim() : '';
         const locationSummary = [city, district].filter(Boolean).join(' ') || '';
 
-        // 2. 電話 (台灣標準市話與手機)
         let phone = place.phone || place.formatted_phone_number || place.telephone || '';
-        if (phone && root?.JiaCommunity?.validateAndNormalizePhone) {
+        if (phone && root?.JiaCountryRouter?.normalizePhoneByCountry) {
+            const phoneCheck = root.JiaCountryRouter.normalizePhoneByCountry(phone, place.country || 'TW');
+            if (phoneCheck.valid) phone = phoneCheck.normalized;
+        } else if (phone && root?.JiaCommunity?.validateAndNormalizePhone) {
             const phoneCheck = root.JiaCommunity.validateAndNormalizePhone(phone);
             if (phoneCheck.valid) phone = phoneCheck.normalized;
         }
 
-        // 3. 料理分類 (嚴格限制來源為 categories/category，禁止 cross-field 誤抓 city)
         let categories = [];
         if (Array.isArray(place.categories) && place.categories.length > 0) {
             categories = place.categories.map(c => mapToControlledCategory(c) || c).filter(c => c && c !== '未分類' && c !== city && c !== district);
@@ -434,7 +504,6 @@
         }
         categories = [...new Set(categories)].slice(0, 3);
 
-        // 4. 每週主要營業時段
         let openingHours = '';
         let weekdayText = [];
         if (typeof place.openingHours === 'string' && place.openingHours.trim()) {
@@ -453,18 +522,13 @@
             }
         }
 
-        // 5. 每人平均消費 (只取有效的正整數)
         const rawSpend = Number(place.communityStats?.averageSpend ?? place.averageSpend ?? 0);
         const spendCount = Number(place.communityStats?.spendCount || 0);
         const averageSpend = (Number.isFinite(rawSpend) && rawSpend > 0) ? Math.round(rawSpend) : null;
 
-        // 6. 官方網站
         const website = place.website || place.webIntelligence?.officialWebsite || place.url || null;
-
-        // 7. 官方菜單外連
         const menuUrl = place.menuUrl || place.webIntelligence?.menuUrl || null;
 
-        // 8. 官方社群
         const social = {
             facebook: place.officialSocial?.facebook || place.webIntelligence?.officialSocial?.facebook || null,
             instagram: place.officialSocial?.instagram || place.webIntelligence?.officialSocial?.instagram || null,
@@ -472,12 +536,16 @@
         };
         const hasSocial = Boolean(social.facebook || social.instagram || social.threads);
 
-        // 9. 資料來源透明化標籤 (只顯示實際有提供內容的合法來源)
         const rawSources = [
             'Jia-ben',
             (place.fieldSources && Object.values(place.fieldSources).includes('community_verified')) ? '社群驗證' : '',
             (place.source === 'nominatim' || place.source === 'overpass' || place.sourceIds?.osm) ? 'OpenStreetMap' : '',
+            place.sourceIds?.taiwanOpenData || place.sourceIds?.taiwan_open_data ? 'Taiwan Open Data' : '',
             place.sourceIds?.foursquare ? 'Foursquare' : '',
+            place.sourceIds?.hotpepper ? 'Hot Pepper' : '',
+            place.sourceIds?.kakao ? 'Kakao Local' : '',
+            place.sourceIds?.naver ? 'Naver Local' : '',
+            place.externalReviews?.naverBlog?.enabled ? 'Naver Blog' : '',
             (website || place.fieldSources?.website === 'official_website') ? '店家官網' : '',
             ...(Array.isArray(place.webIntelligence?.sources) ? place.webIntelligence.sources : [])
         ];
@@ -486,6 +554,7 @@
         return {
             name: place.name || '',
             jiaPlaceId: place.jiaPlaceId || place.id || '',
+            country: place.country || 'TW',
             address,
             city,
             district,
@@ -502,6 +571,9 @@
             social,
             hasSocial,
             sources,
+            fieldSources: place.fieldSources || {},
+            externalReviews: place.externalReviews || {},
+            discovery: place.discovery || place.webIntelligence || {},
             ratingAverage: Number(place.communityStats?.ratingAverage ?? place.rating ?? 0),
             ratingCount: Number(place.communityStats?.ratingCount ?? 0)
         };
@@ -511,6 +583,7 @@
         RAW_CATEGORY_MAP,
         mapToControlledCategory,
         parseSchemaJsonLd,
+        resolveMultiProviderPlace,
         discoverPlaceInfo,
         createWebIntelligenceSchema,
         normalizePlaceDetailData,

@@ -18,22 +18,34 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Color+Emoji&display=swap" rel="stylesheet">
     <!-- OpenStreetMap / Nominatim 地點搜尋相容層（無需付費金鑰） -->
-    <script src="./osm-adapter.js?v=4"></script>
-    <script src="./src/utils/imageSafety.js?v=1"></script>
-    <script src="./src/utils/placeMatch.js?v=1"></script>
-    <script src="./src/services/quotaManager.js?v=1"></script>
-    <script src="./src/providers/nominatimAdapter.js?v=1"></script>
-    <script src="./src/providers/osmAdapter.js?v=1"></script>
-    <script src="./src/providers/foursquareAdapter.js?v=1"></script>
-    <script src="./src/providers/hereAdapter.js?v=1"></script>
-    <script src="./src/providers/geoapifyAdapter.js?v=1"></script>
-    <script src="./src/services/enrichment.js?v=1"></script>
-    <script src="./src/services/communityData.js?v=1"></script>
-    <script src="./src/services/personalization.js?v=1"></script>
-    <script src="./src/services/placeIntelligence.js?v=1"></script>
-    <script src="./src/services/smartSearch.js?v=1"></script>
-    <script src="./src/services/smartWheel.js?v=1"></script>
-    <script src="./src/components/restaurantCard.js?v=1"></script>
+    <script src="./osm-adapter.js?v=5"></script>
+    <script src="./src/utils/imageSafety.js?v=2"></script>
+    <script src="./src/utils/placeMatch.js?v=2"></script>
+    <script src="./src/services/quotaManager.js?v=2"></script>
+    <script src="./src/providers/providerRegistry.js?v=52"></script>
+    <script src="./src/providers/nominatimAdapter.js?v=2"></script>
+    <script src="./src/providers/osmAdapter.js?v=2"></script>
+    <script src="./src/providers/foursquareAdapter.js?v=2"></script>
+    <script src="./src/providers/hereAdapter.js?v=2"></script>
+    <script src="./src/providers/geoapifyAdapter.js?v=2"></script>
+    <script src="./src/providers/taiwanOpenDataAdapter.js?v=52"></script>
+    <script src="./src/providers/nlscAdapter.js?v=52"></script>
+    <script src="./src/providers/hotPepperAdapter.js?v=52"></script>
+    <script src="./src/providers/kakaoLocalAdapter.js?v=52"></script>
+    <script src="./src/providers/naverLocalAdapter.js?v=52"></script>
+    <script src="./src/providers/naverBlogAdapter.js?v=52"></script>
+    <script src="./src/providers/yelpAdapter.js?v=52"></script>
+    <script src="./src/services/countryProviderRouter.js?v=52"></script>
+    <script src="./src/services/placeIdentityResolver.js?v=52"></script>
+    <script src="./src/services/reviewResolver.js?v=52"></script>
+    <script src="./src/services/discoveryResolver.js?v=52"></script>
+    <script src="./src/services/enrichment.js?v=2"></script>
+    <script src="./src/services/communityData.js?v=2"></script>
+    <script src="./src/services/personalization.js?v=2"></script>
+    <script src="./src/services/placeIntelligence.js?v=52"></script>
+    <script src="./src/services/smartSearch.js?v=2"></script>
+    <script src="./src/services/smartWheel.js?v=2"></script>
+    <script src="./src/components/restaurantCard.js?v=2"></script>
     <script>
         window.enterApp = function() {
             var intro = document.getElementById('intro-screen');
@@ -2464,6 +2476,37 @@
                             </div>
                             <button onclick="window.saveSystemSettings()" class="w-full bg-red-500 text-white font-bold py-3.5 rounded-xl hover:bg-red-600 text-sm shadow transition mt-4">儲存系統設定</button>
                         </div>
+
+                        <!-- 🌟 Place Intelligence 5.2 多來源 Provider 狀態與可觀測性看板 -->
+                        <div id="admin-provider-status-section" class="bg-indigo-50/70 p-6 md:p-8 rounded-3xl border border-indigo-100 relative overflow-hidden mt-6">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-sm md:text-base font-bold text-indigo-900 flex items-center gap-2">
+                                    <i class="fa-solid fa-server text-indigo-600"></i>
+                                    <span>Place Intelligence 5.2 Provider 狀態看板 (TW / US / JP / KR)</span>
+                                </h3>
+                                <button type="button" onclick="window.refreshAdminProviderStatus()" class="px-3 py-1 bg-white hover:bg-indigo-100 text-indigo-700 text-xs font-bold rounded-xl border border-indigo-200 transition shadow-2xs">
+                                    <i class="fa-solid fa-arrows-rotate mr-1"></i>重新整理
+                                </button>
+                            </div>
+                            <p class="text-xs text-indigo-700 mb-4 leading-relaxed">遵循 0-Surprise-Billing 零意外計費守則。僅啟用免費、免信用卡之 Provider；需付費或短期試用者嚴格停用 (disabled_billing_required)。</p>
+                            
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left text-xs bg-white rounded-2xl border border-indigo-100 overflow-hidden shadow-2xs">
+                                    <thead class="bg-indigo-100/70 text-indigo-900 font-black">
+                                        <tr>
+                                            <th class="p-3">Provider 名稱</th>
+                                            <th class="p-3">支援國家</th>
+                                            <th class="p-3">狀態 (Status)</th>
+                                            <th class="p-3">計費安全性</th>
+                                            <th class="p-3">免費額度</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="admin-provider-status-tbody" class="divide-y divide-gray-100 text-gray-700 font-medium">
+                                        <!-- JS rendered rows -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -3779,6 +3822,43 @@
                     }).join('');
                 }
             }
+
+            // 🌟 渲染 Place Intelligence 5.2 Provider 狀態
+            window.refreshAdminProviderStatus();
+        };
+
+        window.refreshAdminProviderStatus = function() {
+            const tbody = document.getElementById('admin-provider-status-tbody');
+            if (!tbody) return;
+
+            const registry = window.JiaProviderRegistry;
+            const statuses = registry ? registry.getProviderStatuses() : [];
+
+            if (!statuses || statuses.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-3 text-center text-gray-400">尚無 Provider 註冊資料</td></tr>`;
+                return;
+            }
+
+            const getStatusBadge = (st) => {
+                if (st === 'enabled') return `<span class="bg-emerald-100 text-emerald-800 text-[10px] font-black px-2 py-0.5 rounded-full shadow-2xs">● 啟用中 (Enabled)</span>`;
+                if (st === 'enabled_search_only') return `<span class="bg-blue-100 text-blue-800 text-[10px] font-black px-2 py-0.5 rounded-full shadow-2xs">● 搜尋專用 (Search Only)</span>`;
+                if (st === 'disabled_no_key') return `<span class="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded-full shadow-2xs">○ 未設金鑰 (Disabled No Key)</span>`;
+                if (st === 'disabled_billing_required') return `<span class="bg-rose-100 text-rose-800 text-[10px] font-bold px-2 py-0.5 rounded-full shadow-2xs">✕ 計費限制停用 (Disabled Billing)</span>`;
+                if (st === 'permanently_disabled_zero_call') return `<span class="bg-gray-100 text-gray-600 text-[10px] font-bold px-2 py-0.5 rounded-full">✕ 永久停用 (0 Call)</span>`;
+                return `<span class="bg-gray-100 text-gray-700 text-[10px] px-2 py-0.5 rounded-full">${window.escapeHtml(st)}</span>`;
+            };
+
+            tbody.innerHTML = statuses.map(p => {
+                return `
+                    <tr class="hover:bg-indigo-50/40 transition">
+                        <td class="p-3 font-bold text-gray-900">${window.escapeHtml(p.name)}</td>
+                        <td class="p-3 text-gray-500">${window.escapeHtml(p.countries.join(', '))}</td>
+                        <td class="p-3">${getStatusBadge(p.status)}</td>
+                        <td class="p-3 ${p.paymentRequired ? 'text-rose-600 font-bold' : 'text-emerald-700 font-bold'}">${p.paymentRequired ? '需付款方式 (停用)' : '100% 免費 / 免信用卡'}</td>
+                        <td class="p-3 text-gray-500 text-[11px]">${window.escapeHtml(p.freeQuota || '無限制')}</td>
+                    </tr>
+                `;
+            }).join('');
         };
 
         window.adminApproveGroup = async function(grpName) {
@@ -7886,12 +7966,78 @@
                 `);
             }
 
-            // 🗄 資料來源 (置底微型低調標籤)
-            if (pNorm.sources && pNorm.sources.length > 0) {
+            // 🌟 外部平台評價與食記專區 (Phase 5.2 Review & Discovery Resolver)
+            const extReviews = pNorm.externalReviews || {};
+            const extCards = [];
+
+            if (extReviews.foursquare?.enabled && extReviews.foursquare.rating) {
+                extCards.push(`
+                    <div class="p-2.5 bg-blue-50/70 border border-blue-100 rounded-xl">
+                        <div class="flex items-center justify-between text-xs font-bold text-blue-900 mb-1">
+                            <span class="flex items-center gap-1"><i class="fa-brands fa-foursquare text-blue-600"></i> Foursquare 評分</span>
+                            <span class="text-blue-700 font-black">${extReviews.foursquare.rating.toFixed(1)} / 10</span>
+                        </div>
+                        ${extReviews.foursquare.tips?.length ? `<p class="text-[11px] text-blue-800 italic">"${window.escapeHtml(extReviews.foursquare.tips[0])}"</p>` : ''}
+                    </div>
+                `);
+            }
+
+            const blogArticles = pNorm.discovery?.foodArticles || extReviews.naverBlog?.articles || [];
+            if (blogArticles.length > 0) {
+                const articleList = blogArticles.map(a => `
+                    <a href="${window.escapeHtml(a.sourceUrl)}" target="_blank" rel="noopener noreferrer" class="block p-2 bg-emerald-50/60 hover:bg-emerald-100/70 border border-emerald-100 rounded-lg transition mb-1 text-left">
+                        <div class="text-xs font-bold text-emerald-950 truncate">${window.escapeHtml(a.title)}</div>
+                        <div class="text-[10px] text-emerald-700 truncate">${window.escapeHtml(a.summary || '')}</div>
+                        <div class="text-[9px] text-emerald-600 font-medium flex items-center justify-between mt-0.5">
+                            <span>${window.escapeHtml(a.blogger || 'Naver Blogger')}</span>
+                            <span>${window.escapeHtml(a.date || '')}</span>
+                        </div>
+                    </a>
+                `).join('');
+
+                extCards.push(`
+                    <div class="p-2.5 bg-emerald-50/40 border border-emerald-100 rounded-xl">
+                        <div class="flex items-center justify-between text-xs font-bold text-emerald-900 mb-1.5">
+                            <span class="flex items-center gap-1"><i class="fa-solid fa-newspaper text-emerald-600"></i> Naver 網路食記 (${blogArticles.length} 篇)</span>
+                        </div>
+                        <div class="space-y-1">${articleList}</div>
+                    </div>
+                `);
+            }
+
+            if (extCards.length > 0) {
                 rows.push(`
-                    <div class="pt-2 mt-1 border-t border-gray-100 flex items-center justify-between text-[10px] text-gray-400">
-                        <span class="flex items-center gap-1"><i class="fa-solid fa-database text-gray-300"></i><span>資料來源：${window.escapeHtml(pNorm.sources.join(' · '))}</span></span>
-                        <span class="text-orange-400 cursor-pointer hover:underline" onclick="window.openContributeModal()">回報有誤</span>
+                    <div class="pt-2 mt-1 border-t border-gray-100 space-y-2">
+                        <div class="text-[11px] font-bold text-gray-500 flex items-center gap-1">
+                            <i class="fa-solid fa-layer-group text-orange-400"></i><span>其他平台評價與食記</span>
+                        </div>
+                        <div class="space-y-1.5">${extCards.join('')}</div>
+                    </div>
+                `);
+            }
+
+            // 🗄 資料來源透明化 (Provenance Details)
+            if (pNorm.sources && pNorm.sources.length > 0) {
+                const prov = pNorm.fieldSources || {};
+                const provItems = [
+                    prov.name ? `店名：${prov.name}` : '',
+                    prov.address ? `地址：${prov.address}` : '',
+                    prov.phone ? `電話：${prov.phone}` : '',
+                    prov.category ? `分類：${prov.category}` : ''
+                ].filter(Boolean);
+
+                rows.push(`
+                    <div class="pt-2 mt-1 border-t border-gray-100 text-[10px] text-gray-400">
+                        <details class="cursor-pointer group">
+                            <summary class="flex items-center justify-between hover:text-gray-600 transition list-none">
+                                <span class="flex items-center gap-1 font-medium"><i class="fa-solid fa-database text-gray-300"></i><span>資料來源：${window.escapeHtml(pNorm.sources.join(' · '))}</span></span>
+                                <span class="text-[9px] text-orange-400 group-hover:underline">來源明細 ▾</span>
+                            </summary>
+                            <div class="mt-1.5 p-2 bg-gray-50 rounded-lg text-gray-500 space-y-0.5 border border-gray-100">
+                                ${provItems.length ? provItems.map(item => `<div>• ${window.escapeHtml(item)}</div>`).join('') : `<div>• 綜合資料來源：${window.escapeHtml(pNorm.sources.join(', '))}</div>`}
+                                <div class="text-right pt-1"><span class="text-orange-500 cursor-pointer hover:underline" onclick="window.openContributeModal()">回報資訊有誤</span></div>
+                            </div>
+                        </details>
                     </div>
                 `);
             }
@@ -8963,22 +9109,134 @@
             });
         };
 
-        window.adminSearchPlace = function(k) {
-            const list = document.getElementById('admin-autocomplete-list'); if(!k.trim()) return list.classList.add('hidden');
-            if (typeof google !== 'undefined' && google.maps && google.maps.places) {
-                try {
-                    const matchStatus = document.getElementById('smart-place-match-status');
-                    if (matchStatus) { matchStatus.className = 'text-[10px] font-bold mt-1.5 px-1 text-blue-600'; matchStatus.textContent = '正在搜尋 OpenStreetMap…'; }
-                    new google.maps.places.AutocompleteService().getPlacePredictions({ input: k }, (p, s) => {
-                        if (s === 'OK' && p) { 
-                            list.innerHTML = p.map(x => `<div onclick="window.selectAdminPlace('${x.place_id}')" class="p-4 border-b border-gray-50 text-sm font-bold text-gray-700 cursor-pointer hover:bg-orange-50 transition">${window.escapeHtml(x.structured_formatting.main_text)} <span class="text-[10px] text-gray-400 font-normal ml-2">${window.escapeHtml(x.structured_formatting.secondary_text)}</span></div>`).join(''); list.classList.remove('hidden');
-                        } else {
-                            list.classList.add('hidden');
-                            const matchStatus = document.getElementById('smart-place-match-status');
-                            if (matchStatus) { matchStatus.className = 'text-[10px] font-bold mt-1.5 px-1 text-amber-600'; matchStatus.textContent = '智慧搜尋目前找不到這間店，請手動填寫國家、縣市與分類。'; }
-                        }
-                    });
-                } catch(e) { console.error(e); }
+        window.adminSearchPlace = async function(k) {
+            const list = document.getElementById('admin-autocomplete-list');
+            if (!k || !k.trim()) return list?.classList.add('hidden');
+            
+            const matchStatus = document.getElementById('smart-place-match-status');
+            const countryEl = document.getElementById('input-country');
+            const cityEl = document.getElementById('input-city');
+            const country = countryEl ? countryEl.value : '台灣';
+            const city = cityEl ? cityEl.value : '';
+
+            if (matchStatus) {
+                matchStatus.className = 'text-[10px] font-bold mt-1.5 px-1 text-blue-600 flex items-center gap-1';
+                matchStatus.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>正在跨平台多來源尋找店家資訊 (TW/US/JP/KR)…</span>';
+            }
+
+            try {
+                let resolver = window.JiaPlaceIntelligence?.resolveMultiProviderPlace;
+                let res = resolver ? await resolver({ name: k.trim(), country, city }) : null;
+
+                if (!res || (!res.candidates?.length && !res.existingMatch)) {
+                    // Fallback to OSM adapter directly if resolver returned no candidates
+                    if (typeof google !== 'undefined' && google.maps && google.maps.places) {
+                        new google.maps.places.AutocompleteService().getPlacePredictions({ input: k }, (p, s) => {
+                            if (s === 'OK' && p && p.length > 0) {
+                                list.innerHTML = p.map(x => `
+                                    <div onclick="window.selectAdminPlace('${x.place_id}')" class="p-3.5 border-b border-gray-50 text-xs font-bold text-gray-700 cursor-pointer hover:bg-orange-50 transition flex items-center justify-between">
+                                        <div>
+                                            <div class="text-sm text-gray-800">${window.escapeHtml(x.structured_formatting?.main_text || x.description)}</div>
+                                            <div class="text-[10px] text-gray-400 font-normal">${window.escapeHtml(x.structured_formatting?.secondary_text || '')}</div>
+                                        </div>
+                                        <span class="text-[10px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded font-bold">OSM</span>
+                                    </div>
+                                `).join('');
+                                list.classList.remove('hidden');
+                            } else {
+                                list.classList.add('hidden');
+                                if (matchStatus) {
+                                    matchStatus.className = 'text-[10px] font-bold mt-1.5 px-1 text-amber-600';
+                                    matchStatus.textContent = '多平台目前找不到完整公開資訊，請手動填寫國家、縣市與分類。';
+                                }
+                            }
+                        });
+                        return;
+                    }
+                }
+
+                if (res?.status === 'existing_match' && res.existingMatch) {
+                    const em = res.existingMatch;
+                    if (matchStatus) {
+                        matchStatus.className = 'text-[10px] font-bold mt-1.5 px-1 text-emerald-600';
+                        matchStatus.innerHTML = `<i class="fa-solid fa-circle-check"></i> 這家店已經在 Jia-ben 資料庫中！`;
+                    }
+                    list.innerHTML = `
+                        <div class="p-4 bg-emerald-50/90 border-b border-emerald-100 flex items-center justify-between">
+                            <div>
+                                <div class="text-sm font-black text-emerald-900">${window.escapeHtml(em.name)}</div>
+                                <div class="text-[11px] text-emerald-700">${window.escapeHtml(em.address || em.city || '已有完整記錄')}</div>
+                            </div>
+                            <button type="button" onclick="window.openRestaurantDetailByName('${window.escapeForBtn(em.name)}'); document.getElementById('admin-autocomplete-list').classList.add('hidden');" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs shadow-xs transition">
+                                立即查看店家
+                            </button>
+                        </div>
+                    `;
+                    list.classList.remove('hidden');
+                    return;
+                }
+
+                if (res?.candidates && res.candidates.length > 0) {
+                    window._adminCandidateCache = res.candidates;
+                    list.innerHTML = res.candidates.map((cand, idx) => {
+                        const sourceBadges = (cand.sources || ['多來源']).map(s => `<span class="bg-orange-100 text-orange-800 text-[9px] font-black px-1.5 py-0.5 rounded mr-1">✓ ${window.escapeHtml(s)}</span>`).join('');
+                        return `
+                            <div onclick="window.selectCandidatePlace(${idx})" class="p-3.5 border-b border-gray-100 hover:bg-orange-50 cursor-pointer transition">
+                                <div class="flex items-center justify-between gap-1 mb-1">
+                                    <span class="text-sm font-bold text-gray-800">${window.escapeHtml(cand.name)}</span>
+                                    <div class="flex items-center">${sourceBadges}</div>
+                                </div>
+                                <div class="text-[11px] text-gray-500 truncate">${window.escapeHtml(cand.address || cand.city || '公開店家資訊')}</div>
+                                ${cand.phone ? `<div class="text-[10px] text-gray-400 mt-0.5"><i class="fa-solid fa-phone text-[9px] mr-1"></i>${window.escapeHtml(cand.phone)}</div>` : ''}
+                            </div>
+                        `;
+                    }).join('');
+                    list.classList.remove('hidden');
+                    if (matchStatus) {
+                        matchStatus.className = 'text-[10px] font-bold mt-1.5 px-1 text-emerald-600';
+                        matchStatus.textContent = `找到 ${res.candidates.length} 間可能店家，點選即可自動填入資料`;
+                    }
+                } else {
+                    list.classList.add('hidden');
+                    if (matchStatus) {
+                        matchStatus.className = 'text-[10px] font-bold mt-1.5 px-1 text-amber-600';
+                        matchStatus.textContent = '智慧搜尋目前找不到這間店，請手動填寫國家、縣市與分類。';
+                    }
+                }
+            } catch (err) {
+                console.warn('[AdminSearchPlace] Error:', err);
+                list.classList.add('hidden');
+            }
+        };
+
+        window.selectCandidatePlace = function(idx) {
+            const list = document.getElementById('admin-autocomplete-list');
+            if (list) list.classList.add('hidden');
+            const cand = (window._adminCandidateCache || [])[idx];
+            if (!cand) return;
+
+            document.getElementById('input-name').value = cand.name || '';
+            if (cand.location && cand.location.lat) {
+                document.getElementById('input-lat').value = cand.location.lat;
+                document.getElementById('input-lng').value = cand.location.lng;
+            }
+            if (cand.category && cand.category !== '未分類') {
+                document.getElementById('input-category').value = cand.category;
+            }
+
+            const countryEl = document.getElementById('input-country');
+            if (cand.country && countryEl) {
+                const countryMap = { TW: '台灣', US: '美國', JP: '日本', KR: '韓國' };
+                const cName = countryMap[cand.country] || cand.country;
+                window.setSelectValueWithFallback(countryEl, cName);
+                window.handleAddCountryChange(cand.city);
+            }
+
+            window.smartPlaceSelected = true;
+            const matchStatus = document.getElementById('smart-place-match-status');
+            if (matchStatus) {
+                matchStatus.className = 'text-[10px] font-bold mt-1.5 px-1 text-emerald-600';
+                matchStatus.textContent = `已自動帶入：${(cand.sources || []).join(' · ')} 資料`;
             }
         };
 
@@ -9006,7 +9264,6 @@
                                 matchStatus.textContent = category === '未分類' ? '已找到店家並帶入國家、縣市；OSM 未提供明確類型，請手動確認分類。' : `已自動配對：${region.country || '國家未提供'}・${region.city || '縣市未提供'}・${category}`;
                             }
                             if (p.photos && p.photos.length > 0) {
-                                // OSM 不提供商業店家照片，保留使用者自行上傳的照片。
                                 document.getElementById('input-photo').value = '';
                             }
                         } else {
