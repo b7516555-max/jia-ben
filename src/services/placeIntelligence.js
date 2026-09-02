@@ -193,8 +193,13 @@
 
         // 1. 優先檢查現有 Jia-ben 資料庫 (0 external call)
         const existingJiaPlaces = root?.jiaPlacesData || [];
+        const twIdResolver = (country === 'TW' && root?.JiaTaiwanPlaceIdentityResolver) ? root.JiaTaiwanPlaceIdentityResolver : idResolver;
+
         const existingMatchCandidate = existingJiaPlaces.find(p => {
-            if (idResolver) {
+            if (twIdResolver && twIdResolver.evaluateTaiwanMatch) {
+                const evalRes = twIdResolver.evaluateTaiwanMatch(query, p);
+                return evalRes.acceptable;
+            } else if (idResolver) {
                 const evalRes = idResolver.evaluateMatch(query, p, { country });
                 return evalRes.canAutoMerge || evalRes.acceptable;
             }
@@ -226,6 +231,43 @@
         }
 
         trace.push({ provider: 'Jia-ben', result: 'no_match' });
+
+        // 🌟 2. 優先檢查 Taiwan POI Cache (0 external API call)
+        if (country === 'TW' && root?.JiaTaiwanPoiCache?.searchPoiCache) {
+            try {
+                const cachedPoiList = await root.JiaTaiwanPoiCache.searchPoiCache(query);
+                if (cachedPoiList && cachedPoiList.length > 0) {
+                    const topPoi = cachedPoiList[0];
+                    const matchEval = twIdResolver?.evaluateTaiwanMatch ? twIdResolver.evaluateTaiwanMatch(query, topPoi) : { acceptable: true, confidence: 0.95 };
+                    if (matchEval.acceptable) {
+                        trace.push({ provider: 'taiwanPoiCache', result: 'cached_hit', poiId: topPoi.taiwanPoiId });
+                        return {
+                            status: 'success',
+                            candidates: [{
+                                name: topPoi.officialName || topPoi.name || name,
+                                address: topPoi.normalizedAddress || topPoi.address || '',
+                                phone: topPoi.identity?.formattedPhone || topPoi.phone || '',
+                                category: topPoi.categories?.[0] || '餐飲業',
+                                location: topPoi.location || null,
+                                country: 'TW',
+                                sources: ['Taiwan POI Cache', topPoi.source || 'Taiwan Open Data'],
+                                sourceIds: { taiwanPoiCache: topPoi.taiwanPoiId, moea: topPoi.businessId || '', tfda: topPoi.foodRegistrationId || '' },
+                                confidence: matchEval.confidence || 0.95,
+                                fieldSources: {
+                                    name: 'taiwanPoiCache',
+                                    address: 'taiwanPoiCache',
+                                    phone: topPoi.phone ? 'taiwanPoiCache' : undefined
+                                }
+                            }],
+                            existingMatch: null,
+                            trace
+                        };
+                    }
+                }
+            } catch (e) {
+                console.warn('[PlaceIntelligence] TaiwanPoiCache query error:', e);
+            }
+        }
 
         // 2. 取得國家專屬 Provider 流水線
         const pipeline = countryRouter ? countryRouter.getCountryPipeline(country) : [{ id: 'osm', status: 'enabled' }];
@@ -557,6 +599,10 @@
         ];
         const sources = [...new Set(rawSources.filter(Boolean))];
 
+        const recommendedDishes = Array.isArray(place.recommendedDishes) ? place.recommendedDishes : (Array.isArray(place.communityStats?.recommendedDishes) ? place.communityStats.recommendedDishes : []);
+
+        const completeness = root?.JiaCompletenessScorer ? root.JiaCompletenessScorer.computeCompleteness(place) : null;
+
         return {
             name: place.name || '',
             jiaPlaceId: place.jiaPlaceId || place.id || '',
@@ -572,6 +618,8 @@
             weekdayText,
             averageSpend,
             spendCount,
+            recommendedDishes,
+            completeness,
             website,
             menuUrl,
             social,

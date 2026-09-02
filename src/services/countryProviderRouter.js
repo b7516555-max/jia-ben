@@ -54,7 +54,10 @@
     let str = String(address).normalize('NFKC').trim();
 
     if (code === 'TW') {
-      // Taiwan: clean postal codes, standardize 臺/台, remove repeated country
+      const twNormalizer = root?.JiaTaiwanAddressNormalizer || (typeof require === 'function' ? require('../utils/taiwanAddressNormalizer.js') : null);
+      if (twNormalizer && twNormalizer.normalizeTaiwanAddress) {
+        return twNormalizer.normalizeTaiwanAddress(str).formattedAddress;
+      }
       str = str.replace(/^(中華民國|台灣|臺灣)/, '');
       str = str.replace(/^\d{3,6}\s*/, '');
       str = str.replace(/臺/g, '台');
@@ -88,7 +91,11 @@
     const digitsOnly = raw.replace(/[^\d+]/g, '');
 
     if (code === 'TW') {
-      // Taiwan phone format: 02-xxxx-xxxx, 09xx-xxx-xxx, etc.
+      const twPhoneNormalizer = root?.JiaTaiwanPhoneNormalizer || (typeof require === 'function' ? require('../utils/taiwanPhoneNormalizer.js') : null);
+      if (twPhoneNormalizer && twPhoneNormalizer.normalizeTaiwanPhone) {
+        const res = twPhoneNormalizer.normalizeTaiwanPhone(raw);
+        return { valid: res.valid, normalized: res.formatted, canonical: res.canonical };
+      }
       let clean = raw.replace(/[^\d]/g, '');
       if (clean.startsWith('886')) clean = '0' + clean.slice(3);
       if (/^09\d{8}$/.test(clean)) {
