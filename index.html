@@ -4356,21 +4356,30 @@
         window.runCalculator = function() { let total = parseFloat(document.getElementById('calc-total').value) || 0; if(document.getElementById('calc-service').checked) total *= 1.1; document.getElementById('calc-result').textContent = `$${Math.ceil(total / calcPeopleCount)}`; };
         window.copyCalcResult = function() { let text = `【分帳計算機】\n結帳總額: $${document.getElementById('calc-service').checked ? (parseFloat(document.getElementById('calc-total').value)||0)*1.1 : (parseFloat(document.getElementById('calc-total').value)||0)}\n參加人數: ${calcPeopleCount} 人\n---\n💵 每人應付: ${document.getElementById('calc-result').textContent}`; navigator.clipboard.writeText(text).then(() => { window.showCustomMsg("✅ 已複製分帳結果！可直接貼上 Line 群組。"); }).catch(err => { window.showCustomMsg("複製失敗，請手動輸入。"); }); };
 
-        window.showAdvancedAuth = function() { document.getElementById('advanced-auth-modal').classList.remove('hidden'); document.getElementById('advanced-auth-input').focus(); };
+        window.showAdvancedAuth = function() { 
+            const modal = document.getElementById('advanced-auth-modal');
+            if (modal) { modal.classList.remove('hidden'); document.getElementById('advanced-auth-input')?.focus(); }
+        };
         
         window.verifyAdvancedAuth = function() {
-            const input = document.getElementById('advanced-auth-input').value;
+            const input = document.getElementById('advanced-auth-input')?.value;
             if(input === window.appConfig.deleteCode) {
-                document.getElementById('advanced-auth-error').classList.add('hidden'); window.closeModal('advanced-auth-modal'); document.getElementById('advanced-auth-input').value = '';
-                document.getElementById('advanced-unlock-section').classList.add('hidden'); document.getElementById('advanced-settings-section').classList.remove('hidden');
-                document.querySelectorAll('.advanced-only').forEach(el => el.classList.remove('hidden'));
-            } else { document.getElementById('advanced-auth-error').classList.remove('hidden'); }
+                document.getElementById('advanced-auth-error')?.classList.add('hidden'); 
+                window.closeModal('advanced-auth-modal'); 
+                const authInput = document.getElementById('advanced-auth-input');
+                if (authInput) authInput.value = '';
+                document.getElementById('advanced-unlock-section')?.classList.add('hidden'); 
+                document.getElementById('advanced-settings-section')?.classList.remove('hidden');
+                document.querySelectorAll('.advanced-only').forEach(el => el?.classList.remove('hidden'));
+            } else { 
+                document.getElementById('advanced-auth-error')?.classList.remove('hidden'); 
+            }
         };
         
         window.lockAdvanced = function() { 
-            document.getElementById('advanced-settings-section').classList.add('hidden'); 
-            document.getElementById('advanced-unlock-section').classList.remove('hidden'); 
-            document.querySelectorAll('.advanced-only').forEach(el => el.classList.add('hidden')); 
+            document.getElementById('advanced-settings-section')?.classList.add('hidden'); 
+            document.getElementById('advanced-unlock-section')?.classList.remove('hidden'); 
+            document.querySelectorAll('.advanced-only').forEach(el => el?.classList.add('hidden')); 
         };
 
         window.saveSystemSettings = async function() {
