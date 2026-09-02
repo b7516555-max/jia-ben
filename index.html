@@ -7383,10 +7383,15 @@
                 : '<span class="text-xs text-gray-400">來自動態牆的店家推薦</span>';
             const safeNameStr = window.escapeForBtn(name);
             const appUrl = window.appConfig.appUrl || window.location.href;
+            const selectedImgInfo = jiaPlace 
+                ? window.imageSafety.selectImage(jiaPlace, './assets/place-placeholder.svg')
+                : (window.isGoogleMapsPhotoUrl(restaurant.photoUrl) ? { url: './assets/place-placeholder.svg', isPlaceholder: true, label: '示意圖片' } : { url: window.getSafeImage(restaurant.photoUrl, name), isPlaceholder: false, label: '' });
+
             const detailData = {
                 name: name,
-                img: jiaPlace ? window.imageSafety.selectImage(jiaPlace, './assets/place-placeholder.svg').url : (window.isGoogleMapsPhotoUrl(restaurant.photoUrl) ? './assets/place-placeholder.svg' : window.getSafeImage(restaurant.photoUrl, name)),
-                imageIsPlaceholder: jiaPlace ? window.imageSafety.selectImage(jiaPlace, './assets/place-placeholder.svg').isPlaceholder : false,
+                img: selectedImgInfo.url,
+                imageIsPlaceholder: selectedImgInfo.isPlaceholder,
+                imageLabelText: selectedImgInfo.label || (selectedImgInfo.isPlaceholder ? 'AI 示意圖' : ''),
                 city: jiaPlace?.city || restaurant.city || '',
                 mUrl: jiaPlace?.mapLink || mUrl,
                 placeId: restaurant.placeId || '',
@@ -7481,7 +7486,7 @@
                 <div class="restaurant-card bg-white rounded-2xl shadow-sm border ${isH ? 'border-orange-200' : 'border-gray-100'} overflow-hidden relative cursor-pointer group h-48 md:h-56 lg:h-64" onclick="window.openRestaurantDetailByName('${safeNameStr}')">
                     <img id="list-img-${safeNameStr}" src="${displayImg}" onerror="this.onerror=null; this.src='./assets/place-placeholder.svg';" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110">
                     <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent"></div>
-                    ${selectedImage.isPlaceholder ? '<span class="absolute top-2.5 right-2.5 z-20 bg-white/90 text-gray-700 text-[10px] px-2 py-1 rounded-full font-bold border border-gray-200">示意圖片</span>' : ''}
+                    ${selectedImage.isPlaceholder ? `<span class="absolute top-2.5 right-2.5 z-20 bg-white/90 text-gray-700 text-[10px] px-2 py-1 rounded-full font-bold border border-gray-200">${selectedImage.label || 'AI 示意圖'}</span>` : ''}
                     <div class="absolute top-2.5 left-2.5 z-10 flex items-center gap-1">
                         <span class="bg-black/50 backdrop-blur-md text-white text-[10px] px-2 py-0.5 rounded-full font-bold tracking-widest border border-white/20">${i.city || '未分類'}</span>
                         ${isH ? '<span class="bg-orange-500/90 backdrop-blur-sm text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full shadow-sm"><i class="fa-solid fa-crown text-[9px]"></i></span>' : ''}
@@ -7523,7 +7528,10 @@
                 detailImgEl.onerror = function() { this.onerror = null; this.src = window.getFallbackImage(data.name); };
             }
             const imageLabel = document.getElementById('detail-image-label');
-            if (imageLabel) imageLabel.classList.toggle('hidden', !data.imageIsPlaceholder);
+            if (imageLabel) {
+                imageLabel.textContent = data.imageLabelText || 'AI 示意圖';
+                imageLabel.classList.toggle('hidden', !data.imageIsPlaceholder);
+            }
 
             const detailCityEl = document.getElementById('detail-city');
             if (detailCityEl) detailCityEl.textContent = data.city || '未分類';

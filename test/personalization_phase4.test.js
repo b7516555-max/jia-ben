@@ -123,5 +123,39 @@ global.imageSafety = imageSafety;
   assert(cardHtml.includes('你最愛的台式料理'), 'Card markup contains recommendation pill text');
   console.log('✅ Test 7 Passed: RestaurantCard 2.0 successfully displays recommendation badge pill.');
 
+  // Test 8: Real photo priority & Non-counting of AI fallbacks in community photo stats
+  const placeWithRealCover = {
+    name: '老張牛肉麵',
+    coverPhoto: 'https://example.com/real_beef_noodle.jpg',
+    communityPhotos: []
+  };
+  const imgCover = imageSafety.selectImage(placeWithRealCover);
+  assert.strictEqual(imgCover.url, 'https://example.com/real_beef_noodle.jpg', 'Real coverPhoto overrides AI fallback');
+  assert.strictEqual(imgCover.isPlaceholder, false, 'Real photo is not placeholder');
+  assert.strictEqual(imgCover.isAiFallback, false, 'Real photo is not AI fallback');
+
+  const placeWithCommunityPhoto = {
+    name: '阿婆甜不辣',
+    communityPhotos: ['https://example.com/user_photo.jpg']
+  };
+  const imgCommunity = imageSafety.selectImage(placeWithCommunityPhoto);
+  assert.strictEqual(imgCommunity.url, 'https://example.com/user_photo.jpg', 'Community photo overrides AI fallback');
+  assert.strictEqual(imgCommunity.isPlaceholder, false, 'Community photo is not placeholder');
+
+  const placeNoPhoto = {
+    name: '不知名小火鍋',
+    categories: ['火鍋']
+  };
+  const imgAi = imageSafety.selectImage(placeNoPhoto);
+  assert(imgAi.url.includes('hotpot.jpg'), 'Uses AI food fallback when no real photo');
+  assert.strictEqual(imgAi.isPlaceholder, true, 'AI fallback is flagged as placeholder');
+  assert.strictEqual(imgAi.isAiFallback, true, 'AI fallback is marked isAiFallback');
+
+  // Verify that AI fallback does not count towards place completeness real photo score
+  const CommunityData = require('../src/services/communityData.js');
+  const compNoPhoto = CommunityData.calculatePlaceCompleteness(placeNoPhoto);
+  assert.strictEqual(compNoPhoto.details.hasPhoto, false, 'Place with AI fallback has details.hasPhoto = false');
+  console.log('✅ Test 8 Passed: Photo hierarchy (Real > Community > AI > Placeholder) & Community Data Isolation verified.');
+
   console.log('🎉 All Jia-ben Personalization Phase 4 unit tests passed successfully!');
 })();
