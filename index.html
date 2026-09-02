@@ -7669,115 +7669,148 @@
                 photoCta.classList.toggle('hidden', !data.imageIsPlaceholder);
             }
 
-            if (data.jiaPlace) {
-                const place = data.jiaPlace, rows = [];
-                if (place.openingHours) rows.push(`<p class="flex items-start"><i class="fa-solid fa-clock text-gray-400 w-5 mt-0.5"></i><span>營業時間：${window.escapeHtml(typeof place.openingHours === 'string' ? place.openingHours : '請展開下方詳細時段')}</span></p>`);
-                if (place.phone) rows.push(`<p class="flex items-start"><i class="fa-solid fa-phone text-gray-400 w-5 mt-0.5"></i><a href="tel:${String(place.phone).replace(/[^\d+]/g,'')}" class="text-blue-600 font-bold hover:underline">${window.escapeHtml(place.phone)}</a></p>`);
-                if (place.website) rows.push(`<p class="flex items-start"><i class="fa-solid fa-globe text-gray-400 w-5 mt-0.5"></i><a href="${window.escapeHtml(place.website)}" target="_blank" rel="noopener noreferrer" class="text-blue-600 font-bold break-all hover:underline">官方網站</a></p>`);
-                if (place.address) rows.push(`<p class="flex items-start"><i class="fa-solid fa-location-dot text-gray-400 w-5 mt-0.5"></i><span>${window.escapeHtml(place.address)}</span></p>`);
-                const sources = [...new Set(['Jia-ben', place.source === 'nominatim' || place.source === 'overpass' ? 'OpenStreetMap' : '', ...Object.keys(place.sourceIds||{}).filter(key=>place.sourceIds[key]&&key!=='google')].filter(Boolean))];
-                rows.push(`<p class="flex items-start"><i class="fa-solid fa-database text-gray-400 w-5 mt-0.5"></i><span>資料來源：${window.escapeHtml(sources.join(' · '))}</span></p>`);
-                if (rows.length === 1) rows.unshift('<p class="text-gray-400">部分店家資料尚待補充</p>');
-                infoEl.innerHTML = rows.join('');
-                const priceBadge = document.getElementById('detail-price-badge'), priceText = document.getElementById('detail-price-text');
-                const spend = Number(place.communityStats?.averageSpend), spendCount = Number(place.communityStats?.spendCount || 0);
-                if (priceBadge) priceBadge.classList.toggle('hidden', !(spend > 0 || place.priceLevel));
-                if (priceText && spend > 0) priceText.textContent = `Jia-ben 平均每人約 NT$${Math.round(spend)}（${spendCount} 筆）`;
-                else if (priceText && place.priceLevel) priceText.textContent = `外部價格等級：${window.escapeHtml(String(place.priceLevel))}`;
-                const hours = Array.isArray(place.openingHours?.weekday_text) ? place.openingHours.weekday_text : [];
-                if (hours.length) { hoursEl.innerHTML = hours.map(line=>`<p>${window.escapeHtml(line)}</p>`).join(''); hoursWrap.classList.remove('hidden'); }
-                window._currentGoogleReviews = [];
-                window._currentPlaceRating = Number(place.communityStats?.ratingAverage || 0);
-                window._currentPlaceReviewCount = Number(place.communityStats?.ratingCount || 0);
-                window._currentPlaceName = place.name;
-                window._currentPlaceId = place.sourceIds?.osm || '';
-                return;
+            // 🌟 透過 PlaceIntelligence.normalizePlaceDetailData 取得全欄位統一視圖
+            const rawPlace = data.jiaPlace || (window.jiaPlacesData || []).find(p => p.name === data.name) || { name: data.name };
+            const pNorm = window.JiaPlaceIntelligence?.normalizePlaceDetailData 
+                ? window.JiaPlaceIntelligence.normalizePlaceDetailData(rawPlace)
+                : {
+                    name: data.name,
+                    address: rawPlace.address || '',
+                    phone: rawPlace.phone || '',
+                    categories: rawPlace.categories || (rawPlace.category ? [rawPlace.category] : []),
+                    openingHours: typeof rawPlace.openingHours === 'string' ? rawPlace.openingHours : '',
+                    weekdayText: Array.isArray(rawPlace.openingHours?.weekday_text) ? rawPlace.openingHours.weekday_text : [],
+                    averageSpend: Number(rawPlace.communityStats?.averageSpend || 0) || null,
+                    spendCount: Number(rawPlace.communityStats?.spendCount || 0),
+                    website: rawPlace.website || null,
+                    menuUrl: rawPlace.menuUrl || null,
+                    social: rawPlace.officialSocial || {},
+                    hasSocial: Boolean(rawPlace.officialSocial?.facebook || rawPlace.officialSocial?.instagram || rawPlace.officialSocial?.threads),
+                    sources: ['Jia-ben']
+                };
+
+            // 1. 頂部摘要列更新（平均消費 & 分類）
+            const priceBadge = document.getElementById('detail-price-badge');
+            const priceText = document.getElementById('detail-price-text');
+            if (priceBadge && priceText) {
+                if (pNorm.averageSpend) {
+                    priceText.textContent = `平均每人約 NT$${pNorm.averageSpend}${pNorm.spendCount ? `（${pNorm.spendCount} 筆）` : ''}`;
+                    priceBadge.classList.remove('hidden');
+                } else if (rawPlace.priceLevel) {
+                    priceText.textContent = `消費價位等級：${rawPlace.priceLevel}`;
+                    priceBadge.classList.remove('hidden');
+                } else {
+                    priceBadge.classList.add('hidden');
+                }
             }
 
-            if (typeof google === 'undefined' || !google.maps || !google.maps.places) {
-                infoEl.innerHTML = '<p class="text-xs text-gray-400">店家詳細資料尚在建立中。</p>';
-                return;
+            // 2. 構建「店家基本資訊」卡片內部所有完整欄位
+            const rows = [];
+
+            // 📍 地址 (支援長地址換行與自動截斷安全)
+            if (pNorm.address) {
+                rows.push(`
+                    <p class="flex items-start gap-2">
+                        <i class="fa-solid fa-location-dot text-rose-500 w-4 text-center mt-0.5 shrink-0"></i>
+                        <span class="text-gray-800 break-words flex-1">${window.escapeHtml(pNorm.address)}</span>
+                    </p>
+                `);
             }
 
-            const service = new google.maps.places.PlacesService(document.createElement('div'));
-            const fields = ['name', 'formatted_address', 'formatted_phone_number', 'opening_hours', 'price_level', 'website', 'business_status', 'photos', 'rating', 'user_ratings_total', 'reviews'];
-            const showDetails = (place, status) => {
-                if (status !== 'OK' || !place) {
-                    infoEl.innerHTML = '<p class="text-xs text-gray-400">尚未提供這間店的外部連線詳細資訊。</p>';
-                    return;
-                }
-                if (place.photos && place.photos.length) {
-                    const detailImage = document.getElementById('detail-img');
-                    detailImage.onerror = function() { this.onerror = null; this.src = window.getFallbackImage(data.name); };
-                    detailImage.src = place.photos[0].getUrl({ maxWidth: 800 });
-                }
-
-                // 保留既有歷史評分顯示；OSM 本身不提供商業評分。
-                const rating = place.rating || data.rating || 0;
-                const reviews = place.user_ratings_total || data.reviews || 0;
-                const detailRatingEl = document.getElementById('detail-rating');
-                
-                // 儲存既有評分摘要資料供彈窗使用。
-                window._currentGoogleReviews = place.reviews || [];
-                window._currentPlaceRating = rating;
-                window._currentPlaceReviewCount = reviews;
-                window._currentPlaceName = data.name;
-                window._currentPlaceId = place.place_id || data.placeId || '';
-                
-                if (detailRatingEl) {
-                    if (rating > 0) {
-                        detailRatingEl.innerHTML = `<i class="fa-solid fa-star mr-1 text-amber-400"></i> ${parseFloat(rating).toFixed(1)} <span class="text-gray-500 text-xs ml-1 font-normal">(${reviews} 則歷史評價)</span>`;
-                    } else {
-                        detailRatingEl.innerHTML = `<span class="text-gray-400 text-xs">暫無評分</span>`;
-                    }
-                }
-
-                // 平均單價 / 價位等級更新
-                const priceLabels = ['免費', '$（平價 · 約 $100~200）', '$$（中等 · 約 $200~500）', '$$$（偏高 · 約 $500~1000）', '$$$$（高價 · 約 $1000+）'];
-                const priceDesc = Number.isInteger(place.price_level) ? priceLabels[place.price_level] : (Number.isInteger(data.price_level) ? priceLabels[data.price_level] : '未提供');
-                const priceTextEl = document.getElementById('detail-price-text');
-                if (priceTextEl) {
-                    priceTextEl.textContent = `平均消費：${priceDesc}`;
-                }
-
-                const phone = place.formatted_phone_number || '未提供';
-                const address = place.formatted_address || data.city || '未提供';
-                
-                const openStatusInfo = window.computeOpeningStatus(place);
-                let openClass = 'text-gray-500';
-                if (openStatusInfo.status === 'open') openClass = 'text-emerald-600';
-                else if (openStatusInfo.status === 'closing_soon') openClass = 'text-amber-500';
-                else if (openStatusInfo.status === 'closed' || openStatusInfo.status.startsWith('closed_')) openClass = 'text-rose-500';
-
-                const phoneHtml = phone === '未提供' ? phone : `<a href="tel:${phone.replace(/[^\d+]/g, '')}" class="text-blue-600 font-bold hover:underline">${phone}</a>`;
-                const websiteHtml = place.website ? `<p class="flex items-start"><i class="fa-solid fa-globe text-gray-400 w-5 mt-0.5"></i><a href="${place.website}" target="_blank" rel="noopener noreferrer" class="text-blue-600 font-bold hover:underline break-all">官方網站</a></p>` : '';
-                infoEl.innerHTML = `
-                    <p class="flex items-center gap-2"><i class="fa-solid fa-clock text-gray-400 w-5"></i><span class="font-bold ${openClass}">${openStatusInfo.text}</span> ${openStatusInfo.badgeHtml}</p>
-                    <p class="flex items-start"><i class="fa-solid fa-phone text-gray-400 w-5 mt-0.5"></i><span>${phoneHtml}</span></p>
-                    <p class="flex items-start"><i class="fa-solid fa-coins text-gray-400 w-5 mt-0.5"></i><span>消費價位：${priceDesc}</span></p>
-                    <p class="flex items-start"><i class="fa-solid fa-location-dot text-gray-400 w-5 mt-0.5"></i><span>${address}</span></p>
-                    ${websiteHtml}`;
-
-                const weekdayText = place.opening_hours && place.opening_hours.weekday_text;
-                if (weekdayText && weekdayText.length) {
-                    hoursEl.innerHTML = weekdayText.map(line => `<p>${line}</p>`).join('');
-                    hoursWrap.classList.remove('hidden');
-                }
-            };
-
-            if (data.placeId) {
-                service.getDetails({ placeId: data.placeId, fields: fields }, (place, status) => {
-                    if (status === 'OK' && place) return showDetails(place, status);
-                    service.textSearch({ query: `${data.city || ''} ${data.name}` }, (results, searchStatus) => {
-                        showDetails(results && results[0], searchStatus);
-                    });
-                });
-            } else {
-                service.textSearch({ query: `${data.city || ''} ${data.name}` }, (results, status) => {
-                    if (status !== 'OK' || !results || !results[0]) return showDetails(null, status);
-                    service.getDetails({ placeId: results[0].place_id, fields: fields }, showDetails);
-                });
+            // 📞 電話 (支援一鍵撥號點擊)
+            if (pNorm.phone) {
+                rows.push(`
+                    <p class="flex items-center gap-2">
+                        <i class="fa-solid fa-phone text-blue-500 w-4 text-center shrink-0"></i>
+                        <a href="tel:${String(pNorm.phone).replace(/[^\d+]/g, '')}" class="text-blue-600 font-bold hover:underline tracking-wide">${window.escapeHtml(pNorm.phone)}</a>
+                    </p>
+                `);
             }
+
+            // 🕐 每週主要營業時段 (支援文字與詳細展開)
+            if (pNorm.openingHours) {
+                rows.push(`
+                    <p class="flex items-start gap-2">
+                        <i class="fa-solid fa-clock text-emerald-600 w-4 text-center mt-0.5 shrink-0"></i>
+                        <span class="text-gray-700 font-medium break-words flex-1">${window.escapeHtml(pNorm.openingHours)}</span>
+                    </p>
+                `);
+            }
+
+            // 🍽 料理主要分類 (優雅膠囊 Chip 標籤)
+            if (pNorm.categories && pNorm.categories.length > 0) {
+                const catChips = pNorm.categories.map(c => `<span class="bg-orange-50 text-orange-700 border border-orange-200/70 text-[10px] font-black px-2 py-0.5 rounded-lg shadow-2xs">${window.escapeHtml(c)}</span>`).join(' ');
+                rows.push(`
+                    <div class="flex items-center gap-2 pt-0.5">
+                        <i class="fa-solid fa-utensils text-orange-500 w-4 text-center shrink-0"></i>
+                        <div class="flex items-center gap-1.5 flex-wrap">${catChips}</div>
+                    </div>
+                `);
+            }
+
+            // 💰 每人平均消費 (詳細資訊列)
+            if (pNorm.averageSpend) {
+                rows.push(`
+                    <p class="flex items-center gap-2">
+                        <i class="fa-solid fa-coins text-amber-500 w-4 text-center shrink-0"></i>
+                        <span class="text-gray-800 font-bold">每人平均消費 <span class="text-emerald-700 font-black">約 NT$${pNorm.averageSpend}</span></span>
+                    </p>
+                `);
+            }
+
+            // 🌐 官方網站 & 📖 菜單連結按鈕列
+            const actionLinks = [];
+            if (pNorm.website) {
+                actionLinks.push(`<a href="${window.escapeHtml(pNorm.website)}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-xl bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 transition"><i class="fa-solid fa-globe text-blue-500"></i><span>官方網站</span></a>`);
+            }
+            if (pNorm.menuUrl) {
+                actionLinks.push(`<a href="${window.escapeHtml(pNorm.menuUrl)}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-xl bg-amber-50 text-amber-800 hover:bg-amber-100 border border-amber-200 transition"><i class="fa-solid fa-book-open text-amber-600"></i><span>查看菜單</span></a>`);
+            }
+            if (pNorm.social?.instagram) {
+                actionLinks.push(`<a href="${window.escapeHtml(pNorm.social.instagram)}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-xl bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 transition"><i class="fa-brands fa-instagram text-rose-500"></i><span>Instagram</span></a>`);
+            }
+            if (pNorm.social?.facebook) {
+                actionLinks.push(`<a href="${window.escapeHtml(pNorm.social.facebook)}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-xl bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 transition"><i class="fa-brands fa-facebook text-indigo-600"></i><span>Facebook</span></a>`);
+            }
+            if (pNorm.social?.threads) {
+                actionLinks.push(`<a href="${window.escapeHtml(pNorm.social.threads)}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-xl bg-gray-100 text-gray-800 hover:bg-gray-200 border border-gray-300 transition"><i class="fa-brands fa-threads"></i><span>Threads</span></a>`);
+            }
+            if (actionLinks.length > 0) {
+                rows.push(`
+                    <div class="flex items-center gap-1.5 flex-wrap pt-1">
+                        ${actionLinks.join('')}
+                    </div>
+                `);
+            }
+
+            // 🗄 資料來源 (置底微型低調標籤)
+            if (pNorm.sources && pNorm.sources.length > 0) {
+                rows.push(`
+                    <div class="pt-2 mt-1 border-t border-gray-100 flex items-center justify-between text-[10px] text-gray-400">
+                        <span class="flex items-center gap-1"><i class="fa-solid fa-database text-gray-300"></i><span>資料來源：${window.escapeHtml(pNorm.sources.join(' · '))}</span></span>
+                        <span class="text-orange-400 cursor-pointer hover:underline" onclick="window.openContributeModal()">回報有誤</span>
+                    </div>
+                `);
+            }
+
+            if (rows.length === 0) {
+                rows.push('<p class="text-gray-400 text-xs py-2 text-center">部分店家基本資料尚待補充，歡迎點擊上方按鈕協助補充！</p>');
+            }
+
+            infoEl.innerHTML = rows.join('');
+
+            // 詳細營業時間折疊區
+            if (pNorm.weekdayText && pNorm.weekdayText.length > 0) {
+                hoursEl.innerHTML = pNorm.weekdayText.map(line => `<p class="leading-relaxed">${window.escapeHtml(line)}</p>`).join('');
+                hoursWrap.classList.remove('hidden');
+            }
+
+            window._currentGoogleReviews = [];
+            window._currentPlaceRating = pNorm.ratingAverage;
+            window._currentPlaceReviewCount = pNorm.ratingCount;
+            window._currentPlaceName = data.name;
+            window._currentPlaceId = rawPlace.sourceIds?.osm || '';
+            return;
         };
 
         window.triggerDetailPhotoUpload = function() {

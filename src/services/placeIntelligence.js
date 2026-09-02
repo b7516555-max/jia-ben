@@ -398,12 +398,113 @@
         };
     }
 
+    /**
+     * 統一店家詳情資料正規化 (Single Source of Truth for Place Detail View)
+     * 整合：Canonical Place, Community Stats, Web Intelligence, Contribution Field Overrides, Legacy Fields
+     * 
+     * @param {Object} place - 店家物件
+     * @returns {Object} 正規化後的完整欄位資料
+     */
+    function normalizePlaceDetailData(place = {}) {
+        if (!place) return null;
+
+        // 1. 地址
+        const address = place.address || place.formatted_address || (place.city ? `${place.city} ${place.district || ''}` : '') || '';
+
+        // 2. 電話
+        let phone = place.phone || place.formatted_phone_number || place.telephone || '';
+        if (phone && root?.JiaCommunity?.validateAndNormalizePhone) {
+            const phoneCheck = root.JiaCommunity.validateAndNormalizePhone(phone);
+            if (phoneCheck.valid) phone = phoneCheck.normalized;
+        }
+
+        // 3. 料理分類 (過濾出 1~3 個主要受控分類，不顯示「未分類」)
+        let categories = [];
+        if (Array.isArray(place.categories) && place.categories.length > 0) {
+            categories = place.categories.map(c => mapToControlledCategory(c) || c).filter(c => c && c !== '未分類');
+        } else if (place.category && place.category !== '未分類') {
+            const mapped = mapToControlledCategory(place.category) || place.category;
+            if (mapped) categories = [mapped];
+        }
+        categories = [...new Set(categories)].slice(0, 3);
+
+        // 4. 每週主要營業時段
+        let openingHours = '';
+        let weekdayText = [];
+        if (typeof place.openingHours === 'string' && place.openingHours.trim()) {
+            openingHours = place.openingHours.trim();
+        } else if (place.openingHours && typeof place.openingHours === 'object') {
+            if (Array.isArray(place.openingHours.weekday_text)) {
+                weekdayText = place.openingHours.weekday_text;
+                openingHours = weekdayText[0] || '詳見每週營業時間';
+            } else if (place.openingHours.text) {
+                openingHours = place.openingHours.text;
+            }
+        } else if (place.opening_hours) {
+            if (Array.isArray(place.opening_hours.weekday_text)) {
+                weekdayText = place.opening_hours.weekday_text;
+                openingHours = weekdayText[0] || '詳見每週營業時間';
+            }
+        }
+
+        // 5. 每人平均消費 (只取有效的正整數)
+        const rawSpend = Number(place.communityStats?.averageSpend ?? place.averageSpend ?? 0);
+        const spendCount = Number(place.communityStats?.spendCount || 0);
+        const averageSpend = (Number.isFinite(rawSpend) && rawSpend > 0) ? Math.round(rawSpend) : null;
+
+        // 6. 官方網站
+        const website = place.website || place.webIntelligence?.officialWebsite || place.url || null;
+
+        // 7. 官方菜單外連
+        const menuUrl = place.menuUrl || place.webIntelligence?.menuUrl || null;
+
+        // 8. 官方社群
+        const social = {
+            facebook: place.officialSocial?.facebook || place.webIntelligence?.officialSocial?.facebook || null,
+            instagram: place.officialSocial?.instagram || place.webIntelligence?.officialSocial?.instagram || null,
+            threads: place.officialSocial?.threads || place.webIntelligence?.officialSocial?.threads || null
+        };
+        const hasSocial = Boolean(social.facebook || social.instagram || social.threads);
+
+        // 9. 資料來源透明化標籤 (只顯示實際有提供內容的合法來源)
+        const rawSources = [
+            'Jia-ben',
+            (place.fieldSources && Object.values(place.fieldSources).includes('community_verified')) ? '社群驗證' : '',
+            (place.source === 'nominatim' || place.source === 'overpass' || place.sourceIds?.osm) ? 'OpenStreetMap' : '',
+            place.sourceIds?.foursquare ? 'Foursquare' : '',
+            (website || place.fieldSources?.website === 'official_website') ? '店家官網' : '',
+            ...(Array.isArray(place.webIntelligence?.sources) ? place.webIntelligence.sources : [])
+        ];
+        const sources = [...new Set(rawSources.filter(Boolean))];
+
+        return {
+            name: place.name || '',
+            jiaPlaceId: place.jiaPlaceId || place.id || '',
+            address,
+            phone,
+            categories,
+            primaryCategory: categories[0] || '',
+            openingHours,
+            weekdayText,
+            averageSpend,
+            spendCount,
+            website,
+            menuUrl,
+            social,
+            hasSocial,
+            sources,
+            ratingAverage: Number(place.communityStats?.ratingAverage ?? place.rating ?? 0),
+            ratingCount: Number(place.communityStats?.ratingCount ?? 0)
+        };
+    }
+
     return {
         RAW_CATEGORY_MAP,
         mapToControlledCategory,
         parseSchemaJsonLd,
         discoverPlaceInfo,
         createWebIntelligenceSchema,
+        normalizePlaceDetailData,
         _discoveryCache: discoveryCache
     };
 });

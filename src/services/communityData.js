@@ -283,9 +283,27 @@
             updatedPlace.openingHours = contribution.value;
             updatedPlace.fieldSources.openingHours = 'community_verified';
         } else if (field === 'category') {
-            const cats = Array.isArray(contribution.value) ? contribution.value : [contribution.value];
-            updatedPlace.categories = [...new Set([...(updatedPlace.categories || []), ...cats])].slice(0, 3);
+            const rawCats = Array.isArray(contribution.value) ? contribution.value : [contribution.value];
+            const mappedCats = rawCats.map(c => {
+                if (typeof window !== 'undefined' && window.JiaPlaceIntelligence?.mapToControlledCategory) {
+                    return window.JiaPlaceIntelligence.mapToControlledCategory(c) || c;
+                }
+                return c;
+            }).filter(Boolean);
+            updatedPlace.categories = [...new Set([...(updatedPlace.categories || []), ...mappedCats])].slice(0, 3);
             updatedPlace.fieldSources.categories = 'community_verified';
+        } else if (field === 'averageSpend') {
+            const spendNum = Number(contribution.value);
+            if (Number.isFinite(spendNum) && spendNum > 0) {
+                if (!updatedPlace.communityStats) updatedPlace.communityStats = {};
+                const prevCount = Number(updatedPlace.communityStats.spendCount || 0);
+                const prevSpend = Number(updatedPlace.communityStats.averageSpend || 0);
+                const newCount = prevCount + 1;
+                const newSpend = prevCount > 0 ? Math.round((prevSpend * prevCount + spendNum) / newCount) : Math.round(spendNum);
+                updatedPlace.communityStats.averageSpend = newSpend;
+                updatedPlace.communityStats.spendCount = newCount;
+                updatedPlace.fieldSources.averageSpend = 'community_verified';
+            }
         } else if (field === 'photo') {
             if (!Array.isArray(updatedPlace.communityPhotos)) updatedPlace.communityPhotos = [];
             if (!updatedPlace.communityPhotos.includes(contribution.value)) {
