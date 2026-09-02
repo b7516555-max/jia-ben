@@ -30,6 +30,7 @@
         lng: Number(doc.x)
       },
       placeUrl: doc.place_url || '',
+      sourceUrl: doc.place_url || '',
       attribution: 'Kakao Local API',
       raw: doc
     };

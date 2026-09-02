@@ -140,8 +140,8 @@
         paymentRequired: false,
         hardLimitSupported: true
       },
-      status: 'disabled_no_key', // Enabled only when HOTPEPPER_API_KEY is configured and verified
-      attributionRequired: 'Powered by ホットペッパー Webサービス',
+      status: 'disabled_registration_rejected', // Registration was rejected by provider
+      attributionRequired: 'Powered by ホットペッパー Web服務',
       persistencePolicy: 'allow_display_with_source_url'
     },
     kakao_local: {
@@ -163,7 +163,7 @@
         paymentRequired: false,
         hardLimitSupported: true
       },
-      status: 'disabled_no_key', // Enabled only when KAKAO_REST_API_KEY is configured and verified
+      status: 'enabled', // Verified & Live in production via Apps Script proxy
       attributionRequired: 'Kakao Local API',
       persistencePolicy: 'allow_display_with_place_url'
     },
@@ -185,7 +185,7 @@
         paymentRequired: false,
         hardLimitSupported: true
       },
-      status: 'disabled_no_key', // Enabled only when NAVER_CLIENT_ID / SECRET are configured
+      status: 'disabled_scope_invalid', // Keys configured; awaiting search scope activation in Naver Console
       attributionRequired: 'NAVER Search API',
       persistencePolicy: 'allow_display_with_source_link'
     },
@@ -207,9 +207,9 @@
         paymentRequired: false,
         hardLimitSupported: true
       },
-      status: 'disabled_no_key', // Enabled only when NAVER_CLIENT_ID / SECRET are configured
-      attributionRequired: 'NAVER Blog Search',
-      persistencePolicy: 'allow_article_snippets_with_source_link'
+      status: 'disabled_scope_invalid', // Keys configured; awaiting search scope activation in Naver Console
+      attributionRequired: 'NAVER Blog Search API',
+      persistencePolicy: 'short_excerpt_and_link_only'
     },
     yelp: {
       id: 'yelp',

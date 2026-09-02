@@ -283,6 +283,12 @@
                             ...res,
                             match: matchEval
                         });
+
+                        // 🌟 Early stop: if current stage yields high confidence (>= 0.93) with full fields, skip remaining POI providers
+                        if (matchEval.confidence >= 0.93 && res.address && res.location && (res.phone || res.category)) {
+                            trace.push({ action: 'early_stop', reason: 'High confidence complete record resolved from ' + stage.id });
+                            break;
+                        }
                     }
                 } else {
                     trace.push({ provider: stage.id, status: 'no_result' });

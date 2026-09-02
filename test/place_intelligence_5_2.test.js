@@ -48,7 +48,7 @@ global.JiaProviderAdapters = {
   assert(osmMeta && osmMeta.status === 'enabled', 'OSM is registered and enabled');
   const kakaoMeta = ProviderRegistry.getProvider('kakao_local');
   assert.strictEqual(kakaoMeta.billing.freeQuotaEligibility, 'first_map_enabled_app_only', 'Kakao has first_map_enabled_app_only eligibility');
-  assert.strictEqual(kakaoMeta.status, 'disabled_no_key', 'Kakao status defaults to disabled_no_key without key');
+  assert.strictEqual(kakaoMeta.status, 'enabled', 'Kakao status is enabled after live verification');
   const yelpMeta = ProviderRegistry.getProvider('yelp');
   assert.strictEqual(yelpMeta.status, 'disabled_billing_required', 'Yelp strictly marked disabled_billing_required');
   assert.strictEqual(yelpMeta.billing.paymentRequired, true, 'Yelp requires payment method');

@@ -9,25 +9,56 @@ const SPREADSHEET_ID = '1lNOBRQJTnbdtOnAbTv1C4An1_1MQOaoRSW-mmxOCgYY';
 const DEFAULT_PHOTO_FOLDER_NAME = '一起吃飯_評價照片';
 
 function doGet(e) {
-  // 若包含 action 參數則作為 API 處理
-  if (e && e.parameter) {
-    if (e.parameter.action === 'image' && e.parameter.id) {
-      try {
-        const file = DriveApp.getFileById(e.parameter.id);
-        return file.getBlob();
-      } catch (err) {
-        return ContentService.createTextOutput("Image not found: " + err.toString());
-      }
-    }
-    if (e.parameter.action) {
-      return handleApiRead(e.parameter);
+  var params = (e && e.parameter) || {};
+  var action = String(params.action || '').trim();
+
+  if (action === 'image' && params.id) {
+    try {
+      const file = DriveApp.getFileById(params.id);
+      return file.getBlob();
+    } catch (err) {
+      return ContentService.createTextOutput("Image not found: " + err.toString());
     }
   }
-  // 否則輸出為 index.html 網頁
-  return HtmlService.createHtmlOutputFromFile('index')
-      .setTitle('一起吃飯吧！')
-      .addMetaTag('viewport', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no')
-      .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+
+  if (action === 'check_provider_keys') {
+    var properties = PropertiesService.getScriptProperties();
+    return jsonResponse({
+      status: 'success',
+      KAKAO_REST_API_KEY: Boolean(properties.getProperty('KAKAO_REST_API_KEY')),
+      NAVER_CLIENT_ID: Boolean(properties.getProperty('NAVER_CLIENT_ID')),
+      NAVER_CLIENT_SECRET: Boolean(properties.getProperty('NAVER_CLIENT_SECRET')),
+      FOURSQUARE_API_KEY: Boolean(properties.getProperty('FOURSQUARE_API_KEY')),
+      GEOAPIFY_API_KEY: Boolean(properties.getProperty('GEOAPIFY_API_KEY')),
+      HOTPEPPER_API_KEY: Boolean(properties.getProperty('HOTPEPPER_API_KEY'))
+    });
+  }
+
+  if (action === 'enrich_place') {
+    try {
+      var req = {
+        action: 'enrich_place',
+        provider: params.provider,
+        place: {
+          name: params.name || params.query || '',
+          city: params.city || '',
+          location: {
+            lat: Number(params.lat),
+            lng: Number(params.lng)
+          }
+        }
+      };
+      return jsonResponse(handlePlaceEnrichmentProxy(req));
+    } catch (err) {
+      return jsonResponse({ status: 'error', message: err.toString() });
+    }
+  }
+
+  if (action === 'read' || action === 'get' || action === 'list') {
+    return handleApiRead(params);
+  }
+
+  return jsonResponse({ status: 'active', app: 'Jia-ben Place Intelligence API' });
 }
 
 function getOrCreatePhotoFolder() {
@@ -127,6 +158,20 @@ function doPost(e) {
       return jsonResponse(uploadRes);
     }
 
+    // 檢查 Provider Key 是否已設定 (僅回傳布林值，嚴格保密 Secret 內容)
+    if (action === 'check_provider_keys') {
+      const properties = PropertiesService.getScriptProperties();
+      return jsonResponse({
+        status: 'success',
+        KAKAO_REST_API_KEY: Boolean(properties.getProperty('KAKAO_REST_API_KEY')),
+        NAVER_CLIENT_ID: Boolean(properties.getProperty('NAVER_CLIENT_ID')),
+        NAVER_CLIENT_SECRET: Boolean(properties.getProperty('NAVER_CLIENT_SECRET')),
+        FOURSQUARE_API_KEY: Boolean(properties.getProperty('FOURSQUARE_API_KEY')),
+        GEOAPIFY_API_KEY: Boolean(properties.getProperty('GEOAPIFY_API_KEY')),
+        HOTPEPPER_API_KEY: Boolean(properties.getProperty('HOTPEPPER_API_KEY'))
+      });
+    }
+
     // Jia-ben Place Enrichment proxy. API keys only live in Script Properties.
     if (action === 'enrich_place') {
       return jsonResponse(handlePlaceEnrichmentProxy(contents));
@@ -214,6 +259,11 @@ function handlePlaceEnrichmentProxy(request) {
   const provider = String(request.provider || '').toLowerCase();
   const properties = PropertiesService.getScriptProperties();
 
+  // Hot Pepper registration was rejected by provider
+  if (provider === 'hotpepper') {
+    return { status: 'disabled_registration_rejected', provider: 'hotpepper', message: 'Hot Pepper API registration was rejected' };
+  }
+
   // Yelp is strictly disabled due to billing policy
   if (provider === 'yelp') {
     return { status: 'disabled_billing_required', provider: 'yelp', message: 'Yelp is disabled due to billing requirement policy' };
@@ -236,7 +286,6 @@ function handlePlaceEnrichmentProxy(request) {
     foursquare: 'FOURSQUARE_API_KEY',
     here: 'HERE_API_KEY',
     geoapify: 'GEOAPIFY_API_KEY',
-    hotpepper: 'HOTPEPPER_API_KEY',
     kakao_local: 'KAKAO_REST_API_KEY',
     kakao: 'KAKAO_REST_API_KEY',
     naver_local: 'NAVER_CLIENT_ID',
@@ -247,7 +296,6 @@ function handlePlaceEnrichmentProxy(request) {
     foursquare: 450,
     here: 900,
     geoapify: 2700,
-    hotpepper: 9000,
     kakao_local: 250000,
     kakao: 250000,
     naver_local: 20000,
@@ -286,8 +334,6 @@ function handlePlaceEnrichmentProxy(request) {
       result = fetchHereEnrichment_(apiKey, place);
     } else if (normalizedProvider === 'geoapify') {
       result = fetchGeoapifyEnrichment_(apiKey, place);
-    } else if (normalizedProvider === 'hotpepper') {
-      result = fetchHotPepperEnrichment_(apiKey, place);
     } else if (normalizedProvider === 'kakao_local') {
       result = fetchKakaoEnrichment_(apiKey, place);
     } else if (normalizedProvider === 'naver_local') {
@@ -351,85 +397,84 @@ function fetchGeoapifyEnrichment_(apiKey, place) {
   return { status:'success', provider:'geoapify', sourceId:p.place_id || '', name:p.name || '', address:p.formatted || '', phone:p.contact && p.contact.phone || '', website:p.website || p.contact && p.contact.website || '', openingHours:p.opening_hours || null, priceLevel:null, externalPhotos:[], location:{lat:Number(coordinates[1]),lng:Number(coordinates[0])} };
 }
 
-function fetchHotPepperEnrichment_(apiKey, place) {
-  const params = { key: apiKey, name_any: place.name, count: 3, format: 'json' };
-  const lat = Number(place.location && place.location.lat);
-  const lng = Number(place.location && place.location.lng);
-  if (isFinite(lat) && isFinite(lng)) {
-    params.lat = lat;
-    params.lng = lng;
-    params.range = 3;
-  }
-  const url = 'https://webservice.recruit.co.jp/hotpepper/gourmet/v1/?' + toQueryString_(params);
-  const response = UrlFetchApp.fetch(url, { muteHttpExceptions: true });
-  if (response.getResponseCode() !== 200) throw new Error('HotPepper HTTP ' + response.getResponseCode());
-  const payload = JSON.parse(response.getContentText());
-  const shop = payload.results && payload.results.shop && payload.results.shop[0];
-  if (!shop) return null;
-  return {
-    status: 'success',
-    provider: 'hotpepper',
-    shop: shop
-  };
-}
-
 function fetchKakaoEnrichment_(apiKey, place) {
-  const params = { query: place.name, size: 3, category_group_code: 'FD6' }; // FD6 is restaurant in Kakao Local
+  let query = place.name || '';
+  if (place.city && !query.includes(place.city)) {
+    query = place.city + ' ' + query;
+  }
+  const params = { query: query, size: 5 };
+  if (place.categoryGroup) {
+    params.category_group_code = place.categoryGroup;
+  }
   const lat = Number(place.location && place.location.lat);
   const lng = Number(place.location && place.location.lng);
   if (isFinite(lat) && isFinite(lng)) {
     params.x = lng;
     params.y = lat;
-    params.radius = 1000;
+    params.radius = 2000;
   }
   const url = 'https://dapi.kakao.com/v2/local/search/keyword.json?' + toQueryString_(params);
   const response = UrlFetchApp.fetch(url, {
     muteHttpExceptions: true,
     headers: { Authorization: 'KakaoAK ' + apiKey }
   });
-  if (response.getResponseCode() !== 200) throw new Error('Kakao HTTP ' + response.getResponseCode());
+  const code = response.getResponseCode();
+  if (code !== 200) throw new Error('Kakao HTTP ' + code);
   const payload = JSON.parse(response.getContentText());
   const doc = payload.documents && payload.documents[0];
   if (!doc) return null;
   return {
     status: 'success',
     provider: 'kakao_local',
-    document: doc
+    document: doc,
+    documents: payload.documents || []
   };
 }
 
 function fetchNaverLocalEnrichment_(clientId, clientSecret, place) {
-  const params = { query: place.name, display: 3, start: 1, sort: 'random' };
+  let query = place.name || '';
+  if (place.city && !query.includes(place.city)) {
+    query = place.city + ' ' + query;
+  }
+  const params = { query: query, display: 5, start: 1, sort: 'random' };
   const url = 'https://openapi.naver.com/v1/search/local.json?' + toQueryString_(params);
   const response = UrlFetchApp.fetch(url, {
     muteHttpExceptions: true,
     headers: {
-      'X-Naver-Client-Id': clientId,
-      'X-Naver-Client-Secret': clientSecret
+      'X-Naver-Client-Id': String(clientId || '').trim(),
+      'X-Naver-Client-Secret': String(clientSecret || '').trim()
     }
   });
-  if (response.getResponseCode() !== 200) throw new Error('Naver Local HTTP ' + response.getResponseCode());
+  const code = response.getResponseCode();
+  if (code !== 200) throw new Error('Naver Local HTTP ' + code + ' Response: ' + response.getContentText());
   const payload = JSON.parse(response.getContentText());
   const item = payload.items && payload.items[0];
   if (!item) return null;
   return {
     status: 'success',
     provider: 'naver_local',
-    item: item
+    item: item,
+    items: payload.items || [],
+    total: payload.total || 0
   };
 }
 
 function fetchNaverBlogEnrichment_(clientId, clientSecret, place) {
-  const params = { query: place.name, display: 5, start: 1, sort: 'sim' };
+  let query = place.name || '';
+  if (place.city && !query.includes(place.city)) {
+    query = place.city + ' ' + query;
+  }
+  const params = { query: query, display: 5, start: 1, sort: 'sim' };
   const url = 'https://openapi.naver.com/v1/search/blog.json?' + toQueryString_(params);
   const response = UrlFetchApp.fetch(url, {
     muteHttpExceptions: true,
     headers: {
-      'X-Naver-Client-Id': clientId,
-      'X-Naver-Client-Secret': clientSecret
+      'X-Naver-Client-Id': String(clientId || '').trim(),
+      'X-Naver-Client-Secret': String(clientSecret || '').trim()
     }
   });
-  if (response.getResponseCode() !== 200) throw new Error('Naver Blog HTTP ' + response.getResponseCode());
+  const code = response.getResponseCode();
+  if (code !== 200) throw new Error('Naver Blog HTTP ' + code + ' Response: ' + response.getContentText());
   const payload = JSON.parse(response.getContentText());
   return {
     status: 'success',
