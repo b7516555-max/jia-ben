@@ -66,7 +66,7 @@ global.JiaProviderAdapters = {
   const jpPipeline = CountryRouter.getCountryPipeline('JP');
   assert(jpPipeline.some(p => p.id === 'hotpepper'), 'JP pipeline includes Hot Pepper');
   const krPipeline = CountryRouter.getCountryPipeline('KR');
-  assert(krPipeline.some(p => p.id === 'kakao_local') && krPipeline.some(p => p.id === 'naver_blog'), 'KR pipeline includes Kakao and Naver Blog');
+  assert(krPipeline.some(p => p.id === 'kakao_local') && !krPipeline.some(p => p.id === 'naver_blog'), 'KR pipeline includes Kakao and strictly omits Naver');
   console.log('✅ 2. CountryProviderRouterTest Passed: Country code normalization & provider pipeline routing verified.');
 
   // 3. PlaceIdentityResolverTest

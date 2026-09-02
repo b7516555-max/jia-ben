@@ -47,6 +47,10 @@
 
   async function search(place) {
     if (!place || !place.name) return null;
+    const providerMeta = root?.JiaProviderRegistry?.getProvider('naver_local');
+    if (providerMeta && providerMeta.productionEnabled === false) {
+      return { status: 'disabled_new_registration_unavailable', productionEnabled: false };
+    }
     if (!root?.JIA_ENRICHMENT_PROXY_URL) return { status: 'disabled_no_proxy' };
 
     try {

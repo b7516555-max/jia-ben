@@ -33,6 +33,10 @@
 
   async function searchArticles(place) {
     if (!place || !place.name) return { articles: [], totalCount: 0 };
+    const providerMeta = root?.JiaProviderRegistry?.getProvider('naver_blog');
+    if (providerMeta && providerMeta.productionEnabled === false) {
+      return { status: 'disabled_new_registration_unavailable', articles: [], totalCount: 0, productionEnabled: false };
+    }
     if (!root?.JIA_ENRICHMENT_PROXY_URL) return { status: 'disabled_no_proxy', articles: [], totalCount: 0 };
 
     try {

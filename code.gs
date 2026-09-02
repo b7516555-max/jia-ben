@@ -304,6 +304,23 @@ function handlePlaceEnrichmentProxy(request) {
 
   const normalizedProvider = provider === 'kakao' ? 'kakao_local' : provider;
 
+  // Zero-call billing and registration safeguards
+  if (normalizedProvider === 'naver_local' || normalizedProvider === 'naver_blog' || normalizedProvider === 'naver_api_hub') {
+    return {
+      status: 'disabled_billing_required',
+      provider: normalizedProvider,
+      message: 'Naver Search is disabled in production due to new registration unavailability / API HUB billing requirements.'
+    };
+  }
+
+  if (normalizedProvider === 'hotpepper') {
+    return { status: 'disabled_registration_rejected', provider: 'hotpepper', message: 'Hot Pepper API registration rejected by provider.' };
+  }
+
+  if (normalizedProvider === 'yelp' || normalizedProvider === 'google_places' || normalizedProvider === 'google') {
+    return { status: 'disabled_billing_required', provider: normalizedProvider, message: 'Provider permanently disabled due to billing policy.' };
+  }
+
   if (!keyNames[normalizedProvider]) {
     return { status: 'unsupported_provider', provider: provider };
   }

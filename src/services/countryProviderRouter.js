@@ -136,7 +136,7 @@
       TW: ['taiwan_open_data', 'osm', 'geoapify', 'foursquare'],
       US: ['osm', 'geoapify', 'foursquare', 'yelp'],
       JP: ['hotpepper', 'osm', 'geoapify', 'foursquare'],
-      KR: ['kakao_local', 'naver_local', 'naver_blog', 'osm', 'geoapify', 'foursquare']
+      KR: ['kakao_local', 'osm', 'geoapify', 'foursquare']
     };
 
     const targetList = basePipeline[code] || basePipeline.TW;

@@ -3843,7 +3843,9 @@
                 if (st === 'enabled') return `<span class="bg-emerald-100 text-emerald-800 text-[10px] font-black px-2 py-0.5 rounded-full shadow-2xs">● 啟用中 (Enabled)</span>`;
                 if (st === 'enabled_search_only') return `<span class="bg-blue-100 text-blue-800 text-[10px] font-black px-2 py-0.5 rounded-full shadow-2xs">● 搜尋專用 (Search Only)</span>`;
                 if (st === 'disabled_no_key') return `<span class="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded-full shadow-2xs">○ 未設金鑰 (Disabled No Key)</span>`;
-                if (st === 'disabled_billing_required') return `<span class="bg-rose-100 text-rose-800 text-[10px] font-bold px-2 py-0.5 rounded-full shadow-2xs">✕ 計費限制停用 (Disabled Billing)</span>`;
+                if (st === 'disabled_new_registration_unavailable') return `<span class="bg-amber-100 text-amber-900 text-[10px] font-bold px-2 py-0.5 rounded-full shadow-2xs">✕ 停用 (新搜尋註冊已終止)</span>`;
+                if (st === 'disabled_registration_rejected') return `<span class="bg-rose-100 text-rose-800 text-[10px] font-bold px-2 py-0.5 rounded-full shadow-2xs">✕ 停用 (申請遭服務商拒絕)</span>`;
+                if (st === 'disabled_billing_required') return `<span class="bg-rose-100 text-rose-800 text-[10px] font-bold px-2 py-0.5 rounded-full shadow-2xs">✕ 停用 (需信用卡/計費)</span>`;
                 if (st === 'permanently_disabled_zero_call') return `<span class="bg-gray-100 text-gray-600 text-[10px] font-bold px-2 py-0.5 rounded-full">✕ 永久停用 (0 Call)</span>`;
                 return `<span class="bg-gray-100 text-gray-700 text-[10px] px-2 py-0.5 rounded-full">${window.escapeHtml(st)}</span>`;
             };

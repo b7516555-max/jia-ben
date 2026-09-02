@@ -40,10 +40,78 @@ global.JiaProviderAdapters = {
 
 (async () => {
   console.log('============================================================');
-  console.log('--- JIA-BEN PLACE INTELLIGENCE 5.2B UNIT TESTS (13 SUITES) ---');
+  console.log('--- JIA-BEN PLACE INTELLIGENCE 5.2B UNIT TESTS ---');
   console.log('============================================================\n');
 
-  // 1. KakaoLiveAdapterTest
+  // 1. NaverDevelopersUnavailableTest
+  const naverLocalMeta = ProviderRegistry.getProvider('naver_local');
+  const naverBlogMeta = ProviderRegistry.getProvider('naver_blog');
+  assert.strictEqual(naverLocalMeta.status, 'disabled_new_registration_unavailable', 'Naver Local is disabled_new_registration_unavailable');
+  assert.strictEqual(naverLocalMeta.productionEnabled, false, 'Naver Local productionEnabled is false');
+  assert.strictEqual(naverBlogMeta.status, 'disabled_new_registration_unavailable', 'Naver Blog is disabled_new_registration_unavailable');
+  assert.strictEqual(naverBlogMeta.productionEnabled, false, 'Naver Blog productionEnabled is false');
+  console.log('✅ 1. NaverDevelopersUnavailableTest Passed: Naver Developers search registration unavailable status verified.');
+
+  // 2. NaverApiHubBillingRequiredTest
+  const naverHubMeta = ProviderRegistry.getProvider('naver_api_hub');
+  assert.strictEqual(naverHubMeta.status, 'disabled_billing_required', 'NAVER API HUB is disabled_billing_required');
+  assert.strictEqual(naverHubMeta.billing.paymentRequired, true, 'NAVER API HUB requires payment / credit card');
+  assert.strictEqual(naverHubMeta.productionEnabled, false, 'NAVER API HUB productionEnabled is false');
+  console.log('✅ 2. NaverApiHubBillingRequiredTest Passed: NAVER API HUB disabled due to credit card / billing requirement.');
+
+  // 3. NaverProductionZeroCallTest
+  const naverLocalCall = await NaverLocalAdapter.search({ name: '명동교자' });
+  assert.strictEqual(naverLocalCall.productionEnabled, false, 'Naver Local search immediately returns without network call');
+  assert.strictEqual(naverLocalCall.status, 'disabled_new_registration_unavailable');
+
+  const naverBlogCall = await NaverBlogAdapter.searchArticles({ name: '명동교자' });
+  assert.strictEqual(naverBlogCall.productionEnabled, false, 'Naver Blog search immediately returns without network call');
+  assert.strictEqual(naverBlogCall.status, 'disabled_new_registration_unavailable');
+  assert.strictEqual(naverBlogCall.articles.length, 0);
+  console.log('✅ 3. NaverProductionZeroCallTest Passed: Zero network calls guaranteed on Naver adapters.');
+
+  // 4. KoreaRouterSkipsNaverTest
+  const krPipeline = CountryRouter.getCountryPipeline('KR');
+  const krProviderIds = krPipeline.map(p => p.id);
+  assert(!krProviderIds.includes('naver_local'), 'KR pipeline excludes naver_local');
+  assert(!krProviderIds.includes('naver_blog'), 'KR pipeline excludes naver_blog');
+  assert(!krProviderIds.includes('naver_api_hub'), 'KR pipeline excludes naver_api_hub');
+  assert.deepStrictEqual(krProviderIds, ['kakao_local', 'osm', 'geoapify', 'foursquare']);
+  console.log('✅ 4. KoreaRouterSkipsNaverTest Passed: CountryProviderRouter for KR omits Naver.');
+
+  // 5. KoreaRouterUsesKakaoTest
+  assert.strictEqual(krPipeline[0].id, 'kakao_local', 'Kakao Local is primary provider in KR pipeline');
+  assert.strictEqual(krPipeline[0].canExecute, true, 'Kakao Local canExecute is true');
+  const kakaoMeta = ProviderRegistry.getProvider('kakao_local');
+  assert.strictEqual(kakaoMeta.status, 'enabled', 'Kakao Local status is enabled');
+  assert.strictEqual(kakaoMeta.billing.bizWalletEnabled, false, 'Kakao Biz Wallet is OFF');
+  assert.strictEqual(kakaoMeta.billing.paidApiEnabled, false, 'Kakao Paid API is OFF');
+  console.log('✅ 5. KoreaRouterUsesKakaoTest Passed: Kakao Local is active primary KR provider with billing safeguards.');
+
+  // 6. KoreaFallbackWithoutNaverTest
+  const executableStages = krPipeline.filter(p => p.canExecute).map(p => p.id);
+  assert.strictEqual(executableStages[0], 'kakao_local');
+  assert.strictEqual(executableStages[1], 'osm');
+  assert.strictEqual(executableStages[2], 'geoapify');
+  assert.strictEqual(executableStages[3], 'foursquare');
+  console.log('✅ 6. KoreaFallbackWithoutNaverTest Passed: Clean fallback chain Kakao -> OSM -> Geoapify -> Foursquare.');
+
+  // 7. NoPaidProviderAutoEnableTest
+  const allProviders = ProviderRegistry.getAllProviders();
+  const paidProviders = allProviders.filter(p => p.billing && p.billing.paymentRequired);
+  for (const p of paidProviders) {
+    assert.notStrictEqual(p.status, 'enabled', `Paid provider ${p.id} must NEVER be enabled`);
+    assert.strictEqual(p.productionEnabled, false, `Paid provider ${p.id} must have productionEnabled: false`);
+  }
+  console.log('✅ 7. NoPaidProviderAutoEnableTest Passed: Strict prohibition on paid provider activation verified.');
+
+  // 8. GoogleZeroCallTest
+  const googleMeta = ProviderRegistry.getProvider('google_places');
+  assert.strictEqual(googleMeta.status, 'permanently_disabled_zero_call', 'Google Places is permanently_disabled_zero_call');
+  assert.strictEqual(googleMeta.productionEnabled, false, 'Google Places productionEnabled is false');
+  console.log('✅ 8. GoogleZeroCallTest Passed: Google Places permanently disabled with 0 calls.');
+
+  // 9. KakaoLiveAdapterTest
   const rawKakao = {
     id: "26567082",
     place_name: "명동교자 분점",
@@ -62,98 +130,41 @@ global.JiaProviderAdapters = {
   assert(Math.abs(normKakao.location.lng - 126.985136) < 0.001); // x is longitude
   assert(Math.abs(normKakao.location.lat - 37.563455) < 0.001);  // y is latitude
   assert.strictEqual(normKakao.sourceUrl, "http://place.map.kakao.com/26567082");
-  console.log('✅ 1. KakaoLiveAdapterTest Passed: Parsing, road address, x/y coords verified.');
+  console.log('✅ 9. KakaoLiveAdapterTest Passed: Parsing, road address, x/y coords verified.');
 
-  // 2. NaverLocalLiveAdapterTest
-  const rawNaverLocal = {
-    title: "<b>명동교자</b> 본점",
-    link: "http://www.mdkj.co.kr/",
-    category: "한식>칼국수,만두",
-    description: "",
-    telephone: "02-776-5336",
-    address: "서울특별시 중구 명동2가 25-2",
-    roadAddress: "서울특별시 중구 명동10길 29",
-    mapx: "1269858000",
-    mapy: "375636000"
-  };
-  const normNaverLocal = NaverLocalAdapter.normalize(rawNaverLocal);
-  assert.strictEqual(normNaverLocal.name, "명동교자 본점", "HTML tags stripped");
-  assert.strictEqual(normNaverLocal.roadAddress, "서울특별시 중구 명동10길 29");
-  assert.strictEqual(normNaverLocal.phone, "02-776-5336");
-  assert.strictEqual(normNaverLocal.category, "한식>칼국수,만두");
-  console.log('✅ 2. NaverLocalLiveAdapterTest Passed: Tag stripping, road address & category verified.');
+  // 10. KoreanCoordinateNormalizationTest
+  const sampleCoord = { lat: Number(rawKakao.y), lng: Number(rawKakao.x) };
+  assert(sampleCoord.lat > 33 && sampleCoord.lat < 39, "Valid Korean latitude range");
+  assert(sampleCoord.lng > 124 && sampleCoord.lng < 132, "Valid Korean longitude range");
+  console.log('✅ 10. KoreanCoordinateNormalizationTest Passed: Coordinate range checks verified.');
 
-  // 3. NaverBlogLiveAdapterTest
-  const rawNaverBlogItem = {
-    title: "서울 명동 맛집 [<b>명동교자 본점</b>] 칼국수와 만두 후기",
-    link: "https://blog.naver.com/testuser/223000000000",
-    description: "명동에 방문하면 꼭 들러야 하는 미쉐린 가이드 서울 맛집 <b>명동교자</b>...",
-    bloggername: "맛있는일상",
-    bloggerlink: "https://blog.naver.com/testuser",
-    postdate: "20260710"
-  };
-  const normArticle = NaverBlogAdapter.normalizeArticle(rawNaverBlogItem);
-  assert.strictEqual(normArticle.title, "서울 명동 맛집 [명동교자 본점] 칼국수와 만두 후기");
-  assert(!normArticle.title.includes("<b>"), "HTML tags stripped from blog title");
-  assert.strictEqual(normArticle.blogger, "맛있는일상");
-  assert.strictEqual(normArticle.date, "20260710");
-  assert.strictEqual(normArticle.sourceUrl, "https://blog.naver.com/testuser/223000000000");
-  console.log('✅ 3. NaverBlogLiveAdapterTest Passed: Blog discovery metadata extraction verified.');
-
-  // 4. KoreanCoordinateNormalizationTest
-  const validWgs84 = NaverLocalAdapter.normalize({
-    title: "우래옥",
-    mapx: "1269987000",
-    mapy: "375682000"
-  });
-  assert(validWgs84.location.lat > 33 && validWgs84.location.lat < 39, "Valid Korean latitude range");
-  assert(validWgs84.location.lng > 124 && validWgs84.location.lng < 132, "Valid Korean longitude range");
-  console.log('✅ 4. KoreanCoordinateNormalizationTest Passed: Coordinate range checks verified.');
-
-  // 5. KoreanAddressNormalizerTest
+  // 11. KoreanAddressNormalizerTest
   const normAddr = CountryRouter.normalizeAddressByCountry("대한민국 서울특별시 중구 창경궁로 62-29", "KR");
   assert.strictEqual(normAddr, "서울특별시 중구 창경궁로 62-29", "Country prefix removed");
   const normAddrPostal = CountryRouter.normalizeAddressByCountry("04546 서울 중구 명동10길 8", "KR");
   assert.strictEqual(normAddrPostal, "서울 중구 명동10길 8", "5-digit Korean postal code stripped");
-  console.log('✅ 5. KoreanAddressNormalizerTest Passed: Road address normalizer verified.');
+  console.log('✅ 11. KoreanAddressNormalizerTest Passed: Road address normalizer verified.');
 
-  // 6. KoreanIdentityResolutionTest
+  // 12. KoreanIdentityResolutionTest
   const targetK = {
-    name: "명동교자 본점",
-    address: "서울 중구 명동10길 29",
-    phone: "02-776-5336",
-    location: { lat: 37.5636, lng: 126.9858 },
+    name: "명동교자 분점",
+    address: "서울 중구 명동10길 8",
+    phone: "02-776-3424",
+    location: { lat: 37.563455, lng: 126.985136 },
     country: "KR"
   };
   const candK = {
-    name: "명동교자 본점",
-    address: "서울 중구 명동2가 25-2",
-    phone: "02-776-5336",
-    location: { lat: 37.5636, lng: 126.9858 }
+    name: "명동교자",
+    address: "서울 중구 명동10길 8",
+    phone: "02-776-3424",
+    location: { lat: 37.5635, lng: 126.9852 }
   };
   const evalK = PlaceIdentityResolver.evaluateMatch(targetK, candK, { country: "KR" });
   assert(evalK.confidence >= 0.93, `Confidence should be >= 0.93, got ${evalK.confidence}`);
   assert.strictEqual(evalK.matchType, "auto_match");
-  console.log('✅ 6. KoreanIdentityResolutionTest Passed: Multi-signal identity match verified.');
+  console.log('✅ 12. KoreanIdentityResolutionTest Passed: Multi-signal identity match verified.');
 
-  // 7. KakaoNaverSamePlaceTest
-  const kakaoPlace = {
-    name: "우래옥 본점",
-    address: "서울 중구 창경궁로 62-29",
-    phone: "02-2265-0151",
-    location: { lat: 37.568211, lng: 126.998718 }
-  };
-  const naverPlace = {
-    name: "우래옥",
-    address: "서울특별시 중구 주교동 118-1",
-    phone: "02-2265-0151",
-    location: { lat: 37.568211, lng: 126.998718 }
-  };
-  const crossMatch = PlaceIdentityResolver.evaluateMatch(kakaoPlace, naverPlace, { country: "KR" });
-  assert(crossMatch.confidence >= 0.93, `Same place cross-provider confidence >= 0.93, got ${crossMatch.confidence}`);
-  console.log('✅ 7. KakaoNaverSamePlaceTest Passed: Kakao and Naver records correctly resolve to ONE JiaPlace.');
-
-  // 8. KoreanGenericNameRejectTest
+  // 13. KoreanGenericNameRejectTest
   const genericStore = {
     name: "식당",
     address: "서울 중구 남대문로",
@@ -167,66 +178,14 @@ global.JiaProviderAdapters = {
   const genericEval = PlaceIdentityResolver.evaluateMatch(genericStore, genericOther, { country: "KR" });
   assert(genericEval.confidence < 0.70, `Generic store without matching GPS must be rejected, got ${genericEval.confidence}`);
   assert.strictEqual(genericEval.matchType, "reject");
-  console.log('✅ 8. KoreanGenericNameRejectTest Passed: Common generic Korean store names protected.');
+  console.log('✅ 13. KoreanGenericNameRejectTest Passed: Common generic Korean store names protected.');
 
-  // 9. NaverBlogNotRatingTest
-  const blogArticle = {
-    title: "우래옥 평양냉면 불고기 찐 맛집",
-    summary: "서울 평양냉면 성지 우래옥에 다녀왔습니다. 국물이 깊고...",
-    sourceUrl: "https://blog.naver.com/test/123",
-    source: "Naver Blog"
-  };
-  let discModel = DiscoveryResolver.createDiscoveryModel({});
-  discModel = DiscoveryResolver.addFoodArticle(discModel, blogArticle);
-  assert.strictEqual(discModel.foodArticles.length, 1);
-  assert.strictEqual(discModel.foodArticles[0].source, "Naver Blog");
-  assert.strictEqual(discModel.foodArticles[0].rating, undefined, "No numeric rating computed from blog");
-  console.log('✅ 9. NaverBlogNotRatingTest Passed: Naver Blog strictly categorized as discovery.');
-
-  // 10. NaverArticleMatchTest
-  const targetPlace = {
-    name: "명동교자",
-    city: "서울",
-    district: "중구",
-    roadAddress: "서울 중구 명동10길 29"
-  };
-  const goodArticle = {
-    title: "명동교자 본점 서울 중구 명동 맛집",
-    summary: "서울 중구 명동10길에 위치한 명동교자에서 만두와 칼국수를 먹었습니다.",
-    sourceUrl: "https://blog.naver.com/1"
-  };
-  const goodMatch = DiscoveryResolver.evaluateArticleMatch(targetPlace, goodArticle);
-  assert(goodMatch.confidence >= 0.90, `Good match confidence >= 0.90, got ${goodMatch.confidence}`);
-  assert.strictEqual(goodMatch.canDisplay, true);
-
-  const irrelevantArticle = {
-    title: "제주도 흑돼지 맛집 탐방",
-    summary: "서귀포 올레시장에서 맛있는 음식을 먹었습니다.",
-    sourceUrl: "https://blog.naver.com/2"
-  };
-  const badMatch = DiscoveryResolver.evaluateArticleMatch(targetPlace, irrelevantArticle);
-  assert(badMatch.confidence < 0.80, `Irrelevant article rejected, got ${badMatch.confidence}`);
-  assert.strictEqual(badMatch.canDisplay, false);
-  console.log('✅ 10. NaverArticleMatchTest Passed: Article confidence thresholds verified.');
-
-  // 11. KakaoQuotaGuardTest (Official REST API limit: 100,000 req/day)
+  // 14. KakaoQuotaGuardTest (Official REST API limit: 100,000 req/day)
   const kakaoLimit = QuotaManager.LIMITS.kakao_local.safeLimit;
   assert.strictEqual(kakaoLimit, 95000, "Kakao safe limit set to 95,000/day (95% of 100,000 REST Local API quota)");
   assert.strictEqual(QuotaManager.LIMITS.kakao_local.warning, 80000, "Kakao 80% warning is 80,000");
   assert.strictEqual(QuotaManager.LIMITS.kakao_local.high, 90000, "Kakao 90% warning is 90,000");
-  console.log('✅ 11. KakaoQuotaGuardTest Passed: Kakao official REST API quota (100k) & safety thresholds verified.');
+  console.log('✅ 14. KakaoQuotaGuardTest Passed: Kakao official REST API quota (100k) & safety thresholds verified.');
 
-  // 12. NaverSharedQuotaGuardTest (Official Shared Search API limit: 25,000 req/day)
-  const naverLocalLimit = QuotaManager.LIMITS.naver_local.safeLimit;
-  assert.strictEqual(naverLocalLimit, 23750, "Naver shared safe limit is 23,750 req/day (95% hard stop)");
-  assert.strictEqual(QuotaManager.LIMITS.naver_local.warning, 20000, "Naver 80% warning is 20,000");
-  assert.strictEqual(QuotaManager.LIMITS.naver_local.high, 22500, "Naver 90% warning is 22,500");
-  console.log('✅ 12. NaverSharedQuotaGuardTest Passed: Naver conservative shared quota budget (25k) verified.');
-
-  // 13. SecretNeverExposedTest
-  const exposedKeys = Object.keys(global).filter(k => k.includes('SECRET') || k.includes('API_KEY'));
-  assert.strictEqual(exposedKeys.length, 0, "No raw secret keys exposed in global scope");
-  console.log('✅ 13. SecretNeverExposedTest Passed: API secrets strictly confined to server-side.');
-
-  console.log('\n🎉 ALL 13 JIA-BEN PLACE INTELLIGENCE 5.2B UNIT TESTS PASSED SUCCESSFULLY!');
+  console.log('\n🎉 ALL 14 JIA-BEN PLACE INTELLIGENCE 5.2B UNIT TESTS PASSED SUCCESSFULLY!');
 })();

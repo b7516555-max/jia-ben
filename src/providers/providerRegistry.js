@@ -141,6 +141,7 @@
         hardLimitSupported: true
       },
       status: 'disabled_registration_rejected', // Registration was rejected by provider
+      productionEnabled: false,
       attributionRequired: 'Powered by ホットペッパー Web服務',
       persistencePolicy: 'allow_display_with_source_url'
     },
@@ -160,16 +161,20 @@
         free: true,
         freeQuota: '100,000 req/day (REST Local Search, No Credit Card)',
         freeQuotaEligibility: 'first_map_enabled_app_only',
+        bizWalletEnabled: false,
+        paidApiEnabled: false,
         paymentRequired: false,
         hardLimitSupported: true
       },
+      productionEnabled: true,
+      autoDisableIfBillingRequired: true,
       status: 'enabled', // Verified & Live in production via Apps Script proxy
       attributionRequired: 'Kakao Local API',
       persistencePolicy: 'allow_display_with_place_url'
     },
     naver_local: {
       id: 'naver_local',
-      name: 'Naver Search Local',
+      name: 'Naver Search Local (Developers)',
       countries: ['KR'],
       capabilities: {
         poi: true,
@@ -180,18 +185,20 @@
         geocoding: false
       },
       billing: {
-        free: true,
-        freeQuota: '25,000 req/day (Search API shared quota, No Credit Card)',
+        free: false,
+        freeQuota: '0 (New Search registration unavailable on NAVER Developers)',
         paymentRequired: false,
         hardLimitSupported: true
       },
-      status: 'disabled_scope_invalid', // Keys configured; awaiting search scope activation in Naver Console
+      productionEnabled: false,
+      status: 'disabled_new_registration_unavailable', // NAVER Developers no longer allows new Search API registration
+      adminStatusText: 'Disabled — new Search registration unavailable',
       attributionRequired: 'NAVER Search API',
       persistencePolicy: 'allow_display_with_source_link'
     },
     naver_blog: {
       id: 'naver_blog',
-      name: 'Naver Blog Discovery',
+      name: 'Naver Blog Discovery (Developers)',
       countries: ['KR'],
       capabilities: {
         poi: false,
@@ -202,14 +209,40 @@
         geocoding: false
       },
       billing: {
-        free: true,
-        freeQuota: '25,000 req/day (Search API shared quota, No Credit Card)',
+        free: false,
+        freeQuota: '0 (New Search registration unavailable on NAVER Developers)',
         paymentRequired: false,
         hardLimitSupported: true
       },
-      status: 'disabled_scope_invalid', // Keys configured; awaiting search scope activation in Naver Console
+      productionEnabled: false,
+      status: 'disabled_new_registration_unavailable', // NAVER Developers no longer allows new Search API registration
+      adminStatusText: 'Disabled — new Search registration unavailable',
       attributionRequired: 'NAVER Blog Search API',
       persistencePolicy: 'short_excerpt_and_link_only'
+    },
+    naver_api_hub: {
+      id: 'naver_api_hub',
+      name: 'NAVER API HUB',
+      countries: ['KR'],
+      capabilities: {
+        poi: true,
+        reviews: false,
+        photos: false,
+        discovery: true,
+        map: false,
+        geocoding: false
+      },
+      billing: {
+        free: false,
+        freeQuota: 'Requires payment / credit-card registration',
+        paymentRequired: true,
+        hardLimitSupported: false
+      },
+      productionEnabled: false,
+      status: 'disabled_billing_required', // Strictly disabled to comply with zero surprise billing policy
+      adminStatusText: 'Disabled — billing / credit card required',
+      attributionRequired: 'NAVER Cloud Platform',
+      persistencePolicy: 'prohibited'
     },
     yelp: {
       id: 'yelp',
@@ -230,6 +263,7 @@
         hardLimitSupported: false
       },
       status: 'disabled_billing_required', // Strictly disabled in production to avoid billing
+      productionEnabled: false,
       attributionRequired: 'Yelp',
       persistencePolicy: 'prohibited'
     },
@@ -251,6 +285,7 @@
         paymentRequired: true,
         hardLimitSupported: false
       },
+      productionEnabled: false,
       status: 'permanently_disabled_zero_call',
       attributionRequired: 'N/A',
       persistencePolicy: 'prohibited'
@@ -287,9 +322,14 @@
     }));
   }
 
+  function getAllProviders() {
+    return Object.values(PROVIDERS);
+  }
+
   return {
     PROVIDERS,
     getProvider,
+    getAllProviders,
     listProvidersByCountry,
     getActiveProviders,
     getProviderStatuses
