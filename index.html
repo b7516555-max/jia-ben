@@ -47,6 +47,7 @@
     <script src="./src/services/discoveryResolver.js?v=60"></script>
     <script src="./src/services/enrichment.js?v=2"></script>
     <script src="./src/services/communityData.js?v=2"></script>
+    <script src="./src/services/canonicalPromotionService.js?v=1"></script>
     <script src="./src/services/personalization.js?v=2"></script>
     <script src="./src/services/placeIntelligence.js?v=60"></script>
     <script src="./src/services/smartSearch.js?v=2"></script>
@@ -1305,7 +1306,10 @@
             
             <div id="detail-header-wrap" class="h-44 md:h-56 relative w-full shrink-0 bg-gray-100 overflow-hidden">
                 <img id="detail-img" src="" class="w-full h-full object-cover">
-                <span id="detail-image-label" class="hidden absolute top-3.5 left-3.5 bg-black/40 text-white/90 text-[9px] font-medium px-2 py-0.5 rounded backdrop-blur-xs">示意圖片</span>
+                <span id="detail-image-label" class="hidden absolute top-12 left-3.5 z-20 bg-black/65 text-amber-300 border border-amber-300/40 text-[10px] font-black px-2.5 py-0.5 rounded-full backdrop-blur-md shadow-sm flex items-center gap-1">
+                    <i class="fa-solid fa-wand-magic-sparkles text-amber-400"></i>
+                    <span>目前為 AI 示意圖</span>
+                </span>
                 <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-black/20"></div>
                 
                 <!-- 頂部照片覆蓋按鈕列：新增店家、編輯店家、移除店家 -->
@@ -1325,19 +1329,20 @@
             </div>
             
             <div class="p-4 md:p-5 overflow-y-auto no-scrollbar flex-1 bg-gray-50 space-y-3">
-                <!-- 店家無照片時的社群激勵區塊 (Photo Community CTA) -->
+                <!-- 店家無真實照片時的社群激勵區塊 (Photo Community CTA) -->
                 <div id="detail-photo-cta" class="hidden bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-200 p-3 rounded-2xl flex items-center justify-between gap-3 shadow-2xs">
                     <div class="flex items-center gap-2.5">
                         <div class="w-8 h-8 rounded-xl bg-orange-500 text-white flex items-center justify-center text-sm shrink-0 shadow-2xs">
                             <i class="fa-solid fa-camera"></i>
                         </div>
                         <div>
-                            <p class="text-xs font-bold text-gray-800">尚無店家真實照片</p>
-                            <p class="text-[11px] text-gray-500">吃過這間？成為第一個分享照片的人！</p>
+                            <p class="text-xs font-black text-gray-800">目前為 AI 示意圖</p>
+                            <p class="text-[11px] text-gray-500">吃過這間？分享這間店的真實照片！</p>
                         </div>
                     </div>
-                    <button onclick="window.triggerDetailPhotoUpload()" class="bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold px-3 py-1.5 rounded-xl shadow-xs transition shrink-0 whitespace-nowrap">
-                        分享照片
+                    <button onclick="window.openContributeModal()" class="bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold px-3 py-1.5 rounded-xl shadow-xs transition shrink-0 whitespace-nowrap flex items-center gap-1">
+                        <i class="fa-solid fa-upload"></i>
+                        <span>分享真實照片</span>
                     </button>
                 </div>
 
@@ -1446,10 +1451,10 @@
                     </p>
                 </div>
 
-                <!-- 1. 每人平均消費 -->
+                <!-- 1. 你這次每人大約花多少？ -->
                 <div class="bg-white p-3.5 rounded-2xl border border-gray-200 shadow-2xs space-y-2">
                     <label class="block text-xs font-bold text-gray-700 flex items-center justify-between">
-                        <span><i class="fa-solid fa-coins text-amber-500 mr-1.5"></i>每人平均消費 (NT$)</span>
+                        <span><i class="fa-solid fa-coins text-amber-500 mr-1.5"></i>你這次每人大約花多少？ (NT$)</span>
                         <span class="text-[10px] text-gray-400 font-normal">選填 · 1~100,000 整數</span>
                     </label>
                     <div class="flex items-center bg-gray-50 border border-gray-200 rounded-xl px-3 py-2">
@@ -1458,7 +1463,16 @@
                     </div>
                 </div>
 
-                <!-- 2. 店家詳細地址 -->
+                <!-- 2. 推薦餐點 -->
+                <div class="bg-white p-3.5 rounded-2xl border border-gray-200 shadow-2xs space-y-2">
+                    <label class="block text-xs font-bold text-gray-700 flex items-center justify-between">
+                        <span><i class="fa-solid fa-thumbs-up text-orange-500 mr-1.5"></i>推薦餐點 (以逗號分隔)</span>
+                        <span class="text-[10px] text-gray-400 font-normal">選填 · 如：餛飩湯、乾麵</span>
+                    </label>
+                    <input type="text" id="contrib-dishes" placeholder="例如：招牌餛飩、鮮蝦水餃、滷肉飯" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm font-medium text-gray-800 focus:outline-none focus:border-orange-400">
+                </div>
+
+                <!-- 3. 店家詳細地址 -->
                 <div class="bg-white p-3.5 rounded-2xl border border-gray-200 shadow-2xs space-y-2">
                     <label class="block text-xs font-bold text-gray-700 flex items-center justify-between">
                         <span class="flex items-center gap-1.5">
@@ -1467,22 +1481,22 @@
                         </span>
                         <span class="text-[10px] text-gray-400 font-normal">完整門牌或夜市攤號</span>
                     </label>
-                    <input type="text" id="contrib-address" placeholder="例如：台北市大安區信義路二段198巷6號" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm font-medium text-gray-800 focus:outline-none focus:border-orange-400">
+                    <input type="text" id="contrib-address" placeholder="例如：高雄市鹽埕區新樂街163巷1號" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm font-medium text-gray-800 focus:outline-none focus:border-orange-400">
                 </div>
 
-                <!-- 3. 店家連絡電話 -->
+                <!-- 4. 店家連絡電話 -->
                 <div class="bg-white p-3.5 rounded-2xl border border-gray-200 shadow-2xs space-y-2">
                     <label class="block text-xs font-bold text-gray-700 flex items-center justify-between">
                         <span class="flex items-center gap-1.5">
                             <i class="fa-solid fa-phone text-blue-500"></i>店家連絡電話
                             <span id="badge-auto-phone" class="hidden text-[9px] bg-emerald-100 text-emerald-800 font-bold px-1.5 py-0.2 rounded border border-emerald-200 shadow-2xs">✨ 自動找到</span>
                         </span>
-                        <span class="text-[10px] text-gray-400 font-normal">市話或手機</span>
+                        <span class="text-[10px] text-gray-400 font-normal">例如：07-521-1398</span>
                     </label>
-                    <input type="tel" id="contrib-phone" placeholder="例如：02-23456789 或 0912-345-678" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm font-medium text-gray-800 focus:outline-none focus:border-orange-400">
+                    <input type="tel" id="contrib-phone" placeholder="例如：07-521-1398 或 0912-345-678" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm font-medium text-gray-800 focus:outline-none focus:border-orange-400">
                 </div>
 
-                <!-- 4. 料理分類 -->
+                <!-- 5. 料理分類 -->
                 <div class="bg-white p-3.5 rounded-2xl border border-gray-200 shadow-2xs space-y-2">
                     <label class="block text-xs font-bold text-gray-700 flex items-center justify-between">
                         <span class="flex items-center gap-1.5">
@@ -1496,7 +1510,7 @@
                     </select>
                 </div>
 
-                <!-- 5. 營業時間快速時段 -->
+                <!-- 6. 營業時間 (支援文字或每週簡易時段) -->
                 <div class="bg-white p-3.5 rounded-2xl border border-gray-200 shadow-2xs space-y-2">
                     <label class="block text-xs font-bold text-gray-700 flex items-center justify-between">
                         <span class="flex items-center gap-1.5">
@@ -1505,7 +1519,43 @@
                         </span>
                         <span class="text-[10px] text-gray-400 font-normal">例如 11:30~14:00, 17:00~21:00</span>
                     </label>
-                    <input type="text" id="contrib-hours-text" placeholder="例如：週一至週日 11:30-14:00, 17:00-21:00 (週二公休)" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm font-medium text-gray-800 focus:outline-none focus:border-orange-400">
+                    <input type="text" id="contrib-hours-text" placeholder="例如：週一至週五 14:00-20:30, 週六日 11:30-20:00 (週二公休)" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm font-medium text-gray-800 focus:outline-none focus:border-orange-400">
+                </div>
+
+                <!-- 7. 官方網站 / 社群 (選填) -->
+                <div class="bg-white p-3.5 rounded-2xl border border-gray-200 shadow-2xs space-y-2">
+                    <label class="block text-xs font-bold text-gray-700 flex items-center justify-between">
+                        <span class="flex items-center gap-1.5">
+                            <i class="fa-solid fa-globe text-indigo-500"></i>官方網站 / 社群連結 (選填)
+                        </span>
+                        <span class="text-[10px] text-gray-400 font-normal">核准前標示為參考連結</span>
+                    </label>
+                    <input type="url" id="contrib-website" placeholder="官方網站：https://..." class="w-full px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-medium text-gray-800 focus:outline-none focus:border-orange-400 mb-1.5">
+                    <input type="url" id="contrib-facebook" placeholder="官方 Facebook：https://facebook.com/..." class="w-full px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-medium text-gray-800 focus:outline-none focus:border-orange-400 mb-1.5">
+                    <input type="url" id="contrib-instagram" placeholder="官方 Instagram：https://instagram.com/..." class="w-full px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-medium text-gray-800 focus:outline-none focus:border-orange-400">
+                </div>
+
+                <!-- 8. 分享店家或餐點真實照片 (選填) -->
+                <div class="bg-white p-3.5 rounded-2xl border border-gray-200 shadow-2xs space-y-2">
+                    <label class="block text-xs font-bold text-gray-700 flex items-center justify-between">
+                        <span class="flex items-center gap-1.5">
+                            <i class="fa-solid fa-camera text-orange-500"></i>分享這間店的真實照片 (選填)
+                        </span>
+                        <span class="text-[10px] text-gray-400 font-normal">通過審核後加入相簿</span>
+                    </label>
+                    <input type="file" id="contrib-photo-file" accept="image/jpeg,image/png,image/webp" class="hidden" onchange="window.handleContribPhotoSelected(this)">
+                    <div class="flex items-center gap-2">
+                        <button type="button" onclick="document.getElementById('contrib-photo-file').click()" class="px-3 py-2 bg-orange-50 hover:bg-orange-100 text-orange-600 border border-orange-200 rounded-xl text-xs font-bold transition flex items-center gap-1">
+                            <i class="fa-solid fa-image"></i> 選擇照片
+                        </button>
+                        <span id="contrib-photo-status" class="text-xs text-gray-400">未選取照片</span>
+                    </div>
+                    <div id="contrib-photo-preview-wrap" class="hidden relative aspect-video rounded-xl overflow-hidden border border-gray-200 max-h-40 bg-gray-100">
+                        <img id="contrib-photo-preview" src="" class="w-full h-full object-cover">
+                        <button type="button" onclick="window.clearContribPhoto()" class="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/60 text-white flex items-center justify-center text-xs">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -9993,19 +10043,54 @@
             }
         };
 
+        // 照片暫存狀態
+        let currentContribPhotoBase64 = '';
+        window.handleContribPhotoSelected = async function(input) {
+            if (!input.files || input.files.length === 0) return;
+            const file = input.files[0];
+            try {
+                const compressed = await window.compressImageFile(file, 1200, 1200, 0.8);
+                currentContribPhotoBase64 = compressed;
+                const img = document.getElementById('contrib-photo-preview');
+                const wrap = document.getElementById('contrib-photo-preview-wrap');
+                const status = document.getElementById('contrib-photo-status');
+                if (img) img.src = compressed;
+                if (wrap) wrap.classList.remove('hidden');
+                if (status) status.textContent = `已選擇照片 (${file.name || '相片'})`;
+            } catch (err) {
+                console.error("相片壓縮失敗:", err);
+                window.showCustomMsg("⚠️ 相片處理失敗，請換一張試試！");
+            }
+        };
+
+        window.clearContribPhoto = function() {
+            currentContribPhotoBase64 = '';
+            const wrap = document.getElementById('contrib-photo-preview-wrap');
+            const status = document.getElementById('contrib-photo-status');
+            const fileInput = document.getElementById('contrib-photo-file');
+            if (wrap) wrap.classList.add('hidden');
+            if (status) status.textContent = '未選取照片';
+            if (fileInput) fileInput.value = '';
+        };
+
         // 送出社群補充資料 (寫入 placeContributions 審核待審區，絕不直寫 canonical)
         window.submitPlaceContribution = async function() {
             const place = window.currentDetailPlace || { name: document.getElementById('detail-name')?.textContent || '' };
             if (!place || !place.name) return;
 
             const spendVal = document.getElementById('contrib-spend')?.value.trim();
+            const dishesVal = document.getElementById('contrib-dishes')?.value.trim();
             const addressVal = document.getElementById('contrib-address')?.value.trim();
             const phoneVal = document.getElementById('contrib-phone')?.value.trim();
             const categoryVal = document.getElementById('contrib-category')?.value;
             const hoursVal = document.getElementById('contrib-hours-text')?.value.trim();
+            const websiteVal = document.getElementById('contrib-website')?.value.trim();
+            const facebookVal = document.getElementById('contrib-facebook')?.value.trim();
+            const instagramVal = document.getElementById('contrib-instagram')?.value.trim();
+            const hasPhoto = Boolean(currentContribPhotoBase64);
 
-            if (!spendVal && !addressVal && !phoneVal && !categoryVal && !hoursVal) {
-                return window.showCustomMsg("請至少填寫一項想為大家補充的店家資訊喔！");
+            if (!spendVal && !dishesVal && !addressVal && !phoneVal && !categoryVal && !hoursVal && !websiteVal && !facebookVal && !instagramVal && !hasPhoto) {
+                return window.showCustomMsg("請至少填寫一項想為大家補充的店家資訊或照片喔！");
             }
 
             const btn = document.getElementById('contrib-submit-btn');
@@ -10018,14 +10103,22 @@
                 const uid = currentUser?.uid || userName;
                 const autoSources = window._lastAutoAssistSources || [];
 
-                // 1. 消費驗證
+                // 1. 每人消費
                 if (spendVal) {
                     const check = window.JiaCommunity?.validateSpend ? window.JiaCommunity.validateSpend(spendVal) : { valid: true, value: Number(spendVal) };
                     if (!check.valid) throw new Error(check.message);
                     contributions.push({ field: 'averageSpend', value: check.value, autoAssist: false, autoSources: [] });
                 }
 
-                // 2. 地址驗證
+                // 2. 推薦餐點
+                if (dishesVal) {
+                    const dishItems = dishesVal.split(/[,，、]/).map(s => s.trim()).filter(Boolean);
+                    if (dishItems.length > 0) {
+                        contributions.push({ field: 'recommendedDishes', value: dishItems, autoAssist: false, autoSources: [] });
+                    }
+                }
+
+                // 3. 地址驗證
                 if (addressVal && addressVal !== place.address) {
                     const check = window.JiaCommunity?.validateAddress ? window.JiaCommunity.validateAddress(addressVal) : { valid: true, normalized: addressVal };
                     if (!check.valid) throw new Error(check.message);
@@ -10033,7 +10126,7 @@
                     contributions.push({ field: 'address', value: check.normalized, autoAssist: isAuto, autoSources: isAuto ? autoSources : [] });
                 }
 
-                // 3. 電話驗證
+                // 4. 電話驗證
                 if (phoneVal && phoneVal !== place.phone) {
                     const check = window.JiaCommunity?.validateAndNormalizePhone ? window.JiaCommunity.validateAndNormalizePhone(phoneVal) : { valid: true, normalized: phoneVal };
                     if (!check.valid) throw new Error(check.message);
@@ -10041,23 +10134,46 @@
                     contributions.push({ field: 'phone', value: check.normalized, autoAssist: isAuto, autoSources: isAuto ? autoSources : [] });
                 }
 
-                // 4. 分類
+                // 5. 分類
                 if (categoryVal && (!place.categories || !place.categories.includes(categoryVal))) {
                     const isAuto = Boolean(document.getElementById('badge-auto-category') && !document.getElementById('badge-auto-category').classList.contains('hidden'));
-                    contributions.push({ field: 'category', value: [categoryVal], autoAssist: isAuto, autoSources: isAuto ? autoSources : [] });
+                    contributions.push({ field: 'categories', value: [categoryVal], autoAssist: isAuto, autoSources: isAuto ? autoSources : [] });
                 }
 
-                // 5. 營業時間
+                // 6. 營業時間
                 if (hoursVal && hoursVal !== place.openingHours) {
                     const isAuto = Boolean(document.getElementById('badge-auto-hours') && !document.getElementById('badge-auto-hours').classList.contains('hidden'));
                     contributions.push({ field: 'openingHours', value: hoursVal, autoAssist: isAuto, autoSources: isAuto ? autoSources : [] });
+                }
+
+                // 7. 網站 / 社群
+                if (websiteVal) {
+                    contributions.push({ field: 'website', value: websiteVal, autoAssist: false, autoSources: [] });
+                }
+                if (facebookVal || instagramVal) {
+                    const socialObj = {};
+                    if (facebookVal) socialObj.facebook = facebookVal;
+                    if (instagramVal) socialObj.instagram = instagramVal;
+                    contributions.push({ field: 'officialSocial', value: socialObj, autoAssist: false, autoSources: [] });
+                }
+
+                // 8. 真實照片
+                if (hasPhoto) {
+                    contributions.push({ field: 'photo', value: currentContribPhotoBase64, autoAssist: false, autoSources: [] });
                 }
 
                 if (contributions.length === 0) {
                     return window.showCustomMsg("您填寫的資料與既有店家資訊相同，無需重複補充！");
                 }
 
+                let submittedCount = 0;
                 for (const c of contributions) {
+                    // Anti-spam duplicate check
+                    if (window.JiaCommunity?.isDuplicateContribution && window.JiaCommunity.isDuplicateContribution(window.placeContributions || [], { jiaPlaceId, uid, field: c.field, value: c.value })) {
+                        console.log(`跳過重複提交: ${c.field}`);
+                        continue;
+                    }
+
                     const record = window.JiaCommunity?.createContributionRecord ? 
                         window.JiaCommunity.createContributionRecord({
                             jiaPlaceId,
@@ -10092,10 +10208,12 @@
                     }
                     window.placeContributions = window.placeContributions || [];
                     window.placeContributions.unshift(record);
+                    submittedCount++;
                 }
 
+                window.clearContribPhoto();
                 window.closeModal('place-contribute-modal');
-                window.showCustomMsg(`🎉 店家資訊已成功送出！\n\n已提交 ${contributions.length} 項資料，待管理員審核通過後將正式更新店家卡片。`);
+                window.showCustomMsg(`🎉 店家資訊已成功送出！\n\n已提交 ${submittedCount} 項資料，待管理員審核通過後將正式更新店家卡片。`);
                 if (typeof window.renderAdminDataList === 'function') window.renderAdminDataList();
             } catch (err) {
                 console.error("提交貢獻失敗:", err);
@@ -10105,20 +10223,49 @@
             }
         };
 
-        // 🌟 主揪管理後台：審核社群貢獻 (Accept/Reject)
-        window.reviewContribution = async function(contributionId, isApproved) {
+        // 🌟 主揪管理後台：審核社群貢獻 (Accept/Reject with Field Diff & Canonical Promotion Service)
+        window.reviewContribution = async function(contributionId, isApproved, overwriteConfirmed = false) {
             const contrib = (window.placeContributions || []).find(c => c.contributionId === contributionId || c.id === contributionId);
             if (!contrib) return window.showCustomMsg("找不到該筆審核資料。");
 
             window.requireAdminAuthForAction(`您正在以主揪身分${isApproved ? '採用' : '退回'}社群貢獻`, async () => {
                 try {
                     const jiaPlace = (window.jiaPlacesData || []).find(p => p.jiaPlaceId === contrib.jiaPlaceId || p.name === contrib.placeName);
-                    
+                    const reviewer = {
+                        name: window.myIdentity?.name || '黃政誥',
+                        role: 'admin',
+                        isAdmin: true
+                    };
+
                     if (isApproved && jiaPlace) {
-                        // 套用安全 Partial PATCH
-                        const { updatedPlace, auditedContribution } = window.JiaCommunity.applyContributionToPlace(jiaPlace, contrib, window.myIdentity?.name || 'admin');
+                        let updatedPlace = null;
+                        let auditedContribution = null;
+
+                        if (window.JiaCanonicalPromotionService && window.JiaCanonicalPromotionService.ALLOWED_PROMOTION_FIELDS.includes(contrib.field)) {
+                            const promoRes = window.JiaCanonicalPromotionService.prepareFieldPromotion({
+                                canonicalPlace: jiaPlace,
+                                contribution: contrib,
+                                reviewer,
+                                options: { overwriteConfirmed }
+                            });
+
+                            if (promoRes.status === 'NEEDS_OVERWRITE_CONFIRMATION' && !overwriteConfirmed) {
+                                if (confirm(`⚠️ 此店家已有既有 ${contrib.field} 資料：\n\n目前：${JSON.stringify(promoRes.oldValue)}\n投稿：${JSON.stringify(promoRes.newValue)}\n\n確定要覆寫並更新為社群補充資料嗎？`)) {
+                                    return window.reviewContribution(contributionId, true, true);
+                                } else {
+                                    return;
+                                }
+                            }
+                            updatedPlace = promoRes.updatedPlace;
+                            auditedContribution = promoRes.auditedContribution;
+                        } else {
+                            const res = window.JiaCommunity.applyContributionToPlace(jiaPlace, contrib, reviewer.name);
+                            updatedPlace = res.updatedPlace;
+                            auditedContribution = res.auditedContribution;
+                        }
+
                         Object.assign(jiaPlace, updatedPlace);
-                        
+
                         if (db && currentUser) {
                             await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'jiaPlaces', jiaPlace.jiaPlaceId), updatedPlace, { merge: true });
                             if (contrib.id) {
@@ -10126,7 +10273,7 @@
                             }
                         }
                         contrib.status = 'accepted';
-                        
+
                         // 🌟 即時重新渲染當前開啟中的店家詳細資訊 Modal (若開啟中)
                         if (window.currentDetailPlace && (window.currentDetailPlace.jiaPlaceId === jiaPlace.jiaPlaceId || window.currentDetailPlace.name === jiaPlace.name)) {
                             window.currentDetailPlace = jiaPlace;
@@ -10140,7 +10287,7 @@
                             await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'placeContributions', contrib.id), {
                                 status: 'rejected',
                                 reviewedAt: new Date().toISOString(),
-                                reviewedBy: window.myIdentity?.name || 'admin'
+                                reviewedBy: reviewer.name
                             });
                         }
                         window.showCustomMsg(`已退回該筆貢獻。`);
@@ -10150,6 +10297,39 @@
                 } catch (err) {
                     console.error("審核操作失敗:", err);
                     window.showCustomMsg(`審核失敗：${err.message || err}`);
+                }
+            });
+        };
+
+        // 🌟 歷史變更回滾功能 (Rollback)
+        window.rollbackPlaceField = async function(jiaPlaceId, historyEventId) {
+            window.requireAdminAuthForAction('您正在執行店家歷史欄位回滾', async () => {
+                try {
+                    const jiaPlace = (window.jiaPlacesData || []).find(p => p.jiaPlaceId === jiaPlaceId);
+                    if (!jiaPlace) throw new Error('找不到指定店家');
+                    const reviewer = { name: window.myIdentity?.name || '黃政誥', role: 'admin', isAdmin: true };
+                    
+                    const res = window.JiaCanonicalPromotionService.rollbackFieldPromotion({
+                        canonicalPlace: jiaPlace,
+                        historyEventId,
+                        reviewer
+                    });
+
+                    Object.assign(jiaPlace, res.rolledBackPlace);
+                    if (db && currentUser) {
+                        await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'jiaPlaces', jiaPlace.jiaPlaceId), res.rolledBackPlace);
+                    }
+
+                    if (window.currentDetailPlace && window.currentDetailPlace.jiaPlaceId === jiaPlace.jiaPlaceId) {
+                        window.currentDetailPlace = jiaPlace;
+                        window.loadPlaceDetails({ name: jiaPlace.name, jiaPlace });
+                    }
+
+                    window.showCustomMsg(`⏮️ 已成功將「${jiaPlace.name}」還原回先前的數值！`);
+                    if (typeof window.renderAdminDataList === 'function') window.renderAdminDataList();
+                } catch (err) {
+                    console.error("回滾失敗:", err);
+                    window.showCustomMsg(`⚠️ 回滾失敗：${err.message || err}`);
                 }
             });
         };
@@ -10189,13 +10369,18 @@
             const pendingContribs = (window.placeContributions || []).filter(c => c.status === 'pending');
             if (contribCountEl) contribCountEl.textContent = pendingContribs.length;
 
-            // 1. 渲染社群補充審核清單
+            // 1. 渲染社群補充審核清單 (含 Field Diff: 目前 vs 投稿)
             const contribContainer = document.getElementById('admin-contributions-container');
             if (contribContainer) {
                 if (pendingContribs.length === 0) {
                     contribContainer.innerHTML = '<div class="text-center text-gray-400 py-6 text-xs"><i class="fa-solid fa-circle-check text-2xl mb-1.5 text-emerald-400 block"></i>目前沒有待審核的社群補充資料！</div>';
                 } else {
-                    contribContainer.innerHTML = pendingContribs.map(c => `
+                    contribContainer.innerHTML = pendingContribs.map(c => {
+                        const matchedPlace = (window.jiaPlacesData || []).find(p => p.jiaPlaceId === c.jiaPlaceId || p.name === c.placeName);
+                        const currentVal = matchedPlace ? matchedPlace[c.field] : null;
+                        const hasCurrent = currentVal !== undefined && currentVal !== null && currentVal !== '';
+
+                        return `
                         <div class="bg-amber-50/50 p-3.5 rounded-2xl border border-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
                             <div class="min-w-0 flex-1">
                                 <div class="flex items-center gap-1.5 flex-wrap">
@@ -10203,9 +10388,20 @@
                                     <span class="bg-amber-200 text-amber-900 text-[10px] px-1.5 py-0.2 rounded font-bold">${window.escapeHtml(c.field)}</span>
                                     <span class="text-[10px] text-gray-400">由 ${window.escapeHtml(c.userName || '成員')} 回報</span>
                                 </div>
-                                <p class="text-xs text-gray-700 font-bold mt-1 break-all bg-white p-2 rounded-xl border border-amber-100">
-                                    ${window.escapeHtml(typeof c.value === 'object' ? JSON.stringify(c.value) : String(c.value))}
-                                </p>
+                                <div class="mt-1.5 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                                    <div class="bg-gray-50 p-2 rounded-xl border border-gray-200">
+                                        <span class="text-[10px] font-bold text-gray-400 block">目前正式庫：</span>
+                                        <p class="font-medium text-gray-700 truncate mt-0.5">
+                                            ${hasCurrent ? window.escapeHtml(typeof currentVal === 'object' ? JSON.stringify(currentVal) : String(currentVal)) : '<span class="text-gray-400 italic">尚未有資料</span>'}
+                                        </p>
+                                    </div>
+                                    <div class="bg-white p-2 rounded-xl border border-amber-200 shadow-2xs">
+                                        <span class="text-[10px] font-bold text-amber-600 block">社群投稿：</span>
+                                        <p class="font-bold text-gray-900 truncate mt-0.5">
+                                            ${c.field === 'photo' ? `<img src="${c.value}" class="h-16 w-24 object-cover rounded-lg border border-amber-200">` : window.escapeHtml(typeof c.value === 'object' ? JSON.stringify(c.value) : String(c.value))}
+                                        </p>
+                                    </div>
+                                </div>
                             </div>
                             <div class="flex items-center gap-2 shrink-0">
                                 <button onclick="window.reviewContribution('${c.contributionId || c.id}', true)" class="bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold px-3 py-1.5 rounded-xl shadow-xs transition flex items-center gap-1">
@@ -10216,7 +10412,8 @@
                                 </button>
                             </div>
                         </div>
-                    `).join('');
+                    `;
+                    }).join('');
                 }
             }
 

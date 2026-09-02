@@ -1,4 +1,4 @@
-const CACHE_NAME = 'together-eat-shell-v106';
+const CACHE_NAME = 'together-eat-shell-v107';
 const APP_SHELL = [
   './', 
   './index.html', 
@@ -31,6 +31,7 @@ const APP_SHELL = [
   './src/services/discoveryResolver.js?v=60',
   './src/services/enrichment.js?v=2',
   './src/services/communityData.js?v=3',
+  './src/services/canonicalPromotionService.js?v=1',
   './src/services/personalization.js?v=1',
   './src/services/placeIntelligence.js?v=60',
   './src/services/smartSearch.js?v=2',

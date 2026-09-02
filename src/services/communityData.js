@@ -180,22 +180,57 @@
             return { averageSpend: Math.round((validList[0] + validList[1]) / 2), count: 2 };
         }
 
-        // 當 >= 4 筆時，修剪前後 10% 極端值以防止惡意輸入（如 99999）摧毀平均
+        // 當 >= 4 筆時，修剪前後 15% 極端值以防止惡意輸入（如 99999）摧毀平均
+        let robustAvg = 0;
         if (validList.length >= 4) {
             const trimCount = Math.floor(validList.length * 0.15) || 1;
             const trimmed = validList.slice(trimCount, validList.length - trimCount);
             const sum = trimmed.reduce((acc, v) => acc + v, 0);
-            return {
-                averageSpend: Math.round(sum / trimmed.length),
-                count: validList.length
-            };
+            robustAvg = Math.round(sum / trimmed.length);
+        } else {
+            const sum = validList.reduce((acc, v) => acc + v, 0);
+            robustAvg = Math.round(sum / validList.length);
         }
 
-        const sum = validList.reduce((acc, v) => acc + v, 0);
+        // Median calculation
+        const mid = Math.floor(validList.length / 2);
+        const median = validList.length % 2 !== 0 ? validList[mid] : Math.round((validList[mid - 1] + validList[mid]) / 2);
+
         return {
-            averageSpend: Math.round(sum / validList.length),
-            count: validList.length
+            averageSpend: robustAvg,
+            robustAverage: robustAvg,
+            median,
+            count: validList.length,
+            sampleCount: validList.length,
+            min: validList[0],
+            max: validList[validList.length - 1]
         };
+    }
+
+    /**
+     * 推薦菜色字串淨化與正規化 (個別餐點名稱，保留原貌並去除多餘空白)
+     */
+    function normalizeRecommendedDish(dishStr) {
+        if (!dishStr || typeof dishStr !== 'string') return '';
+        return dishStr.trim().replace(/\s+/g, ' ').slice(0, 30);
+    }
+
+    /**
+     * 社群推薦菜色統計聚合 (大家推薦清單)
+     * @param {Array<string>} dishList 
+     * @returns {Array<{ dish: string, count: number }>}
+     */
+    function aggregateRecommendedDishes(dishList = []) {
+        if (!Array.isArray(dishList) || dishList.length === 0) return [];
+        const counts = {};
+        for (const item of dishList) {
+            const normalized = normalizeRecommendedDish(item);
+            if (!normalized) continue;
+            counts[normalized] = (counts[normalized] || 0) + 1;
+        }
+        return Object.entries(counts)
+            .map(([dish, count]) => ({ dish, count }))
+            .sort((a, b) => b.count - a.count);
     }
 
     /**
@@ -368,6 +403,22 @@
         };
     }
 
+    /**
+     * 社群防灌水 / 重複提交判定
+     */
+    function isDuplicateContribution(existingContribs = [], newContrib = {}, windowMs = 60000) {
+        if (!Array.isArray(existingContribs) || !newContrib.jiaPlaceId || !newContrib.field) return false;
+        const now = Date.now();
+        return existingContribs.some(c => {
+            if (c.jiaPlaceId !== newContrib.jiaPlaceId) return false;
+            if (c.uid !== newContrib.uid) return false;
+            if (c.field !== newContrib.field) return false;
+            if (JSON.stringify(c.value) !== JSON.stringify(newContrib.value)) return false;
+            const cTime = new Date(c.createdAt || 0).getTime();
+            return (now - cTime) < windowMs;
+        });
+    }
+
     const CommunityService = {
         CATEGORY_DICTIONARY,
         sanitizeText,
@@ -376,6 +427,9 @@
         validateOpeningHoursSchema,
         validateSpend,
         calculateRobustAverageSpend,
+        normalizeRecommendedDish,
+        aggregateRecommendedDishes,
+        isDuplicateContribution,
         calculatePlaceCompleteness,
         createContributionRecord,
         applyContributionToPlace
