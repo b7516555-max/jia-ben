@@ -127,6 +127,8 @@
       matchSignals.push(`Exact Food Registration ID Match: ${fidA}`);
     }
 
+    const hasExactId = hasExactBid || hasExactFid;
+
     // 3. Exact Phone Match (Landline or Mobile)
     const phoneA = phoneNormalizer.normalizeTaiwanPhone(target.phone);
     const phoneB = phoneNormalizer.normalizeTaiwanPhone(candidate.phone);
@@ -154,12 +156,12 @@
     if (normA && normB) {
       if (normA === normB) {
         nameSim = 1.0;
-        score += isGeneric ? 0.40 : 0.78;
+        score += isGeneric ? 0.30 : 0.65;
         matchSignals.push('Exact Name Match');
       } else if (normA.includes(normB) || normB.includes(normA)) {
         const ratio = Math.min(normA.length, normB.length) / Math.max(normA.length, normB.length);
         nameSim = Math.max(ratio, 0.85);
-        score += (isGeneric ? 0.35 : 0.65) * nameSim;
+        score += (isGeneric ? 0.25 : 0.55) * nameSim;
         matchSignals.push(`Partial Name Match (${(nameSim * 100).toFixed(0)}%)`);
       }
     }
@@ -170,10 +172,12 @@
     
     let isSameCity = false;
     let isSameDistrict = false;
+    let hasStrongAddressSignal = false;
+
     if (normAddrA.city && normAddrB.city) {
       isSameCity = (normAddrA.city === normAddrB.city);
       if (isSameCity) {
-        score += 0.16;
+        score += 0.12;
         matchSignals.push(`Same City: ${normAddrA.city}`);
       } else {
         score -= 0.50;
@@ -184,7 +188,7 @@
     if (normAddrA.district && normAddrB.district && isSameCity) {
       isSameDistrict = (normAddrA.district === normAddrB.district);
       if (isSameDistrict) {
-        score += 0.15;
+        score += 0.10;
         matchSignals.push(`Same District: ${normAddrA.district}`);
       } else {
         score -= 0.25;
@@ -197,18 +201,22 @@
       const cleanStreetB = normAddrB.street.replace(/\s+/g, '');
       if (cleanStreetA === cleanStreetB) {
         score += 0.35;
+        hasStrongAddressSignal = true;
         matchSignals.push('Exact Street & Door Number Match');
       } else if (cleanStreetA.includes(cleanStreetB) || cleanStreetB.includes(cleanStreetA)) {
         score += 0.20;
+        hasStrongAddressSignal = true;
         matchSignals.push('Partial Street Match');
       }
     }
 
     // 7. GPS Distance Signal
     const dist = distanceMeters(target, candidate);
+    let hasGpsProximity = false;
     if (dist !== null) {
       if (dist <= 50) {
         score += 0.40;
+        hasGpsProximity = true;
         matchSignals.push(`Close GPS (${dist.toFixed(0)}m)`);
       } else if (dist <= 300) {
         score += 0.25;
@@ -226,6 +234,13 @@
         score = Math.min(score, 0.65);
         matchSignals.push('Generic store name penalty applied (Requires exact phone/ID or close GPS to match)');
       }
+    }
+
+    // Safety Cap: Name + City alone cannot reach AUTO_MATCH (>= 0.93)
+    const hasStrongSecondarySignal = Boolean(hasExactBid || hasExactFid || hasExactPhone || hasExactDomain || hasStrongAddressSignal || (hasGpsProximity && dist <= 50));
+    if (!hasStrongSecondarySignal && score >= 0.90) {
+      score = 0.88; // Hard capped at NEEDS_REVIEW
+      matchSignals.push('Safety Cap: Missing strong secondary signal (Phone/Address/GPS/ID) -> Capped at NEEDS_REVIEW');
     }
 
     // Cap confidence between 0 and 1.0

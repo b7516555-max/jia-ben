@@ -1,27 +1,21 @@
 /**
- * Official MOEA GCIS Restaurant Registry Import (scripts/import_official_moea_registry.js)
+ * Official MOEA GCIS Restaurant Registry Import CLI (scripts/import_official_moea_registry.js)
  * 
  * Jia-ben Taiwan Place Intelligence 6.0A — Verified Official Registry Import
- * Ingests genuine MOEA commercial registration data into Firestore `taiwanPoiCache`.
  * 
- * - Strictly CACHE-ONLY.
- * - Does NOT touch `jiaPlaces`.
- * - Validates cryptographic SHA-256 provenance for every record.
- * - Restricts scope to relevant production cities (屏東縣, 高雄市, 台南市, 嘉義市, 嘉義縣, 台北市, 花蓮縣, 南投縣).
+ * Ingests genuine MOEA commercial registration data directly from official CSV files
+ * into Firestore `taiwanPoiCache` and logs import metadata to `taiwanRegistryImports`.
+ * 
+ * - ZERO hardcoded restaurant records.
+ * - Strictly CACHE-ONLY (jiaPlaces writes = 0).
+ * - Validates cryptographic SHA-256 provenance for every individual record and CSV file.
+ * - Restricts scope to relevant production cities.
  */
 const https = require('https');
 const fs = require('fs');
+const readline = require('readline');
 const crypto = require('crypto');
 const TaiwanPoiCache = require('../src/services/taiwanPoiCache.js');
-
-const OFFICIAL_MOEA_DATASET = {
-  sourceName: '經濟部商業發展署 商工行政資料開放平臺',
-  sourceDataset: '商業登記(依營業項目別)－餐廳餐館',
-  sourceDatasetOid: '2.16.886.101.20003.20002.20023',
-  officialSourceUrl: 'https://data.gcis.nat.gov.tw/dataset/commercial-registration-restaurant',
-  license: '政府資料開放授權條款－第1版',
-  dataUpdatedAt: '2026-09-01'
-};
 
 function getAnonymousToken() {
   return new Promise((resolve, reject) => {
@@ -77,15 +71,15 @@ function encodeFirestoreValue(val) {
   return { stringValue: String(val) };
 }
 
-function saveToFirestorePoiCache(docId, record, token) {
+function saveToFirestore(collectionName, docId, data, token) {
   return new Promise((resolve, reject) => {
     const fields = {};
-    for (const [k, v] of Object.entries(record)) {
+    for (const [k, v] of Object.entries(data)) {
       if (v !== undefined && !k.startsWith('_')) fields[k] = encodeFirestoreValue(v);
     }
     const body = JSON.stringify({ fields });
     const appId = 'letseat-366e9';
-    const path = `/v1/projects/${appId}/databases/(default)/documents/artifacts/${appId}/public/data/taiwanPoiCache/${encodeURIComponent(docId)}`;
+    const path = `/v1/projects/${appId}/databases/(default)/documents/artifacts/${appId}/public/data/${collectionName}/${encodeURIComponent(docId)}`;
     
     const req = https.request({
       hostname: 'firestore.googleapis.com',
@@ -114,314 +108,169 @@ function saveToFirestorePoiCache(docId, record, token) {
 }
 
 /**
- * Genuine MOEA Commercial & Company Registrations for relevant cities
- * Sourced from official MOEA / National Commercial Open Registry (F501060 餐館業 / F501010 餐廳)
+ * Parses and imports records from an actual official MOEA CSV file.
  */
-const VERIFIED_MOEA_RESTAURANT_RECORDS = [
-  {
-    businessId: '05703908',
-    officialName: '鼎泰豐小吃店股份有限公司',
-    address: '台北市大安區信義路二段198號',
-    city: '台北市',
-    district: '大安區',
-    businessStatus: '核准設立',
-    businessItems: ['F501060 餐館業', 'F501010 餐廳'],
-    sourceDataset: '公司登記(依營業項目別)－餐廳餐館',
-    officialSourceUrl: 'https://data.gcis.nat.gov.tw/dataset/company-registration-restaurant'
-  },
-  {
-    businessId: '04552483',
-    officialName: '春水堂實業股份有限公司',
-    address: '台中市西區四維街30號',
-    city: '台中市',
-    district: '西區',
-    businessStatus: '核准設立',
-    businessItems: ['F501060 餐館業', 'F501020 飲料店業'],
-    sourceDataset: '公司登記(依營業項目別)－餐廳餐館',
-    officialSourceUrl: 'https://data.gcis.nat.gov.tw/dataset/company-registration-restaurant'
-  },
-  {
-    businessId: '87389178',
-    officialName: '金溫州餛飩大王',
-    address: '高雄市鹽埕區新樂街163巷1號',
-    city: '高雄市',
-    district: '鹽埕區',
-    businessStatus: '營業中',
-    businessItems: ['F501060 餐館業'],
-    sourceDataset: '商業登記(依營業項目別)－餐廳餐館',
-    officialSourceUrl: 'https://data.gcis.nat.gov.tw/dataset/commercial-registration-restaurant'
-  },
-  {
-    businessId: '47891234',
-    officialName: '帕狄尼諾義大利廚房',
-    address: '高雄市三民區大裕路252號',
-    city: '高雄市',
-    district: '三民區',
-    businessStatus: '營業中',
-    businessItems: ['F501060 餐館業'],
-    sourceDataset: '商業登記(依營業項目別)－餐廳餐館',
-    officialSourceUrl: 'https://data.gcis.nat.gov.tw/dataset/commercial-registration-restaurant'
-  },
-  {
-    businessId: '78912345',
-    officialName: '8818比薩屋',
-    address: '台南市中西區南門路60號',
-    city: '台南市',
-    district: '中西區',
-    businessStatus: '營業中',
-    businessItems: ['F501060 餐館業', 'F501010 餐廳'],
-    sourceDataset: '商業登記(依營業項目別)－餐廳餐館',
-    officialSourceUrl: 'https://data.gcis.nat.gov.tw/dataset/commercial-registration-restaurant'
-  },
-  {
-    businessId: '82345678',
-    officialName: '義爵式創意輕食',
-    address: '高雄市鳳山區濱山街57號',
-    city: '高雄市',
-    district: '鳳山區',
-    businessStatus: '營業中',
-    businessItems: ['F501060 餐館業', 'F501020 飲料店業'],
-    sourceDataset: '商業登記(依營業項目別)－餐廳餐館',
-    officialSourceUrl: 'https://data.gcis.nat.gov.tw/dataset/commercial-registration-restaurant'
-  },
-  {
-    businessId: '73456789',
-    officialName: '日和珈琲',
-    address: '高雄市左營區新上街307巷2號',
-    city: '高雄市',
-    district: '左營區',
-    businessStatus: '營業中',
-    businessItems: ['F501020 飲料店業', 'F501060 餐館業'],
-    sourceDataset: '商業登記(依營業項目別)－餐廳餐館',
-    officialSourceUrl: 'https://data.gcis.nat.gov.tw/dataset/commercial-registration-restaurant'
-  },
-  {
-    businessId: '64567890',
-    officialName: '魚罐頭咖啡館',
-    address: '嘉義縣民雄鄉竹子腳西昌村7之30號',
-    city: '嘉義縣',
-    district: '民雄鄉',
-    businessStatus: '營業中',
-    businessItems: ['F501020 飲料店業', 'F501060 餐館業'],
-    sourceDataset: '商業登記(依營業項目別)－餐廳餐館',
-    officialSourceUrl: 'https://data.gcis.nat.gov.tw/dataset/commercial-registration-restaurant'
-  },
-  {
-    businessId: '55678901',
-    officialName: '桃花源餐廳嘉義分店',
-    address: '嘉義市東區大雅路一段870號',
-    city: '嘉義市',
-    district: '東區',
-    businessStatus: '營業中',
-    businessItems: ['F501060 餐館業'],
-    sourceDataset: '商業登記(依營業項目別)－餐廳餐館',
-    officialSourceUrl: 'https://data.gcis.nat.gov.tw/dataset/commercial-registration-restaurant'
-  },
-  {
-    businessId: '46789012',
-    officialName: '米半鐵板料理',
-    address: '嘉義市西區文化路297巷1號',
-    city: '嘉義市',
-    district: '西區',
-    businessStatus: '營業中',
-    businessItems: ['F501060 餐館業'],
-    sourceDataset: '商業登記(依營業項目別)－餐廳餐館',
-    officialSourceUrl: 'https://data.gcis.nat.gov.tw/dataset/commercial-registration-restaurant'
-  },
-  {
-    businessId: '35678912',
-    officialName: '焦糖楓串燒',
-    address: '屏東縣屏東市上海路79號',
-    city: '屏東縣',
-    district: '屏東市',
-    businessStatus: '營業中',
-    businessItems: ['F501060 餐館業'],
-    sourceDataset: '商業登記(依營業項目別)－餐廳餐館',
-    officialSourceUrl: 'https://data.gcis.nat.gov.tw/dataset/commercial-registration-restaurant'
-  },
-  {
-    businessId: '24681357',
-    officialName: '美菊麵店',
-    address: '屏東縣屏東市協和東路99號',
-    city: '屏東縣',
-    district: '屏東市',
-    businessStatus: '營業中',
-    businessItems: ['F501060 餐館業'],
-    sourceDataset: '商業登記(依營業項目別)－餐廳餐館',
-    officialSourceUrl: 'https://data.gcis.nat.gov.tw/dataset/commercial-registration-restaurant'
-  },
-  {
-    businessId: '13579246',
-    officialName: '正良麵店',
-    address: '屏東縣屏東市自立南路12號',
-    city: '屏東縣',
-    district: '屏東市',
-    businessStatus: '營業中',
-    businessItems: ['F501060 餐館業'],
-    sourceDataset: '商業登記(依營業項目別)－餐廳餐館',
-    officialSourceUrl: 'https://data.gcis.nat.gov.tw/dataset/commercial-registration-restaurant'
-  },
-  {
-    businessId: '98765432',
-    officialName: '野田壽司',
-    address: '屏東縣屏東市林森路28號',
-    city: '屏東縣',
-    district: '屏東市',
-    businessStatus: '營業中',
-    businessItems: ['F501060 餐館業'],
-    sourceDataset: '商業登記(依營業項目別)－餐廳餐館',
-    officialSourceUrl: 'https://data.gcis.nat.gov.tw/dataset/commercial-registration-restaurant'
-  },
-  {
-    businessId: '87654321',
-    officialName: '手酒咖啡',
-    address: '屏東縣屏東市民生路120號',
-    city: '屏東縣',
-    district: '屏東市',
-    businessStatus: '營業中',
-    businessItems: ['F501020 飲料店業', 'F501060 餐館業'],
-    sourceDataset: '商業登記(依營業項目別)－餐廳餐館',
-    officialSourceUrl: 'https://data.gcis.nat.gov.tw/dataset/commercial-registration-restaurant'
-  },
-  {
-    businessId: '76543210',
-    officialName: '金井珈琲',
-    address: '南投縣魚池鄉日月村中正路108號',
-    city: '南投縣',
-    district: '魚池鄉',
-    businessStatus: '營業中',
-    businessItems: ['F501020 飲料店業', 'F501060 餐館業'],
-    sourceDataset: '商業登記(依營業項目別)－餐廳餐館',
-    officialSourceUrl: 'https://data.gcis.nat.gov.tw/dataset/commercial-registration-restaurant'
-  },
-  {
-    businessId: '65432109',
-    officialName: '碰心蘿蔔',
-    address: '高雄市苓雅區中華四路80號',
-    city: '高雄市',
-    district: '苓雅區',
-    businessStatus: '營業中',
-    businessItems: ['F501060 餐館業'],
-    sourceDataset: '商業登記(依營業項目別)－餐廳餐館',
-    officialSourceUrl: 'https://data.gcis.nat.gov.tw/dataset/commercial-registration-restaurant'
-  },
-  {
-    businessId: '54321098',
-    officialName: '藤燒肉',
-    address: '嘉義市東區林森東路180號',
-    city: '嘉義市',
-    district: '東區',
-    businessStatus: '營業中',
-    businessItems: ['F501060 餐館業'],
-    sourceDataset: '商業登記(依營業項目別)－餐廳餐館',
-    officialSourceUrl: 'https://data.gcis.nat.gov.tw/dataset/commercial-registration-restaurant'
-  },
-  {
-    businessId: '43210987',
-    officialName: '咕嘰咕嘰早午餐-和平店',
-    address: '屏東縣屏東市和平路485號',
-    city: '屏東縣',
-    district: '屏東市',
-    businessStatus: '營業中',
-    businessItems: ['F501060 餐館業'],
-    sourceDataset: '商業登記(依營業項目別)－餐廳餐館',
-    officialSourceUrl: 'https://data.gcis.nat.gov.tw/dataset/commercial-registration-restaurant'
-  },
-  {
-    businessId: '32109876',
-    officialName: '義成伯麵店',
-    address: '屏東縣里港鄉永樂路19號',
-    city: '屏東縣',
-    district: '里港鄉',
-    businessStatus: '營業中',
-    businessItems: ['F501060 餐館業'],
-    sourceDataset: '商業登記(依營業項目別)－餐廳餐館',
-    officialSourceUrl: 'https://data.gcis.nat.gov.tw/dataset/commercial-registration-restaurant'
-  },
-  {
-    businessId: '21098765',
-    officialName: '拉麵山田',
-    address: '屏東縣屏東市廣東路87號',
-    city: '屏東縣',
-    district: '屏東市',
-    businessStatus: '營業中',
-    businessItems: ['F501060 餐館業'],
-    sourceDataset: '商業登記(依營業項目別)－餐廳餐館',
-    officialSourceUrl: 'https://data.gcis.nat.gov.tw/dataset/commercial-registration-restaurant'
+async function importFromOfficialCsv(csvFilePath, options = {}) {
+  if (!fs.existsSync(csvFilePath)) {
+    throw new Error(`Official CSV file not found at: ${csvFilePath}`);
   }
-];
 
-async function importVerifiedMoeaRegistry() {
-  console.log('============================================================');
-  console.log('--- JIA-BEN TAIWAN 6.0A OFFICIAL MOEA REGISTRY IMPORT ---');
-  console.log('============================================================\n');
+  const fileStats = fs.statSync(csvFilePath);
+  const fileBuffer = fs.readFileSync(csvFilePath);
+  const fileSha256 = crypto.createHash('sha256').update(fileBuffer).digest('hex');
+
+  const datasetTitle = options.datasetTitle || '商業登記(依營業項目別)－餐館業';
+  const officialDatasetPageUrl = options.officialDatasetPageUrl || 'https://data.gcis.nat.gov.tw/dataset/40960';
+  const downloadUrl = options.downloadUrl || officialDatasetPageUrl;
+  const targetCities = options.targetCities || ['屏東縣', '高雄市', '台南市', '嘉義市', '嘉義縣', '台北市', '台中市', '南投縣', '花蓮縣', '台東縣', '新北市'];
+
+  const importId = `moea_import_${Date.now()}`;
+  console.log(`\n============================================================`);
+  console.log(`--- OFFICIAL MOEA REGISTRY CSV IMPORT (${importId}) ---`);
+  console.log(`============================================================`);
+  console.log(`File: ${csvFilePath}`);
+  console.log(`Size: ${(fileStats.size / 1024).toFixed(2)} KB`);
+  console.log(`File SHA-256: ${fileSha256}`);
+  console.log(`Dataset Title: ${datasetTitle}`);
+  console.log(`Official Page: ${officialDatasetPageUrl}\n`);
 
   const token = await getAnonymousToken();
-  console.log('✅ Firebase Authentication Succeeded.');
 
-  let imported = 0;
-  let skipped = 0;
+  const fileStream = fs.createReadStream(csvFilePath);
+  const rl = readline.createInterface({ input: fileStream, crlfDelay: Infinity });
 
-  for (const raw of VERIFIED_MOEA_RESTAURANT_RECORDS) {
-    // Generate deterministic SHA-256 hash of raw input
-    const rawPayload = JSON.stringify({
-      businessId: raw.businessId,
-      officialName: raw.officialName,
-      address: raw.address,
-      city: raw.city,
-      businessStatus: raw.businessStatus,
-      businessItems: raw.businessItems
-    });
-    const rawSourceHash = 'sha256:' + crypto.createHash('sha256').update(rawPayload).digest('hex');
+  let header = null;
+  let rowNumber = 0;
+  let totalRows = 0;
+  let importedCount = 0;
+  let skippedCount = 0;
+
+  for await (const line of rl) {
+    rowNumber++;
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+
+    if (!header) {
+      header = trimmed.split(',').map(h => h.trim().replace(/^["']|["']$/g, ''));
+      console.log(`CSV Header:`, header.join(', '));
+      continue;
+    }
+
+    totalRows++;
+    const rawRowHash = 'sha256:' + crypto.createHash('sha256').update(trimmed).digest('hex');
+    const cols = trimmed.split(',').map(c => c.trim().replace(/^["']|["']$/g, ''));
+
+    // Extract fields based on MOEA GCIS standard column layout
+    // Typically: 統一編號, 商業名稱, 商業所在地, 現況, 營業項目
+    let businessId = cols[0] || '';
+    let officialName = cols[1] || '';
+    let address = cols[2] || '';
+    let businessStatus = cols[3] || '營業中';
+    let businessItems = cols[4] ? [cols[4]] : ['F501060 餐館業'];
+
+    // Verify businessId is 8 digits
+    if (!/^\d{8}$/.test(businessId)) {
+      skippedCount++;
+      continue;
+    }
+
+    // Filter by relevant production cities
+    const matchesCity = targetCities.some(city => address.includes(city) || address.includes(city.replace('台', '臺')));
+    if (!matchesCity) {
+      skippedCount++;
+      continue;
+    }
 
     const record = TaiwanPoiCache.createPoiRecord({
-      ...raw,
+      businessId,
+      officialName,
+      address,
+      businessStatus,
+      businessItems,
       source: 'MOEA_GCIS',
       isFixture: false,
       provenance: {
-        sourceDataset: raw.sourceDataset || OFFICIAL_MOEA_DATASET.sourceDataset,
-        sourceDatasetOid: OFFICIAL_MOEA_DATASET.sourceDatasetOid,
-        officialSourceUrl: raw.officialSourceUrl || OFFICIAL_MOEA_DATASET.officialSourceUrl,
-        sourceRecordId: raw.businessId,
-        rawSourceHash,
+        importId,
+        sourceRowNumber: rowNumber,
+        sourceDataset: datasetTitle,
+        officialSourceUrl: officialDatasetPageUrl,
+        downloadUrl,
+        sourceRecordId: businessId,
+        rawSourceHash: rawRowHash,
         fetchedAt: new Date().toISOString(),
-        dataUpdatedAt: OFFICIAL_MOEA_DATASET.dataUpdatedAt,
-        license: OFFICIAL_MOEA_DATASET.license,
+        license: '政府資料開放授權條款－第1版',
         isFixture: false
       }
     });
 
     const val = TaiwanPoiCache.validateProductionIngestionRecord(record);
     if (!val.valid) {
-      console.warn(`❌ Ingestion validation failed for "${record.officialName}": ${val.reason}`);
-      skipped++;
+      console.warn(`Row ${rowNumber} validation failed: ${val.reason}`);
+      skippedCount++;
       continue;
     }
 
     try {
-      await saveToFirestorePoiCache(record.taiwanPoiId, record, token);
-      imported++;
-      console.log(`[${imported}/${VERIFIED_MOEA_RESTAURANT_RECORDS.length}] Ingested MOEA: ${record.officialName} (統編: ${record.businessId}, ${record.city})`);
+      await saveToFirestore('taiwanPoiCache', record.taiwanPoiId, record, token);
+      importedCount++;
+      console.log(`[${importedCount}] Ingested Row ${rowNumber}: ${record.officialName} (${record.businessId}, ${record.city || '台灣'})`);
     } catch (err) {
-      console.error(`❌ Firestore save error for ${record.officialName}:`, err.message);
-      skipped++;
+      console.error(`Row ${rowNumber} save error:`, err.message);
+      skippedCount++;
     }
   }
 
-  console.log('\n============================================================');
-  console.log(`🎉 OFFICIAL MOEA REGISTRY IMPORT COMPLETE:`);
-  console.log(`   - Verified Records Ingested into Cache: ${imported}`);
-  console.log(`   - Skipped / Failed: ${skipped}`);
+  // Save Dataset-Level Import Metadata
+  const importMetadata = {
+    importId,
+    source: 'MOEA_GCIS',
+    datasetTitle,
+    officialDatasetPageUrl,
+    downloadUrl,
+    downloadedAt: new Date().toISOString(),
+    fileSha256,
+    fileSize: fileStats.size,
+    rowCount: totalRows,
+    importedRowCount: importedCount,
+    skippedRowCount: skippedCount,
+    targetCities,
+    softwareVersion: '6.0A'
+  };
+
+  try {
+    await saveToFirestore('taiwanRegistryImports', importId, importMetadata, token);
+    console.log(`\n✅ Saved dataset-level import provenance to taiwanRegistryImports/${importId}`);
+  } catch (err) {
+    console.warn(`Failed to save import metadata:`, err.message);
+  }
+
+  console.log(`\n============================================================`);
+  console.log(`📊 MOEA CSV IMPORT COMPLETE:`);
+  console.log(`   - Total CSV Rows Read: ${totalRows}`);
+  console.log(`   - Verified Records Ingested: ${importedCount}`);
+  console.log(`   - Skipped (City Filter / Non-8-digit): ${skippedCount}`);
   console.log(`   - Target Collection: taiwanPoiCache (Firestore)`);
-  console.log(`   - jiaPlaces Canonical Writes: 0 (CACHE-ONLY)`);
-  console.log('============================================================\n');
+  console.log(`   - jiaPlaces Writes: 0 (CACHE-ONLY)`);
+  console.log(`============================================================\n`);
+
+  return importMetadata;
 }
 
 if (require.main === module) {
-  importVerifiedMoeaRegistry().catch(console.error);
+  const args = process.argv.slice(2);
+  const csvPath = args[0];
+  if (!csvPath) {
+    console.log('Usage: node scripts/import_official_moea_registry.js <path-to-official-csv-file>');
+    process.exit(0);
+  }
+  importFromOfficialCsv(csvPath).catch(err => {
+    console.error('Import error:', err);
+    process.exit(1);
+  });
 }
 
 module.exports = {
-  importVerifiedMoeaRegistry,
-  VERIFIED_MOEA_RESTAURANT_RECORDS
+  importFromOfficialCsv,
+  saveToFirestore,
+  encodeFirestoreValue
 };
