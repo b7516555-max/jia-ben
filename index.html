@@ -29,6 +29,7 @@
     <script src="./src/providers/geoapifyAdapter.js?v=1"></script>
     <script src="./src/services/enrichment.js?v=1"></script>
     <script src="./src/services/communityData.js?v=1"></script>
+    <script src="./src/services/personalization.js?v=1"></script>
     <script src="./src/services/smartSearch.js?v=1"></script>
     <script src="./src/services/smartWheel.js?v=1"></script>
     <script src="./src/components/restaurantCard.js?v=1"></script>
@@ -788,6 +789,18 @@
                 <div>
                     <label class="block text-xs font-bold text-gray-700 mb-1"><i class="fa-solid fa-quote-left text-orange-400 mr-1"></i>美食宣言 / 個人喜好</label>
                     <input type="text" id="settings-bio" placeholder="最愛麻辣鍋與居酒屋..." class="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:border-orange-400 text-xs font-bold">
+                </div>
+
+                <!-- 個人化推薦隱私開關 -->
+                <div class="bg-amber-50/70 p-3 rounded-2xl border border-amber-200/80 flex items-center justify-between gap-3">
+                    <div class="min-w-0 flex-1">
+                        <p class="text-xs font-bold text-gray-800 flex items-center gap-1"><i class="fa-solid fa-sparkles text-amber-600"></i>個人化飲食推薦</p>
+                        <p class="text-[10px] text-gray-500 mt-0.5">根據您的想吃、吃過與評價偏好為您推薦專屬餐廳</p>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer shrink-0">
+                        <input type="checkbox" id="settings-personalization-toggle" class="sr-only peer" checked>
+                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500"></div>
+                    </label>
                 </div>
 
                 <!-- 大頭貼更換 -->
@@ -1791,7 +1804,7 @@
             </div>
             <button onclick="window.switchTab('explore')" id="tab-explore" class="tab-btn active flex-1 md:flex-none py-2 md:py-3 flex flex-col items-center gap-1 transition md:w-[84px] md:mx-auto md:hover:bg-orange-50 md:hover:text-orange-400"><i class="fa-solid fa-compass text-[18px] md:text-[20px] mb-0.5"></i><span>找餐廳</span></button>
             <button onclick="window.switchTab('nearby')" id="tab-nearby" class="tab-btn flex-1 md:flex-none py-2 md:py-3 flex flex-col items-center gap-1 transition md:w-[84px] md:mx-auto md:hover:bg-orange-50 md:hover:text-orange-400"><i class="fa-solid fa-dharmachakra text-[18px] md:text-[20px] mb-0.5"></i><span>輪盤</span></button>
-            <button onclick="window.switchTab('random')" id="tab-random" class="tab-btn flex-1 md:flex-none py-2 md:py-3 flex flex-col items-center gap-1 transition md:w-[84px] md:mx-auto md:hover:bg-orange-50 md:hover:text-orange-400"><i class="fa-solid fa-wand-magic-sparkles text-[18px] md:text-[20px] mb-0.5"></i><span>隨機抽</span></button>
+            <button onclick="window.switchTab('history')" id="tab-history" class="tab-btn flex-1 md:flex-none py-2 md:py-3 flex flex-col items-center gap-1 transition md:w-[84px] md:mx-auto md:hover:bg-orange-50 md:hover:text-orange-400"><i class="fa-solid fa-clock-rotate-left text-[18px] md:text-[20px] mb-0.5"></i><span>吃過</span></button>
             <button onclick="window.switchTab('party')" id="tab-party" class="tab-btn flex-1 md:flex-none py-2 md:py-3 flex flex-col items-center gap-1 transition md:w-[84px] md:mx-auto md:hover:bg-orange-50 md:hover:text-orange-400 relative"><i class="fa-solid fa-fire text-[18px] md:text-[20px] mb-0.5"></i><span>揪團</span></button>
             <button onclick="window.switchTab('feed')" id="tab-feed" class="tab-btn flex-1 md:flex-none py-2 md:py-3 flex flex-col items-center gap-1 transition md:w-[84px] md:mx-auto md:hover:bg-orange-50 md:hover:text-orange-400"><i class="fa-solid fa-comments text-[18px] md:text-[20px] mb-0.5"></i><span>動態牆</span></button>
             <button onclick="window.switchTab('chat')" id="tab-chat" class="tab-btn flex-1 md:flex-none py-2 md:py-3 flex flex-col items-center gap-1 transition md:w-[84px] md:mx-auto md:hover:bg-orange-50 md:hover:text-orange-400 relative"><i class="fa-solid fa-message text-[18px] md:text-[20px] mb-0.5"></i><span>留言板</span></button>
@@ -1819,73 +1832,144 @@
 
             <main class="flex-1 overflow-y-auto p-0 no-scrollbar relative w-full bg-[linear-gradient(180deg,#fffdfb_0%,#f8fafc_100%)]" id="main-content">
                 
-                <!-- 視圖 0: 找餐廳 (Explore) 超精簡高效 header -->
-                <div id="view-explore" class="fade-in h-full flex flex-col relative w-full">
-                    <div class="hero-panel p-3.5 sm:p-5 shadow-sm z-10 border-b border-gray-100 flex flex-col items-center">
-                        <div class="w-full max-w-3xl">
-                            <div class="flex items-center justify-between gap-2 mb-2">
-                                <div>
-                                    <h2 class="text-base sm:text-lg font-bold text-gray-800 flex items-center gap-1.5 leading-none">
-                                        <i class="fa-solid fa-utensils text-orange-500"></i>
-                                        <span>找尋最對味的餐廳</span>
-                                    </h2>
-                                </div>
-                                <p class="hidden sm:block text-xs text-gray-400">支援關鍵字、地點與價位篩選</p>
+                <!-- 🌟 視圖 0: 個人化首頁 (Home / Explore) 5~10 秒極速決策 -->
+                <div id="view-explore" class="fade-in h-full flex flex-col relative w-full overflow-y-auto no-scrollbar">
+                    <!-- 1. Hero 快速決策區 (今天吃什麼？) -->
+                    <div class="hero-panel p-4 sm:p-6 bg-gradient-to-br from-orange-500 via-amber-500 to-orange-600 text-white shadow-md relative overflow-hidden shrink-0">
+                        <div class="absolute -right-6 -bottom-8 opacity-10 text-9xl pointer-events-none select-none">
+                            <i class="fa-solid fa-bowl-food"></i>
+                        </div>
+                        <div class="max-w-4xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 relative z-10">
+                            <div>
+                                <span class="bg-white/20 backdrop-blur-md text-[11px] font-bold px-2.5 py-0.5 rounded-full border border-white/30 text-white/95 inline-flex items-center gap-1 mb-1.5 shadow-2xs">
+                                    <i class="fa-solid fa-sparkles text-amber-300"></i>
+                                    <span id="home-greeting-badge">今天想吃點什麼？</span>
+                                </span>
+                                <h2 class="text-xl sm:text-2xl md:text-3xl font-black text-white tracking-tight leading-tight">
+                                    今天吃什麼？
+                                </h2>
+                                <p class="text-xs sm:text-sm text-white/80 mt-1 max-w-md">
+                                    智能分析您的口味偏好，5 秒幫你選出最想吃的好店！
+                                </p>
                             </div>
-                            
-                            <!-- 國家與縣市篩選選單 (精簡並排) -->
-                            <div class="grid grid-cols-2 gap-2 mb-2">
-                                <div class="flex items-center gap-1 bg-white rounded-xl px-2.5 py-1.5 border border-orange-100/90 shadow-2xs">
-                                    <i class="fa-solid fa-globe text-orange-500 text-xs shrink-0"></i>
-                                    <select id="explore-country" onchange="window.handleExploreCountryChange()" class="w-full bg-transparent text-xs font-bold text-gray-800 focus:outline-none cursor-pointer truncate">
-                                        <option value="all">不限國家</option>
-                                        <option value="台灣" selected>🇹🇼 台灣</option>
-                                        <option value="日本">🇯🇵 日本</option>
-                                        <option value="韓國">🇰🇷 韓國</option>
-                                        <option value="美國">🇺🇸 美國</option>
-                                    </select>
-                                </div>
-                                <div class="flex items-center gap-1 bg-white rounded-xl px-2.5 py-1.5 border border-orange-100/90 shadow-2xs">
-                                    <i class="fa-solid fa-location-dot text-orange-500 text-xs shrink-0"></i>
-                                    <select id="explore-city" class="w-full bg-transparent text-xs font-bold text-gray-800 focus:outline-none cursor-pointer truncate">
-                                    </select>
-                                </div>
-                            </div>
-
-                            <!-- 關鍵字搜尋列 -->
-                            <div class="search-surface flex gap-1.5 relative bg-white rounded-2xl p-1.5 border border-orange-100 shadow-2xs">
-                                <div class="relative flex-1 min-w-0">
-                                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-gray-400 text-xs"></i>
-                                    <input type="text" id="explore-keyword" placeholder="例如：台北 火鍋 或 義大利麵" class="w-full pl-8 pr-2 py-1.5 bg-transparent rounded-xl text-xs sm:text-sm font-medium text-gray-800 focus:outline-none" onkeypress="if(event.key === 'Enter') window.searchGooglePlaces('explore')">
-                                </div>
-                                <button onclick="window.searchGooglePlaces('explore')" class="bg-orange-500 text-white px-3.5 py-1.5 rounded-xl shadow-2xs font-bold text-xs sm:text-sm hover:bg-orange-600 transition whitespace-nowrap shrink-0">找餐廳</button>
-                            </div>
-
-                            <!-- 快捷標籤與價位列 (緊湊單行化) -->
-                            <div class="desktop-filter-row flex items-center justify-between gap-2 mt-2 pt-1 border-t border-gray-100/60">
-                                <div class="flex items-center gap-1 overflow-x-auto no-scrollbar py-0.5">
-                                    <button onclick="window.runQuickSearch('午餐')" class="pill-chip shrink-0 rounded-full border border-orange-100 bg-white px-2 py-0.5 text-[10px] font-bold text-orange-600 shadow-2xs">🍽️午餐</button>
-                                    <button onclick="window.runQuickSearch('晚餐')" class="pill-chip shrink-0 rounded-full border border-orange-100 bg-white px-2 py-0.5 text-[10px] font-bold text-orange-600 shadow-2xs">🌙晚餐</button>
-                                    <button onclick="window.runQuickSearch('甜點')" class="pill-chip shrink-0 rounded-full border border-orange-100 bg-white px-2 py-0.5 text-[10px] font-bold text-orange-600 shadow-2xs">🧁甜點</button>
-                                    <button onclick="window.runQuickSearch('聚餐')" class="pill-chip shrink-0 rounded-full border border-orange-100 bg-white px-2 py-0.5 text-[10px] font-bold text-orange-600 shadow-2xs">🥂聚餐</button>
-                                </div>
-                                <div class="flex items-center gap-1 text-xs text-gray-600 shrink-0">
-                                    <i class="fa-solid fa-coins text-orange-400 text-xs"></i>
-                                    <span class="font-bold text-xs text-gray-700">預算</span>
-                                    <div class="flex items-center bg-white border border-gray-300 rounded-xl px-2.5 py-1 shadow-2xs hover:border-orange-300 focus-within:border-orange-400 transition">
-                                        <span class="text-xs text-gray-400 font-bold mr-1">$</span>
-                                        <input type="number" id="explore-price-min" placeholder="最低" min="0" step="50" class="w-16 sm:w-20 bg-transparent text-xs sm:text-sm font-bold text-gray-800 focus:outline-none placeholder:text-gray-300" onkeypress="if(event.key === 'Enter') window.searchGooglePlaces('explore')">
-                                        <span class="text-gray-300 mx-1.5 font-bold">~</span>
-                                        <span class="text-xs text-gray-400 font-bold mr-1">$</span>
-                                        <input type="number" id="explore-price-max" placeholder="最高" min="0" step="50" class="w-16 sm:w-20 bg-transparent text-xs sm:text-sm font-bold text-gray-800 focus:outline-none placeholder:text-gray-300" onkeypress="if(event.key === 'Enter') window.searchGooglePlaces('explore')">
-                                    </div>
-                                </div>
+                            <div class="flex items-center gap-2.5 w-full sm:w-auto shrink-0">
+                                <button type="button" onclick="window.quickDecidePlace()" class="flex-1 sm:flex-initial bg-white text-orange-600 hover:bg-orange-50 font-black px-4 py-3 rounded-2xl shadow-lg hover:shadow-xl transition-all active:scale-95 flex items-center justify-center gap-2 text-xs sm:text-sm">
+                                    <i class="fa-solid fa-bolt text-amber-500 text-base"></i>
+                                    <span>幫我決定</span>
+                                </button>
+                                <button type="button" onclick="window.switchTab('nearby')" class="flex-1 sm:flex-initial bg-black/20 hover:bg-black/30 backdrop-blur-md text-white border border-white/30 font-black px-4 py-3 rounded-2xl shadow-sm transition-all active:scale-95 flex items-center justify-center gap-2 text-xs sm:text-sm">
+                                    <i class="fa-solid fa-dharmachakra text-amber-300 text-base"></i>
+                                    <span>轉輪盤</span>
+                                </button>
                             </div>
                         </div>
                     </div>
 
-                    <div id="explore-results-container" class="flex-1 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 p-4 md:p-6 pb-6 items-stretch content-start">
-                        <div class="text-center text-gray-300 py-10 mt-6 col-span-full"><i class="fa-solid fa-mug-hot text-6xl mb-4 opacity-30"></i><p class="text-sm font-medium text-gray-400">輸入你想吃的，馬上出發！</p></div>
+                    <div class="p-4 md:p-6 space-y-6 max-w-[1560px] mx-auto w-full flex-1">
+                        <!-- 搜尋與快篩列 (非侵入式，精巧搜尋) -->
+                        <div class="bg-white p-3 sm:p-4 rounded-2xl border border-gray-100 shadow-2xs space-y-2">
+                            <div class="flex items-center justify-between gap-2">
+                                <div class="grid grid-cols-2 gap-2 flex-1 min-w-0">
+                                    <div class="flex items-center gap-1 bg-gray-50 rounded-xl px-2.5 py-1.5 border border-gray-200 shadow-2xs min-w-0">
+                                        <i class="fa-solid fa-globe text-orange-500 text-xs shrink-0"></i>
+                                        <select id="explore-country" onchange="window.handleExploreCountryChange()" class="w-full bg-transparent text-xs font-bold text-gray-800 focus:outline-none cursor-pointer truncate">
+                                            <option value="all">不限國家</option>
+                                            <option value="台灣" selected>🇹🇼 台灣</option>
+                                            <option value="日本">🇯🇵 日本</option>
+                                            <option value="韓國">🇰🇷 韓國</option>
+                                            <option value="美國">🇺🇸 美國</option>
+                                        </select>
+                                    </div>
+                                    <div class="flex items-center gap-1 bg-gray-50 rounded-xl px-2.5 py-1.5 border border-gray-200 shadow-2xs min-w-0">
+                                        <i class="fa-solid fa-location-dot text-orange-500 text-xs shrink-0"></i>
+                                        <select id="explore-city" class="w-full bg-transparent text-xs font-bold text-gray-800 focus:outline-none cursor-pointer truncate">
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="flex gap-1.5 relative">
+                                <div class="relative flex-1 min-w-0">
+                                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-gray-400 text-xs"></i>
+                                    <input type="text" id="explore-keyword" placeholder="搜尋美食、餐廳或特定料理（如：燒肉、拉麵）" class="w-full pl-8 pr-2 py-1.5 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm font-medium text-gray-800 focus:outline-none focus:border-orange-400" onkeypress="if(event.key === 'Enter') window.searchGooglePlaces('explore')">
+                                </div>
+                                <button onclick="window.searchGooglePlaces('explore')" class="bg-orange-500 text-white px-4 py-1.5 rounded-xl shadow-2xs font-bold text-xs sm:text-sm hover:bg-orange-600 transition whitespace-nowrap shrink-0">搜尋</button>
+                            </div>
+
+                            <div class="flex items-center justify-between gap-2 pt-1 border-t border-gray-100 flex-wrap">
+                                <div class="flex items-center gap-1 overflow-x-auto no-scrollbar py-0.5">
+                                    <button onclick="window.runQuickSearch('拉麵')" class="pill-chip shrink-0 rounded-full border border-orange-100 bg-orange-50/60 hover:bg-orange-100 px-2.5 py-0.5 text-[10px] font-bold text-orange-700 shadow-2xs">🍜 拉麵</button>
+                                    <button onclick="window.runQuickSearch('火鍋')" class="pill-chip shrink-0 rounded-full border border-orange-100 bg-orange-50/60 hover:bg-orange-100 px-2.5 py-0.5 text-[10px] font-bold text-orange-700 shadow-2xs">🍲 火鍋</button>
+                                    <button onclick="window.runQuickSearch('燒肉')" class="pill-chip shrink-0 rounded-full border border-orange-100 bg-orange-50/60 hover:bg-orange-100 px-2.5 py-0.5 text-[10px] font-bold text-orange-700 shadow-2xs">🥩 燒肉</button>
+                                    <button onclick="window.runQuickSearch('小吃')" class="pill-chip shrink-0 rounded-full border border-orange-100 bg-orange-50/60 hover:bg-orange-100 px-2.5 py-0.5 text-[10px] font-bold text-orange-700 shadow-2xs">🥢 台灣小吃</button>
+                                    <button onclick="window.runQuickSearch('甜點')" class="pill-chip shrink-0 rounded-full border border-orange-100 bg-orange-50/60 hover:bg-orange-100 px-2.5 py-0.5 text-[10px] font-bold text-orange-700 shadow-2xs">☕ 咖啡/甜點</button>
+                                </div>
+                                <div class="flex items-center gap-1 text-xs text-gray-500 shrink-0">
+                                    <span class="font-bold text-[11px]"><i class="fa-solid fa-coins text-amber-500 mr-0.5"></i>預算</span>
+                                    <input type="number" id="explore-price-min" placeholder="最低" min="0" step="50" class="w-14 bg-gray-50 border border-gray-200 rounded-lg px-1.5 py-0.5 text-xs text-gray-800 font-bold focus:outline-none">
+                                    <span>~</span>
+                                    <input type="number" id="explore-price-max" placeholder="最高" min="0" step="50" class="w-14 bg-gray-50 border border-gray-200 rounded-lg px-1.5 py-0.5 text-xs text-gray-800 font-bold focus:outline-none">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 2. 為你推薦 (For You) -->
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-7 h-7 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center text-xs font-black">
+                                        <i class="fa-solid fa-sparkles"></i>
+                                    </div>
+                                    <div>
+                                        <h3 class="text-base sm:text-lg font-black text-gray-800 leading-none">為你推薦</h3>
+                                        <p class="text-[11px] text-gray-400 mt-0.5">根據飲食偏好與歷史紀錄為你專屬計算</p>
+                                    </div>
+                                </div>
+                                <button type="button" onclick="window.renderHomeForYou(true)" class="text-xs text-orange-600 font-bold hover:text-orange-700 flex items-center gap-1 bg-orange-50 px-2.5 py-1 rounded-xl border border-orange-200">
+                                    <i class="fa-solid fa-rotate-right text-[10px]"></i> 換一批
+                                </button>
+                            </div>
+                            <div id="home-for-you-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-stretch content-start">
+                                <div class="text-center text-gray-400 py-8 col-span-full"><i class="fa-solid fa-spinner fa-spin text-2xl mb-2 text-orange-400 block"></i>正在整理專屬推薦好店...</div>
+                            </div>
+                        </div>
+
+                        <!-- 3. 一直想吃，今天去嗎？ (Want To Eat) -->
+                        <div class="space-y-3" id="home-want-section">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-7 h-7 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center text-xs font-black">
+                                        <i class="fa-solid fa-heart"></i>
+                                    </div>
+                                    <div>
+                                        <h3 class="text-base sm:text-lg font-black text-gray-800 leading-none">一直想吃，今天去嗎？</h3>
+                                        <p class="text-[11px] text-gray-400 mt-0.5">已收藏在想吃清單中的店家</p>
+                                    </div>
+                                </div>
+                                <button type="button" onclick="window.switchTab('list')" class="text-xs text-rose-600 font-bold hover:underline flex items-center gap-0.5">
+                                    看完整名單 <i class="fa-solid fa-chevron-right text-[9px]"></i>
+                                </button>
+                            </div>
+                            <div id="home-want-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-stretch content-start"></div>
+                        </div>
+
+                        <!-- 4. 附近好店探索 (Nearby Jia-ben) / 搜尋結果區 -->
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-7 h-7 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-black">
+                                        <i class="fa-solid fa-compass"></i>
+                                    </div>
+                                    <div>
+                                        <h3 class="text-base sm:text-lg font-black text-gray-800 leading-none" id="explore-results-heading">附近 Jia-ben 好店</h3>
+                                        <p class="text-[11px] text-gray-400 mt-0.5">全站收錄的高評價口碑美食</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="explore-results-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-stretch content-start pb-8">
+                                <div class="text-center text-gray-300 py-10 mt-2 col-span-full"><i class="fa-solid fa-mug-hot text-5xl mb-3 opacity-30"></i><p class="text-xs font-medium text-gray-400">正在探索好店...</p></div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -2182,6 +2266,34 @@
                     <!-- 🌟 統一卡片容器：Responsive 3～4 Columns -->
                     <div class="flex-1 overflow-y-auto p-4 md:p-6 pb-8 bg-gray-50">
                         <div id="list-container" class="max-w-[1560px] mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6 items-stretch content-start"></div>
+                    </div>
+                </div>
+
+                <!-- 🌟 視圖 4.5: 吃過歷史 (History) -->
+                <div id="view-history" class="hidden fade-in h-full flex flex-col relative w-full overflow-y-auto no-scrollbar bg-[#fafafa]">
+                    <div class="bg-white p-4 sm:p-5 shadow-sm z-10 border-b border-gray-100 sticky top-0">
+                        <div class="max-w-4xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                            <div>
+                                <h2 class="text-lg sm:text-xl font-black text-gray-800 flex items-center gap-2">
+                                    <i class="fa-solid fa-clock-rotate-left text-emerald-600"></i>
+                                    <span>吃過的美食紀錄</span>
+                                </h2>
+                                <p class="text-xs text-gray-400 mt-0.5">回顧所有曾去過、評過分的好店與造訪次數</p>
+                            </div>
+                            <div class="flex items-center gap-2 w-full sm:w-auto">
+                                <span class="text-xs text-gray-500 font-bold shrink-0">排序：</span>
+                                <select id="history-sort" onchange="window.renderHistoryView()" class="bg-gray-50 border border-gray-200 text-xs font-bold text-gray-700 px-3 py-1.5 rounded-xl focus:outline-none focus:border-emerald-500 w-full sm:w-auto cursor-pointer">
+                                    <option value="recent">🕒 最近吃過</option>
+                                    <option value="visits">🔥 造訪次數最多</option>
+                                    <option value="rating">⭐ 評分最高</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="p-4 md:p-6 max-w-[1560px] mx-auto w-full flex-1">
+                        <div id="history-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6 items-stretch content-start pb-8">
+                            <!-- 吃過餐廳列表 -->
+                        </div>
                     </div>
                 </div>
 
@@ -2592,14 +2704,17 @@
         };
 
         const FOOD_IMAGES = [
-            "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=400&q=80",
-            "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=400&q=80",
-            "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=400&q=80",
-            "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&w=400&q=80",
-            "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=400&q=80"
+            "./assets/food/lu_rou_fan.jpg",
+            "./assets/food/ramen.jpg",
+            "./assets/food/yakiniku.jpg",
+            "./assets/food/cafe.jpg",
+            "./assets/food/hotpot.jpg"
         ];
         
         window.getFallbackImage = function(name) {
+            if (window.imageSafety?.getAiFoodImageForPlace) {
+                return window.imageSafety.getAiFoodImageForPlace({ name: name });
+            }
             if (!name) return FOOD_IMAGES[0];
             let hash = 0;
             for (let i = 0; i < name.length; i++) hash += name.charCodeAt(i);
@@ -3152,8 +3267,15 @@
         }
         function setupJiaPlacesBridge() {
             window.jiaPlacesData = window.jiaPlacesData || [];
-            hydrateJiaPlacesNow().catch(error => console.error('jiaPlaces REST 讀取失敗:', error));
-            onSnapshot(collection(db,'artifacts',appId,'public','data','jiaPlaces'), snap => { if(!snap.empty) window.jiaPlacesData=snap.docs.map(item=>({jiaPlaceId:item.id,...item.data()})); }, error => console.error('jiaPlaces 同步失敗:',error));
+            hydrateJiaPlacesNow().then(() => {
+                if (typeof window.renderHomeForYou === 'function') window.renderHomeForYou();
+            }).catch(error => console.error('jiaPlaces REST 讀取失敗:', error));
+            onSnapshot(collection(db,'artifacts',appId,'public','data','jiaPlaces'), snap => { 
+                if(!snap.empty) {
+                    window.jiaPlacesData=snap.docs.map(item=>({jiaPlaceId:item.id,...item.data()})); 
+                    if (typeof window.renderHomeForYou === 'function') window.renderHomeForYou();
+                }
+            }, error => console.error('jiaPlaces 同步失敗:',error));
             window.JiaPlaces?.configureFirebase({ load:async()=>window.jiaPlacesData?.length?window.jiaPlacesData:hydrateJiaPlacesNow(), commercialSearch:async()=>[], save:saveExternalJiaPlace });
             window.JiaQuotaManager?.configure({
                 get: async id => { const snap = await getDoc(doc(db,'artifacts',appId,'public','data','placesApiUsage',id)); return snap.exists() ? snap.data() : { used: 0 }; },
@@ -3256,6 +3378,32 @@
                 window.chatData = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); 
                 if (!document.getElementById('view-chat').classList.contains('hidden')) window.renderChatMessages(); 
             }, handleSyncError);
+
+            // 🌟 即時監聽與同步 userPlaceStates
+            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'userPlaceStates'), (snap) => {
+                const myName = window.myIdentity?.name;
+                if (myName && !snap.empty) {
+                    snap.docs.forEach(docSnap => {
+                        const data = docSnap.data();
+                        if (data.userName === myName) {
+                            const placeKey = data.jiaPlaceId || docSnap.id.replace(`${myName}_`, '');
+                            window.userPlaceStates[placeKey] = {
+                                wantToEat: !!data.wantToEat,
+                                ate: !!data.ate,
+                                visitCount: Number(data.visitCount || 0),
+                                lastVisitedAt: data.lastVisitedAt || null
+                            };
+                        }
+                    });
+                    window.saveUserPlaceStatesLocal();
+                    if (!document.getElementById('view-explore').classList.contains('hidden') && typeof window.renderHomeForYou === 'function') {
+                        window.renderHomeForYou();
+                    }
+                    if (!document.getElementById('view-history').classList.contains('hidden') && typeof window.renderHistoryView === 'function') {
+                        window.renderHistoryView();
+                    }
+                }
+            }, handleSyncError);
         }
 
         window.handleNewIdGroupSelect = function(el) {
@@ -3347,9 +3495,15 @@
 
         window.switchTab = function(tabName, forceRefresh = false) {
             if (!forceRefresh && document.getElementById('tab-' + tabName) && document.getElementById('tab-' + tabName).classList.contains('active')) return;
-            ['explore', 'nearby', 'random', 'party', 'feed', 'chat', 'list', 'admin', 'guide'].forEach(name => { document.getElementById('view-' + name)?.classList.add('hidden'); if(document.getElementById('tab-' + name)) document.getElementById('tab-' + name).classList.remove('active'); });
-            document.getElementById('view-' + tabName)?.classList.remove('hidden'); if(document.getElementById('tab-' + tabName)) document.getElementById('tab-' + tabName).classList.add('active');
+            ['explore', 'nearby', 'history', 'random', 'party', 'feed', 'chat', 'list', 'admin', 'guide'].forEach(name => { 
+                document.getElementById('view-' + name)?.classList.add('hidden'); 
+                if(document.getElementById('tab-' + name)) document.getElementById('tab-' + name).classList.remove('active'); 
+            });
+            document.getElementById('view-' + tabName)?.classList.remove('hidden'); 
+            if(document.getElementById('tab-' + tabName)) document.getElementById('tab-' + tabName).classList.add('active');
             if(tabName !== 'admin' && tabName !== 'guide') previousTab = tabName;
+            if(tabName === 'explore') window.renderHomeForYou();
+            if(tabName === 'history') window.renderHistoryView();
             if(tabName === 'list') window.renderList(); 
             if(tabName === 'feed') window.renderFeed(); 
             if(tabName === 'party') window.renderParties();
@@ -3906,12 +4060,15 @@
         };
 
         window.logoutIdentity = function() {
-            window.myIdentity = { group: '', name: '', password: '', lineId: '', bio: '', avatarId: 'host', customAvatarUrl: '' };
+            window.myIdentity = { group: '', name: '', password: '', lineId: '', bio: '', avatarId: 'host', customAvatarUrl: '', personalizationEnabled: true };
+            window.userPlaceStates = {};
             try { localStorage.removeItem('together_eat_saved_identity'); } catch(e) {}
+            try { localStorage.removeItem('jia_user_place_states'); } catch(e) {}
             if (db && currentUser) {
                 setDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'settings', 'profile'), window.myIdentity, { merge: true }).catch(()=>{});
             }
             window.updateHeaderAvatarBadge();
+            if (typeof window.renderHomeForYou === 'function') window.renderHomeForYou();
             window.closeModal('user-settings-modal');
             window.showCustomMsg("👋 已成功登出身分！\n\n下次點擊右上角大頭貼時，請輸入密碼即可快速登入並自動帶入個人資料。");
         };
@@ -4076,9 +4233,34 @@
                 window.renderFeed();
             }
             if (typeof window.updateHeaderAvatarBadge === 'function') window.updateHeaderAvatarBadge();
+            
+            // 🌟 跨裝置雲端同步：拉取該使用者雲端 userPlaceStates
+            if (db && currentUser && nName) {
+                try {
+                    getDocs(query(collection(db, 'artifacts', appId, 'public', 'data', 'userPlaceStates'), where('userName', '==', nName))).then(snap => {
+                        if (!snap.empty) {
+                            snap.docs.forEach(docSnap => {
+                                const data = docSnap.data();
+                                const placeKey = data.jiaPlaceId || docSnap.id.replace(`${nName}_`, '');
+                                window.userPlaceStates[placeKey] = {
+                                    wantToEat: !!data.wantToEat,
+                                    ate: !!data.ate,
+                                    visitCount: Number(data.visitCount || 0),
+                                    lastVisitedAt: data.lastVisitedAt || null
+                                };
+                            });
+                            window.saveUserPlaceStatesLocal();
+                            if (typeof window.renderHomeForYou === 'function') window.renderHomeForYou();
+                        }
+                    }).catch(err => console.warn('載入雲端 userPlaceStates 失敗:', err));
+                } catch(e) {}
+            }
+
             window.closeModal('identity-modal'); 
             if(pendingPartyAction) { pendingPartyAction(); pendingPartyAction = null; } 
             
+            if (typeof window.renderHomeForYou === 'function') window.renderHomeForYou();
+
             const lvl = window.getUserLevel(nName);
             window.showCustomMsg(`✅ 登入成功！歡迎回來，${window.myIdentity.name}！\n\n已為您自動帶入所屬群組【${window.myIdentity.group}】與個人大頭貼。\n當前美食榮耀：${lvl.badgeFullLabel} (${lvl.title})`);
         };
@@ -5821,6 +6003,8 @@
             if (document.getElementById('settings-new-password')) document.getElementById('settings-new-password').value = '';
             if (document.getElementById('settings-line-id')) document.getElementById('settings-line-id').value = window.myIdentity.lineId || '';
             if (document.getElementById('settings-bio')) document.getElementById('settings-bio').value = window.myIdentity.bio || '';
+            const pToggle = document.getElementById('settings-personalization-toggle');
+            if (pToggle) pToggle.checked = window.myIdentity.personalizationEnabled !== false;
 
             // 渲染後台的大頭貼選擇器
             const avatarInfo = window.getAvatarInfo(window.myIdentity);
@@ -5926,10 +6110,14 @@
                 }
             }
 
+            const personalizationToggle = document.getElementById('settings-personalization-toggle');
+            const personalizationEnabled = personalizationToggle ? personalizationToggle.checked : true;
+
             window.myIdentity.lineId = newLineId;
             window.myIdentity.bio = newBio;
             window.myIdentity.avatarId = avatarId;
             window.myIdentity.customAvatarUrl = customAvatarUrl;
+            window.myIdentity.personalizationEnabled = personalizationEnabled;
 
             if (db && currentUser) {
                 setDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'settings', 'profile'), window.myIdentity, { merge: true }).catch(()=>{});
@@ -8413,6 +8601,170 @@
             } catch (e) {
                 console.warn('儲存本機餐廳狀態失敗:', e);
             }
+        };
+
+        // 🌟 Part B & D: 個人化推薦首頁渲染 (For You & Want to Eat & Nearby)
+        window.renderHomeForYou = function(shuffle = false) {
+            const forYouContainer = document.getElementById('home-for-you-container');
+            const wantContainer = document.getElementById('home-want-container');
+            const greetingBadge = document.getElementById('home-greeting-badge');
+            
+            if (greetingBadge && window.myIdentity?.name) {
+                greetingBadge.textContent = `${window.myIdentity.name}，今天想吃點什麼？`;
+            }
+
+            // 1. 取得使用者偏好設定 (是否開啟個人化)
+            const isPersonalizationEnabled = window.myIdentity?.personalizationEnabled !== false;
+
+            // 2. 構建 UserTasteProfile
+            let tasteProfile = null;
+            if (isPersonalizationEnabled && window.JiaPersonalization) {
+                tasteProfile = window.JiaPersonalization.buildUserTasteProfile({
+                    userName: window.myIdentity?.name || '',
+                    userPlaceStates: window.userPlaceStates || {},
+                    feedData: window.feedData || [],
+                    restaurantData: window.restaurantData || [],
+                    partyData: window.partyData || [],
+                    placesData: window.jiaPlacesData || []
+                });
+            }
+
+            const places = Array.isArray(window.jiaPlacesData) && window.jiaPlacesData.length > 0 
+                ? [...window.jiaPlacesData] 
+                : [];
+
+            if (places.length === 0) {
+                if (forYouContainer) forYouContainer.innerHTML = '<div class="text-center text-gray-400 py-6 col-span-full text-xs">尚無店家資料</div>';
+                return;
+            }
+
+            // 3. 取得「為你推薦」清單 (4~6 間)
+            if (forYouContainer) {
+                let recs = [];
+                if (window.JiaPersonalization && tasteProfile) {
+                    recs = window.JiaPersonalization.getForYouRecommendations(places, tasteProfile, { limit: 6 });
+                } else {
+                    // 關閉個人化推薦或未登入時，使用隨機/熱門探索模式
+                    const shuffled = [...places].sort(() => 0.5 - Math.random());
+                    recs = shuffled.slice(0, 6).map(p => ({ ...p, _recommendationReason: '✨ 人氣口碑推薦' }));
+                }
+
+                if (shuffle) {
+                    recs = recs.sort(() => 0.5 - Math.random());
+                }
+
+                forYouContainer.innerHTML = recs.map(p => {
+                    return window.JiaRestaurantCard ? window.JiaRestaurantCard.render(p) : '';
+                }).join('');
+            }
+
+            // 4. 取得「一直想吃，今天去嗎？」清單 (wantToEat == true)
+            if (wantContainer) {
+                const wantPlaceIds = Object.entries(window.userPlaceStates || {})
+                    .filter(([_, st]) => st && st.wantToEat)
+                    .map(([id]) => id);
+
+                const wantPlaces = places.filter(p => wantPlaceIds.includes(p.jiaPlaceId) || wantPlaceIds.includes(p.name));
+                const wantSection = document.getElementById('home-want-section');
+
+                if (wantPlaces.length === 0) {
+                    if (wantSection) wantSection.classList.add('hidden');
+                } else {
+                    if (wantSection) wantSection.classList.remove('hidden');
+                    wantContainer.innerHTML = wantPlaces.slice(0, 4).map(p => {
+                        return window.JiaRestaurantCard ? window.JiaRestaurantCard.render({ ...p, _recommendationReason: '❤️ 你的想吃清單' }) : '';
+                    }).join('');
+                }
+            }
+
+            // 5. 附近 Jia-ben 探索初始列表
+            const exploreResultsContainer = document.getElementById('explore-results-container');
+            if (exploreResultsContainer && (!exploreResultsContainer.children || exploreResultsContainer.children.length <= 1)) {
+                const exploreSubset = [...places].slice(0, 8);
+                exploreResultsContainer.innerHTML = exploreSubset.map(p => {
+                    return window.JiaRestaurantCard ? window.JiaRestaurantCard.render(p) : '';
+                }).join('');
+            }
+        };
+
+        // 🌟 Part G: 吃過歷史 (History View) 渲染
+        window.renderHistoryView = function() {
+            const container = document.getElementById('history-container');
+            if (!container) return;
+
+            const sortMode = document.getElementById('history-sort')?.value || 'recent';
+            const places = Array.isArray(window.jiaPlacesData) ? window.jiaPlacesData : [];
+
+            // 找出所有 ate == true 的店家
+            const visitedEntries = Object.entries(window.userPlaceStates || {})
+                .filter(([_, st]) => st && (st.ate || st.visitCount > 0));
+
+            if (visitedEntries.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center text-gray-400 py-16 col-span-full">
+                        <i class="fa-solid fa-utensils text-5xl mb-3 opacity-20 block"></i>
+                        <p class="text-sm font-bold text-gray-600">尚無吃過的美食紀錄</p>
+                        <p class="text-xs text-gray-400 mt-1">在店家卡片點擊「吃過 ✓」，就能在這裡隨時回顧您的美食足跡！</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const historyList = [];
+            visitedEntries.forEach(([key, st]) => {
+                const place = places.find(p => p.jiaPlaceId === key || p.name === key || String(p.normalizedName || '') === String(key).normalize('NFKC').toLowerCase().replace(/\s+/g, '')) || { name: key, jiaPlaceId: key };
+                // 尋找該用戶對此店家的評分
+                const userReview = (window.feedData || []).find(f => f.creator === window.myIdentity?.name && (f.restaurantName === place.name || f.restaurantName === key));
+                historyList.push({
+                    place,
+                    state: st,
+                    review: userReview
+                });
+            });
+
+            // 排序
+            if (sortMode === 'recent') {
+                historyList.sort((a, b) => new Date(b.state.lastVisitedAt || 0) - new Date(a.state.lastVisitedAt || 0));
+            } else if (sortMode === 'visits') {
+                historyList.sort((a, b) => (b.state.visitCount || 0) - (a.state.visitCount || 0));
+            } else if (sortMode === 'rating') {
+                historyList.sort((a, b) => (b.place.rating || 0) - (a.place.rating || 0));
+            }
+
+            container.innerHTML = historyList.map(({ place, state, review }) => {
+                const safeName = window.escapeForBtn(place.name);
+                const visitDateStr = state.lastVisitedAt ? new Date(state.lastVisitedAt).toLocaleDateString('zh-TW', { year: 'numeric', month: 'short', day: 'numeric' }) : '造訪日期未紀錄';
+                const ratingBadge = review ? `<span class="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded-md"><i class="fa-solid fa-star text-amber-500 mr-0.5"></i>你的評分: ${review.rating}</span>` : '';
+                
+                return `
+                <div class="bg-white rounded-2xl shadow-xs border border-gray-100 overflow-hidden hover:shadow-md transition group flex flex-col">
+                    <div class="h-36 relative overflow-hidden bg-gray-100 cursor-pointer" onclick="window.openRestaurantDetailByName('${safeName}')">
+                        <img src="${place.coverPhoto || window.getFallbackImage(place.name)}" onerror="this.onerror=null; this.src=window.getFallbackImage('${safeName}')" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent"></div>
+                        <div class="absolute top-2.5 left-2.5 bg-emerald-600 text-white text-[10px] font-black px-2.5 py-0.5 rounded-full shadow-2xs">
+                            <i class="fa-solid fa-check-circle mr-1"></i>造訪 ${state.visitCount || 1} 次
+                        </div>
+                        <div class="absolute bottom-2 left-3 right-3 text-white">
+                            <h3 class="text-sm sm:text-base font-black truncate drop-shadow">${window.escapeHtml(place.name)}</h3>
+                            <p class="text-[10px] text-gray-200 truncate">${window.escapeHtml(place.address || place.city || '美食店家')}</p>
+                        </div>
+                    </div>
+                    <div class="p-3 bg-white flex flex-col justify-between flex-1 gap-2">
+                        <div class="flex items-center justify-between text-[11px] text-gray-500">
+                            <span class="flex items-center gap-1"><i class="fa-regular fa-calendar text-gray-400"></i> ${visitDateStr}</span>
+                            ${ratingBadge}
+                        </div>
+                        <div class="flex gap-1.5 pt-1 border-t border-gray-100">
+                            <button type="button" onclick="window.openRestaurantDetailByName('${safeName}')" class="flex-1 py-1.5 bg-orange-50 hover:bg-orange-100 text-orange-600 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1">
+                                <i class="fa-solid fa-circle-info text-[10px]"></i> 詳細卡片
+                            </button>
+                            <button type="button" onclick="window.openContributeModal(${JSON.stringify(place).replace(/"/g, '&quot;')})" class="py-1.5 px-3 bg-gray-50 hover:bg-gray-100 text-gray-600 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1" title="補充/更新消費與資訊">
+                                <i class="fa-solid fa-pen-to-square text-[10px]"></i> 補充
+                            </button>
+                        </div>
+                    </div>
+                </div>`;
+            }).join('');
         };
 
         // 取得特定店家的使用者狀態

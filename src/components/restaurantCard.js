@@ -141,9 +141,11 @@
 
         // 推薦者 (若有)
         let recBadgeHtml = '';
-        if (vm.recommenders.length > 0) {
-            const firstRec = vm.recommenders[0];
-            recBadgeHtml = `<div class="mt-1.5 flex items-center gap-1 overflow-hidden"><span class="text-[10px] bg-amber-50 text-amber-800 border border-amber-200 px-1.5 py-0.2 rounded font-bold truncate max-w-full"><i class="fa-solid fa-user-check mr-1 text-[9px]"></i>${escapeHtml(firstRec.creator || firstRec.name || '成員')}${vm.recommenders.length > 1 ? ` 等 ${vm.recommenders.length} 人` : ''} 推薦</span></div>`;
+        // 個人化推薦理由 (若有)
+        const recReason = options.recommendationReason || place._recommendationReason || '';
+        let reasonHtml = '';
+        if (recReason) {
+            reasonHtml = `<div class="mb-1"><span class="inline-flex items-center gap-1 text-[10px] font-black text-amber-900 bg-amber-100/90 border border-amber-200/80 px-2 py-0.5 rounded-md leading-tight shadow-2xs"><i class="fa-solid fa-sparkles text-amber-600 text-[9px]"></i><span>${escapeHtml(recReason)}</span></span></div>`;
         }
 
         return `
@@ -159,6 +161,7 @@
             </div>
             <div class="p-3.5 sm:p-4 flex-1 flex flex-col justify-between bg-white min-h-[110px]">
                 <div class="space-y-1.5">
+                    ${reasonHtml}
                     <div class="flex items-center justify-between gap-1.5 flex-wrap">
                         ${ratingHtml}
                         ${catBadgeHtml}
