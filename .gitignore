@@ -22,3 +22,5 @@ registry_import_manifest.json
 taiwan_registry_review_report.md
 taiwan_secondary_verification_report.md
 secondary_verification_report.json
+taiwan_enrichment_dry_run_report.md
+enrichment_cache_manifest.json
