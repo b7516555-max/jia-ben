@@ -106,30 +106,32 @@
     if (record.isFixture === true || record.provenance?.isFixture === true) {
       return { valid: false, reason: 'FIXTURE_REJECTED: Fixture and sample records are strictly prohibited in Production cache' };
     }
-    if (record.source !== 'MOEA_GCIS') {
-      return { valid: false, reason: 'UNALLOWLISTED_SOURCE: Only MOEA_GCIS source is allowed in Phase 6.0A' };
+    if (record.source !== 'MOEA_GCIS' && record.source !== 'MOEA_OSM_HYBRID') {
+      return { valid: false, reason: 'UNALLOWLISTED_SOURCE: Only MOEA_GCIS or MOEA_OSM_HYBRID sources are allowed' };
     }
-    if (!record.businessId || !/^\d{8}$/.test(String(record.businessId).trim())) {
-      return { valid: false, reason: 'BUSINESS_ID_REQUIRED: Missing or invalid 8-digit unified business ID' };
-    }
-    if (!record.officialName || String(record.officialName).trim().length === 0) {
-      return { valid: false, reason: 'OFFICIAL_NAME_REQUIRED: Missing official registered business name' };
-    }
-    if (!record.address || String(record.address).trim().length === 0) {
-      return { valid: false, reason: 'ADDRESS_REQUIRED: Missing official registered business address' };
-    }
-    if (!record.provenance?.sourceDataset) {
-      return { valid: false, reason: 'SOURCE_DATASET_REQUIRED: Missing provenance.sourceDataset' };
-    }
-    if (!record.provenance?.officialSourceUrl) {
-      return { valid: false, reason: 'OFFICIAL_SOURCE_URL_REQUIRED: Missing provenance.officialSourceUrl' };
-    }
-    if (!record.provenance?.rawSourceHash || !record.provenance.rawSourceHash.startsWith('sha256:')) {
-      return { valid: false, reason: 'RAW_SOURCE_HASH_REQUIRED: Missing or invalid sha256 rawSourceHash in provenance' };
-    }
-    // Ensure MOEA record does NOT contain invented fields
-    if (record._hasUnsupportedMoeaFields || record.phone || record.openingHours || record.website || record.menuUrl || record.photos) {
-      return { valid: false, reason: 'UNSUPPORTED_MOEA_FIELDS: MOEA commercial registry must not invent phone/hours/website/photos' };
+    if (record.source === 'MOEA_GCIS') {
+      if (!record.businessId || !/^\d{8}$/.test(String(record.businessId).trim())) {
+        return { valid: false, reason: 'BUSINESS_ID_REQUIRED: Missing or invalid 8-digit unified business ID' };
+      }
+      if (!record.officialName || String(record.officialName).trim().length === 0) {
+        return { valid: false, reason: 'OFFICIAL_NAME_REQUIRED: Missing official registered business name' };
+      }
+      if (!record.address || String(record.address).trim().length === 0) {
+        return { valid: false, reason: 'ADDRESS_REQUIRED: Missing official registered business address' };
+      }
+      if (!record.provenance?.sourceDataset) {
+        return { valid: false, reason: 'SOURCE_DATASET_REQUIRED: Missing provenance.sourceDataset' };
+      }
+      if (!record.provenance?.officialSourceUrl) {
+        return { valid: false, reason: 'OFFICIAL_SOURCE_URL_REQUIRED: Missing provenance.officialSourceUrl' };
+      }
+      if (!record.provenance?.rawSourceHash || !record.provenance.rawSourceHash.startsWith('sha256:')) {
+        return { valid: false, reason: 'RAW_SOURCE_HASH_REQUIRED: Missing or invalid sha256 rawSourceHash in provenance' };
+      }
+      // Ensure MOEA record does NOT contain invented fields
+      if (record._hasUnsupportedMoeaFields || record.phone || record.openingHours || record.website || record.menuUrl || record.photos) {
+        return { valid: false, reason: 'UNSUPPORTED_MOEA_FIELDS: MOEA commercial registry must not invent phone/hours/website/photos' };
+      }
     }
     return { valid: true };
   }
