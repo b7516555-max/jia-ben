@@ -1,0 +1,136 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // JIA-BEN SECURITY MODEL (Phase 6.0G Hardened)
+    // Project: letseat-366e9
+    // Path: /artifacts/letseat-366e9/public/data/...
+    // ===============================================================
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null && request.auth.uid != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.admin == true ||
+        request.auth.token.role == 'admin'
+      );
+    }
+
+    // Default deny for all unmatched paths
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Let's Eat base artifact document path
+    match /artifacts/{appId} {
+      allow read: if true;
+
+      // 1. User private settings and state
+      match /users/{userId}/settings/{settingDoc} {
+        allow read, write: if isSignedIn() && request.auth.uid == userId;
+      }
+
+      // 2. Public application data collections
+      match /public/data {
+
+        // --- CANONICAL RESTAURANT DATABASE (jiaPlaces) ---
+        // Public read for app browsing. Strictly admin/trusted backend write.
+        match /jiaPlaces/{placeId} {
+          allow read: if true;
+          allow write: if isAdmin();
+        }
+
+        // --- CACHE COLLECTIONS (taiwanPoiCache, placeEnrichmentCache) ---
+        // Public read for enrichment resolution. Strictly admin/backend write.
+        match /taiwanPoiCache/{cacheId} {
+          allow read: if true;
+          allow write: if isAdmin();
+        }
+
+        match /placeEnrichmentCache/{cacheId} {
+          allow read: if true;
+          allow write: if isAdmin();
+        }
+
+        // --- AUDIT HISTORY (placeFieldHistory) ---
+        match /placeFieldHistory/{historyId} {
+          allow read: if true;
+          allow write: if isAdmin();
+        }
+
+        // --- COMMUNITY CONTRIBUTIONS (placeContributions) ---
+        // Users can create own contributions with status 'pending'.
+        // Users CANNOT self-approve, set reviewerUid, or alter moderation status.
+        // Only Admin can update status, review decisions, or delete.
+        match /placeContributions/{contributionId} {
+          allow read: if true;
+
+          // Create: authenticated user only, contributorUid must match auth.uid, status must be 'pending'
+          allow create: if isSignedIn()
+            && request.resource.data.uid == request.auth.uid
+            && request.resource.data.status == 'pending'
+            && !('reviewerUid' in request.resource.data)
+            && !('reviewedBy' in request.resource.data)
+            && !('approvedAt' in request.resource.data)
+            && !('community_verified' in request.resource.data);
+
+          // Update & Delete: Admin only (prevents self-approval & reviewer spoofing)
+          allow update, delete: if isAdmin();
+        }
+
+        // --- REVIEWS & FEED (feed) ---
+        match /feed/{feedId} {
+          allow read: if true;
+          allow create: if isSignedIn();
+          allow update, delete: if isSignedIn() && (
+            resource.data.creatorUid == request.auth.uid ||
+            isAdmin()
+          );
+        }
+
+        // --- COMMUNITY RESTAURANTS (restaurants) ---
+        match /restaurants/{resId} {
+          allow read: if true;
+          allow create: if isSignedIn();
+          allow update, delete: if isSignedIn();
+        }
+
+        // --- PARTIES (parties) ---
+        match /parties/{partyId} {
+          allow read: if true;
+          allow create: if isSignedIn();
+          allow update, delete: if isSignedIn();
+        }
+
+        // --- CHAT & COMMENTS (chat) ---
+        match /chat/{chatId} {
+          allow read: if true;
+          allow create: if isSignedIn();
+          allow update, delete: if isSignedIn();
+        }
+
+        // --- PERSONALIZATION & USER STATES (userPlaceStates) ---
+        match /userPlaceStates/{stateId} {
+          allow read: if true;
+          allow write: if isSignedIn();
+        }
+
+        // --- SYSTEM APP CONFIG (config) ---
+        match /config/{configId} {
+          allow read: if true;
+          allow write: if isAdmin();
+        }
+
+        // --- QUOTA TRACKING (placesApiUsage) ---
+        match /placesApiUsage/{usageId} {
+          allow read: if true;
+          allow write: if isSignedIn();
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,28 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // Default deny
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+
+    // Community user photo uploads
+    match /communityPhotos/{userId}/{photoId} {
+      // Public read for display
+      allow read: if true;
+
+      // Upload: authenticated user, write only to their own directory, size <= 10MB, images only
+      allow write: if request.auth != null
+        && request.auth.uid == userId
+        && request.resource.size < 10 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+    }
+
+    // Admin-managed canonical photos
+    match /canonicalPhotos/{photoId} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.token.admin == true;
+    }
+  }
+}
