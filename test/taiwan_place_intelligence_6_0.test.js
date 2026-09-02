@@ -110,13 +110,12 @@ global.imageSafety = imageSafety;
       businessId: '12345678',
       officialName: '阿霞飯店',
       address: '台南市中西區忠義路二段84號',
-      phone: '06-2231418',
-      categories: ['F501010', '餐飲業'],
-      source: 'moea',
-      sourceMetadata: {
-        sourceName: '經濟部商工行政資料',
-        sourceDataset: 'tw.gov.fia.eip~ref~business-tax',
-        sourceUrl: 'https://data.openfun.tw/datasets/tw.gov.fia.eip~ref~business-tax'
+      businessItems: ['F501060 餐館業'],
+      source: 'MOEA_GCIS',
+      provenance: {
+        sourceDataset: '商業登記(依營業項目別)－餐廳餐館',
+        officialSourceUrl: 'https://data.gcis.nat.gov.tw/dataset/commercial-registration-restaurant',
+        rawSourceHash: 'sha256:1234567890abcdef'
       }
     }
   ];

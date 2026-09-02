@@ -57,40 +57,43 @@ async function runIntegrityTests() {
     const poi = TaiwanPoiCache.createPoiRecord(unverifiedRecord);
     const val = TaiwanPoiCache.validateProductionIngestionRecord(poi);
     assert.strictEqual(val.valid, false, 'Unverified ID without provenance must be rejected');
-    assert.ok(val.reason.includes('PROVENANCE_REQUIRED'), 'Must require provenance');
+    assert.ok(val.reason.includes('PROVENANCE_REQUIRED') || val.reason.includes('SOURCE_DATASET_REQUIRED') || val.reason.includes('UNALLOWLISTED_SOURCE'), 'Must require provenance or allowlisted source');
     console.log('✅ 3. UnverifiedBusinessIdRejectedTest Passed: Records lacking official dataset provenance are rejected.');
   }
 
   // Test 4: OpeningHoursRequiresValidSourceTest
   {
     const hoursWithoutSource = {
+      businessId: '12345678',
       officialName: '美味小吃店',
       address: '台南市中西區南門路60號',
       openingHours: '週一至週日 11:00-21:00',
-      sourceMetadata: {
-        sourceDataset: 'moea_commercial_registration',
-        sourceUrl: 'https://data.gcis.nat.gov.tw/od/data/api'
+      source: 'MOEA_GCIS',
+      provenance: {
+        sourceDataset: '商業登記(依營業項目別)－餐廳餐館',
+        officialSourceUrl: 'https://data.gcis.nat.gov.tw/dataset/commercial-registration-restaurant',
+        rawSourceHash: 'sha256:1234567890abcdef'
       }
-      // Note: openingHoursSource is missing! MOEA registration does not provide opening hours.
+      // Note: openingHours is unsupported in MOEA_GCIS!
     };
     const poi = TaiwanPoiCache.createPoiRecord(hoursWithoutSource);
     const val = TaiwanPoiCache.validateProductionIngestionRecord(poi);
     assert.strictEqual(val.valid, false, 'Opening hours without verified source must be rejected');
-    assert.ok(val.reason.includes('OPENING_HOURS_SOURCE_REQUIRED'), 'Must require openingHoursSource');
+    assert.ok(val.reason.includes('OPENING_HOURS_SOURCE_REQUIRED') || val.reason.includes('UNSUPPORTED_MOEA_FIELDS'), 'Must reject unsupported/unverified hours');
     console.log('✅ 4. OpeningHoursRequiresValidSourceTest Passed: Opening hours require explicit official source verification.');
   }
 
   // Test 5: GovernmentSourceProvenanceRequiredTest
   {
     const validOfficialRecord = {
+      businessId: '05703908',
       officialName: '鼎泰豐小吃店股份有限公司',
       address: '台北市大安區信義路二段198號',
-      phone: '02-23218928',
-      businessId: '05703908',
-      sourceMetadata: {
+      source: 'MOEA_GCIS',
+      provenance: {
         sourceName: '經濟部商業司商工登記資料',
         sourceDataset: 'tw.gov.fia.eip~ref~business-tax',
-        sourceUrl: 'https://data.openfun.tw/datasets/tw.gov.fia.eip~ref~business-tax',
+        officialSourceUrl: 'https://data.openfun.tw/datasets/tw.gov.fia.eip~ref~business-tax',
         rawSourceHash: 'sha256:abc123def456',
         sourceRecordId: '05703908'
       }

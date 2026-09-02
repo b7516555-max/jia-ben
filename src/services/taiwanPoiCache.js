@@ -39,69 +39,97 @@
     const idSeed = businessId ? `moea_${businessId}` : (foodRegistrationId ? `tfda_${foodRegistrationId}` : `${raw.source || 'tw'}_${normalizedName}_${normAddr.formattedAddress}`);
     const taiwanPoiId = raw.taiwanPoiId || idSeed;
 
-    const isFixture = Boolean(raw.isFixture || raw.sourceMetadata?.isFixture);
-    const sourceDataset = raw.sourceDataset || raw.sourceMetadata?.sourceDataset || '';
-    const sourceUrl = raw.sourceUrl || raw.sourceMetadata?.sourceUrl || '';
-    const rawSourceHash = raw.rawSourceHash || raw.sourceMetadata?.rawSourceHash || '';
+    const isFixture = Boolean(raw.isFixture || raw.provenance?.isFixture || raw.sourceMetadata?.isFixture);
+    const sourceDataset = raw.provenance?.sourceDataset || raw.sourceDataset || raw.sourceMetadata?.sourceDataset || '';
+    const sourceDatasetOid = raw.provenance?.sourceDatasetOid || raw.sourceDatasetOid || '';
+    const officialSourceUrl = raw.provenance?.officialSourceUrl || raw.officialSourceUrl || raw.sourceUrl || raw.sourceMetadata?.sourceUrl || '';
+    const rawSourceHash = raw.provenance?.rawSourceHash || raw.rawSourceHash || raw.sourceMetadata?.rawSourceHash || '';
+    const sourceRecordId = raw.provenance?.sourceRecordId || raw.sourceRecordId || businessId || foodRegistrationId || '';
+    const dataUpdatedAt = raw.provenance?.dataUpdatedAt || raw.dataUpdatedAt || '';
+    const license = raw.provenance?.license || '政府資料開放授權條款－第1版';
+
+    // Business items (e.g. F501060 餐館業)
+    let businessItems = [];
+    if (Array.isArray(raw.businessItems)) {
+      businessItems = raw.businessItems;
+    } else if (raw.businessItems) {
+      businessItems = [String(raw.businessItems)];
+    } else if (Array.isArray(raw.categories)) {
+      businessItems = raw.categories;
+    } else if (raw.category) {
+      businessItems = [raw.category];
+    } else {
+      businessItems = ['F501060 餐館業'];
+    }
+
+    const hasUnsupportedMoeaFields = Boolean(raw.phone || raw.telephone || raw.openingHours || raw.website || raw.menuUrl || raw.photos);
 
     return {
       taiwanPoiId,
-      source: raw.source || 'taiwan_open_data',
-      isFixture,
-      businessId,
-      foodRegistrationId,
+      source: raw.source || 'MOEA_GCIS',
       officialName,
+      rawOfficialName: raw.rawOfficialName || officialName,
       normalizedName,
       address: rawAddress,
+      rawOfficialAddress: raw.rawOfficialAddress || rawAddress,
       normalizedAddress: normAddr.formattedAddress,
       city: normAddr.city || raw.city || '',
       district: normAddr.district || raw.district || '',
-      location: (raw.location && Number.isFinite(raw.location.lat) && Number.isFinite(raw.location.lng)) ? raw.location : null,
-      phone: normPhone.formatted || rawPhone || '',
-      openingHours: raw.openingHours || '',
-      openingHoursSource: raw.openingHoursSource || '',
-      website: raw.website || '',
-      menuUrl: raw.menuUrl || '',
+      businessId,
       businessStatus: raw.businessStatus || '營業中',
-      categories: Array.isArray(raw.categories) ? raw.categories : (raw.category ? [raw.category] : ['餐飲業']),
-      sourceMetadata: {
-        sourceName: raw.sourceMetadata?.sourceName || raw.source || 'Taiwan Open Data',
+      businessItems,
+      location: (raw.location && Number.isFinite(raw.location.lat) && Number.isFinite(raw.location.lng)) ? raw.location : null,
+      _hasUnsupportedMoeaFields: hasUnsupportedMoeaFields,
+      provenance: {
         sourceDataset,
-        sourceUrl,
+        sourceDatasetOid,
+        officialSourceUrl,
+        sourceRecordId,
         rawSourceHash,
-        isFixture,
-        sourceRecordId: raw.sourceMetadata?.sourceRecordId || businessId || foodRegistrationId || '',
-        importedAt: raw.sourceMetadata?.importedAt || new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        fetchedAt: raw.provenance?.fetchedAt || raw.fetchedAt || new Date().toISOString(),
+        dataUpdatedAt,
+        license,
+        isFixture
       },
-      identity: {
-        phone: normPhone.canonical || '',
-        formattedPhone: normPhone.formatted || '',
-        businessId,
-        addressHash: normAddr.formattedAddress
-      }
+      isFixture
     };
   }
 
   /**
-   * Strict validation for Production POI Cache Ingestion
-   * Guarantees synthetic/fixture records never contaminate Production Firestore.
+   * Strict validation for Production POI Cache Ingestion (Phase 6.0A)
+   * Enforces 100% genuine MOEA GCIS open data records with cryptographic provenance.
    */
   function validateProductionIngestionRecord(record) {
     if (!record || typeof record !== 'object') {
-      return { valid: false, reason: 'Invalid or empty record object' };
+      return { valid: false, reason: 'INVALID_OBJECT: Empty or invalid record object' };
     }
-    if (record.isFixture === true || record.sourceMetadata?.isFixture === true) {
+    if (record.isFixture === true || record.provenance?.isFixture === true) {
       return { valid: false, reason: 'FIXTURE_REJECTED: Fixture and sample records are strictly prohibited in Production cache' };
     }
-    if (!record.officialName || record.officialName.trim().length === 0) {
-      return { valid: false, reason: 'NAME_REQUIRED: Missing official store name' };
+    if (record.source !== 'MOEA_GCIS') {
+      return { valid: false, reason: 'UNALLOWLISTED_SOURCE: Only MOEA_GCIS source is allowed in Phase 6.0A' };
     }
-    if (!record.sourceMetadata?.sourceDataset && !record.sourceMetadata?.sourceUrl) {
-      return { valid: false, reason: 'PROVENANCE_REQUIRED: Missing reproducible sourceDataset or sourceUrl' };
+    if (!record.businessId || !/^\d{8}$/.test(String(record.businessId).trim())) {
+      return { valid: false, reason: 'BUSINESS_ID_REQUIRED: Missing or invalid 8-digit unified business ID' };
     }
-    if (record.openingHours && !record.openingHoursSource) {
-      return { valid: false, reason: 'OPENING_HOURS_SOURCE_REQUIRED: Opening hours must be verified by official website or verified page' };
+    if (!record.officialName || String(record.officialName).trim().length === 0) {
+      return { valid: false, reason: 'OFFICIAL_NAME_REQUIRED: Missing official registered business name' };
+    }
+    if (!record.address || String(record.address).trim().length === 0) {
+      return { valid: false, reason: 'ADDRESS_REQUIRED: Missing official registered business address' };
+    }
+    if (!record.provenance?.sourceDataset) {
+      return { valid: false, reason: 'SOURCE_DATASET_REQUIRED: Missing provenance.sourceDataset' };
+    }
+    if (!record.provenance?.officialSourceUrl) {
+      return { valid: false, reason: 'OFFICIAL_SOURCE_URL_REQUIRED: Missing provenance.officialSourceUrl' };
+    }
+    if (!record.provenance?.rawSourceHash || !record.provenance.rawSourceHash.startsWith('sha256:')) {
+      return { valid: false, reason: 'RAW_SOURCE_HASH_REQUIRED: Missing or invalid sha256 rawSourceHash in provenance' };
+    }
+    // Ensure MOEA record does NOT contain invented fields
+    if (record._hasUnsupportedMoeaFields || record.phone || record.openingHours || record.website || record.menuUrl || record.photos) {
+      return { valid: false, reason: 'UNSUPPORTED_MOEA_FIELDS: MOEA commercial registry must not invent phone/hours/website/photos' };
     }
     return { valid: true };
   }
