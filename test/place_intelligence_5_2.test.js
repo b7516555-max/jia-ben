@@ -190,7 +190,7 @@ global.JiaProviderAdapters = {
   // 10. ProviderQuotaStopTest
   assert(QuotaManager.LIMITS.foursquare.safeLimit === 450, 'Foursquare limit is 450');
   assert(QuotaManager.LIMITS.geoapify.safeLimit === 2700, 'Geoapify limit is 2700');
-  assert(QuotaManager.LIMITS.kakao_local.safeLimit === 250000, 'Kakao limit is 250000');
+  assert(QuotaManager.LIMITS.kakao_local.safeLimit === 95000, 'Kakao limit is 95000');
   const mockStorage = {
     data: new Map(),
     async get(id) { return this.data.get(id); },

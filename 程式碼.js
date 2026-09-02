@@ -296,10 +296,10 @@ function handlePlaceEnrichmentProxy(request) {
     foursquare: 450,
     here: 900,
     geoapify: 2700,
-    kakao_local: 250000,
-    kakao: 250000,
-    naver_local: 20000,
-    naver_blog: 20000
+    kakao_local: 95000,
+    kakao: 95000,
+    naver_local: 23750,
+    naver_blog: 23750
   };
 
   const normalizedProvider = provider === 'kakao' ? 'kakao_local' : provider;

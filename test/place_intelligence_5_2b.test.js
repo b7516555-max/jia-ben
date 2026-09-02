@@ -209,15 +209,19 @@ global.JiaProviderAdapters = {
   assert.strictEqual(badMatch.canDisplay, false);
   console.log('✅ 10. NaverArticleMatchTest Passed: Article confidence thresholds verified.');
 
-  // 11. KakaoQuotaGuardTest
+  // 11. KakaoQuotaGuardTest (Official REST API limit: 100,000 req/day)
   const kakaoLimit = QuotaManager.LIMITS.kakao_local.safeLimit;
-  assert.strictEqual(kakaoLimit, 250000, "Kakao safe limit set to 250,000/day");
-  console.log('✅ 11. KakaoQuotaGuardTest Passed: Kakao quota guard verified.');
+  assert.strictEqual(kakaoLimit, 95000, "Kakao safe limit set to 95,000/day (95% of 100,000 REST Local API quota)");
+  assert.strictEqual(QuotaManager.LIMITS.kakao_local.warning, 80000, "Kakao 80% warning is 80,000");
+  assert.strictEqual(QuotaManager.LIMITS.kakao_local.high, 90000, "Kakao 90% warning is 90,000");
+  console.log('✅ 11. KakaoQuotaGuardTest Passed: Kakao official REST API quota (100k) & safety thresholds verified.');
 
-  // 12. NaverSharedQuotaGuardTest
+  // 12. NaverSharedQuotaGuardTest (Official Shared Search API limit: 25,000 req/day)
   const naverLocalLimit = QuotaManager.LIMITS.naver_local.safeLimit;
-  assert(naverLocalLimit <= 20000, "Naver local safe limit <= 20,000 req/day");
-  console.log('✅ 12. NaverSharedQuotaGuardTest Passed: Naver conservative shared quota budget verified.');
+  assert.strictEqual(naverLocalLimit, 23750, "Naver shared safe limit is 23,750 req/day (95% hard stop)");
+  assert.strictEqual(QuotaManager.LIMITS.naver_local.warning, 20000, "Naver 80% warning is 20,000");
+  assert.strictEqual(QuotaManager.LIMITS.naver_local.high, 22500, "Naver 90% warning is 22,500");
+  console.log('✅ 12. NaverSharedQuotaGuardTest Passed: Naver conservative shared quota budget (25k) verified.');
 
   // 13. SecretNeverExposedTest
   const exposedKeys = Object.keys(global).filter(k => k.includes('SECRET') || k.includes('API_KEY'));

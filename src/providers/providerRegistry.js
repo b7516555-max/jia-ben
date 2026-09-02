@@ -158,7 +158,7 @@
       },
       billing: {
         free: true,
-        freeQuota: '300,000 req/day (No Credit Card)',
+        freeQuota: '100,000 req/day (REST Local Search, No Credit Card)',
         freeQuotaEligibility: 'first_map_enabled_app_only',
         paymentRequired: false,
         hardLimitSupported: true

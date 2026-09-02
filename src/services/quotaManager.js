@@ -12,10 +12,10 @@
     nominatim: { safeLimit: 1, period: 'second', warning: 1, high: 1 },
     overpass: { safeLimit: 1, period: 'second', warning: 1, high: 1 },
     taiwan_open_data: { safeLimit: 5000, period: 'day', warning: 4000, high: 4500 },
-    hotpepper: { safeLimit: 9000, period: 'day', warning: 7200, high: 8100 },
-    kakao_local: { safeLimit: 250000, period: 'day', warning: 200000, high: 225000 },
-    naver_local: { safeLimit: 20000, period: 'day', warning: 16000, high: 18000 },
-    naver_blog: { safeLimit: 20000, period: 'day', warning: 16000, high: 18000 }
+    hotpepper: { safeLimit: 0, period: 'day', warning: 0, high: 0 },
+    kakao_local: { safeLimit: 95000, period: 'day', warning: 80000, high: 90000, officialLimit: 100000 },
+    naver_local: { safeLimit: 23750, period: 'day', warning: 20000, high: 22500, officialLimit: 25000 },
+    naver_blog: { safeLimit: 23750, period: 'day', warning: 20000, high: 22500, officialLimit: 25000 }
   };
 
   let storage = null;
