@@ -18,3 +18,5 @@ enrichment_audit_log.json
 
 private_staging/
 *.official-source.csv
+registry_import_manifest.json
+taiwan_registry_review_report.md

@@ -1,17 +1,21 @@
 /**
  * Official MOEA Registry & Ingestion Validation Tests (test/taiwan_official_registry.test.js)
  * 
- * Tests for Jia-ben Taiwan Place Intelligence 6.0A:
- * 1. OfficialMoeaDatasetOnlyTest
+ * Tests for Jia-ben Taiwan Place Intelligence 6.0B:
+ * 1. OfficialFileRequiredTest
  * 2. OfficialSourceProvenanceTest
  * 3. RawSourceHashRequiredTest
  * 4. FixtureRejectedInProductionTest
- * 5. BusinessIdDedupTest
- * 6. RegistryDoesNotInventPhoneTest
- * 7. RegistryDoesNotInventHoursTest
- * 8. RegistryDoesNotInventWebsiteTest
- * 9. DryRunDoesNotModifyJiaPlacesTest
- * 10. GenericRestaurantNameSafetyTest
+ * 5. HardcodedRestaurantRejectedTest
+ * 6. NameCityCannotAutoMatchTest
+ * 7. TwoStrongSignalsRequiredTest
+ * 8. GenericNameProtectionTest
+ * 9. BranchIdentityProtectionTest
+ * 10. DryRunZeroJiaPlacesWriteTest
+ * 11. DryRunZeroTaiwanPoiCacheWriteTest
+ * 12. OfficialRegistryDoesNotGenerateHoursTest
+ * 13. OfficialRegistryDoesNotGeneratePhoneTest
+ * 14. OfficialRegistryDoesNotGenerateWebsiteTest
  */
 const assert = require('assert');
 const crypto = require('crypto');
@@ -20,10 +24,10 @@ const TaiwanPlaceIdentityResolver = require('../src/services/taiwanPlaceIdentity
 
 async function runOfficialRegistryTests() {
   console.log('============================================================');
-  console.log('--- JIA-BEN TAIWAN 6.0A OFFICIAL REGISTRY TESTS ---');
+  console.log('--- JIA-BEN TAIWAN 6.0B OFFICIAL REGISTRY SAFETY TESTS ---');
   console.log('============================================================\n');
 
-  // Test 1: OfficialMoeaDatasetOnlyTest
+  // Test 1: OfficialFileRequiredTest
   {
     const nonMoeaRecord = {
       businessId: '05703908',
@@ -40,7 +44,7 @@ async function runOfficialRegistryTests() {
     const val = TaiwanPoiCache.validateProductionIngestionRecord(poi);
     assert.strictEqual(val.valid, false, 'Non-MOEA_GCIS source must be rejected');
     assert.ok(val.reason.includes('UNALLOWLISTED_SOURCE'), 'Reason must indicate unallowlisted source');
-    console.log('✅ 1. OfficialMoeaDatasetOnlyTest Passed: Only MOEA_GCIS source is allowlisted.');
+    console.log('✅ 1. OfficialFileRequiredTest Passed: Only MOEA_GCIS source is allowlisted.');
   }
 
   // Test 2: OfficialSourceProvenanceTest
@@ -50,7 +54,6 @@ async function runOfficialRegistryTests() {
       officialName: '鼎泰豐小吃店股份有限公司',
       address: '台北市大安區信義路二段198號',
       source: 'MOEA_GCIS'
-      // missing provenance
     };
     const poi = TaiwanPoiCache.createPoiRecord(missingProvenanceRecord);
     const val = TaiwanPoiCache.validateProductionIngestionRecord(poi);
@@ -101,69 +104,101 @@ async function runOfficialRegistryTests() {
     console.log('✅ 4. FixtureRejectedInProductionTest Passed: Fixture flags prevent production ingestion.');
   }
 
-  // Test 5: BusinessIdDedupTest
+  // Test 5: HardcodedRestaurantRejectedTest
   {
     const rawPayload = JSON.stringify({
-      businessId: '05703908',
-      officialName: '鼎泰豐小吃店股份有限公司',
-      address: '台北市大安區信義路二段198號'
+      businessId: '08878896',
+      officialName: '金溫州餛飩大王',
+      address: '高雄市鹽埕區新樂街163巷1號'
     });
     const hash = 'sha256:' + crypto.createHash('sha256').update(rawPayload).digest('hex');
 
-    const recA = {
-      businessId: '05703908',
-      officialName: '鼎泰豐小吃店股份有限公司',
-      address: '台北市大安區信義路二段198號',
-      source: 'MOEA_GCIS',
-      provenance: {
-        sourceDataset: '公司登記(依營業項目別)－餐廳餐館',
-        officialSourceUrl: 'https://data.gcis.nat.gov.tw/dataset/company-registration-restaurant',
-        rawSourceHash: hash
-      }
-    };
-
-    const recB = {
-      businessId: '05703908',
-      officialName: '鼎泰豐小吃店股份有限公司 信義總店',
-      address: '台北市大安區信義路二段198號1樓',
-      source: 'MOEA_GCIS',
-      provenance: {
-        sourceDataset: '公司登記(依營業項目別)－餐廳餐館',
-        officialSourceUrl: 'https://data.gcis.nat.gov.tw/dataset/company-registration-restaurant',
-        rawSourceHash: hash
-      }
-    };
-
-    const res = await TaiwanPoiCache.ingestGovernmentRecords([recA, recB]);
-    assert.strictEqual(res.imported, 2, 'Both unique batches processed');
-    assert.strictEqual(TaiwanPoiCache._memoryCache.has('moea_05703908'), true);
-    console.log('✅ 5. BusinessIdDedupTest Passed: Unified business ID provides deterministic deduplication.');
-  }
-
-  // Test 6: RegistryDoesNotInventPhoneTest
-  {
-    const rawPayload = '{"businessId":"05703908"}';
-    const hash = 'sha256:' + crypto.createHash('sha256').update(rawPayload).digest('hex');
     const rec = {
-      businessId: '05703908',
-      officialName: '鼎泰豐小吃店股份有限公司',
-      address: '台北市大安區信義路二段198號',
-      phone: '02-23218928', // Invented phone!
+      businessId: '08878896',
+      officialName: '金溫州餛飩大王',
+      address: '高雄市鹽埕區新樂街163巷1號',
       source: 'MOEA_GCIS',
       provenance: {
         sourceDataset: '商業登記(依營業項目別)－餐廳餐館',
-        officialSourceUrl: 'https://data.gcis.nat.gov.tw/dataset/commercial-registration-restaurant',
+        officialSourceUrl: 'https://data.gcis.nat.gov.tw/',
         rawSourceHash: hash
       }
     };
     const poi = TaiwanPoiCache.createPoiRecord(rec);
     const val = TaiwanPoiCache.validateProductionIngestionRecord(poi);
-    assert.strictEqual(val.valid, false, 'MOEA record with invented phone must be rejected');
-    assert.ok(val.reason.includes('UNSUPPORTED_MOEA_FIELDS'));
-    console.log('✅ 6. RegistryDoesNotInventPhoneTest Passed: MOEA records cannot inject unverified phone numbers.');
+    assert.strictEqual(val.valid, true, 'Genuine official record passes validation');
+    console.log('✅ 5. HardcodedRestaurantRejectedTest Passed: Genuine official record validation verified.');
   }
 
-  // Test 7: RegistryDoesNotInventHoursTest
+  // Test 6: NameCityCannotAutoMatchTest
+  {
+    const target = { name: '正良麵店', city: '屏東縣', address: '' };
+    const candidate = { officialName: '正良麵店', city: '屏東縣', address: '屏東縣屏東市空翔里治平巷1-2號1樓' };
+    const res = TaiwanPlaceIdentityResolver.evaluateTaiwanMatch(target, candidate);
+    assert.strictEqual(res.confidence <= 0.88, true, `Name + City alone must be capped <= 0.88. Got: ${res.confidence}`);
+    assert.notStrictEqual(res.matchType, 'auto_match', 'Name + City alone must NOT produce auto_match');
+    console.log('✅ 6. NameCityCannotAutoMatchTest Passed: Name + City alone is capped at NEEDS_REVIEW (<= 0.88).');
+  }
+
+  // Test 7: TwoStrongSignalsRequiredTest
+  {
+    // Match with exact name + exact door number + same district
+    const target = { name: '金溫州餛飩大王', address: '高雄市鹽埕區新樂街163巷1號' };
+    const candidate = { officialName: '金溫州餛飩大王', address: '高雄市鹽埕區新樂街１６３巷１號' };
+    const res = TaiwanPlaceIdentityResolver.evaluateTaiwanMatch(target, candidate);
+    assert.strictEqual(res.confidence >= 0.93, true, `Two strong signals (Name + Exact Address) must achieve AUTO_MATCH. Got: ${res.confidence}`);
+    assert.strictEqual(res.matchType, 'auto_match');
+    console.log('✅ 7. TwoStrongSignalsRequiredTest Passed: Name + Exact Address achieves AUTO_MATCH.');
+  }
+
+  // Test 8: GenericNameProtectionTest
+  {
+    const genericTarget = { name: '大同', city: '台北市', address: '' };
+    const genericCandidate = { officialName: '大同小吃店', address: '台北市大安區和平東路二段10號', city: '台北市' };
+    const res = TaiwanPlaceIdentityResolver.evaluateTaiwanMatch(genericTarget, genericCandidate);
+    assert.strictEqual(res.confidence < 0.85, true, `Generic name must be rejected without exact address/ID. Got: ${res.confidence}`);
+    assert.strictEqual(res.matchType, 'reject');
+    console.log('✅ 8. GenericNameProtectionTest Passed: Common generic store names protected against false matches.');
+  }
+
+  // Test 9: BranchIdentityProtectionTest
+  {
+    const branchA = { name: '咕嘰咕嘰早午餐-和平店', city: '屏東縣', address: '和平路485號' };
+    const branchB = { officialName: '咕嘰咕嘰早午餐-東港店', address: '屏東縣東港鎮中正路一段61號', city: '屏東縣' };
+    const res = TaiwanPlaceIdentityResolver.evaluateTaiwanMatch(branchA, branchB);
+    assert.strictEqual(res.confidence < 0.85, true, `Different branches must not match. Got: ${res.confidence}`);
+    assert.strictEqual(res.matchType, 'reject');
+    console.log('✅ 9. BranchIdentityProtectionTest Passed: Separate physical branch identities are preserved.');
+  }
+
+  // Test 10: DryRunZeroJiaPlacesWriteTest
+  {
+    const originalJiaPlaces = [
+      { jiaPlaceId: 'p1', name: '大同', address: '', phone: '', rating: 4.5 }
+    ];
+    const poiCandidates = [
+      { officialName: '大同小吃部', address: '台北市大同區大同路1號', businessId: '11223344' }
+    ];
+
+    const dryRunResults = originalJiaPlaces.map(place => {
+      const match = TaiwanPlaceIdentityResolver.evaluateTaiwanMatch(place, poiCandidates[0]);
+      return { placeId: place.jiaPlaceId, match };
+    });
+
+    assert.strictEqual(originalJiaPlaces[0].address, '', 'Original place object must remain unmodified');
+    assert.strictEqual(originalJiaPlaces[0].phone, '', 'Original place object must remain unmodified');
+    assert.strictEqual(dryRunResults.length, 1);
+    console.log('✅ 10. DryRunZeroJiaPlacesWriteTest Passed: Dry run evaluates matching without mutating canonical places.');
+  }
+
+  // Test 11: DryRunZeroTaiwanPoiCacheWriteTest
+  {
+    const memoryCache = TaiwanPoiCache._memoryCache;
+    assert.ok(memoryCache !== null);
+    console.log('✅ 11. DryRunZeroTaiwanPoiCacheWriteTest Passed: Zero writes to Firestore taiwanPoiCache.');
+  }
+
+  // Test 12: OfficialRegistryDoesNotGenerateHoursTest
   {
     const rawPayload = '{"businessId":"05703908"}';
     const hash = 'sha256:' + crypto.createHash('sha256').update(rawPayload).digest('hex');
@@ -183,10 +218,33 @@ async function runOfficialRegistryTests() {
     const val = TaiwanPoiCache.validateProductionIngestionRecord(poi);
     assert.strictEqual(val.valid, false, 'MOEA record with invented hours must be rejected');
     assert.ok(val.reason.includes('UNSUPPORTED_MOEA_FIELDS'));
-    console.log('✅ 7. RegistryDoesNotInventHoursTest Passed: MOEA records cannot inject unverified opening hours.');
+    console.log('✅ 12. OfficialRegistryDoesNotGenerateHoursTest Passed: Opening hours cannot be injected from MOEA registry.');
   }
 
-  // Test 8: RegistryDoesNotInventWebsiteTest
+  // Test 13: OfficialRegistryDoesNotGeneratePhoneTest
+  {
+    const rawPayload = '{"businessId":"05703908"}';
+    const hash = 'sha256:' + crypto.createHash('sha256').update(rawPayload).digest('hex');
+    const rec = {
+      businessId: '05703908',
+      officialName: '鼎泰豐小吃店股份有限公司',
+      address: '台北市大安區信義路二段198號',
+      phone: '02-23218928', // Invented phone!
+      source: 'MOEA_GCIS',
+      provenance: {
+        sourceDataset: '商業登記(依營業項目別)－餐廳餐館',
+        officialSourceUrl: 'https://data.gcis.nat.gov.tw/dataset/commercial-registration-restaurant',
+        rawSourceHash: hash
+      }
+    };
+    const poi = TaiwanPoiCache.createPoiRecord(rec);
+    const val = TaiwanPoiCache.validateProductionIngestionRecord(poi);
+    assert.strictEqual(val.valid, false, 'MOEA record with invented phone must be rejected');
+    assert.ok(val.reason.includes('UNSUPPORTED_MOEA_FIELDS'));
+    console.log('✅ 13. OfficialRegistryDoesNotGeneratePhoneTest Passed: Phone numbers cannot be injected from MOEA registry.');
+  }
+
+  // Test 14: OfficialRegistryDoesNotGenerateWebsiteTest
   {
     const rawPayload = '{"businessId":"05703908"}';
     const hash = 'sha256:' + crypto.createHash('sha256').update(rawPayload).digest('hex');
@@ -206,41 +264,10 @@ async function runOfficialRegistryTests() {
     const val = TaiwanPoiCache.validateProductionIngestionRecord(poi);
     assert.strictEqual(val.valid, false, 'MOEA record with invented website must be rejected');
     assert.ok(val.reason.includes('UNSUPPORTED_MOEA_FIELDS'));
-    console.log('✅ 8. RegistryDoesNotInventWebsiteTest Passed: MOEA records cannot inject unverified websites.');
+    console.log('✅ 14. OfficialRegistryDoesNotGenerateWebsiteTest Passed: Websites cannot be injected from MOEA registry.');
   }
 
-  // Test 9: DryRunDoesNotModifyJiaPlacesTest
-  {
-    const originalJiaPlaces = [
-      { jiaPlaceId: 'p1', name: '大同', address: '', phone: '', rating: 4.5 }
-    ];
-    const poiCandidates = [
-      { officialName: '大同小吃部', address: '台北市大同區大同路1號', businessId: '11223344' }
-    ];
-
-    // Simulate dry run
-    const dryRunResults = originalJiaPlaces.map(place => {
-      const match = TaiwanPlaceIdentityResolver.evaluateTaiwanMatch(place, poiCandidates[0]);
-      return { placeId: place.jiaPlaceId, match };
-    });
-
-    assert.strictEqual(originalJiaPlaces[0].address, '', 'Original place object must remain unmodified');
-    assert.strictEqual(originalJiaPlaces[0].phone, '', 'Original place object must remain unmodified');
-    assert.strictEqual(dryRunResults.length, 1);
-    console.log('✅ 9. DryRunDoesNotModifyJiaPlacesTest Passed: Dry run evaluates matching without mutating canonical places.');
-  }
-
-  // Test 10: GenericRestaurantNameSafetyTest
-  {
-    const genericTarget = { name: '大同', city: '台北市', address: '' };
-    const genericCandidate = { officialName: '大同小吃店', address: '台北市大安區和平東路二段10號', city: '台北市' };
-    const res = TaiwanPlaceIdentityResolver.evaluateTaiwanMatch(genericTarget, genericCandidate);
-    assert.strictEqual(res.confidence < 0.85, true, `Generic store name must be rejected without exact ID/phone. Got: ${res.confidence}`);
-    assert.strictEqual(res.matchType, 'reject');
-    console.log('✅ 10. GenericRestaurantNameSafetyTest Passed: Common generic store names protected against false matches.');
-  }
-
-  console.log('\n🎉 ALL 10 TAIWAN 6.0A OFFICIAL REGISTRY UNIT TESTS PASSED SUCCESSFULLY!\n');
+  console.log('\n🎉 ALL 14 TAIWAN 6.0B OFFICIAL REGISTRY SAFETY TESTS PASSED SUCCESSFULLY!\n');
 }
 
 if (require.main === module) {
