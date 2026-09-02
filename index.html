@@ -30,6 +30,7 @@
     <script src="./src/services/enrichment.js?v=1"></script>
     <script src="./src/services/communityData.js?v=1"></script>
     <script src="./src/services/personalization.js?v=1"></script>
+    <script src="./src/services/placeIntelligence.js?v=1"></script>
     <script src="./src/services/smartSearch.js?v=1"></script>
     <script src="./src/services/smartWheel.js?v=1"></script>
     <script src="./src/components/restaurantCard.js?v=1"></script>
@@ -1401,10 +1402,27 @@
             <div class="p-4 md:p-5 overflow-y-auto no-scrollbar space-y-4 flex-1 bg-gray-50">
                 <div class="bg-blue-50 border border-blue-200 p-3 rounded-2xl text-[11px] text-blue-800 flex items-start gap-2">
                     <i class="fa-solid fa-shield-halved text-blue-600 text-sm mt-0.5 shrink-0"></i>
-                    <div>
+                    <div class="flex-1">
                         <p class="font-bold">社群共建守護機制</p>
                         <p class="text-blue-700 leading-relaxed mt-0.5">您補充的資料將進入待審核清單，經主揪/管理員審核採用後將正式更新至店家卡片！</p>
                     </div>
+                </div>
+
+                <!-- 🌟 Auto Place Info Assist 快速自動尋找店家資訊按鈕 -->
+                <div class="bg-gradient-to-r from-orange-50 via-amber-50 to-orange-50 border border-orange-200 p-3 rounded-2xl shadow-2xs space-y-2">
+                    <div class="flex items-center justify-between gap-2">
+                        <div class="flex items-center gap-2">
+                            <span class="w-6 h-6 rounded-lg bg-orange-500 text-white flex items-center justify-center text-xs shadow-2xs"><i class="fa-solid fa-wand-magic-sparkles"></i></span>
+                            <span class="text-xs font-black text-gray-800">店家公開資訊自動搜尋</span>
+                        </div>
+                        <button type="button" id="btn-auto-place-info" onclick="window.handleAutoPlaceInfoAssist()" class="px-3 py-1.5 bg-orange-500 hover:bg-orange-600 active:scale-95 text-white text-xs font-black rounded-xl shadow-xs transition flex items-center gap-1.5 shrink-0">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                            <span id="btn-auto-place-info-text">自動尋找店家資訊</span>
+                        </button>
+                    </div>
+                    <p id="auto-assist-status-msg" class="text-[11px] text-gray-500 leading-normal pl-8">
+                        點擊後系統將從 Jia-ben、OpenStreetMap 與公開資料庫自動比對地址、電話、營業時間與料理分類。
+                    </p>
                 </div>
 
                 <!-- 1. 每人平均消費 -->
@@ -1422,7 +1440,10 @@
                 <!-- 2. 店家詳細地址 -->
                 <div class="bg-white p-3.5 rounded-2xl border border-gray-200 shadow-2xs space-y-2">
                     <label class="block text-xs font-bold text-gray-700 flex items-center justify-between">
-                        <span><i class="fa-solid fa-location-dot text-rose-500 mr-1.5"></i>店家地址 / 攤位位置</span>
+                        <span class="flex items-center gap-1.5">
+                            <i class="fa-solid fa-location-dot text-rose-500"></i>店家地址 / 攤位位置
+                            <span id="badge-auto-address" class="hidden text-[9px] bg-emerald-100 text-emerald-800 font-bold px-1.5 py-0.2 rounded border border-emerald-200 shadow-2xs">✨ 自動找到</span>
+                        </span>
                         <span class="text-[10px] text-gray-400 font-normal">完整門牌或夜市攤號</span>
                     </label>
                     <input type="text" id="contrib-address" placeholder="例如：台北市大安區信義路二段198巷6號" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm font-medium text-gray-800 focus:outline-none focus:border-orange-400">
@@ -1431,7 +1452,10 @@
                 <!-- 3. 店家連絡電話 -->
                 <div class="bg-white p-3.5 rounded-2xl border border-gray-200 shadow-2xs space-y-2">
                     <label class="block text-xs font-bold text-gray-700 flex items-center justify-between">
-                        <span><i class="fa-solid fa-phone text-blue-500 mr-1.5"></i>店家連絡電話</span>
+                        <span class="flex items-center gap-1.5">
+                            <i class="fa-solid fa-phone text-blue-500"></i>店家連絡電話
+                            <span id="badge-auto-phone" class="hidden text-[9px] bg-emerald-100 text-emerald-800 font-bold px-1.5 py-0.2 rounded border border-emerald-200 shadow-2xs">✨ 自動找到</span>
+                        </span>
                         <span class="text-[10px] text-gray-400 font-normal">市話或手機</span>
                     </label>
                     <input type="tel" id="contrib-phone" placeholder="例如：02-23456789 或 0912-345-678" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm font-medium text-gray-800 focus:outline-none focus:border-orange-400">
@@ -1440,7 +1464,10 @@
                 <!-- 4. 料理分類 -->
                 <div class="bg-white p-3.5 rounded-2xl border border-gray-200 shadow-2xs space-y-2">
                     <label class="block text-xs font-bold text-gray-700 flex items-center justify-between">
-                        <span><i class="fa-solid fa-utensils text-orange-500 mr-1.5"></i>料理主要分類</span>
+                        <span class="flex items-center gap-1.5">
+                            <i class="fa-solid fa-utensils text-orange-500"></i>料理主要分類
+                            <span id="badge-auto-category" class="hidden text-[9px] bg-emerald-100 text-emerald-800 font-bold px-1.5 py-0.2 rounded border border-emerald-200 shadow-2xs">✨ 自動找到</span>
+                        </span>
                         <span class="text-[10px] text-gray-400 font-normal">從字典選取</span>
                     </label>
                     <select id="contrib-category" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm font-bold text-gray-800 focus:outline-none focus:border-orange-400">
@@ -1451,7 +1478,10 @@
                 <!-- 5. 營業時間快速時段 -->
                 <div class="bg-white p-3.5 rounded-2xl border border-gray-200 shadow-2xs space-y-2">
                     <label class="block text-xs font-bold text-gray-700 flex items-center justify-between">
-                        <span><i class="fa-solid fa-clock text-emerald-600 mr-1.5"></i>每週主要營業時段</span>
+                        <span class="flex items-center gap-1.5">
+                            <i class="fa-solid fa-clock text-emerald-600"></i>每週主要營業時段
+                            <span id="badge-auto-hours" class="hidden text-[9px] bg-emerald-100 text-emerald-800 font-bold px-1.5 py-0.2 rounded border border-emerald-200 shadow-2xs">✨ 自動找到</span>
+                        </span>
                         <span class="text-[10px] text-gray-400 font-normal">例如 11:30~14:00, 17:00~21:00</span>
                     </label>
                     <input type="text" id="contrib-hours-text" placeholder="例如：週一至週日 11:30-14:00, 17:00-21:00 (週二公休)" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm font-medium text-gray-800 focus:outline-none focus:border-orange-400">
@@ -8940,8 +8970,104 @@
                     catSelect.value = place.categories[0];
                 }
 
+                // 重設自動帶入標籤與提示
+                ['badge-auto-address', 'badge-auto-phone', 'badge-auto-category', 'badge-auto-hours'].forEach(id => {
+                    document.getElementById(id)?.classList.add('hidden');
+                });
+                const statusMsg = document.getElementById('auto-assist-status-msg');
+                if (statusMsg) {
+                    statusMsg.className = "text-[11px] text-gray-500 leading-normal pl-8";
+                    statusMsg.textContent = "點擊後系統將從 Jia-ben、OpenStreetMap 與公開資料庫自動比對地址、電話、營業時間與料理分類。";
+                }
+
                 document.getElementById('place-contribute-modal')?.classList.remove('hidden');
             });
+        };
+
+        // 🌟 Auto Place Info Assist 執行函數 (點擊自動搜尋並帶入表單，由使用者確認後送出)
+        window.handleAutoPlaceInfoAssist = async function() {
+            const place = window.currentDetailPlace || { name: document.getElementById('detail-name')?.textContent || document.getElementById('contribute-place-title')?.textContent || '' };
+            if (!place || !place.name) return window.showCustomMsg("請先選擇店家。");
+
+            const btn = document.getElementById('btn-auto-place-info');
+            const btnText = document.getElementById('btn-auto-place-info-text');
+            const statusMsg = document.getElementById('auto-assist-status-msg');
+
+            if (btn) btn.disabled = true;
+            if (btnText) btnText.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> 正在尋找…';
+            if (statusMsg) {
+                statusMsg.className = "text-[11px] text-orange-600 font-bold leading-normal pl-8";
+                statusMsg.textContent = "正在自動檢索公開店家情資 (Jia-ben / OpenStreetMap / Foursquare)...";
+            }
+
+            try {
+                if (!window.JiaPlaceIntelligence) {
+                    throw new Error("Place Intelligence 模組載入中，請稍候重試");
+                }
+
+                const result = await window.JiaPlaceIntelligence.discoverPlaceInfo(place);
+                
+                let filledCount = 0;
+                if (result && result.status === 'success' && result.autofill) {
+                    const af = result.autofill;
+                    
+                    if (af.address) {
+                        const addrEl = document.getElementById('contrib-address');
+                        if (addrEl) {
+                            addrEl.value = af.address;
+                            document.getElementById('badge-auto-address')?.classList.remove('hidden');
+                            filledCount++;
+                        }
+                    }
+
+                    if (af.phone) {
+                        const phoneEl = document.getElementById('contrib-phone');
+                        if (phoneEl) {
+                            phoneEl.value = af.phone;
+                            document.getElementById('badge-auto-phone')?.classList.remove('hidden');
+                            filledCount++;
+                        }
+                    }
+
+                    if (af.category) {
+                        const catEl = document.getElementById('contrib-category');
+                        if (catEl) {
+                            catEl.value = af.category;
+                            document.getElementById('badge-auto-category')?.classList.remove('hidden');
+                            filledCount++;
+                        }
+                    }
+
+                    if (af.openingHours) {
+                        const hoursEl = document.getElementById('contrib-hours-text');
+                        if (hoursEl) {
+                            hoursEl.value = af.openingHours;
+                            document.getElementById('badge-auto-hours')?.classList.remove('hidden');
+                            filledCount++;
+                        }
+                    }
+
+                    if (statusMsg) {
+                        const srcText = result.sources.length ? `（來源：${result.sources.join('、')}）` : '';
+                        statusMsg.className = "text-[11px] text-emerald-700 font-black leading-normal pl-8";
+                        statusMsg.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-500 mr-1"></i> 已自動填入 ${filledCount} 項公開店家資訊 ${srcText}，請確認無誤後送出！`;
+                    }
+                } else {
+                    if (statusMsg) {
+                        statusMsg.className = "text-[11px] text-amber-700 font-medium leading-normal pl-8";
+                        statusMsg.textContent = "暫時找不到可靠的公開店家資訊，你仍可以手動補充。";
+                    }
+                }
+            } catch (err) {
+                console.warn("自動尋找店家資訊失敗:", err);
+                if (statusMsg) {
+                    statusMsg.className = "text-[11px] text-gray-500 leading-normal pl-8";
+                    statusMsg.textContent = "暫時找不到可靠的公開店家資訊，你仍可以手動補充。";
+                }
+            } finally {
+                if (btn) btn.disabled = false;
+                if (btnText) btnText.innerHTML = '自動尋找店家資訊';
+            }
         };
 
         // 送出社群補充資料 (寫入 placeContributions 審核待審區，絕不直寫 canonical)
