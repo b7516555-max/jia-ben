@@ -16,3 +16,5 @@ backups/
 *.backup.json
 enrichment_audit_log.json
 
+private_staging/
+*.official-source.csv
