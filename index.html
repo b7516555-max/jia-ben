@@ -1270,10 +1270,10 @@
         <div class="bg-white rounded-3xl w-11/12 max-w-lg shadow-2xl relative overflow-hidden flex flex-col max-h-[90vh]">
             <button onclick="window.closeModal('card-detail-modal')" class="absolute top-3.5 right-3.5 text-white hover:text-gray-200 z-30 w-8 h-8 bg-black/40 hover:bg-black/60 rounded-full flex items-center justify-center backdrop-blur-md transition"><i class="fa-solid fa-xmark"></i></button>
             
-            <div class="h-44 md:h-56 relative w-full shrink-0">
+            <div id="detail-header-wrap" class="h-44 md:h-56 relative w-full shrink-0 bg-gray-100 overflow-hidden">
                 <img id="detail-img" src="" class="w-full h-full object-cover">
-                <span id="detail-image-label" class="hidden absolute top-3 left-3 bg-black/60 text-white text-[10px] font-bold px-2 py-1 rounded-full">示意圖片</span>
-                <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-black/30"></div>
+                <span id="detail-image-label" class="hidden absolute top-3.5 left-3.5 bg-black/40 text-white/90 text-[9px] font-medium px-2 py-0.5 rounded backdrop-blur-xs">示意圖片</span>
+                <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-black/20"></div>
                 
                 <!-- 頂部照片覆蓋按鈕列：新增店家、編輯店家、移除店家 -->
                 <div class="absolute top-3.5 left-3.5 right-14 z-20 flex items-center gap-1.5 flex-wrap">
@@ -1284,11 +1284,27 @@
 
                 <div class="absolute bottom-3 left-4 right-4">
                     <span id="detail-city" class="bg-orange-500 text-white text-[10px] px-2 py-0.5 rounded shadow-sm font-bold tracking-widest mb-1 inline-block"></span>
-                    <h2 id="detail-name" class="text-xl md:text-2xl font-bold text-white leading-tight drop-shadow-md truncate"></h2>
+                    <h2 id="detail-name" class="text-lg md:text-xl font-black text-white leading-snug drop-shadow-md break-words line-clamp-3"></h2>
                 </div>
             </div>
             
             <div class="p-4 md:p-5 overflow-y-auto no-scrollbar flex-1 bg-gray-50 space-y-3">
+                <!-- 店家無照片時的社群激勵區塊 (Photo Community CTA) -->
+                <div id="detail-photo-cta" class="hidden bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-200 p-3 rounded-2xl flex items-center justify-between gap-3 shadow-2xs">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-8 h-8 rounded-xl bg-orange-500 text-white flex items-center justify-center text-sm shrink-0 shadow-2xs">
+                            <i class="fa-solid fa-camera"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs font-bold text-gray-800">尚無店家真實照片</p>
+                            <p class="text-[11px] text-gray-500">吃過這間？成為第一個分享照片的人！</p>
+                        </div>
+                    </div>
+                    <button onclick="window.triggerDetailPhotoUpload()" class="bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold px-3 py-1.5 rounded-xl shadow-xs transition shrink-0 whitespace-nowrap">
+                        分享照片
+                    </button>
+                </div>
+
                 <!-- 店家評分與平均消費單價標籤列 -->
                 <div class="flex items-center gap-2 flex-wrap">
                     <span id="detail-rating" onclick="window.showGoogleReviews()" class="text-orange-500 font-bold text-xs md:text-sm bg-orange-50 px-2.5 py-1 md:px-3 md:py-1.5 rounded-xl border border-orange-100 flex items-center shadow-2xs cursor-pointer hover:bg-orange-100 transition">
@@ -1307,7 +1323,7 @@
                 <div class="bg-white p-3.5 rounded-2xl border border-gray-100 shadow-2xs">
                     <p class="text-xs font-bold text-gray-500 mb-2"><i class="fa-solid fa-circle-info mr-1"></i>店家基本資訊</p>
                     <div id="detail-place-info" class="space-y-1.5 text-xs sm:text-sm text-gray-600">
-                        <p class="text-xs text-gray-400"><i class="fa-solid fa-spinner fa-spin mr-1.5"></i>正在讀取 OpenStreetMap 店家資訊...</p>
+                        <p class="text-xs text-gray-400"><i class="fa-solid fa-spinner fa-spin mr-1.5"></i>正在讀取店家資訊...</p>
                     </div>
                     <details id="detail-hours-wrap" class="hidden mt-2 pt-2 border-t border-gray-100">
                         <summary class="text-xs font-bold text-gray-500 cursor-pointer select-none">查看每週營業時間</summary>
@@ -1763,13 +1779,29 @@
                     <div class="bg-white p-5 shadow-sm z-10 flex flex-col border-b border-gray-100 relative">
                         <button onclick="window.switchTab('explore')" class="absolute top-5 left-5 text-gray-400 hover:text-orange-500 transition"><i class="fa-solid fa-arrow-left text-xl"></i></button>
                         <h2 class="text-xl font-bold text-gray-800 text-center">裝進手機教學 📱</h2>
-                        <p class="text-xs text-gray-500 text-center mt-2">免下載！直接加到主畫面，像 App 一樣秒開</p>
                     </div>
-                    <div class="flex-1 overflow-y-auto p-5 space-y-5 no-scrollbar pb-24">
-                        <div class="bg-blue-50 border border-blue-200 p-4 rounded-2xl flex items-start gap-3 shadow-sm"><i class="fa-solid fa-circle-info text-3xl text-blue-500 mt-1"></i><div><h3 class="text-sm font-bold text-gray-800 mb-1.5">💡 提示：建議使用 Safari 或 Chrome</h3><p class="text-xs text-gray-600 leading-relaxed font-medium">若從 LINE 內建瀏覽器開啟，<span class="font-bold text-blue-600 border-b border-blue-300">請務必先用系統預設瀏覽器（Safari 或 Chrome）開啟</span>，即可輕鬆將 App 加至主畫面！</p></div></div>
-                        <div class="bg-white rounded-3xl shadow-sm border border-gray-100 p-5 relative overflow-hidden"><i class="fa-brands fa-apple text-6xl text-gray-100 absolute -right-4 -bottom-4 transform -rotate-12"></i><h3 class="text-lg font-bold text-gray-800 mb-3 flex items-center relative z-10"><i class="fa-brands fa-apple text-gray-800 mr-2 text-xl"></i>iPhone / iPad (Safari 或 Chrome)</h3><div class="bg-gray-50 rounded-2xl p-4 text-[13px] text-gray-700 space-y-4 relative z-10 border border-gray-100"><p class="font-bold text-blue-600 mb-2">🌐 Safari 瀏覽器操作步驟：</p><div class="flex items-start gap-3"><div class="w-6 h-6 rounded-full bg-white text-blue-500 font-bold flex items-center justify-center shrink-0 shadow-sm text-xs border border-gray-200">1</div><p>點擊下方或右上角的「分享」圖示 <i class="fa-solid fa-arrow-up-from-bracket mx-1 text-gray-500"></i></p></div><div class="flex items-start gap-3"><div class="w-6 h-6 rounded-full bg-white text-blue-500 font-bold flex items-center justify-center shrink-0 shadow-sm text-xs border border-gray-200">2</div><p>下滑找到並點擊「<span class="font-bold text-gray-800">加入主畫面</span>」 <i class="fa-regular fa-square-plus mx-1 text-gray-500"></i></p></div><div class="flex items-start gap-3"><div class="w-6 h-6 rounded-full bg-white text-blue-500 font-bold flex items-center justify-center shrink-0 shadow-sm text-xs border border-gray-200">3</div><p>點擊右上角的「新增」，就完成囉！</p></div></div></div>
-                        <div class="bg-white rounded-3xl shadow-sm border border-gray-100 p-5 relative overflow-hidden"><i class="fa-brands fa-android text-6xl text-gray-100 absolute -right-4 -bottom-4 transform rotate-12"></i><h3 class="text-lg font-bold text-gray-800 mb-3 flex items-center relative z-10"><i class="fa-brands fa-android text-emerald-500 mr-2 text-xl"></i>Android</h3><div class="bg-gray-50 rounded-2xl p-4 text-[13px] text-gray-700 space-y-4 relative z-10 border border-gray-100"><p class="font-bold text-blue-600 mb-2">🌐 在 Chrome 瀏覽器中操作：</p><div class="flex items-start gap-3"><div class="w-6 h-6 rounded-full bg-white text-emerald-500 font-bold flex items-center justify-center shrink-0 shadow-sm text-xs border border-gray-200">1</div><p>點擊右上角的「三個點」選單 <i class="fa-solid fa-ellipsis-vertical mx-1 px-2 text-gray-500"></i></p></div><div class="flex items-start gap-3"><div class="w-6 h-6 rounded-full bg-white text-emerald-500 font-bold flex items-center justify-center shrink-0 shadow-sm text-xs border border-gray-200">2</div><p>選擇「<span class="font-bold text-gray-800">加到主畫面</span>」或「安裝應用程式」 <i class="fa-solid fa-mobile-screen-button mx-1 text-gray-500"></i></p></div><div class="flex items-start gap-3"><div class="w-6 h-6 rounded-full bg-white text-emerald-500 font-bold flex items-center justify-center shrink-0 shadow-sm text-xs border border-gray-200">3</div><p>點擊「新增」，就完成囉！</p></div></div></div>
-                        <button onclick="window.switchTab('explore')" class="w-full bg-gray-800 text-white font-bold py-3.5 rounded-2xl shadow-md hover:bg-black transition mt-4 mb-6"><i class="fa-solid fa-check mr-2"></i> 我學會了，回首頁</button>
+                    <div class="p-6 space-y-6 text-gray-700 flex-1 overflow-y-auto">
+                        <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-start gap-4">
+                            <div class="w-10 h-10 bg-orange-100 text-orange-500 rounded-full flex items-center justify-center font-bold text-lg shrink-0">1</div>
+                            <div>
+                                <h3 class="font-bold text-base mb-1">使用 Safari 或 Chrome 開啟</h3>
+                                <p class="text-xs text-gray-500">iPhone 請務必使用 Safari，Android 請使用 Chrome 瀏覽器開啟本頁面。</p>
+                            </div>
+                        </div>
+                        <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-start gap-4">
+                            <div class="w-10 h-10 bg-orange-100 text-orange-500 rounded-full flex items-center justify-center font-bold text-lg shrink-0">2</div>
+                            <div>
+                                <h3 class="font-bold text-base mb-1">點擊「分享」或「選單」</h3>
+                                <p class="text-xs text-gray-500">iPhone 點擊下方中間的「分享」圖示；Android 點擊右上角「三個點」。</p>
+                            </div>
+                        </div>
+                        <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-start gap-4">
+                            <div class="w-10 h-10 bg-orange-100 text-orange-500 rounded-full flex items-center justify-center font-bold text-lg shrink-0">3</div>
+                            <div>
+                                <h3 class="font-bold text-base mb-1">選擇「加入主畫面」</h3>
+                                <p class="text-xs text-gray-500">即可像原生 App 一樣，直接在桌面一鍵點開使用！</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -1819,48 +1851,65 @@
 
                 <!-- 視圖 1.5: 美食旋轉輪盤（內部代號仍保留 radar 以相容既有搜尋流程） -->
                 <div id="view-nearby" class="hidden fade-in h-full flex flex-col relative w-full overflow-hidden">
-                    <!-- 頂部精簡搜尋與預算列（電腦版放大，手機版維持緊湊） -->
-                    <div class="bg-white px-3 py-2 md:py-3 shadow-2xs z-10 border-b border-gray-100 flex flex-col items-center shrink-0">
-                        <div id="nearby-search-box" class="w-full max-w-xl">
-                            <!-- 第一行：關鍵字輸入 + 轉動輪盤 + 幫我決定 -->
-                            <div class="flex items-center gap-1.5 md:gap-2">
-                                <div class="flex-1 relative">
-                                    <input type="text" id="radar-keyword" placeholder="想找什麼？(可留空直接抽)" class="w-full pl-3 pr-2 py-1.5 md:py-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none text-gray-800 text-xs md:text-sm font-medium" onkeypress="if(event.key === 'Enter') window.searchGooglePlaces('radar')">
+                    <div class="bg-white p-3 sm:p-4 shadow-sm z-10 border-b border-gray-100 flex flex-col items-center">
+                        <div class="w-full max-w-2xl space-y-2">
+                            <!-- 輪盤頂部標題與快速速決按鈕 -->
+                            <div class="flex items-center justify-between gap-2">
+                                <div class="flex items-center gap-1.5 min-w-0">
+                                    <div class="w-7 h-7 rounded-xl bg-gradient-to-br from-orange-400 to-amber-500 text-white flex items-center justify-center text-xs shadow-2xs shrink-0">
+                                        <i class="fa-solid fa-dharmachakra"></i>
+                                    </div>
+                                    <h2 class="text-sm sm:text-base font-black text-gray-800 tracking-tight truncate leading-none">智慧美食輪盤</h2>
                                 </div>
-                                <button id="radar-quick-decide-btn" type="button" onclick="window.quickDecidePlace()" class="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white px-2.5 md:px-3.5 py-1.5 md:py-2 rounded-xl shadow-xs font-bold text-xs md:text-sm transition whitespace-nowrap shrink-0 flex items-center gap-1" title="免轉輪盤，直接依智慧加權推薦 1 間">
-                                    <i class="fa-solid fa-bolt"></i><span>幫我決定</span>
-                                </button>
-                                <button id="radar-spin-btn" onclick="window.searchGooglePlaces('radar')" class="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white px-3 md:px-4 py-1.5 md:py-2 rounded-xl shadow-xs font-bold text-xs md:text-sm transition whitespace-nowrap shrink-0 flex items-center gap-1">
-                                    <i class="fa-solid fa-play"></i><span>開抽</span>
-                                </button>
+                                <div class="flex items-center gap-1.5 shrink-0">
+                                    <button id="radar-quick-decide-btn" type="button" onclick="window.quickDecidePlace()" class="px-2.5 sm:px-3 py-1 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white text-[11px] sm:text-xs font-black rounded-xl shadow-2xs flex items-center gap-1 transition active:scale-95">
+                                        <i class="fa-solid fa-bolt text-amber-300"></i>
+                                        <span>幫我決定</span>
+                                    </button>
+                                    <button id="radar-spin-btn" type="button" onclick="window.searchGooglePlaces('radar')" class="px-2.5 sm:px-3 py-1 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white text-[11px] sm:text-xs font-black rounded-xl shadow-2xs flex items-center gap-1 transition active:scale-95">
+                                        <i class="fa-solid fa-dice text-yellow-200"></i>
+                                        <span>開轉</span>
+                                    </button>
+                                </div>
                             </div>
 
-                            <!-- 第二行：三合一極簡篩選器 (距離、預算、分類) -->
-                            <div class="grid grid-cols-3 gap-1.5 mt-2">
-                                <select id="radar-filter-distance" class="bg-gray-50 border border-gray-200 rounded-xl px-2 py-1 text-[11px] font-bold text-gray-700 focus:outline-none cursor-pointer">
-                                    <option value="all">📍 不限距離</option>
-                                    <option value="1">📍 1 公里內</option>
-                                    <option value="3" selected>📍 3 公里內</option>
-                                    <option value="5">📍 5 公里內</option>
-                                    <option value="10">📍 10 公里內</option>
-                                </select>
-                                <select id="radar-filter-budget" class="bg-gray-50 border border-gray-200 rounded-xl px-2 py-1 text-[11px] font-bold text-gray-700 focus:outline-none cursor-pointer">
-                                    <option value="all" selected>💰 不限預算</option>
-                                    <option value="under200">💰 200 元以內</option>
-                                    <option value="200to400">💰 200~400 元</option>
-                                    <option value="400to800">💰 400~800 元</option>
-                                    <option value="above800">💰 800 元以上</option>
-                                </select>
-                                <select id="radar-filter-category" class="bg-gray-50 border border-gray-200 rounded-xl px-2 py-1 text-[11px] font-bold text-gray-700 focus:outline-none cursor-pointer">
-                                    <option value="all" selected>🍽️ 全部料理</option>
-                                    <option value="拉麵">🍜 拉麵</option>
-                                    <option value="火鍋">🍲 火鍋</option>
-                                    <option value="燒肉">🥩 燒肉</option>
-                                    <option value="咖啡">☕ 咖啡/甜點</option>
-                                    <option value="早午餐">🥪 早餐/早午餐</option>
-                                    <option value="壽司">🍣 壽司/日料</option>
-                                </select>
+                            <!-- 3合1 智慧篩選列：距離、預算、分類 -->
+                            <div class="grid grid-cols-3 gap-1.5 text-gray-700">
+                                <div class="flex items-center bg-gray-50 border border-gray-200 rounded-xl px-2 py-1 shadow-2xs">
+                                    <i class="fa-solid fa-location-dot text-orange-400 text-[10px] mr-1 shrink-0"></i>
+                                    <select id="radar-filter-distance" class="w-full bg-transparent text-[11px] font-bold focus:outline-none cursor-pointer truncate">
+                                        <option value="1">1 km 內</option>
+                                        <option value="3" selected>3 km 內</option>
+                                        <option value="5">5 km 內</option>
+                                        <option value="10">10 km 內</option>
+                                        <option value="all">不限距離</option>
+                                    </select>
+                                </div>
+                                <div class="flex items-center bg-gray-50 border border-gray-200 rounded-xl px-2 py-1 shadow-2xs">
+                                    <i class="fa-solid fa-coins text-amber-500 text-[10px] mr-1 shrink-0"></i>
+                                    <select id="radar-filter-budget" class="w-full bg-transparent text-[11px] font-bold focus:outline-none cursor-pointer truncate">
+                                        <option value="all" selected>預算不限</option>
+                                        <option value="under200">平價 ($200內)</option>
+                                        <option value="200to400">中等 ($200~400)</option>
+                                        <option value="400to800">中高 ($400~800)</option>
+                                        <option value="above800">高價 ($800以上)</option>
+                                    </select>
+                                </div>
+                                <div class="flex items-center bg-gray-50 border border-gray-200 rounded-xl px-2 py-1 shadow-2xs">
+                                    <i class="fa-solid fa-utensils text-rose-400 text-[10px] mr-1 shrink-0"></i>
+                                    <select id="radar-filter-category" class="w-full bg-transparent text-[11px] font-bold focus:outline-none cursor-pointer truncate">
+                                        <option value="all" selected>所有類別</option>
+                                        <option value="拉麵">拉麵</option>
+                                        <option value="火鍋">火鍋</option>
+                                        <option value="燒肉">燒肉</option>
+                                        <option value="咖啡">咖啡/甜點</option>
+                                        <option value="早午餐">早午餐</option>
+                                        <option value="壽司">日料/壽司</option>
+                                    </select>
+                                </div>
                             </div>
+
+                            <input type="hidden" id="radar-keyword" value="">
                         </div>
                     </div>
 
@@ -1893,28 +1942,30 @@
 
                 <!-- 視圖 2: 派聚揪團 (Party) -->
                 <div id="view-party" class="hidden fade-in h-full flex flex-col relative w-full">
-                    <div class="bg-white p-5 shadow-sm z-10 border-b border-gray-100 overflow-hidden relative">
-                        <div class="max-w-4xl mx-auto flex justify-between items-center w-full">
-                            <div class="absolute right-0 top-0 opacity-5 text-7xl transform translate-x-4 -translate-y-4"><i class="fa-solid fa-champagne-glasses"></i></div>
-                            <div class="z-10"><h2 class="text-xl font-bold text-gray-800"><i class="fa-solid fa-fire text-orange-500 mr-2"></i>派對揪團</h2><p class="text-xs text-gray-400 mt-0.5">把大家聚在一起吧！</p></div>
-                            <div class="flex gap-2 z-10">
-                                <button onclick="window.openCalculator()" class="w-10 h-10 bg-blue-50 text-blue-600 border border-blue-100 rounded-full flex items-center justify-center hover:bg-blue-500 hover:text-white transition shadow-sm" title="AA 計算機"><i class="fa-solid fa-calculator"></i></button>
-                                <button onclick="window.initCreateParty()" class="w-10 h-10 bg-orange-50 text-orange-600 border border-orange-100 rounded-full flex items-center justify-center hover:bg-orange-500 hover:text-white transition shadow-sm" title="發起揪團"><i class="fa-solid fa-plus"></i></button>
+                    <div class="bg-white p-4 sm:p-5 shadow-sm z-10 border-b border-gray-100 overflow-hidden relative">
+                        <div class="max-w-[1560px] mx-auto flex justify-between items-center w-full px-2 sm:px-4">
+                            <div class="absolute right-4 top-0 opacity-5 text-7xl transform translate-x-4 -translate-y-4 pointer-events-none"><i class="fa-solid fa-champagne-glasses"></i></div>
+                            <div class="z-10"><h2 class="text-xl sm:text-2xl font-black text-gray-800 flex items-center gap-2"><i class="fa-solid fa-fire text-orange-500"></i>派對揪團</h2><p class="text-xs sm:text-sm text-gray-400 mt-0.5">把大家聚在一起吧！</p></div>
+                            <div class="flex gap-2.5 z-10 shrink-0">
+                                <button onclick="window.openCalculator()" class="w-10 h-10 bg-blue-50 text-blue-600 border border-blue-100 rounded-2xl flex items-center justify-center hover:bg-blue-500 hover:text-white transition shadow-sm" title="AA 計算機"><i class="fa-solid fa-calculator"></i></button>
+                                <button onclick="window.initCreateParty()" class="w-10 h-10 bg-orange-50 text-orange-600 border border-orange-100 rounded-2xl flex items-center justify-center hover:bg-orange-500 hover:text-white transition shadow-sm" title="發起揪團"><i class="fa-solid fa-plus"></i></button>
                             </div>
                         </div>
                     </div>
-                    <div id="party-container" class="flex-1 overflow-y-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 p-4 md:p-6 pb-6 items-stretch content-start"></div>
+                    <div class="flex-1 overflow-y-auto p-4 md:p-6 pb-8">
+                        <div id="party-container" class="max-w-[1560px] mx-auto grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 md:gap-6 items-stretch content-start"></div>
+                    </div>
                 </div>
 
                 <!-- 視圖 3: 動態牆 (Feed) -->
                 <div id="view-feed" class="hidden fade-in h-full flex flex-col relative w-full">
-                    <div class="bg-white p-5 shadow-sm z-10 border-b border-gray-100 flex flex-col items-center">
-                        <div class="w-full flex items-center justify-between gap-3">
+                    <div class="bg-white p-4 sm:p-5 shadow-sm z-10 border-b border-gray-100">
+                        <div class="max-w-[1560px] mx-auto flex items-center justify-between gap-3 px-2 sm:px-4">
                             <div>
-                                <h2 class="text-xl font-bold text-gray-800 mb-1 flex items-center gap-2">
+                                <h2 class="text-xl sm:text-2xl font-black text-gray-800 mb-0.5 flex items-center gap-2">
                                     <i class="fa-solid fa-comments text-orange-400"></i>美食動態牆
                                 </h2>
-                                <p class="text-xs text-gray-400">跨群朋友的美食足跡、留言點讚與交流互動</p>
+                                <p class="text-xs sm:text-sm text-gray-400">跨群朋友的美食足跡、留言點讚與交流互動</p>
                             </div>
                             <div class="flex items-center gap-2 shrink-0">
                                 <button onclick="window.openQuickReviewModal()" class="bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold px-3.5 py-2.5 rounded-2xl shadow-sm transition flex items-center gap-1.5" title="不用先加入名單，直接評價任何店家"><i class="fa-solid fa-pen-to-square text-sm"></i><span>我要評價</span></button>
@@ -1924,7 +1975,9 @@
                             </div>
                         </div>
                     </div>
-                    <div id="feed-container" class="flex-1 overflow-y-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 p-4 md:p-6 pb-6 items-stretch content-start"></div>
+                    <div class="flex-1 overflow-y-auto p-4 md:p-6 pb-8">
+                        <div id="feed-container" class="max-w-[1560px] mx-auto grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 md:gap-6 items-stretch content-start"></div>
+                    </div>
                 </div>
 
                 <!-- 🌟 視圖 3.5: 留言板／聊天群組 (Chat Room) -->
@@ -2011,8 +2064,10 @@
                             </div>
                         </div>
                     </div>
-                    <!-- 🌟 滿版網格化容器：相簿風排版 -->
-                    <div id="list-container" class="flex-1 overflow-y-auto grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-3 md:gap-5 p-4 md:p-6 pb-6 items-start content-start bg-gray-50"></div>
+                    <!-- 🌟 統一卡片容器：Responsive 3～4 Columns -->
+                    <div class="flex-1 overflow-y-auto p-4 md:p-6 pb-8 bg-gray-50">
+                        <div id="list-container" class="max-w-[1560px] mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6 items-stretch content-start"></div>
+                    </div>
                 </div>
 
                 <!-- 視圖 5: 隱藏後台 (Admin) -->
@@ -7229,15 +7284,21 @@
             const infoEl = document.getElementById('detail-place-info');
             const hoursWrap = document.getElementById('detail-hours-wrap');
             const hoursEl = document.getElementById('detail-hours');
-            infoEl.innerHTML = '<p class="text-xs text-gray-400"><i class="fa-solid fa-spinner fa-spin mr-1.5"></i>正在讀取 OpenStreetMap 店家資訊...</p>';
+            const photoCta = document.getElementById('detail-photo-cta');
+            
+            infoEl.innerHTML = '<p class="text-xs text-gray-400"><i class="fa-solid fa-spinner fa-spin mr-1.5"></i>正在讀取店家資訊...</p>';
             hoursWrap.classList.add('hidden');
             hoursEl.innerHTML = '';
+            
+            if (photoCta) {
+                photoCta.classList.toggle('hidden', !data.imageIsPlaceholder);
+            }
 
             if (data.jiaPlace) {
                 const place = data.jiaPlace, rows = [];
                 if (place.openingHours) rows.push(`<p class="flex items-start"><i class="fa-solid fa-clock text-gray-400 w-5 mt-0.5"></i><span>營業時間：${window.escapeHtml(typeof place.openingHours === 'string' ? place.openingHours : '請展開下方詳細時段')}</span></p>`);
-                if (place.phone) rows.push(`<p class="flex items-start"><i class="fa-solid fa-phone text-gray-400 w-5 mt-0.5"></i><a href="tel:${String(place.phone).replace(/[^\d+]/g,'')}" class="text-blue-600 font-bold">${window.escapeHtml(place.phone)}</a></p>`);
-                if (place.website) rows.push(`<p class="flex items-start"><i class="fa-solid fa-globe text-gray-400 w-5 mt-0.5"></i><a href="${window.escapeHtml(place.website)}" target="_blank" rel="noopener noreferrer" class="text-blue-600 font-bold break-all">官方網站</a></p>`);
+                if (place.phone) rows.push(`<p class="flex items-start"><i class="fa-solid fa-phone text-gray-400 w-5 mt-0.5"></i><a href="tel:${String(place.phone).replace(/[^\d+]/g,'')}" class="text-blue-600 font-bold hover:underline">${window.escapeHtml(place.phone)}</a></p>`);
+                if (place.website) rows.push(`<p class="flex items-start"><i class="fa-solid fa-globe text-gray-400 w-5 mt-0.5"></i><a href="${window.escapeHtml(place.website)}" target="_blank" rel="noopener noreferrer" class="text-blue-600 font-bold break-all hover:underline">官方網站</a></p>`);
                 if (place.address) rows.push(`<p class="flex items-start"><i class="fa-solid fa-location-dot text-gray-400 w-5 mt-0.5"></i><span>${window.escapeHtml(place.address)}</span></p>`);
                 const sources = [...new Set(['Jia-ben', place.source === 'nominatim' || place.source === 'overpass' ? 'OpenStreetMap' : '', ...Object.keys(place.sourceIds||{}).filter(key=>place.sourceIds[key]&&key!=='google')].filter(Boolean))];
                 rows.push(`<p class="flex items-start"><i class="fa-solid fa-database text-gray-400 w-5 mt-0.5"></i><span>資料來源：${window.escapeHtml(sources.join(' · '))}</span></p>`);
@@ -7259,7 +7320,7 @@
             }
 
             if (typeof google === 'undefined' || !google.maps || !google.maps.places) {
-                infoEl.innerHTML = '<p class="text-xs text-gray-400">OpenStreetMap 店家資訊目前無法讀取。</p>';
+                infoEl.innerHTML = '<p class="text-xs text-gray-400">店家詳細資料尚在建立中。</p>';
                 return;
             }
 
@@ -7267,7 +7328,7 @@
             const fields = ['name', 'formatted_address', 'formatted_phone_number', 'opening_hours', 'price_level', 'website', 'business_status', 'photos', 'rating', 'user_ratings_total', 'reviews'];
             const showDetails = (place, status) => {
                 if (status !== 'OK' || !place) {
-                    infoEl.innerHTML = '<p class="text-xs text-gray-400">OpenStreetMap 尚未提供這間店的詳細資訊。</p>';
+                    infoEl.innerHTML = '<p class="text-xs text-gray-400">尚未提供這間店的外部連線詳細資訊。</p>';
                     return;
                 }
                 if (place.photos && place.photos.length) {
@@ -7344,6 +7405,16 @@
             }
         };
 
+        window.triggerDetailPhotoUpload = function() {
+            const detailName = document.getElementById('detail-name')?.textContent || '';
+            window.closeModal('card-detail-modal');
+            if (window.initInteraction) {
+                window.initInteraction('review', detailName);
+            } else if (window.openQuickReviewModal) {
+                window.openQuickReviewModal(detailName);
+            }
+        };
+
         // 顯示店家評分摘要彈窗
         window.showGoogleReviews = function() {
             const reviewsData = window._currentGoogleReviews || [];
@@ -7352,7 +7423,7 @@
             const placeName = window._currentPlaceName || '';
 
             if (!avgRating && reviewsData.length === 0) {
-                return window.showCustomMsg('OpenStreetMap 不提供商業評論；可查看本系統好友留下的評價。');
+                return;
             }
 
             // 更新標題與外部按鈕連結
