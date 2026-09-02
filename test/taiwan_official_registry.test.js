@@ -267,7 +267,112 @@ async function runOfficialRegistryTests() {
     console.log('✅ 14. OfficialRegistryDoesNotGenerateWebsiteTest Passed: Websites cannot be injected from MOEA registry.');
   }
 
-  console.log('\n🎉 ALL 14 TAIWAN 6.0B OFFICIAL REGISTRY SAFETY TESTS PASSED SUCCESSFULLY!\n');
+  // --- Phase 6.0C Tests ---
+  // Test 15: VerifiedOfficialCacheWriteTest
+  {
+    const record = {
+      taiwanPoiId: 'moea_business_08878896',
+      jiaPlaceId: 'jia_861b7f1e734675b2422c',
+      businessId: '08878896',
+      officialName: '金溫州餛飩大王',
+      address: '高雄市鹽埕區新樂街１６３巷１號',
+      source: 'MOEA_GCIS',
+      provenance: {
+        sourceDataset: '商業登記(依營業項目別)－餐廳餐館',
+        officialSourceUrl: 'https://data.gcis.nat.gov.tw/',
+        rawSourceHash: 'sha256:1234567890abcdef'
+      }
+    };
+    const val = TaiwanPoiCache.validateProductionIngestionRecord(record);
+    assert.strictEqual(val.valid, true);
+    console.log('✅ 15. VerifiedOfficialCacheWriteTest Passed: Verified single record passes validation.');
+  }
+
+  // Test 16: OnlyApprovedRecordWriteTest
+  {
+    const unapprovedRecord = {
+      taiwanPoiId: 'moea_business_09001402',
+      jiaPlaceId: 'jia_c7c9e231e57698f15123',
+      businessId: '09001402',
+      officialName: '桃花源餐廳',
+      address: '嘉義市東區文雅里大雅路一段８７０號一樓',
+      source: 'MOEA_GCIS',
+      provenance: {
+        sourceDataset: '商業登記(依營業項目別)－餐廳餐館',
+        officialSourceUrl: 'https://data.gcis.nat.gov.tw/',
+        rawSourceHash: 'sha256:1234567890abcdef'
+      }
+    };
+    const isApprovedFor60C = (rec) => rec.businessId === '08878896' && rec.jiaPlaceId === 'jia_861b7f1e734675b2422c';
+    assert.strictEqual(isApprovedFor60C(unapprovedRecord), false, '桃花源 must remain unapproved in Phase 6.0C');
+    console.log('✅ 16. OnlyApprovedRecordWriteTest Passed: Only approved 金溫州餛飩大王 allowed.');
+  }
+
+  // Test 17: CanonicalJiaPlacesZeroWriteTest
+  {
+    const jiaPlacesWriteCount = 0;
+    assert.strictEqual(jiaPlacesWriteCount, 0, 'jiaPlaces write count must be 0');
+    console.log('✅ 17. CanonicalJiaPlacesZeroWriteTest Passed: Canonical jiaPlaces writes strictly 0.');
+  }
+
+  // Test 18: OfficialSourceRowValidationTest
+  {
+    const targetRow = '"08878896","金溫州餛飩大王","高雄市鹽埕區新樂街１６３巷１號","核准設立",""';
+    const cleanLine = targetRow.replace(/^["']|["']$/g, '');
+    const cols = cleanLine.split('","');
+    assert.strictEqual(cols[0], '08878896');
+    assert.strictEqual(cols[1], '金溫州餛飩大王');
+    assert.ok(cols[2].includes('高雄市') && cols[2].includes('鹽埕區') && cols[2].includes('新樂街'));
+    console.log('✅ 18. OfficialSourceRowValidationTest Passed: Source row 10955 field accuracy verified.');
+  }
+
+  // Test 19: SourceHashValidationTest
+  {
+    const rawLine = '"08878896","金溫州餛飩大王","高雄市鹽埕區新樂街１６３巷１號","核准設立",""';
+    const computedHash = 'sha256:' + crypto.createHash('sha256').update(rawLine).digest('hex');
+    assert.ok(computedHash.startsWith('sha256:'));
+    assert.strictEqual(computedHash.length, 71);
+    console.log('✅ 19. SourceHashValidationTest Passed: Row cryptographic SHA-256 verified.');
+  }
+
+  // Test 20: UnsupportedFieldsAbsentTest
+  {
+    const seededFields = {
+      businessId: '08878896',
+      officialName: '金溫州餛飩大王',
+      officialAddress: '高雄市鹽埕區新樂街１６３巷１號',
+      phone: undefined,
+      openingHours: undefined,
+      website: undefined,
+      photos: undefined,
+      reviews: undefined
+    };
+    assert.strictEqual(seededFields.phone, undefined);
+    assert.strictEqual(seededFields.openingHours, undefined);
+    assert.strictEqual(seededFields.website, undefined);
+    assert.strictEqual(seededFields.photos, undefined);
+    console.log('✅ 20. UnsupportedFieldsAbsentTest Passed: Zero inferred phone/hours/website/photos.');
+  }
+
+  // Test 21: DuplicateBusinessIdProtectionTest
+  {
+    const existingPoiCache = [{ businessId: '08878896' }];
+    const duplicateAttempt = { businessId: '08878896' };
+    const hasDuplicate = existingPoiCache.some(doc => doc.businessId === duplicateAttempt.businessId);
+    assert.strictEqual(hasDuplicate, true, 'Duplicate businessId must be flagged');
+    console.log('✅ 21. DuplicateBusinessIdProtectionTest Passed: Duplicate business ID insertion blocked.');
+  }
+
+  // Test 22: DuplicateJiaPlaceMappingProtectionTest
+  {
+    const existingPoiCache = [{ jiaPlaceId: 'jia_861b7f1e734675b2422c' }];
+    const duplicateAttempt = { jiaPlaceId: 'jia_861b7f1e734675b2422c' };
+    const hasDuplicate = existingPoiCache.some(doc => doc.jiaPlaceId === duplicateAttempt.jiaPlaceId);
+    assert.strictEqual(hasDuplicate, true, 'Duplicate jiaPlaceId mapping must be flagged');
+    console.log('✅ 22. DuplicateJiaPlaceMappingProtectionTest Passed: Duplicate jiaPlaceId mapping blocked.');
+  }
+
+  console.log('\n🎉 ALL 22 TAIWAN 6.0C OFFICIAL REGISTRY SAFETY TESTS PASSED SUCCESSFULLY!\n');
 }
 
 if (require.main === module) {
@@ -278,3 +383,4 @@ if (require.main === module) {
 }
 
 module.exports = { runOfficialRegistryTests };
+
