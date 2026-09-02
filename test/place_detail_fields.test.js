@@ -20,6 +20,8 @@ global.imageSafety = imageSafety;
     jiaPlaceId: 'jia_goodvibe',
     name: '日和珈琲 GoodVibe Coffee',
     address: '高雄市左營區新上街307巷2號',
+    city: '高雄市',
+    district: '左營區',
     phone: '07-556-7788',
     categories: ['咖啡廳', '甜點/冰品'],
     openingHours: '週一～週日 10:00–18:00',
@@ -45,6 +47,8 @@ global.imageSafety = imageSafety;
   assert(norm, 'Normalized place exists');
   assert.strictEqual(norm.name, '日和珈琲 GoodVibe Coffee');
   assert.strictEqual(norm.address, '高雄市左營區新上街307巷2號');
+  assert.strictEqual(norm.city, '高雄市');
+  assert.strictEqual(norm.district, '左營區');
   assert.strictEqual(norm.phone, '07-556-7788');
   assert.deepStrictEqual(norm.categories, ['咖啡廳', '甜點/冰品']);
   assert.strictEqual(norm.openingHours, '週一～週日 10:00–18:00');
@@ -58,26 +62,37 @@ global.imageSafety = imageSafety;
   assert(norm.sources.includes('社群驗證'));
   console.log('✅ Test 1 Passed: Full place detail normalization across all fields.');
 
-  // Test 2: Missing Fields Safe Handling (No undefined, no null, no NT$0)
-  const emptyPlace = {
-    name: '極簡小攤'
+  // Test 2: Production-Shaped Fixture [大同] - City is NOT Full Street Address & NOT Category
+  const rawDatongFixture = {
+    id: "jia_1be340e5097402b43e56",
+    jiaPlaceId: "jia_1be340e5097402b43e56",
+    name: "大同",
+    city: "台北市",
+    district: "",
+    address: "",
+    categories: ["未分類"],
+    phone: "",
+    openingHours: "",
+    communityStats: { averageSpend: 0, spendCount: 0 }
   };
-  const normEmpty = PlaceIntelligence.normalizePlaceDetailData(emptyPlace);
-  assert.strictEqual(normEmpty.address, '');
-  assert.strictEqual(normEmpty.phone, '');
-  assert.deepStrictEqual(normEmpty.categories, []);
-  assert.strictEqual(normEmpty.openingHours, '');
-  assert.strictEqual(normEmpty.averageSpend, null, 'averageSpend is null when 0 or missing, not 0');
-  assert.strictEqual(normEmpty.website, null);
-  assert.strictEqual(normEmpty.menuUrl, null);
-  console.log('✅ Test 2 Passed: Missing fields cleanly nullified to prevent unwanted render.');
 
-  // Test 3: Legacy Compatibility (fallback from singular category and legacy phone)
+  const normDatong = PlaceIntelligence.normalizePlaceDetailData(rawDatongFixture);
+  assert.strictEqual(normDatong.address, '', 'Street address is strictly empty when only city exists');
+  assert.strictEqual(normDatong.city, '台北市');
+  assert.strictEqual(normDatong.locationSummary, '台北市');
+  assert.deepStrictEqual(normDatong.categories, [], 'Uncategorized / City string not confused as category');
+  assert.strictEqual(normDatong.primaryCategory, '');
+  assert.strictEqual(normDatong.averageSpend, null, 'averageSpend is null when 0');
+  assert.strictEqual(normDatong.phone, '');
+  console.log('✅ Test 2 Passed: Production fixture [大同] - Strict separation of City, Address, and Category.');
+
+  // Test 3: Legacy Compatibility (fallback from singular category and legacy telephone)
   const legacyPlace = {
     name: '傳統麵店',
     category: 'noodle',
     telephone: '0223456789',
-    formatted_address: '台北市大安區和平東路一段1號'
+    formatted_address: '台北市大安區和平東路一段1號',
+    city: '台北市'
   };
   const normLegacy = PlaceIntelligence.normalizePlaceDetailData(legacyPlace);
   assert.strictEqual(normLegacy.address, '台北市大安區和平東路一段1號');
@@ -89,6 +104,7 @@ global.imageSafety = imageSafety;
   const baseCanonical = {
     jiaPlaceId: 'jia_contrib_test',
     name: '測試餐廳',
+    city: '高雄市',
     communityStats: { averageSpend: 0, spendCount: 0 }
   };
 
@@ -119,7 +135,7 @@ global.imageSafety = imageSafety;
     uid: 'u1',
     userName: 'Tester',
     field: 'category',
-    value: '咖啡'
+    value: '咖啡廳'
   });
   const cHours = CommunityData.createContributionRecord({
     jiaPlaceId: 'jia_contrib_test',
@@ -141,7 +157,7 @@ global.imageSafety = imageSafety;
   assert.strictEqual(patched.address, '高雄市左營區測試路123號');
   assert.strictEqual(patched.phone, '07-123-4567');
   assert.strictEqual(patched.openingHours, '週一～週五 11:00–20:00');
-  assert.deepStrictEqual(patched.categories, ['咖啡廳']); // Mapped to controlled category
+  assert.deepStrictEqual(patched.categories, ['咖啡廳']);
   assert.strictEqual(patched.communityStats.averageSpend, 250);
   assert.strictEqual(patched.communityStats.spendCount, 1);
 

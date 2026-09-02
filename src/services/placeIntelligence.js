@@ -408,21 +408,26 @@
     function normalizePlaceDetailData(place = {}) {
         if (!place) return null;
 
-        // 1. 地址
-        const address = place.address || place.formatted_address || (place.city ? `${place.city} ${place.district || ''}` : '') || '';
+        // 1. 地區與地址嚴格區分 (禁止把 city/district 偽裝成完整 street address)
+        const city = place.city || '';
+        const district = place.district || '';
+        const rawAddress = place.address || place.formatted_address || '';
+        const isFullAddress = Boolean(rawAddress && rawAddress.trim() && rawAddress.trim() !== city && rawAddress.trim() !== district);
+        const address = isFullAddress ? rawAddress.trim() : '';
+        const locationSummary = [city, district].filter(Boolean).join(' ') || '';
 
-        // 2. 電話
+        // 2. 電話 (台灣標準市話與手機)
         let phone = place.phone || place.formatted_phone_number || place.telephone || '';
         if (phone && root?.JiaCommunity?.validateAndNormalizePhone) {
             const phoneCheck = root.JiaCommunity.validateAndNormalizePhone(phone);
             if (phoneCheck.valid) phone = phoneCheck.normalized;
         }
 
-        // 3. 料理分類 (過濾出 1~3 個主要受控分類，不顯示「未分類」)
+        // 3. 料理分類 (嚴格限制來源為 categories/category，禁止 cross-field 誤抓 city)
         let categories = [];
         if (Array.isArray(place.categories) && place.categories.length > 0) {
-            categories = place.categories.map(c => mapToControlledCategory(c) || c).filter(c => c && c !== '未分類');
-        } else if (place.category && place.category !== '未分類') {
+            categories = place.categories.map(c => mapToControlledCategory(c) || c).filter(c => c && c !== '未分類' && c !== city && c !== district);
+        } else if (place.category && place.category !== '未分類' && place.category !== city && place.category !== district) {
             const mapped = mapToControlledCategory(place.category) || place.category;
             if (mapped) categories = [mapped];
         }
@@ -481,6 +486,9 @@
             name: place.name || '',
             jiaPlaceId: place.jiaPlaceId || place.id || '',
             address,
+            city,
+            district,
+            locationSummary,
             phone,
             categories,
             primaryCategory: categories[0] || '',

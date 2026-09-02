@@ -1298,7 +1298,10 @@
                 </div>
 
                 <div class="absolute bottom-3 left-4 right-4">
-                    <span id="detail-city" class="bg-orange-500 text-white text-[10px] px-2 py-0.5 rounded shadow-sm font-bold tracking-widest mb-1 inline-block"></span>
+                    <div class="flex items-center gap-1.5 flex-wrap mb-1">
+                        <span id="detail-city" class="hidden bg-black/60 backdrop-blur-md text-white text-[10px] px-2 py-0.5 rounded-md shadow-sm font-bold tracking-wider border border-white/20"></span>
+                        <span id="detail-category-badge" class="hidden bg-orange-500 text-white text-[10px] px-2 py-0.5 rounded-md shadow-sm font-black tracking-wider"></span>
+                    </div>
                     <h2 id="detail-name" class="text-lg md:text-xl font-black text-white leading-snug drop-shadow-md break-words line-clamp-3"></h2>
                 </div>
             </div>
@@ -7564,7 +7567,14 @@
             }
 
             const detailCityEl = document.getElementById('detail-city');
-            if (detailCityEl) detailCityEl.textContent = data.city || '未分類';
+            if (detailCityEl) {
+                if (data.city && data.city !== '未分類') {
+                    detailCityEl.textContent = data.city;
+                    detailCityEl.classList.remove('hidden');
+                } else {
+                    detailCityEl.classList.add('hidden');
+                }
+            }
 
             const detailNameEl = document.getElementById('detail-name');
             if (detailNameEl) detailNameEl.textContent = data.name;
@@ -7676,6 +7686,9 @@
                 : {
                     name: data.name,
                     address: rawPlace.address || '',
+                    city: rawPlace.city || '',
+                    district: rawPlace.district || '',
+                    locationSummary: [rawPlace.city, rawPlace.district].filter(Boolean).join(' ') || '',
                     phone: rawPlace.phone || '',
                     categories: rawPlace.categories || (rawPlace.category ? [rawPlace.category] : []),
                     openingHours: typeof rawPlace.openingHours === 'string' ? rawPlace.openingHours : '',
@@ -7688,6 +7701,28 @@
                     hasSocial: Boolean(rawPlace.officialSocial?.facebook || rawPlace.officialSocial?.instagram || rawPlace.officialSocial?.threads),
                     sources: ['Jia-ben']
                 };
+
+            // 0. 頂部店名上方分類與縣市標籤列同步
+            const catBadgeEl = document.getElementById('detail-category-badge');
+            if (catBadgeEl) {
+                if (pNorm.primaryCategory) {
+                    catBadgeEl.textContent = pNorm.primaryCategory;
+                    catBadgeEl.classList.remove('hidden');
+                } else {
+                    catBadgeEl.classList.add('hidden');
+                }
+            }
+
+            const detailCityEl = document.getElementById('detail-city');
+            if (detailCityEl) {
+                const cityStr = pNorm.city || data.city || '';
+                if (cityStr && cityStr !== '未分類') {
+                    detailCityEl.textContent = cityStr;
+                    detailCityEl.classList.remove('hidden');
+                } else {
+                    detailCityEl.classList.add('hidden');
+                }
+            }
 
             // 1. 頂部摘要列更新（平均消費 & 分類）
             const priceBadge = document.getElementById('detail-price-badge');
@@ -7707,12 +7742,19 @@
             // 2. 構建「店家基本資訊」卡片內部所有完整欄位
             const rows = [];
 
-            // 📍 地址 (支援長地址換行與自動截斷安全)
+            // 📍 地址 (優先顯示完整門牌地址；若無門牌僅有縣市，標註為地區概要)
             if (pNorm.address) {
                 rows.push(`
                     <p class="flex items-start gap-2">
                         <i class="fa-solid fa-location-dot text-rose-500 w-4 text-center mt-0.5 shrink-0"></i>
                         <span class="text-gray-800 break-words flex-1">${window.escapeHtml(pNorm.address)}</span>
+                    </p>
+                `);
+            } else if (pNorm.locationSummary) {
+                rows.push(`
+                    <p class="flex items-start gap-2">
+                        <i class="fa-solid fa-location-dot text-gray-400 w-4 text-center mt-0.5 shrink-0"></i>
+                        <span class="text-gray-500 text-xs break-words flex-1">${window.escapeHtml(pNorm.locationSummary)} <span class="text-[10px] text-gray-400 font-normal">（尚無完整門牌地址）</span></span>
                     </p>
                 `);
             }
