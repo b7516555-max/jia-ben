@@ -28,6 +28,7 @@
     <script src="./src/providers/hereAdapter.js?v=1"></script>
     <script src="./src/providers/geoapifyAdapter.js?v=1"></script>
     <script src="./src/services/enrichment.js?v=1"></script>
+    <script src="./src/services/communityData.js?v=1"></script>
     <script src="./src/services/smartSearch.js?v=1"></script>
     <script src="./src/services/smartWheel.js?v=1"></script>
     <script src="./src/components/restaurantCard.js?v=1"></script>
@@ -1305,6 +1306,25 @@
                     </button>
                 </div>
 
+                <!-- 🌟 Part A: 使用者狀態列（想吃 ♡ / 吃過 ✓ / 造訪次數 / 補充資訊） -->
+                <div class="bg-white p-3.5 rounded-2xl border border-gray-100 shadow-2xs flex items-center justify-between gap-2">
+                    <div class="flex items-center gap-2">
+                        <button type="button" id="detail-state-want-btn" onclick="window.handleDetailStateToggle('wantToEat')" class="px-3 py-1.5 rounded-xl border border-orange-200 text-orange-600 bg-orange-50/50 hover:bg-orange-100 text-xs font-black transition flex items-center gap-1 shadow-2xs">
+                            <i id="detail-state-want-icon" class="fa-regular fa-heart"></i>
+                            <span id="detail-state-want-text">想吃</span>
+                        </button>
+                        <button type="button" id="detail-state-ate-btn" onclick="window.handleDetailStateToggle('ate')" class="px-3 py-1.5 rounded-xl border border-gray-200 text-gray-600 bg-gray-50 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200 text-xs font-black transition flex items-center gap-1 shadow-2xs">
+                            <i id="detail-state-ate-icon" class="fa-regular fa-circle-check"></i>
+                            <span id="detail-state-ate-text">吃過</span>
+                        </button>
+                        <span id="detail-visit-count-badge" class="hidden text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-md">吃過 1 次</span>
+                    </div>
+                    <button type="button" onclick="window.openContributeModal()" class="text-xs font-bold text-gray-500 hover:text-orange-600 px-2 py-1 rounded-lg hover:bg-orange-50 transition flex items-center gap-1">
+                        <i class="fa-solid fa-pen-to-square text-orange-400"></i>
+                        <span>補充店家資訊</span>
+                    </button>
+                </div>
+
                 <!-- 店家評分與平均消費單價標籤列 -->
                 <div class="flex items-center gap-2 flex-wrap">
                     <span id="detail-rating" onclick="window.showGoogleReviews()" class="text-orange-500 font-bold text-xs md:text-sm bg-orange-50 px-2.5 py-1 md:px-3 md:py-1.5 rounded-xl border border-orange-100 flex items-center shadow-2xs cursor-pointer hover:bg-orange-100 transition">
@@ -1321,7 +1341,12 @@
                 </div>
 
                 <div class="bg-white p-3.5 rounded-2xl border border-gray-100 shadow-2xs">
-                    <p class="text-xs font-bold text-gray-500 mb-2"><i class="fa-solid fa-circle-info mr-1"></i>店家基本資訊</p>
+                    <div class="flex items-center justify-between mb-2">
+                        <p class="text-xs font-bold text-gray-500"><i class="fa-solid fa-circle-info mr-1"></i>店家基本資訊</p>
+                        <button type="button" onclick="window.openContributeModal()" class="text-[11px] text-orange-500 font-bold hover:underline">
+                            + 我來補充
+                        </button>
+                    </div>
                     <div id="detail-place-info" class="space-y-1.5 text-xs sm:text-sm text-gray-600">
                         <p class="text-xs text-gray-400"><i class="fa-solid fa-spinner fa-spin mr-1.5"></i>正在讀取店家資訊...</p>
                     </div>
@@ -1338,6 +1363,96 @@
                     
                     <button id="detail-share-btn" class="bg-[#00B900] text-white font-bold py-2.5 md:py-3 rounded-xl hover:bg-[#009900] transition shadow-sm flex items-center justify-center gap-2 text-xs sm:text-sm"><i class="fa-brands fa-line text-base"></i> 分享給好友</button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🌟 Part B & E: 社群補充店家資訊 Modal (Community Contribution Modal) -->
+    <div id="place-contribute-modal" class="hidden fixed inset-0 z-[105] flex items-center justify-center bg-black/60 modal-backdrop fade-in">
+        <div class="bg-white rounded-3xl w-11/12 max-w-lg shadow-2xl relative overflow-hidden flex flex-col max-h-[90vh]">
+            <div class="p-4 border-b border-gray-100 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center text-sm">
+                        <i class="fa-solid fa-hand-holding-heart"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-sm sm:text-base font-black text-gray-800">補充店家資訊</h3>
+                        <p id="contribute-place-title" class="text-[11px] text-gray-400 truncate max-w-[240px]"></p>
+                    </div>
+                </div>
+                <button onclick="window.closeModal('place-contribute-modal')" class="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 flex items-center justify-center transition">
+                    <i class="fa-solid fa-xmark text-sm"></i>
+                </button>
+            </div>
+            
+            <div class="p-4 md:p-5 overflow-y-auto no-scrollbar space-y-4 flex-1 bg-gray-50">
+                <div class="bg-blue-50 border border-blue-200 p-3 rounded-2xl text-[11px] text-blue-800 flex items-start gap-2">
+                    <i class="fa-solid fa-shield-halved text-blue-600 text-sm mt-0.5 shrink-0"></i>
+                    <div>
+                        <p class="font-bold">社群共建守護機制</p>
+                        <p class="text-blue-700 leading-relaxed mt-0.5">您補充的資料將進入待審核清單，經主揪/管理員審核採用後將正式更新至店家卡片！</p>
+                    </div>
+                </div>
+
+                <!-- 1. 每人平均消費 -->
+                <div class="bg-white p-3.5 rounded-2xl border border-gray-200 shadow-2xs space-y-2">
+                    <label class="block text-xs font-bold text-gray-700 flex items-center justify-between">
+                        <span><i class="fa-solid fa-coins text-amber-500 mr-1.5"></i>每人平均消費 (NT$)</span>
+                        <span class="text-[10px] text-gray-400 font-normal">選填 · 1~100,000 整數</span>
+                    </label>
+                    <div class="flex items-center bg-gray-50 border border-gray-200 rounded-xl px-3 py-2">
+                        <span class="text-xs text-gray-400 font-bold mr-2">NT$</span>
+                        <input type="number" id="contrib-spend" placeholder="例如：250" min="1" max="100000" class="w-full bg-transparent text-xs sm:text-sm font-bold text-gray-800 focus:outline-none">
+                    </div>
+                </div>
+
+                <!-- 2. 店家詳細地址 -->
+                <div class="bg-white p-3.5 rounded-2xl border border-gray-200 shadow-2xs space-y-2">
+                    <label class="block text-xs font-bold text-gray-700 flex items-center justify-between">
+                        <span><i class="fa-solid fa-location-dot text-rose-500 mr-1.5"></i>店家地址 / 攤位位置</span>
+                        <span class="text-[10px] text-gray-400 font-normal">完整門牌或夜市攤號</span>
+                    </label>
+                    <input type="text" id="contrib-address" placeholder="例如：台北市大安區信義路二段198巷6號" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm font-medium text-gray-800 focus:outline-none focus:border-orange-400">
+                </div>
+
+                <!-- 3. 店家連絡電話 -->
+                <div class="bg-white p-3.5 rounded-2xl border border-gray-200 shadow-2xs space-y-2">
+                    <label class="block text-xs font-bold text-gray-700 flex items-center justify-between">
+                        <span><i class="fa-solid fa-phone text-blue-500 mr-1.5"></i>店家連絡電話</span>
+                        <span class="text-[10px] text-gray-400 font-normal">市話或手機</span>
+                    </label>
+                    <input type="tel" id="contrib-phone" placeholder="例如：02-23456789 或 0912-345-678" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm font-medium text-gray-800 focus:outline-none focus:border-orange-400">
+                </div>
+
+                <!-- 4. 料理分類 -->
+                <div class="bg-white p-3.5 rounded-2xl border border-gray-200 shadow-2xs space-y-2">
+                    <label class="block text-xs font-bold text-gray-700 flex items-center justify-between">
+                        <span><i class="fa-solid fa-utensils text-orange-500 mr-1.5"></i>料理主要分類</span>
+                        <span class="text-[10px] text-gray-400 font-normal">從字典選取</span>
+                    </label>
+                    <select id="contrib-category" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm font-bold text-gray-800 focus:outline-none focus:border-orange-400">
+                        <option value="">-- 請選擇分類 --</option>
+                    </select>
+                </div>
+
+                <!-- 5. 營業時間快速時段 -->
+                <div class="bg-white p-3.5 rounded-2xl border border-gray-200 shadow-2xs space-y-2">
+                    <label class="block text-xs font-bold text-gray-700 flex items-center justify-between">
+                        <span><i class="fa-solid fa-clock text-emerald-600 mr-1.5"></i>每週主要營業時段</span>
+                        <span class="text-[10px] text-gray-400 font-normal">例如 11:30~14:00, 17:00~21:00</span>
+                    </label>
+                    <input type="text" id="contrib-hours-text" placeholder="例如：週一至週日 11:30-14:00, 17:00-21:00 (週二公休)" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm font-medium text-gray-800 focus:outline-none focus:border-orange-400">
+                </div>
+            </div>
+
+            <div class="p-3.5 bg-white border-t border-gray-100 flex gap-2">
+                <button type="button" onclick="window.closeModal('place-contribute-modal')" class="flex-1 py-2.5 rounded-xl border border-gray-200 text-xs font-bold text-gray-600 hover:bg-gray-50 transition">
+                    取消
+                </button>
+                <button type="button" id="contrib-submit-btn" onclick="window.submitPlaceContribution()" class="flex-1 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-xs font-black text-white shadow-xs transition flex items-center justify-center gap-1">
+                    <i class="fa-solid fa-paper-plane"></i>
+                    <span>送出補充資料</span>
+                </button>
             </div>
         </div>
     </div>
@@ -2118,6 +2233,8 @@
                                 </h3>
                                 <div class="flex gap-1.5 flex-wrap">
                                     <button onclick="window.switchAdminSubTab('restaurants')" id="admin-subtab-res" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-orange-500 text-white shadow-sm transition">口袋店家 (<span id="admin-res-count">0</span>)</button>
+                                    <button onclick="window.switchAdminSubTab('contributions')" id="admin-subtab-contributions" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-100 text-amber-800 hover:bg-amber-200 transition"><i class="fa-solid fa-hand-holding-heart mr-1"></i>社群補充審核 (<span id="admin-contributions-count">0</span>)</button>
+                                    <button onclick="window.switchAdminSubTab('places')" id="admin-subtab-places" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-gray-100 text-gray-600 hover:bg-gray-200 transition"><i class="fa-solid fa-database mr-1"></i>正式店家庫 (<span id="admin-places-count">0</span>)</button>
                                     <button onclick="window.switchAdminSubTab('feed')" id="admin-subtab-feed" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-gray-100 text-gray-600 hover:bg-gray-200 transition">動態評價 (<span id="admin-feed-count">0</span>)</button>
                                     <button onclick="window.switchAdminSubTab('members')" id="admin-subtab-members" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-gray-100 text-gray-600 hover:bg-gray-200 transition"><i class="fa-solid fa-key mr-1"></i>成員密碼 (<span id="admin-members-count">0</span>)</button>
                                     <button onclick="window.switchAdminSubTab('pending-groups')" id="admin-subtab-pending-groups" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-gray-100 text-gray-600 hover:bg-gray-200 transition"><i class="fa-solid fa-layer-group mr-1"></i>待審核群組 (<span id="admin-pending-groups-count">0</span>)</button>
@@ -2127,6 +2244,30 @@
                             <!-- 店家記錄列表 -->
                             <div id="admin-data-list-restaurants" class="space-y-2.5 max-h-96 overflow-y-auto pr-1"></div>
                             
+                            <!-- 🌟 社群補充審核列表 -->
+                            <div id="admin-data-list-contributions" class="hidden space-y-2.5 max-h-96 overflow-y-auto pr-1">
+                                <div class="bg-amber-50 p-3 rounded-2xl border border-amber-200 mb-3 text-xs text-amber-800 flex items-start gap-2">
+                                    <i class="fa-solid fa-stamp text-amber-600 text-base shrink-0 mt-0.5"></i>
+                                    <div>
+                                        <p class="font-bold">社群貢獻審核中心</p>
+                                        <p class="text-[11px] text-amber-700 leading-relaxed">使用者回報補充的店家地址、電話、營業時間與每人消費。點擊「採用」將安全 Partial PATCH 至正式店家庫，並記錄社群驗證來源！</p>
+                                    </div>
+                                </div>
+                                <div id="admin-contributions-container" class="space-y-2"></div>
+                            </div>
+
+                            <!-- 🌟 正式店家庫與資料完整度列表 -->
+                            <div id="admin-data-list-places" class="hidden space-y-2.5 max-h-96 overflow-y-auto pr-1">
+                                <div class="bg-blue-50 p-3 rounded-2xl border border-blue-200 mb-3 text-xs text-blue-800 flex items-start gap-2">
+                                    <i class="fa-solid fa-chart-pie text-blue-600 text-base shrink-0 mt-0.5"></i>
+                                    <div>
+                                        <p class="font-bold">正式店家庫完整度總覽 (jiaPlaces)</p>
+                                        <p class="text-[11px] text-blue-700 leading-relaxed">監控各店家真實照片、地址、電話、營業時間與消費資料完整度，優先引導使用者補充缺漏資訊。</p>
+                                    </div>
+                                </div>
+                                <div id="admin-places-container" class="space-y-2"></div>
+                            </div>
+
                             <!-- 動態評價列表 -->
                             <div id="admin-data-list-feed" class="hidden space-y-2.5 max-h-96 overflow-y-auto pr-1"></div>
 
@@ -4287,10 +4428,16 @@
                             <div class="flex-1 px-2 border-l border-gray-100"><p class="text-[10px] font-bold text-gray-400 mb-0.5"><i class="fa-solid fa-users mr-1"></i>已參加 (${joinCount})</p><p class="text-xs font-bold text-gray-700 line-clamp-1 leading-relaxed">${joinCount > 0 ? p.joined.join('、') : '還沒有人報名喔'}</p></div>
                             <button onclick="window.toggleJoinParty('${p.id}')" class="px-5 py-2.5 rounded-xl font-bold text-sm shadow-sm transition whitespace-nowrap flex-shrink-0 ${isJoined ? 'bg-gray-100 text-gray-600 border border-gray-200 hover:bg-red-50 hover:text-red-500' : 'bg-orange-500 text-white hover:bg-orange-600'}">${isJoined ? '取消參加' : '算我一個！'}</button>
                         </div>
-                        <button onclick="window.openPartyRecapModal('${p.id}')" class="party-recap-action w-full bg-amber-50 hover:bg-amber-100 text-amber-700 font-bold py-2 px-3 rounded-xl text-xs border border-amber-200 transition flex items-center justify-center gap-1.5 shadow-xs" title="聚會結束紀錄／分享現場照片至動態牆">
-                            <i class="fa-solid fa-camera-retro"></i>
-                            <span>📸 分享聚會照片至動態牆</span>
-                        </button>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <button onclick="window.openPartyRecapModal('${p.id}')" class="party-recap-action w-full bg-amber-50 hover:bg-amber-100 text-amber-800 font-bold py-2 px-3 rounded-xl text-xs border border-amber-200 transition flex items-center justify-center gap-1.5 shadow-xs" title="聚會結束紀錄／分享現場照片至動態牆">
+                                <i class="fa-solid fa-camera-retro text-amber-600"></i>
+                                <span>📸 分享聚會照片</span>
+                            </button>
+                            <button onclick="window.initInteraction('review', { name: '${window.escapeForBtn(p.location || p.title)}', mapLink: window.getOsmSearchUrl('${window.escapeForBtn(p.location || p.title)}') })" class="w-full bg-orange-50 hover:bg-orange-100 text-orange-800 font-bold py-2 px-3 rounded-xl text-xs border border-orange-200 transition flex items-center justify-center gap-1.5 shadow-xs" title="聚會吃完寫心得／評價店家">
+                                <i class="fa-solid fa-utensils text-orange-600"></i>
+                                <span>🍽️ 這次吃得如何？</span>
+                            </button>
+                        </div>
                     </div>
                 </div>`;
             }).join('');
@@ -7202,7 +7349,9 @@
             const detailTagsEl = document.getElementById('detail-tags');
             if (detailTagsEl) detailTagsEl.innerHTML = data.tags || '<span class="text-gray-400 text-xs">口袋好店</span>';
 
+            window.currentDetailPlace = data.jiaPlace || (window.jiaPlacesData || []).find(p => p.name === data.name) || { name: data.name, jiaPlaceId: data.jiaPlaceId || data.placeId || '' };
             window.loadPlaceDetails(data);
+            window.updateDetailStateUI(window.currentDetailPlace.jiaPlaceId || data.name);
             
             const navBtn = document.getElementById('detail-nav-btn');
             if (navBtn) navBtn.href = data.mUrl || window.getOsmSearchUrl(data.name);
@@ -8241,6 +8390,429 @@
                 window.switchLightboxPhoto(1);
             }
         });
+
+        // ============================================================
+        // 🌟 JIA-BEN COMMUNITY DATA PHASE 3 LOGIC & EVENT HANDLERS
+        // ============================================================
+
+        window.userPlaceStates = {}; // { [jiaPlaceId]: { wantToEat: boolean, ate: boolean, visitCount: number, lastVisitedAt: string } }
+        window.placeContributions = []; // Array of pending/accepted contribution records
+        window.currentDetailPlace = null;
+
+        // 從 LocalStorage 載入個人餐廳狀態
+        try {
+            const savedStates = localStorage.getItem('jia_user_place_states');
+            if (savedStates) window.userPlaceStates = JSON.parse(savedStates);
+        } catch (e) {
+            console.warn('載入本機餐廳狀態失敗:', e);
+        }
+
+        window.saveUserPlaceStatesLocal = function() {
+            try {
+                localStorage.setItem('jia_user_place_states', JSON.stringify(window.userPlaceStates));
+            } catch (e) {
+                console.warn('儲存本機餐廳狀態失敗:', e);
+            }
+        };
+
+        // 取得特定店家的使用者狀態
+        window.getUserPlaceState = function(placeIdOrName) {
+            if (!placeIdOrName) return { wantToEat: false, ate: false, visitCount: 0, lastVisitedAt: null };
+            let key = placeIdOrName;
+            const place = (window.jiaPlacesData || []).find(p => p.jiaPlaceId === placeIdOrName || p.name === placeIdOrName || String(p.normalizedName || '') === String(placeIdOrName).normalize('NFKC').toLowerCase().replace(/\s+/g, ''));
+            if (place && place.jiaPlaceId) key = place.jiaPlaceId;
+            return window.userPlaceStates[key] || { wantToEat: false, ate: false, visitCount: 0, lastVisitedAt: null };
+        };
+
+        // 切換想吃/吃過狀態
+        window.toggleUserPlaceState = async function(placeIdOrName, actionType, safeName = '') {
+            let placeName = safeName ? decodeURIComponent(safeName) : placeIdOrName;
+            const place = (window.jiaPlacesData || []).find(p => p.jiaPlaceId === placeIdOrName || p.name === placeName || String(p.normalizedName || '') === String(placeName).normalize('NFKC').toLowerCase().replace(/\s+/g, ''));
+            const key = place ? place.jiaPlaceId : (placeIdOrName || placeName);
+            const resolvedName = place ? place.name : placeName;
+
+            if (!window.userPlaceStates[key]) {
+                window.userPlaceStates[key] = { wantToEat: false, ate: false, visitCount: 0, lastVisitedAt: null };
+            }
+            const st = window.userPlaceStates[key];
+
+            if (actionType === 'wantToEat') {
+                st.wantToEat = !st.wantToEat;
+                window.saveUserPlaceStatesLocal();
+                window.updateDetailStateUI(key);
+                window.showCustomMsg(st.wantToEat ? `❤️ 已將「${resolvedName}」加入想吃清單！` : `🤍 已將「${resolvedName}」移出想吃清單。`);
+                
+                // 同步至口袋名單 (若使用者想吃但不在餐廳名單中，自動加入口袋名單)
+                if (st.wantToEat && window.myIdentity && window.myIdentity.name) {
+                    const norm = String(resolvedName).toLowerCase().replace(/\s+/g, '');
+                    const exists = (window.restaurantData || []).some(r => r.name === resolvedName || String(r.name).toLowerCase().replace(/\s+/g, '') === norm);
+                    if (!exists && typeof window.submitForm === 'function') {
+                        const newDoc = {
+                            name: resolvedName,
+                            city: place?.city || '台北市',
+                            country: place?.country || '台灣',
+                            category: place?.categories?.[0] || '未分類',
+                            status: '想去',
+                            mapLink: place?.mapLink || window.getOsmSearchUrl(resolvedName),
+                            group: window.myIdentity.group || '其他',
+                            creator: window.myIdentity.name,
+                            photoUrl: place?.coverPhoto || ''
+                        };
+                        window.restaurantData.unshift({ id: Date.now().toString(), ...newDoc, timestamp: { seconds: Date.now() / 1000 } });
+                        if (db && currentUser) {
+                            addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'restaurants'), { ...newDoc, timestamp: serverTimestamp() }).catch(console.warn);
+                        }
+                        window.renderList();
+                    }
+                }
+            } else if (actionType === 'ate') {
+                st.ate = !st.ate;
+                if (st.ate) {
+                    st.visitCount = (st.visitCount || 0) + 1;
+                    st.lastVisitedAt = new Date().toISOString();
+                }
+                window.saveUserPlaceStatesLocal();
+                window.updateDetailStateUI(key);
+                
+                if (st.ate) {
+                    window.showCustomMsg(`✅ 太棒了！已標記吃過「${resolvedName}」！\n(累計造訪 ${st.visitCount} 次)`);
+                    // 輕量小引導：邀請補充店家資訊
+                    setTimeout(() => {
+                        if (confirm(`🎉 吃過「${resolvedName}」？要順便幫大家補充每人消費或店家資訊嗎？`)) {
+                            window.openContributeModal(place || { name: resolvedName, jiaPlaceId: key });
+                        }
+                    }, 600);
+                } else {
+                    window.showCustomMsg(`已取消標記「${resolvedName}」的吃過紀錄。`);
+                }
+            }
+
+            // 同步雲端 userPlaceStates
+            if (db && currentUser && window.myIdentity?.name) {
+                try {
+                    const userDocId = `${window.myIdentity.name}_${key}`.replace(/[\/\s]/g, '_');
+                    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'userPlaceStates', userDocId), {
+                        uid: currentUser.uid || window.myIdentity.name,
+                        userName: window.myIdentity.name,
+                        jiaPlaceId: key,
+                        placeName: resolvedName,
+                        ...st,
+                        updatedAt: serverTimestamp()
+                    }, { merge: true });
+                } catch (err) {
+                    console.warn('雲端同步 userPlaceStates 失敗:', err);
+                }
+            }
+        };
+
+        window.handleDetailStateToggle = function(type) {
+            const detailName = document.getElementById('detail-name')?.textContent || '';
+            const key = window.currentDetailPlace?.jiaPlaceId || detailName;
+            window.toggleUserPlaceState(key, type, detailName);
+        };
+
+        window.updateDetailStateUI = function(placeIdOrName) {
+            const st = window.getUserPlaceState(placeIdOrName);
+            const wantBtn = document.getElementById('detail-state-want-btn');
+            const wantIcon = document.getElementById('detail-state-want-icon');
+            const wantText = document.getElementById('detail-state-want-text');
+            const ateBtn = document.getElementById('detail-state-ate-btn');
+            const ateIcon = document.getElementById('detail-state-ate-icon');
+            const ateText = document.getElementById('detail-state-ate-text');
+            const countBadge = document.getElementById('detail-visit-count-badge');
+
+            if (wantBtn && wantIcon && wantText) {
+                if (st.wantToEat) {
+                    wantBtn.className = "px-3 py-1.5 rounded-xl border border-rose-300 text-white bg-rose-500 hover:bg-rose-600 text-xs font-black transition flex items-center gap-1 shadow-2xs";
+                    wantIcon.className = "fa-solid fa-heart";
+                    wantText.textContent = "想吃中";
+                } else {
+                    wantBtn.className = "px-3 py-1.5 rounded-xl border border-orange-200 text-orange-600 bg-orange-50/50 hover:bg-orange-100 text-xs font-black transition flex items-center gap-1 shadow-2xs";
+                    wantIcon.className = "fa-regular fa-heart";
+                    wantText.textContent = "想吃";
+                }
+            }
+
+            if (ateBtn && ateIcon && ateText) {
+                if (st.ate) {
+                    ateBtn.className = "px-3 py-1.5 rounded-xl border border-emerald-300 text-white bg-emerald-600 hover:bg-emerald-700 text-xs font-black transition flex items-center gap-1 shadow-2xs";
+                    ateIcon.className = "fa-solid fa-circle-check";
+                    ateText.textContent = "已吃過";
+                } else {
+                    ateBtn.className = "px-3 py-1.5 rounded-xl border border-gray-200 text-gray-600 bg-gray-50 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200 text-xs font-black transition flex items-center gap-1 shadow-2xs";
+                    ateIcon.className = "fa-regular fa-circle-check";
+                    ateText.textContent = "吃過";
+                }
+            }
+
+            if (countBadge) {
+                if (st.visitCount > 0) {
+                    countBadge.textContent = `吃過 ${st.visitCount} 次`;
+                    countBadge.classList.remove('hidden');
+                } else {
+                    countBadge.classList.add('hidden');
+                }
+            }
+        };
+
+        // 開啟社群補充店家資訊 Modal
+        window.openContributeModal = function(placeOverride) {
+            const place = placeOverride || window.currentDetailPlace || { name: document.getElementById('detail-name')?.textContent || '' };
+            if (!place || !place.name) return window.showCustomMsg("請先選擇店家。");
+
+            window.requireIdentity(() => {
+                const titleEl = document.getElementById('contribute-place-title');
+                if (titleEl) titleEl.textContent = place.name;
+                
+                // 填充分類字典
+                const catSelect = document.getElementById('contrib-category');
+                if (catSelect && window.JiaCommunity?.CATEGORY_DICTIONARY) {
+                    catSelect.innerHTML = '<option value="">-- 請選擇料理分類 --</option>' +
+                        window.JiaCommunity.CATEGORY_DICTIONARY.map(c => `<option value="${c}">${c}</option>`).join('');
+                }
+
+                // 預填既有資料
+                if (document.getElementById('contrib-spend')) document.getElementById('contrib-spend').value = '';
+                if (document.getElementById('contrib-address')) document.getElementById('contrib-address').value = place.address || '';
+                if (document.getElementById('contrib-phone')) document.getElementById('contrib-phone').value = place.phone || '';
+                if (document.getElementById('contrib-hours-text')) document.getElementById('contrib-hours-text').value = typeof place.openingHours === 'string' ? place.openingHours : '';
+                if (catSelect && place.categories && place.categories[0]) {
+                    catSelect.value = place.categories[0];
+                }
+
+                document.getElementById('place-contribute-modal')?.classList.remove('hidden');
+            });
+        };
+
+        // 送出社群補充資料 (寫入 placeContributions 審核待審區，絕不直寫 canonical)
+        window.submitPlaceContribution = async function() {
+            const place = window.currentDetailPlace || { name: document.getElementById('detail-name')?.textContent || '' };
+            if (!place || !place.name) return;
+
+            const spendVal = document.getElementById('contrib-spend')?.value.trim();
+            const addressVal = document.getElementById('contrib-address')?.value.trim();
+            const phoneVal = document.getElementById('contrib-phone')?.value.trim();
+            const categoryVal = document.getElementById('contrib-category')?.value;
+            const hoursVal = document.getElementById('contrib-hours-text')?.value.trim();
+
+            if (!spendVal && !addressVal && !phoneVal && !categoryVal && !hoursVal) {
+                return window.showCustomMsg("請至少填寫一項想為大家補充的店家資訊喔！");
+            }
+
+            const btn = document.getElementById('contrib-submit-btn');
+            if (btn) { btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> 傳送中...'; btn.disabled = true; }
+
+            try {
+                const contributions = [];
+                const jiaPlaceId = place.jiaPlaceId || `jia_${Math.random().toString(36).slice(2, 10)}`;
+                const userName = window.myIdentity?.name || '熱心吃貨';
+                const uid = currentUser?.uid || userName;
+
+                // 1. 消費驗證
+                if (spendVal) {
+                    const check = window.JiaCommunity?.validateSpend ? window.JiaCommunity.validateSpend(spendVal) : { valid: true, value: Number(spendVal) };
+                    if (!check.valid) throw new Error(check.message);
+                    contributions.push({ field: 'averageSpend', value: check.value });
+                }
+
+                // 2. 地址驗證
+                if (addressVal && addressVal !== place.address) {
+                    const check = window.JiaCommunity?.validateAddress ? window.JiaCommunity.validateAddress(addressVal) : { valid: true, normalized: addressVal };
+                    if (!check.valid) throw new Error(check.message);
+                    contributions.push({ field: 'address', value: check.normalized });
+                }
+
+                // 3. 電話驗證
+                if (phoneVal && phoneVal !== place.phone) {
+                    const check = window.JiaCommunity?.validateAndNormalizePhone ? window.JiaCommunity.validateAndNormalizePhone(phoneVal) : { valid: true, normalized: phoneVal };
+                    if (!check.valid) throw new Error(check.message);
+                    contributions.push({ field: 'phone', value: check.normalized });
+                }
+
+                // 4. 分類
+                if (categoryVal && (!place.categories || !place.categories.includes(categoryVal))) {
+                    contributions.push({ field: 'category', value: [categoryVal] });
+                }
+
+                // 5. 營業時間
+                if (hoursVal && hoursVal !== place.openingHours) {
+                    contributions.push({ field: 'openingHours', value: hoursVal });
+                }
+
+                for (const c of contributions) {
+                    const record = window.JiaCommunity?.createContributionRecord ? 
+                        window.JiaCommunity.createContributionRecord({
+                            jiaPlaceId,
+                            uid,
+                            userName,
+                            field: c.field,
+                            value: c.value,
+                            note: `補充 ${place.name} 的 ${c.field}`
+                        }) : {
+                            contributionId: `contrib_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+                            jiaPlaceId,
+                            placeName: place.name,
+                            uid,
+                            userName,
+                            field: c.field,
+                            value: c.value,
+                            status: 'pending',
+                            createdAt: new Date().toISOString()
+                        };
+                    record.placeName = place.name;
+
+                    if (db && currentUser) {
+                        await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'placeContributions'), {
+                            ...record,
+                            timestamp: serverTimestamp()
+                        });
+                    } else {
+                        window.placeContributions.unshift(record);
+                    }
+                }
+
+                window.closeModal('place-contribute-modal');
+                window.showCustomMsg(`🎉 感謝您為「${place.name}」貢獻資訊！\n\n已成功提交 ${contributions.length} 項資料至審核中心，主揪審核後將正式更新至全站！`);
+                if (typeof window.renderAdminDataList === 'function') window.renderAdminDataList();
+            } catch (err) {
+                console.error("提交貢獻失敗:", err);
+                window.showCustomMsg(`⚠️ 提交失敗：${err.message || err}`);
+            } finally {
+                if (btn) { btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> <span>送出補充資料</span>'; btn.disabled = false; }
+            }
+        };
+
+        // 🌟 主揪管理後台：審核社群貢獻 (Accept/Reject)
+        window.reviewContribution = async function(contributionId, isApproved) {
+            const contrib = (window.placeContributions || []).find(c => c.contributionId === contributionId || c.id === contributionId);
+            if (!contrib) return window.showCustomMsg("找不到該筆審核資料。");
+
+            window.requireAdminAuthForAction(`您正在以主揪身分${isApproved ? '採用' : '退回'}社群貢獻`, async () => {
+                try {
+                    const jiaPlace = (window.jiaPlacesData || []).find(p => p.jiaPlaceId === contrib.jiaPlaceId || p.name === contrib.placeName);
+                    
+                    if (isApproved && jiaPlace) {
+                        // 套用安全 Partial PATCH
+                        const { updatedPlace, auditedContribution } = window.JiaCommunity.applyContributionToPlace(jiaPlace, contrib, window.myIdentity?.name || 'admin');
+                        Object.assign(jiaPlace, updatedPlace);
+                        
+                        if (db && currentUser) {
+                            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'jiaPlaces', jiaPlace.jiaPlaceId), updatedPlace, { merge: true });
+                            if (contrib.id) {
+                                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'placeContributions', contrib.id), auditedContribution);
+                            }
+                        }
+                        contrib.status = 'accepted';
+                        window.showCustomMsg(`✅ 已成功採用「${contrib.placeName}」的 ${contrib.field} 資訊，並更新至正式店家庫！`);
+                    } else {
+                        contrib.status = 'rejected';
+                        if (db && currentUser && contrib.id) {
+                            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'placeContributions', contrib.id), {
+                                status: 'rejected',
+                                reviewedAt: new Date().toISOString(),
+                                reviewedBy: window.myIdentity?.name || 'admin'
+                            });
+                        }
+                        window.showCustomMsg(`已退回該筆貢獻。`);
+                    }
+
+                    if (typeof window.renderAdminDataList === 'function') window.renderAdminDataList();
+                } catch (err) {
+                    console.error("審核操作失敗:", err);
+                    window.showCustomMsg(`審核失敗：${err.message || err}`);
+                }
+            });
+        };
+
+        // 🌟 Admin Subtabs 切換 (口袋店家 / 社群補充審核 / 正式店家庫 / 動態評價 / 成員密碼 / 待審核群組)
+        window.switchAdminSubTab = function(tabName) {
+            const tabs = ['restaurants', 'contributions', 'places', 'feed', 'members', 'pending-groups'];
+            tabs.forEach(t => {
+                const btn = document.getElementById(`admin-subtab-${t === 'restaurants' ? 'res' : t}`);
+                const list = document.getElementById(`admin-data-list-${t}`);
+                if (btn) {
+                    if (t === tabName) {
+                        btn.className = "px-3 py-1.5 rounded-xl text-xs font-bold bg-orange-500 text-white shadow-sm transition";
+                    } else {
+                        btn.className = "px-3 py-1.5 rounded-xl text-xs font-bold bg-gray-100 text-gray-600 hover:bg-gray-200 transition";
+                    }
+                }
+                if (list) {
+                    list.classList.toggle('hidden', t !== tabName);
+                }
+            });
+        };
+
+        // 🌟 渲染後台資料列表（包含 Phase 3 審核中心與完整度監控）
+        window.renderAdminDataList = function() {
+            const resCountEl = document.getElementById('admin-res-count');
+            const feedCountEl = document.getElementById('admin-feed-count');
+            const contribCountEl = document.getElementById('admin-contributions-count');
+            const placesCountEl = document.getElementById('admin-places-count');
+            const membersCountEl = document.getElementById('admin-members-count');
+            const pendingGroupsCountEl = document.getElementById('admin-pending-groups-count');
+
+            if (resCountEl) resCountEl.textContent = (window.restaurantData || []).length;
+            if (feedCountEl) feedCountEl.textContent = (window.feedData || []).length;
+            if (placesCountEl) placesCountEl.textContent = (window.jiaPlacesData || []).length;
+
+            const pendingContribs = (window.placeContributions || []).filter(c => c.status === 'pending');
+            if (contribCountEl) contribCountEl.textContent = pendingContribs.length;
+
+            // 1. 渲染社群補充審核清單
+            const contribContainer = document.getElementById('admin-contributions-container');
+            if (contribContainer) {
+                if (pendingContribs.length === 0) {
+                    contribContainer.innerHTML = '<div class="text-center text-gray-400 py-6 text-xs"><i class="fa-solid fa-circle-check text-2xl mb-1.5 text-emerald-400 block"></i>目前沒有待審核的社群補充資料！</div>';
+                } else {
+                    contribContainer.innerHTML = pendingContribs.map(c => `
+                        <div class="bg-amber-50/50 p-3.5 rounded-2xl border border-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+                            <div class="min-w-0 flex-1">
+                                <div class="flex items-center gap-1.5 flex-wrap">
+                                    <span class="text-xs font-black text-gray-900">${window.escapeHtml(c.placeName || '店家')}</span>
+                                    <span class="bg-amber-200 text-amber-900 text-[10px] px-1.5 py-0.2 rounded font-bold">${window.escapeHtml(c.field)}</span>
+                                    <span class="text-[10px] text-gray-400">由 ${window.escapeHtml(c.userName || '成員')} 回報</span>
+                                </div>
+                                <p class="text-xs text-gray-700 font-bold mt-1 break-all bg-white p-2 rounded-xl border border-amber-100">
+                                    ${window.escapeHtml(typeof c.value === 'object' ? JSON.stringify(c.value) : String(c.value))}
+                                </p>
+                            </div>
+                            <div class="flex items-center gap-2 shrink-0">
+                                <button onclick="window.reviewContribution('${c.contributionId || c.id}', true)" class="bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold px-3 py-1.5 rounded-xl shadow-xs transition flex items-center gap-1">
+                                    <i class="fa-solid fa-check"></i> 採用
+                                </button>
+                                <button onclick="window.reviewContribution('${c.contributionId || c.id}', false)" class="bg-gray-100 hover:bg-red-50 text-gray-600 hover:text-red-600 text-xs font-bold px-3 py-1.5 rounded-xl border border-gray-200 transition flex items-center gap-1">
+                                    <i class="fa-solid fa-xmark"></i> 拒絕
+                                </button>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            }
+
+            // 2. 渲染正式店家庫完整度總覽
+            const placesContainer = document.getElementById('admin-places-container');
+            if (placesContainer && window.jiaPlacesData) {
+                placesContainer.innerHTML = window.jiaPlacesData.map(p => {
+                    const comp = window.JiaCommunity?.calculatePlaceCompleteness ? window.JiaCommunity.calculatePlaceCompleteness(p) : { score: 50, isComplete: false };
+                    const scoreColor = comp.score >= 80 ? 'text-emerald-600 bg-emerald-50 border-emerald-200' : (comp.score >= 50 ? 'text-amber-600 bg-amber-50 border-amber-200' : 'text-rose-600 bg-rose-50 border-rose-200');
+                    return `
+                        <div class="bg-white p-3 rounded-2xl border border-gray-100 shadow-2xs flex items-center justify-between gap-2">
+                            <div class="min-w-0 flex-1">
+                                <div class="flex items-center gap-2">
+                                    <p class="text-xs font-black text-gray-800 truncate">${window.escapeHtml(p.name)}</p>
+                                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-lg border ${scoreColor}">完整度 ${comp.score}%</span>
+                                </div>
+                                <p class="text-[10px] text-gray-400 truncate mt-0.5">${window.escapeHtml(p.address || p.city || '地址待補充')}</p>
+                            </div>
+                            <button onclick="window.openRestaurantDetailByName('${window.escapeForBtn(p.name)}')" class="bg-gray-50 hover:bg-orange-50 text-gray-700 hover:text-orange-600 text-xs font-bold px-2.5 py-1.5 rounded-xl border border-gray-200 transition shrink-0">
+                                查看卡片
+                            </button>
+                        </div>
+                    `;
+                }).join('');
+            }
+        };
 
         function setupMockData() { 
             updateConfigDropdowns(); 

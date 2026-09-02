@@ -167,13 +167,18 @@
                     ${addressHtml}
                     ${recBadgeHtml}
                 </div>
-                <div class="mt-2.5 pt-2 border-t border-gray-50 flex items-center justify-between">
+                <div class="mt-2.5 pt-2 border-t border-gray-50 flex items-center justify-between gap-1.5">
                     <span class="text-[11px] font-bold text-orange-600 group-hover:text-orange-700 flex items-center gap-1 transition">
                         查看詳情 <i class="fa-solid fa-chevron-right text-[9px] transition-transform group-hover:translate-x-0.5"></i>
                     </span>
-                    <button type="button" onclick="event.stopPropagation(); window.openAddModal ? window.openAddModal({ name: '${vm.safeName}' }) : null;" class="w-7 h-7 rounded-lg bg-orange-50 hover:bg-orange-500 text-orange-500 hover:text-white flex items-center justify-center text-xs transition shadow-2xs" title="存入口袋名單">
-                        <i class="fa-solid fa-heart"></i>
-                    </button>
+                    <div class="flex items-center gap-1" onclick="event.stopPropagation()">
+                        <button type="button" onclick="window.toggleUserPlaceState ? window.toggleUserPlaceState('${vm.id}', 'ate', '${vm.safeName}') : null;" class="h-7 px-2 rounded-lg bg-gray-50 hover:bg-emerald-50 text-gray-500 hover:text-emerald-600 border border-gray-200 text-[10px] font-bold flex items-center gap-1 transition shadow-2xs" title="標記我吃過這家">
+                            <i class="fa-solid fa-circle-check text-[10px]"></i><span>吃過</span>
+                        </button>
+                        <button type="button" onclick="window.toggleUserPlaceState ? window.toggleUserPlaceState('${vm.id}', 'wantToEat', '${vm.safeName}') : (window.openAddModal ? window.openAddModal({ name: '${vm.safeName}' }) : null);" class="w-7 h-7 rounded-lg bg-orange-50 hover:bg-orange-500 text-orange-500 hover:text-white flex items-center justify-center text-xs transition shadow-2xs" title="想吃 / 存入口袋名單">
+                            <i class="fa-regular fa-heart"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>`;

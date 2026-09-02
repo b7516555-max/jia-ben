@@ -108,6 +108,30 @@
             weight *= penalty;
         }
 
+        // 6. 個人化歷史狀態加權 (Personalization Factor: 吃過近期懲罰 & 想吃加成)
+        const userState = context.userPlaceStates ? context.userPlaceStates[id] : null;
+        if (userState) {
+            // A. 想吃清單 (Want To Eat Bonus: 1.35x 加成)
+            if (userState.wantToEat) {
+                weight *= 1.35;
+            }
+            // B. 近期剛吃過 (Recently Ate Penalty: 7天內吃過 0.4x，30天內吃過 0.7x，不完全排除)
+            if (userState.ate) {
+                if (userState.lastVisitedAt) {
+                    const daysAgo = (Date.now() - new Date(userState.lastVisitedAt).getTime()) / (1000 * 60 * 60 * 24);
+                    if (daysAgo <= 7) {
+                        weight *= 0.4;
+                    } else if (daysAgo <= 30) {
+                        weight *= 0.7;
+                    } else {
+                        weight *= 0.9;
+                    }
+                } else {
+                    weight *= 0.8;
+                }
+            }
+        }
+
         return Math.max(0.1, weight);
     }
 
