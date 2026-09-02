@@ -12,4 +12,7 @@ token.json
 jia-ben/
 jia-ben-main/
 reports/
+backups/
+*.backup.json
+enrichment_audit_log.json
 

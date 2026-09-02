@@ -112,7 +112,12 @@ global.imageSafety = imageSafety;
       address: '台南市中西區忠義路二段84號',
       phone: '06-2231418',
       categories: ['F501010', '餐飲業'],
-      source: 'moea'
+      source: 'moea',
+      sourceMetadata: {
+        sourceName: '經濟部商工行政資料',
+        sourceDataset: 'tw.gov.fia.eip~ref~business-tax',
+        sourceUrl: 'https://data.openfun.tw/datasets/tw.gov.fia.eip~ref~business-tax'
+      }
     }
   ];
   const importResult = await TaiwanPoiCache.ingestGovernmentRecords(rawGovRecords);

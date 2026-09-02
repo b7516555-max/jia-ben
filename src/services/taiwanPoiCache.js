@@ -39,9 +39,15 @@
     const idSeed = businessId ? `moea_${businessId}` : (foodRegistrationId ? `tfda_${foodRegistrationId}` : `${raw.source || 'tw'}_${normalizedName}_${normAddr.formattedAddress}`);
     const taiwanPoiId = raw.taiwanPoiId || idSeed;
 
+    const isFixture = Boolean(raw.isFixture || raw.sourceMetadata?.isFixture);
+    const sourceDataset = raw.sourceDataset || raw.sourceMetadata?.sourceDataset || '';
+    const sourceUrl = raw.sourceUrl || raw.sourceMetadata?.sourceUrl || '';
+    const rawSourceHash = raw.rawSourceHash || raw.sourceMetadata?.rawSourceHash || '';
+
     return {
       taiwanPoiId,
       source: raw.source || 'taiwan_open_data',
+      isFixture,
       businessId,
       foodRegistrationId,
       officialName,
@@ -53,12 +59,17 @@
       location: (raw.location && Number.isFinite(raw.location.lat) && Number.isFinite(raw.location.lng)) ? raw.location : null,
       phone: normPhone.formatted || rawPhone || '',
       openingHours: raw.openingHours || '',
+      openingHoursSource: raw.openingHoursSource || '',
       website: raw.website || '',
       menuUrl: raw.menuUrl || '',
       businessStatus: raw.businessStatus || '營業中',
       categories: Array.isArray(raw.categories) ? raw.categories : (raw.category ? [raw.category] : ['餐飲業']),
       sourceMetadata: {
         sourceName: raw.sourceMetadata?.sourceName || raw.source || 'Taiwan Open Data',
+        sourceDataset,
+        sourceUrl,
+        rawSourceHash,
+        isFixture,
         sourceRecordId: raw.sourceMetadata?.sourceRecordId || businessId || foodRegistrationId || '',
         importedAt: raw.sourceMetadata?.importedAt || new Date().toISOString(),
         updatedAt: new Date().toISOString()
@@ -70,6 +81,29 @@
         addressHash: normAddr.formattedAddress
       }
     };
+  }
+
+  /**
+   * Strict validation for Production POI Cache Ingestion
+   * Guarantees synthetic/fixture records never contaminate Production Firestore.
+   */
+  function validateProductionIngestionRecord(record) {
+    if (!record || typeof record !== 'object') {
+      return { valid: false, reason: 'Invalid or empty record object' };
+    }
+    if (record.isFixture === true || record.sourceMetadata?.isFixture === true) {
+      return { valid: false, reason: 'FIXTURE_REJECTED: Fixture and sample records are strictly prohibited in Production cache' };
+    }
+    if (!record.officialName || record.officialName.trim().length === 0) {
+      return { valid: false, reason: 'NAME_REQUIRED: Missing official store name' };
+    }
+    if (!record.sourceMetadata?.sourceDataset && !record.sourceMetadata?.sourceUrl) {
+      return { valid: false, reason: 'PROVENANCE_REQUIRED: Missing reproducible sourceDataset or sourceUrl' };
+    }
+    if (record.openingHours && !record.openingHoursSource) {
+      return { valid: false, reason: 'OPENING_HOURS_SOURCE_REQUIRED: Opening hours must be verified by official website or verified page' };
+    }
+    return { valid: true };
   }
 
   /**
@@ -131,8 +165,10 @@
 
     for (const raw of records) {
       const record = createPoiRecord(raw);
-      if (!record.officialName) {
+      const val = validateProductionIngestionRecord(record);
+      if (!val.valid) {
         skipped++;
+        console.warn(`[TaiwanPoiCache] Ingestion rejected for "${record.officialName}": ${val.reason}`);
         continue;
       }
 
@@ -160,6 +196,7 @@
   return {
     configure,
     createPoiRecord,
+    validateProductionIngestionRecord,
     searchPoiCache,
     ingestGovernmentRecords,
     _memoryCache: memoryCache

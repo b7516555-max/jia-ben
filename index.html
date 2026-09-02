@@ -2494,9 +2494,9 @@
                                     </div>
                                 </div>
                                 <div class="flex items-center gap-2">
-                                    <button type="button" onclick="window.runAdminControlledEnrichment(5)" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black rounded-xl transition shadow-xs flex items-center gap-1.5">
-                                        <i class="fa-solid fa-bolt"></i>
-                                        <span>受控補全 5 間 (Enrich 5)</span>
+                                    <button type="button" onclick="window.runAdminControlledEnrichment(5)" class="px-3 py-1.5 bg-gray-200 text-gray-500 cursor-not-allowed text-xs font-black rounded-xl transition flex items-center gap-1.5" title="資料完整度審計中，暫時凍結">
+                                        <i class="fa-solid fa-lock"></i>
+                                        <span>自動補全已凍結 (Frozen)</span>
                                     </button>
                                     <button type="button" onclick="window.refreshAdminTaiwanDashboard()" class="px-3 py-1.5 bg-white hover:bg-emerald-100 text-emerald-800 text-xs font-bold rounded-xl border border-emerald-200 transition shadow-2xs">
                                         <i class="fa-solid fa-arrows-rotate mr-1"></i>重新整理
@@ -2511,16 +2511,16 @@
                                     <p id="admin-tw-places-count" class="text-2xl font-black text-gray-800 mt-0.5">52</p>
                                 </div>
                                 <div class="bg-white p-3.5 rounded-2xl border border-emerald-100 shadow-2xs text-center">
-                                    <p class="text-[10px] text-gray-400 font-bold">🗄️ POI Cache 快取</p>
-                                    <p id="admin-tw-cache-count" class="text-2xl font-black text-emerald-600 mt-0.5">20</p>
+                                    <p class="text-[10px] text-gray-400 font-bold">🗄️ 已驗證 POI 快取</p>
+                                    <p id="admin-tw-cache-count" class="text-2xl font-black text-emerald-600 mt-0.5">0</p>
                                 </div>
                                 <div class="bg-white p-3.5 rounded-2xl border border-emerald-100 shadow-2xs text-center">
                                     <p class="text-[10px] text-gray-400 font-bold">📍 完整門牌地址</p>
-                                    <p id="admin-tw-address-coverage" class="text-2xl font-black text-blue-600 mt-0.5">19 <span class="text-xs font-normal text-gray-400">(36.5%)</span></p>
+                                    <p id="admin-tw-address-coverage" class="text-2xl font-black text-blue-600 mt-0.5">9 <span class="text-xs font-normal text-gray-400">(17.3%)</span></p>
                                 </div>
                                 <div class="bg-white p-3.5 rounded-2xl border border-emerald-100 shadow-2xs text-center">
                                     <p class="text-[10px] text-gray-400 font-bold">☎ 連絡電話</p>
-                                    <p id="admin-tw-phone-coverage" class="text-2xl font-black text-indigo-600 mt-0.5">19 <span class="text-xs font-normal text-gray-400">(36.5%)</span></p>
+                                    <p id="admin-tw-phone-coverage" class="text-2xl font-black text-indigo-600 mt-0.5">7 <span class="text-xs font-normal text-gray-400">(13.5%)</span></p>
                                 </div>
                             </div>
 
@@ -3998,22 +3998,9 @@
             }
         };
 
-        // 🌟 受控批次補全按鈕 (Enrich 5)
+        // 🌟 受控批次補全按鈕 (緊急審計凍結中)
         window.runAdminControlledEnrichment = async function(batchSize = 5) {
-            if (!confirm(`確定要執行受控補全 ${batchSize} 間台灣店家嗎？\n\n系統將從 POI Cache 與政府開放資料庫比對門牌地址、電話與營業時間，絕不產生外部計費或改動社群評分。`)) return;
-            
-            window.showCustomMsg(`⚡ 正在執行受控補全 ${batchSize} 間店家...`);
-            try {
-                // 若在瀏覽器環境下，呼叫即時比對與更新
-                if (window.JiaEnrichment && typeof window.JiaEnrichment.enrichNextBatch === 'function') {
-                    await window.JiaEnrichment.enrichNextBatch(batchSize);
-                }
-                await window.refreshAdminTaiwanDashboard();
-                window.showCustomMsg(`✅ 受控補全完成！資料庫與看板已即時更新。`);
-            } catch (err) {
-                console.error('受控補全錯誤:', err);
-                window.showCustomMsg(`⚠️ 補全執行完畢，請重新整理查看最新狀態。`);
-            }
+            window.showCustomMsg(`🛑 台灣政府開放資料自動補全功能目前處於「安全審計凍結」狀態 (Emergency Data Freeze)。\n\n為確保生產資料庫 100% 真實性，已全面禁止由非官方管線或未驗證來源寫入資料。`);
         };
 
         window.adminApproveGroup = async function(grpName) {
