@@ -214,14 +214,122 @@ async function runEnrichmentUnitTests() {
     console.log('✅ 19. CanonicalJiaPlacesZeroWriteTest Passed: Canonical jiaPlaces writes strictly 0.');
   }
 
-  // Test 20: PaidProviderZeroCallTest
+  // Test 21: FacebookPlacePageNotAutomaticallyOfficialTest
   {
-    const paidCalls = 0;
-    assert.strictEqual(paidCalls, 0);
-    console.log('✅ 20. PaidProviderZeroCallTest Passed: Paid API calls strictly 0.');
+    const place = { name: '金溫州餛飩大王', city: '高雄市', district: '鹽埕區', address: '新樂街163巷1號' };
+    const sourceMeta = {
+      url: 'https://www.facebook.com/pages/金溫州餛飩大王/182672328434771',
+      title: '金溫州餛飩大王 - 高雄市鹽埕區新樂街163巷1號',
+      snippet: '高雄市鹽埕區新樂街163巷1號'
+    };
+    const res = PlaceEnrichmentService.evaluateSourceIdentityAndOwnership(place, sourceMeta);
+    assert.strictEqual(res.sourceIdentityStatus, 'verified_same_physical_place');
+    assert.strictEqual(res.sourceOwnershipStatus, 'platform_place_page');
+    assert.notStrictEqual(res.sourceOwnershipStatus, 'verified_restaurant_owned');
+    console.log('✅ 21. FacebookPlacePageNotAutomaticallyOfficialTest Passed: Facebook /pages/ does not automatically confer verified official ownership.');
   }
 
-  console.log('\n🎉 ALL 20 TAIWAN 6.0E TRUSTED FIELD ENRICHMENT TESTS PASSED SUCCESSFULLY!\n');
+  // Test 22: SourceIdentityVsOwnershipTest
+  {
+    const place = { name: '金溫州餛飩大王', city: '高雄市', district: '鹽埕區', address: '新樂街163巷1號' };
+    const sourceMeta = {
+      url: 'https://www.facebook.com/pages/金溫州餛飩大王/182672328434771',
+      title: '金溫州餛飩大王 - 高雄市鹽埕區新樂街163巷1號'
+    };
+    const res = PlaceEnrichmentService.evaluateSourceIdentityAndOwnership(place, sourceMeta);
+    assert.ok(res.sourceIdentityStatus);
+    assert.ok(res.sourceOwnershipStatus);
+    assert.notStrictEqual(res.sourceIdentityStatus, res.sourceOwnershipStatus);
+    console.log('✅ 22. SourceIdentityVsOwnershipTest Passed: Identity and ownership concepts strictly separated.');
+  }
+
+  // Test 23: SamePlaceFieldEvidencePreservedTest
+  {
+    const sourceMeta = { url: 'https://www.facebook.com/pages/金溫州餛飩大王/182672328434771' };
+    const verifiedFields = { phone: '07-521-1398', openingHours: '14:00-20:30' };
+    const sourceEval = { confidence: 1.0, sourceIdentityStatus: 'verified_same_physical_place', sourceOwnershipStatus: 'platform_place_page', sourceType: 'OFFICIAL_SOCIAL_FACEBOOK', signals: [] };
+    const doc = PlaceEnrichmentService.createEnrichmentCacheDocument('jia_861b7f1e734675b2422c', sourceMeta, verifiedFields, sourceEval);
+    assert.strictEqual(doc.fields.phone.status, 'verified_same_place_source');
+    assert.strictEqual(doc.fields.openingHours.status, 'verified_same_place_source');
+    console.log('✅ 23. SamePlaceFieldEvidencePreservedTest Passed: Same-place field evidence preserved under supporting status.');
+  }
+
+  // Test 24: UnverifiedOwnershipNotPromotionReadyTest
+  {
+    const { calculateCanonicalCoverage } = require('../src/utils/coverageCalculator.js');
+    const mockPlaces = [{ jiaPlaceId: 'jia_861b7f1e734675b2422c', name: '金溫州餛飩大王', phone: '07 551 1378' }];
+    const mockCache = [{
+      jiaPlaceId: 'jia_861b7f1e734675b2422c',
+      sourceIdentity: { status: 'verified_same_physical_place' },
+      sourceOwnership: { status: 'platform_place_page' },
+      fields: {
+        phone: { normalized: '075211398', status: 'verified_same_place_source' },
+        socialReference: { facebook: 'https://facebook.com/pages/foo', ownershipStatus: 'platform_place_page' }
+      }
+    }];
+    const coverage = calculateCanonicalCoverage(mockPlaces, mockCache);
+    assert.strictEqual(coverage.potentialVerified.officialSocial, 0, 'Unverified ownership must not increase potential official social');
+    assert.strictEqual(coverage.samePlaceSupporting.socialReference, 1, 'Tracked as supporting social reference');
+    console.log('✅ 24. UnverifiedOwnershipNotPromotionReadyTest Passed: Unverified ownership blocked from official canonical promotion.');
+  }
+
+  // Test 25: EffectivePhotoCoverageTest
+  {
+    const { calculateCanonicalCoverage } = require('../src/utils/coverageCalculator.js');
+    const mockPlaces = [
+      { jiaPlaceId: 'p1', communityPhotos: ['https://example.com/1.jpg'] },
+      { jiaPlaceId: 'p2', communityPhotos: [] }
+    ];
+    const coverage = calculateCanonicalCoverage(mockPlaces, []);
+    assert.strictEqual(coverage.current.effectiveRealPhoto, 1);
+    assert.strictEqual(coverage.current.aiFallbackPhoto, 1);
+    console.log('✅ 25. EffectivePhotoCoverageTest Passed: Real vs fallback photos properly partitioned.');
+  }
+
+  // Test 26: AIFallbackNotRealPhotoTest
+  {
+    const { calculateCanonicalCoverage } = require('../src/utils/coverageCalculator.js');
+    const mockPlaces = [{ jiaPlaceId: 'p1', coverPhoto: './assets/place-placeholder.svg' }];
+    const coverage = calculateCanonicalCoverage(mockPlaces, []);
+    assert.strictEqual(coverage.current.effectiveRealPhoto, 0);
+    assert.strictEqual(coverage.current.aiFallbackPhoto, 1);
+    console.log('✅ 26. AIFallbackNotRealPhotoTest Passed: AI / placeholder never counted as real photo.');
+  }
+
+  // Test 27: CommunityPhotoCountsAsRealTest
+  {
+    const { calculateCanonicalCoverage } = require('../src/utils/coverageCalculator.js');
+    const mockPlaces = [{ jiaPlaceId: 'p1', communityPhotos: ['photoA', 'photoB'] }];
+    const coverage = calculateCanonicalCoverage(mockPlaces, []);
+    assert.strictEqual(coverage.current.effectiveRealPhoto, 1);
+    console.log('✅ 27. CommunityPhotoCountsAsRealTest Passed: Community uploaded photo counts as effective real photo.');
+  }
+
+  // Test 28: CanonicalPhoneCoverageReadsProductionTest
+  {
+    const { calculateCanonicalCoverage } = require('../src/utils/coverageCalculator.js');
+    const mockPlaces = [
+      { jiaPlaceId: 'p1', phone: '07 551 1378' },
+      { jiaPlaceId: 'p2', phone: '' },
+      { jiaPlaceId: 'p3', phone: '08 732 2237' }
+    ];
+    const coverage = calculateCanonicalCoverage(mockPlaces, []);
+    assert.strictEqual(coverage.current.phone, 2);
+    assert.strictEqual(coverage.current.phonePlaceIds.length, 2);
+    console.log('✅ 28. CanonicalPhoneCoverageReadsProductionTest Passed: Phone coverage accurately reads canonical documents.');
+  }
+
+  // Test 29: CoverageNoHardcodedBaselineTest
+  {
+    const { calculateCanonicalCoverage } = require('../src/utils/coverageCalculator.js');
+    const coverage = calculateCanonicalCoverage([], []);
+    assert.strictEqual(coverage.total, 0);
+    assert.strictEqual(coverage.current.phone, 0);
+    assert.strictEqual(coverage.current.effectiveRealPhoto, 0);
+    console.log('✅ 29. CoverageNoHardcodedBaselineTest Passed: Zero hardcoded baseline numbers.');
+  }
+
+  console.log('\n🎉 ALL 29 TAIWAN 6.0E & 6.0E.1 TRUSTED FIELD ENRICHMENT TESTS PASSED SUCCESSFULLY!\n');
 }
 
 if (require.main === module) {

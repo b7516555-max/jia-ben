@@ -139,8 +139,8 @@ async function runControlledEnrichment() {
   const verifiedEnrichDocs = [];
   const conflictList = [];
 
-  // Pre-load known verified official source data from verified registries and confirmed domains
-  // Example: 金溫州餛飩大王 official phone is known from physical storefront & official records
+  // Pre-load known same-place source data
+  // Example: 金溫州餛飩大王 Facebook place page matches name & address (platform_place_page)
   const knownOfficialSources = {
     'jia_861b7f1e734675b2422c': {
       url: 'https://www.facebook.com/pages/金溫州餛飩大王/182672328434771',
@@ -162,11 +162,12 @@ async function runControlledEnrichment() {
     let evalRes = null;
 
     if (officialCandidate) {
-      evalRes = PlaceEnrichmentService.evaluateSourceIdentity(place, officialCandidate);
+      evalRes = PlaceEnrichmentService.evaluateSourceIdentityAndOwnership(place, officialCandidate);
     } else {
       evalRes = {
         confidence: 0.0,
-        status: 'NO_TRUSTED_SOURCE_FOUND',
+        sourceIdentityStatus: 'uncertain',
+        sourceOwnershipStatus: 'official_status_uncertain',
         sourceType: 'NONE',
         signals: ['No official website or verified social page identified']
       };
@@ -195,22 +196,22 @@ async function runControlledEnrichment() {
         evalRes
       );
       verifiedEnrichDocs.push(doc);
-      console.log(`[${i + 1}/52] ✨ Verified Official Enrichment: "${place.name}" (Confidence: ${evalRes.confidence})`);
+      console.log(`[${i + 1}/52] ✨ Verified Same-Place Enrichment: "${place.name}" (Identity: ${evalRes.sourceIdentityStatus}, Ownership: ${evalRes.sourceOwnershipStatus})`);
     } else {
-      console.log(`[${i + 1}/52] ℹ️  "${place.name}" -> ${evalRes.status} (Confidence: ${evalRes.confidence})`);
+      console.log(`[${i + 1}/52] ℹ️  "${place.name}" -> ${evalRes.sourceIdentityStatus} (Confidence: ${evalRes.confidence})`);
     }
   }
 
   // Step 3: Generate Dry Run Report
   const dryRunReportPath = path.join(__dirname, '../taiwan_enrichment_dry_run_report.md');
   const reportLines = [
-    '# Jia-ben Taiwan Place Intelligence 6.0E: Field Enrichment Dry Run Report',
+    '# Jia-ben Taiwan Place Intelligence 6.0E.1: Field Enrichment Dry Run Report',
     '',
     `**Execution Time**: ${new Date().toISOString()}`,
     `**Total JiaPlaces Evaluated**: ${jiaPlaces.length}`,
     `**Verified Enrichment Candidates (>= 0.93)**: ${verifiedEnrichDocs.length}`,
-    `**No Trusted Source Found**: ${evaluatedResults.filter(r => r.sourceIdentity.status === 'NO_TRUSTED_SOURCE_FOUND').length}`,
-    `**Source Identity Uncertain**: ${evaluatedResults.filter(r => r.sourceIdentity.status === 'SOURCE_IDENTITY_UNCERTAIN').length}`,
+    `**No Trusted Source Found**: ${evaluatedResults.filter(r => r.sourceIdentity.sourceType === 'NONE').length}`,
+    `**Source Identity Uncertain**: ${evaluatedResults.filter(r => r.sourceIdentity.sourceIdentityStatus === 'uncertain').length}`,
     '',
     '## Verified Enrichment Write Candidates',
     ''
@@ -220,10 +221,11 @@ async function runControlledEnrichment() {
     reportLines.push(`### [${doc.enrichmentId}] JiaPlace: ${doc.jiaPlaceId}`);
     reportLines.push(`- **Source Type**: ${doc.source.type}`);
     reportLines.push(`- **Source URL**: ${doc.source.url}`);
-    reportLines.push(`- **Source Identity Confidence**: ${doc.sourceIdentity.confidence}`);
-    reportLines.push(`- **Verified Phone**: ${doc.fields.phone?.normalized || 'None'}`);
-    reportLines.push(`- **Verified Opening Hours**: ${doc.fields.openingHours?.raw || 'None'}`);
-    reportLines.push(`- **Verified Social**: ${JSON.stringify(doc.fields.social || {})}`);
+    reportLines.push(`- **Source Identity Status**: ${doc.sourceIdentity.status}`);
+    reportLines.push(`- **Source Ownership Status**: ${doc.sourceOwnership.status}`);
+    reportLines.push(`- **Phone Evidence**: ${doc.fields.phone?.normalized || 'None'} (Status: ${doc.fields.phone?.status || 'N/A'})`);
+    reportLines.push(`- **Opening Hours Evidence**: ${doc.fields.openingHours?.raw || 'None'} (Status: ${doc.fields.openingHours?.status || 'N/A'})`);
+    reportLines.push(`- **Social Reference**: ${JSON.stringify(doc.fields.socialReference || doc.fields.social || {})}`);
     reportLines.push('');
   }
 
@@ -235,7 +237,7 @@ async function runControlledEnrichment() {
   console.log('=== PLACE ENRICHMENT CACHE WRITE PLAN ===');
   console.log(`Existing placeEnrichmentCache count: ${existingEnrichCache.length}`);
   console.log(`New verified documents to write: ${verifiedEnrichDocs.length}`);
-  console.log(`Expected placeEnrichmentCache count after write: ${existingEnrichCache.length + verifiedEnrichDocs.length}`);
+  console.log(`Expected placeEnrichmentCache count after write: ${existingEnrichCache.length + (existingEnrichCache.length === 0 ? verifiedEnrichDocs.length : 0)}`);
   console.log('============================================================\n');
 
   if (verifiedEnrichDocs.length > 0) {
@@ -247,9 +249,9 @@ async function runControlledEnrichment() {
 
     const token = await getFirebaseToken();
     for (const doc of verifiedEnrichDocs) {
-      console.log(`🚀 Writing placeEnrichmentCache document [${doc.enrichmentId}]...`);
+      console.log(`🚀 Updating placeEnrichmentCache document [${doc.enrichmentId}] with separated identity/ownership...`);
       await writeFirestoreDocument('placeEnrichmentCache', doc.enrichmentId, doc, token);
-      console.log(`✅ Document [${doc.enrichmentId}] successfully written.`);
+      console.log(`✅ Document [${doc.enrichmentId}] successfully updated.`);
     }
   } else {
     console.log('ℹ️ No new verified documents eligible for cache write.');
@@ -265,28 +267,32 @@ async function runControlledEnrichment() {
 
   console.log(`   - Live jiaPlaces count: ${postPlaces.length} (Expected: 52, writes = 0)`);
   console.log(`   - Live taiwanPoiCache count: ${postPoiCache.length} (Expected: 1, writes = 0)`);
-  console.log(`   - Live placeEnrichmentCache count: ${postEnrichCache.length}`);
+  console.log(`   - Live placeEnrichmentCache count: ${postEnrichCache.length} (Expected: 1)`);
 
-  // Step 7: Potential Canonical Coverage Calculation
-  let potentialPhoneCount = 0;
-  let potentialHoursCount = 0;
-  let potentialSocialCount = 0;
-  let potentialAddressCount = 0;
-
-  for (const p of postPlaces) {
-    const enrich = postEnrichCache.find(e => e.jiaPlaceId === p.jiaPlaceId);
-    if (p.phone || enrich?.fields?.phone) potentialPhoneCount++;
-    if (p.openingHours || enrich?.fields?.openingHours) potentialHoursCount++;
-    if (enrich?.fields?.social) potentialSocialCount++;
-    if (p.address && p.address.length > 5) potentialAddressCount++;
-  }
+  // Step 7: Canonical Coverage via coverageCalculator
+  const { calculateCanonicalCoverage } = require('../src/utils/coverageCalculator.js');
+  const coverage = calculateCanonicalCoverage(postPlaces, postEnrichCache);
 
   console.log('\n============================================================');
-  console.log('📊 POTENTIAL CANONICAL COVERAGE IF PROMOTED:');
-  console.log(`   - Address: ${potentialAddressCount} / 52 (${((potentialAddressCount / 52) * 100).toFixed(1)}%)`);
-  console.log(`   - Phone: ${potentialPhoneCount} / 52 (${((potentialPhoneCount / 52) * 100).toFixed(1)}%)`);
-  console.log(`   - Opening Hours: ${potentialHoursCount} / 52 (${((potentialHoursCount / 52) * 100).toFixed(1)}%)`);
-  console.log(`   - Official Social: ${potentialSocialCount} / 52 (${((potentialSocialCount / 52) * 100).toFixed(1)}%)`);
+  console.log('📊 ACTUAL CANONICAL PRODUCTION COVERAGE:');
+  console.log(`   - Address: ${coverage.current.address} / 52 (${((coverage.current.address / 52) * 100).toFixed(1)}%)`);
+  console.log(`   - Phone: ${coverage.current.phone} / 52 (${((coverage.current.phone / 52) * 100).toFixed(1)}%) -> [${coverage.current.phonePlaceIds.join(', ')}]`);
+  console.log(`   - Opening Hours: ${coverage.current.openingHours} / 52 (${((coverage.current.openingHours / 52) * 100).toFixed(1)}%)`);
+  console.log(`   - Website: ${coverage.current.website} / 52`);
+  console.log(`   - Official Social: ${coverage.current.officialSocial} / 52`);
+  console.log(`   - Menu: ${coverage.current.menu} / 52`);
+  console.log(`   - Effective Real / Community Photo: ${coverage.current.effectiveRealPhoto} / 52 (${((coverage.current.effectiveRealPhoto / 52) * 100).toFixed(1)}%)`);
+  console.log(`   - AI Fallback Photo: ${coverage.current.aiFallbackPhoto} / 52 (${((coverage.current.aiFallbackPhoto / 52) * 100).toFixed(1)}%)`);
+  console.log('============================================================');
+  console.log('💡 POTENTIAL VERIFIED-OFFICIAL CANONICAL COVERAGE:');
+  console.log(`   - Phone: ${coverage.potentialVerified.phone} / 52`);
+  console.log(`   - Opening Hours: ${coverage.potentialVerified.openingHours} / 52`);
+  console.log(`   - Website: ${coverage.potentialVerified.website} / 52`);
+  console.log(`   - Official Social: ${coverage.potentialVerified.officialSocial} / 52`);
+  console.log('💡 SAME-PLACE SUPPORTING EVIDENCE (NOT YET PROMOTED):');
+  console.log(`   - Phone Evidence: ${coverage.samePlaceSupporting.phone}`);
+  console.log(`   - Hours Evidence: ${coverage.samePlaceSupporting.openingHours}`);
+  console.log(`   - Social Reference: ${coverage.samePlaceSupporting.socialReference}`);
   console.log('============================================================\n');
 
   console.log('🎉 JIA-BEN TAIWAN 6.0E TRUSTED FIELD ENRICHMENT COMPLETED SUCCESSFULLY!\n');

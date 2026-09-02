@@ -155,17 +155,20 @@ function classifySourceType(url) {
 }
 
 /**
- * Evaluates Source Identity Gate (Requires confidence >= 0.93 to attach fields)
+ * Evaluates Source Identity and Source Ownership separately
  */
-function evaluateSourceIdentity(jiaPlace, sourceMetadata = {}) {
+function evaluateSourceIdentityAndOwnership(jiaPlace, sourceMetadata = {}) {
   let confidence = 0.0;
   const signals = [];
 
-  const sourceType = classifySourceType(sourceMetadata.url);
+  const rawUrl = sourceMetadata.url || '';
+  const sourceType = classifySourceType(rawUrl);
+
   if (sourceType.startsWith('UNTRUSTED_')) {
     return {
       confidence: 0.0,
-      status: 'rejected_untrusted_source',
+      sourceIdentityStatus: 'rejected',
+      sourceOwnershipStatus: 'rejected',
       sourceType,
       signals: [`Rejected source type: ${sourceType}`]
     };
@@ -196,7 +199,7 @@ function evaluateSourceIdentity(jiaPlace, sourceMetadata = {}) {
 
   // 3. Exact Doorplate Match
   const doorplate = TaiwanAddressNormalizer.standardizeChars(jiaPlace.address || '').match(/\d+號/);
-  if (doorplate && pageText.includes(doorplate[0])) {
+  if (doorplate && (pageTitle.includes(doorplate[0]) || pageText.includes(doorplate[0]))) {
     confidence += 0.25;
     signals.push(`Source Contains Exact Doorplate: ${doorplate[0]}`);
   }
@@ -212,45 +215,83 @@ function evaluateSourceIdentity(jiaPlace, sourceMetadata = {}) {
 
   confidence = Math.min(1.0, Math.round(confidence * 1000) / 1000);
 
-  let status = 'SOURCE_IDENTITY_UNCERTAIN';
+  // Identity Status
+  let sourceIdentityStatus = 'uncertain';
   if (confidence >= 0.93) {
-    status = 'VERIFIED_OFFICIAL_SOURCE';
+    sourceIdentityStatus = 'verified_same_physical_place';
   } else if (confidence >= 0.70) {
-    status = 'SUPPORTING_SOURCE';
+    sourceIdentityStatus = 'probable_same_physical_place';
+  }
+
+  // Ownership Status (Strict Separation)
+  let sourceOwnershipStatus = 'official_status_uncertain';
+  if (rawUrl.includes('facebook.com/pages/') || rawUrl.includes('facebook.com/place/')) {
+    // Platform auto-generated or community place page -> NOT verified restaurant owned
+    sourceOwnershipStatus = 'platform_place_page';
+  } else if (sourceMetadata.isVerifiedOwned || (sourceType === 'OFFICIAL_RESTAURANT_WEBSITE' && confidence >= 0.93)) {
+    sourceOwnershipStatus = 'verified_restaurant_owned';
+  } else if (sourceType === 'OFFICIAL_SOCIAL_FACEBOOK' || sourceType === 'OFFICIAL_SOCIAL_INSTAGRAM') {
+    sourceOwnershipStatus = 'official_status_uncertain';
   }
 
   return {
     confidence,
-    status,
+    sourceIdentityStatus,
+    sourceOwnershipStatus,
     sourceType,
     signals
   };
 }
 
+// Backward-compatible alias
+function evaluateSourceIdentity(jiaPlace, sourceMetadata = {}) {
+  const res = evaluateSourceIdentityAndOwnership(jiaPlace, sourceMetadata);
+  let status = 'SUPPORTING_SOURCE';
+  if (res.sourceIdentityStatus === 'rejected') {
+    status = 'rejected_untrusted_source';
+  } else if (res.sourceIdentityStatus === 'verified_same_physical_place') {
+    status = 'VERIFIED_OFFICIAL_SOURCE';
+  }
+  return {
+    confidence: res.confidence,
+    status,
+    sourceIdentityStatus: res.sourceIdentityStatus,
+    sourceOwnershipStatus: res.sourceOwnershipStatus,
+    sourceType: res.sourceType,
+    signals: res.signals
+  };
+}
+
 /**
- * Creates structured placeEnrichmentCache document
+ * Creates structured placeEnrichmentCache document with identity / ownership separation
  */
-function createEnrichmentCacheDocument(jiaPlaceId, sourceMeta, verifiedFields, sourceIdentity) {
+function createEnrichmentCacheDocument(jiaPlaceId, sourceMeta, verifiedFields, sourceEval) {
   const sourceHash = crypto.createHash('sha256').update(sourceMeta.url || '').digest('hex').slice(0, 12);
   const docId = `enrich_${jiaPlaceId}_${sourceHash}`;
+
+  const isVerifiedOwned = (sourceEval.sourceOwnershipStatus === 'verified_restaurant_owned');
+  const fieldStatus = isVerifiedOwned ? 'verified_official' : 'verified_same_place_source';
 
   const doc = {
     enrichmentId: docId,
     jiaPlaceId,
     source: {
-      type: sourceIdentity.sourceType,
+      type: sourceEval.sourceType,
       url: sourceMeta.url,
       title: sourceMeta.title || '',
       retrievedAt: new Date().toISOString(),
       sourceHash
     },
     sourceIdentity: {
-      confidence: sourceIdentity.confidence,
-      signals: sourceIdentity.signals,
-      status: sourceIdentity.status
+      confidence: sourceEval.confidence,
+      signals: sourceEval.signals,
+      status: sourceEval.sourceIdentityStatus || (sourceEval.confidence >= 0.93 ? 'verified_same_physical_place' : 'uncertain')
+    },
+    sourceOwnership: {
+      status: sourceEval.sourceOwnershipStatus || 'official_status_uncertain'
     },
     fields: {},
-    verificationStatus: (sourceIdentity.confidence >= 0.93) ? 'verified_enrichment' : 'needs_review',
+    verificationStatus: (sourceEval.confidence >= 0.93) ? 'verified_enrichment' : 'needs_review',
     verifiedAt: new Date().toISOString()
   };
 
@@ -260,8 +301,8 @@ function createEnrichmentCacheDocument(jiaPlaceId, sourceMeta, verifiedFields, s
     doc.fields.phone = {
       raw: verifiedFields.phone,
       normalized: norm.canonical || verifiedFields.phone,
-      confidence: 1.0,
-      status: 'verified_official'
+      confidence: sourceEval.confidence,
+      status: fieldStatus
     };
   }
 
@@ -270,8 +311,8 @@ function createEnrichmentCacheDocument(jiaPlaceId, sourceMeta, verifiedFields, s
     doc.fields.openingHours = {
       raw: verifiedFields.openingHours,
       structured: parsedHours?.structured || null,
-      confidence: 0.98,
-      status: 'verified_official',
+      confidence: sourceEval.confidence,
+      status: fieldStatus,
       freshnessDays: 30
     };
   }
@@ -279,19 +320,27 @@ function createEnrichmentCacheDocument(jiaPlaceId, sourceMeta, verifiedFields, s
   if (verifiedFields.website) {
     doc.fields.website = {
       value: verifiedFields.website,
-      confidence: 1.0,
-      status: 'verified_official'
+      confidence: sourceEval.confidence,
+      status: isVerifiedOwned ? 'verified_official' : 'supporting'
     };
   }
 
   if (verifiedFields.social) {
-    doc.fields.social = verifiedFields.social;
+    if (isVerifiedOwned) {
+      doc.fields.social = verifiedFields.social;
+    } else {
+      doc.fields.socialReference = {
+        ...verifiedFields.social,
+        ownershipStatus: sourceEval.sourceOwnershipStatus || 'official_status_uncertain'
+      };
+    }
   }
 
   if (verifiedFields.menuUrl) {
     doc.fields.menu = {
       url: verifiedFields.menuUrl,
       type: verifiedFields.menuType || 'official_webpage',
+      status: fieldStatus,
       retrievedAt: new Date().toISOString()
     };
   }
@@ -313,6 +362,8 @@ module.exports = {
   saveEnrichmentCaches,
   parseStructuredOpeningHours,
   classifySourceType,
+  evaluateSourceIdentityAndOwnership,
   evaluateSourceIdentity,
   createEnrichmentCacheDocument
 };
+
