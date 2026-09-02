@@ -67,15 +67,51 @@
     }
 
     /**
-     * 台灣地址驗證 (至少含縣市+路/街/巷/夜市/攤位描述，禁止單一縣市名)
+     * 台灣地址驗證與正規化 (至少含縣市+路/街/巷/夜市/攤位描述，禁止單一縣市名，自動清理重複縣市與國外/OSM/Foursquare 格式)
      */
     function validateAddress(addressStr) {
         if (!addressStr || typeof addressStr !== 'string') {
             return { valid: false, message: '地址不能為空' };
         }
-        const trimmed = addressStr.trim();
+        let trimmed = addressStr.trim();
+        
+        // 清理常見的 Provider 重複格式與逗號 (如: "屏東市福建路124號, 屏東縣, 屏東縣, 900")
+        if (trimmed.includes(',')) {
+            const parts = trimmed.split(',').map(s => {
+                let segment = s.trim();
+                // 只移除單獨存在的 3~5 碼純郵遞區號段落 (例如 "900" 或 "81360")
+                if (/^\d{3,5}$/.test(segment)) return '';
+                // 移除結尾的郵遞區號 (如 "屏東縣 900" -> "屏東縣")
+                segment = segment.replace(/\s+\d{3,5}$/, '').trim();
+                return segment;
+            }).filter(Boolean);
+            
+            // 去除重複的縣市名
+            const seen = new Set();
+            const uniqueParts = [];
+            for (const p of parts) {
+                if (!seen.has(p)) {
+                    seen.add(p);
+                    uniqueParts.push(p);
+                }
+            }
+            
+            // 尋找縣市 (例如 屏東縣, 台北市)
+            const counties = ['基隆市','台北市','新北市','桃園市','新竹市','新竹縣','苗栗縣','台中市','彰化縣','南投縣','雲林縣','嘉義市','嘉義縣','台南市','高雄市','屏東縣','宜蘭縣','花蓮縣','台東縣','澎湖縣','金門縣','連江縣'];
+            const county = uniqueParts.find(p => counties.includes(p)) || '';
+            const otherParts = uniqueParts.filter(p => p !== county);
+            
+            if (county && otherParts.length > 0) {
+                // 如果主要段落尚未開頭帶有縣市，加上縣市
+                const mainStreet = otherParts.join('');
+                trimmed = mainStreet.startsWith(county) ? mainStreet : `${county}${mainStreet}`;
+            } else {
+                trimmed = uniqueParts.join('');
+            }
+        }
+
         if (trimmed.length < 5) {
-            return { valid: false, message: '地址過短，請填寫完整門牌或清楚位置描述 (例如: 屏東市民族路夜市第32號攤)' };
+            return { valid: false, message: '地址過短，請填寫完整門牌或清楚位置描述 (例如: 屏東市福建路124號)' };
         }
         // 不能只包含單一縣市名
         const cityOnly = /^(台灣|台北市|新北市|桃園市|台中市|台南市|高雄市|基隆市|新竹市|新竹縣|苗栗縣|彰化縣|南投縣|雲林縣|嘉義市|嘉義縣|屏東縣|宜蘭縣|花蓮縣|台東縣|澎湖縣|金門縣|連江縣)$/;
@@ -238,7 +274,7 @@
     /**
      * 建立貢獻紀錄物件
      */
-    function createContributionRecord({ jiaPlaceId, uid, userName, field, value, note = '' }) {
+    function createContributionRecord({ jiaPlaceId, uid, userName, field, value, note = '', autoAssist = false, autoSources = [] }) {
         if (!jiaPlaceId || !uid || !field) {
             throw new Error('缺少必填貢獻參數 (jiaPlaceId, uid, field)');
         }
@@ -247,8 +283,10 @@
             jiaPlaceId,
             uid,
             userName: sanitizeText(userName || '熱心吃貨'),
-            field, // 'address' | 'phone' | 'openingHours' | 'category' | 'photo'
+            field, // 'address' | 'phone' | 'openingHours' | 'category' | 'photo' | 'averageSpend'
             value,
+            autoAssist: Boolean(autoAssist),
+            autoSources: Array.isArray(autoSources) ? autoSources : [],
             note: sanitizeText(note),
             status: 'pending', // 'pending' | 'accepted' | 'rejected'
             confidence: 1.0,

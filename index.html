@@ -9045,14 +9045,26 @@
                     catSelect.value = place.categories[0];
                 }
 
+                // 檢查是否已有該使用者對該店家的待審核資料
+                const myPending = (window.placeContributions || []).filter(c => 
+                    (c.jiaPlaceId === place.jiaPlaceId || c.placeName === place.name) && 
+                    (c.uid === (currentUser?.uid || window.myIdentity?.name)) && 
+                    c.status === 'pending'
+                );
+
                 // 重設自動帶入標籤與提示
                 ['badge-auto-address', 'badge-auto-phone', 'badge-auto-category', 'badge-auto-hours'].forEach(id => {
                     document.getElementById(id)?.classList.add('hidden');
                 });
                 const statusMsg = document.getElementById('auto-assist-status-msg');
                 if (statusMsg) {
-                    statusMsg.className = "text-[11px] text-gray-500 leading-normal pl-8";
-                    statusMsg.textContent = "點擊後系統將從 Jia-ben、OpenStreetMap 與公開資料庫自動比對地址、電話、營業時間與料理分類。";
+                    if (myPending.length > 0) {
+                        statusMsg.className = "text-[11px] text-blue-700 font-bold leading-normal pl-8";
+                        statusMsg.innerHTML = `<i class="fa-solid fa-clock-rotate-left mr-1"></i> 您先前已有 ${myPending.length} 項補充資訊正在審核中，可直接修改並再次送出。`;
+                    } else {
+                        statusMsg.className = "text-[11px] text-gray-500 leading-normal pl-8";
+                        statusMsg.textContent = "點擊後系統將從 Jia-ben、OpenStreetMap 與公開資料庫自動比對地址、電話、營業時間與料理分類。";
+                    }
                 }
 
                 document.getElementById('place-contribute-modal')?.classList.remove('hidden');
@@ -9085,6 +9097,8 @@
                 let filledCount = 0;
                 if (result && result.status === 'success' && result.autofill) {
                     const af = result.autofill;
+                    window._lastAutoAssistProvenance = result.provenance || {};
+                    window._lastAutoAssistSources = result.sources || [];
                     
                     if (af.address) {
                         const addrEl = document.getElementById('contrib-address');
@@ -9168,36 +9182,45 @@
                 const jiaPlaceId = place.jiaPlaceId || `jia_${Math.random().toString(36).slice(2, 10)}`;
                 const userName = window.myIdentity?.name || '熱心吃貨';
                 const uid = currentUser?.uid || userName;
+                const autoSources = window._lastAutoAssistSources || [];
 
                 // 1. 消費驗證
                 if (spendVal) {
                     const check = window.JiaCommunity?.validateSpend ? window.JiaCommunity.validateSpend(spendVal) : { valid: true, value: Number(spendVal) };
                     if (!check.valid) throw new Error(check.message);
-                    contributions.push({ field: 'averageSpend', value: check.value });
+                    contributions.push({ field: 'averageSpend', value: check.value, autoAssist: false, autoSources: [] });
                 }
 
                 // 2. 地址驗證
                 if (addressVal && addressVal !== place.address) {
                     const check = window.JiaCommunity?.validateAddress ? window.JiaCommunity.validateAddress(addressVal) : { valid: true, normalized: addressVal };
                     if (!check.valid) throw new Error(check.message);
-                    contributions.push({ field: 'address', value: check.normalized });
+                    const isAuto = Boolean(document.getElementById('badge-auto-address') && !document.getElementById('badge-auto-address').classList.contains('hidden'));
+                    contributions.push({ field: 'address', value: check.normalized, autoAssist: isAuto, autoSources: isAuto ? autoSources : [] });
                 }
 
                 // 3. 電話驗證
                 if (phoneVal && phoneVal !== place.phone) {
                     const check = window.JiaCommunity?.validateAndNormalizePhone ? window.JiaCommunity.validateAndNormalizePhone(phoneVal) : { valid: true, normalized: phoneVal };
                     if (!check.valid) throw new Error(check.message);
-                    contributions.push({ field: 'phone', value: check.normalized });
+                    const isAuto = Boolean(document.getElementById('badge-auto-phone') && !document.getElementById('badge-auto-phone').classList.contains('hidden'));
+                    contributions.push({ field: 'phone', value: check.normalized, autoAssist: isAuto, autoSources: isAuto ? autoSources : [] });
                 }
 
                 // 4. 分類
                 if (categoryVal && (!place.categories || !place.categories.includes(categoryVal))) {
-                    contributions.push({ field: 'category', value: [categoryVal] });
+                    const isAuto = Boolean(document.getElementById('badge-auto-category') && !document.getElementById('badge-auto-category').classList.contains('hidden'));
+                    contributions.push({ field: 'category', value: [categoryVal], autoAssist: isAuto, autoSources: isAuto ? autoSources : [] });
                 }
 
                 // 5. 營業時間
                 if (hoursVal && hoursVal !== place.openingHours) {
-                    contributions.push({ field: 'openingHours', value: hoursVal });
+                    const isAuto = Boolean(document.getElementById('badge-auto-hours') && !document.getElementById('badge-auto-hours').classList.contains('hidden'));
+                    contributions.push({ field: 'openingHours', value: hoursVal, autoAssist: isAuto, autoSources: isAuto ? autoSources : [] });
+                }
+
+                if (contributions.length === 0) {
+                    return window.showCustomMsg("您填寫的資料與既有店家資訊相同，無需重複補充！");
                 }
 
                 for (const c of contributions) {
@@ -9208,7 +9231,9 @@
                             userName,
                             field: c.field,
                             value: c.value,
-                            note: `補充 ${place.name} 的 ${c.field}`
+                            note: `補充 ${place.name} 的 ${c.field}`,
+                            autoAssist: c.autoAssist,
+                            autoSources: c.autoSources
                         }) : {
                             contributionId: `contrib_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
                             jiaPlaceId,
@@ -9217,23 +9242,26 @@
                             userName,
                             field: c.field,
                             value: c.value,
+                            autoAssist: c.autoAssist || false,
+                            autoSources: c.autoSources || [],
                             status: 'pending',
                             createdAt: new Date().toISOString()
                         };
                     record.placeName = place.name;
 
                     if (db && currentUser) {
-                        await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'placeContributions'), {
+                        const docRef = await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'placeContributions'), {
                             ...record,
                             timestamp: serverTimestamp()
                         });
-                    } else {
-                        window.placeContributions.unshift(record);
+                        record.id = docRef.id;
                     }
+                    window.placeContributions = window.placeContributions || [];
+                    window.placeContributions.unshift(record);
                 }
 
                 window.closeModal('place-contribute-modal');
-                window.showCustomMsg(`🎉 感謝您為「${place.name}」貢獻資訊！\n\n已成功提交 ${contributions.length} 項資料至審核中心，主揪審核後將正式更新至全站！`);
+                window.showCustomMsg(`🎉 店家資訊已成功送出！\n\n已提交 ${contributions.length} 項資料，待管理員審核通過後將正式更新店家卡片。`);
                 if (typeof window.renderAdminDataList === 'function') window.renderAdminDataList();
             } catch (err) {
                 console.error("提交貢獻失敗:", err);
@@ -9264,7 +9292,14 @@
                             }
                         }
                         contrib.status = 'accepted';
-                        window.showCustomMsg(`✅ 已成功採用「${contrib.placeName}」的 ${contrib.field} 資訊，並更新至正式店家庫！`);
+                        
+                        // 🌟 即時重新渲染當前開啟中的店家詳細資訊 Modal (若開啟中)
+                        if (window.currentDetailPlace && (window.currentDetailPlace.jiaPlaceId === jiaPlace.jiaPlaceId || window.currentDetailPlace.name === jiaPlace.name)) {
+                            window.currentDetailPlace = jiaPlace;
+                            window.loadPlaceDetails({ name: jiaPlace.name, jiaPlace: jiaPlace });
+                        }
+
+                        window.showCustomMsg(`✅ 已成功採用「${contrib.placeName}」的 ${contrib.field} 資訊，正式店家庫與店家卡片已同步更新！`);
                     } else {
                         contrib.status = 'rejected';
                         if (db && currentUser && contrib.id) {

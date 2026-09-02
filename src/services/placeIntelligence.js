@@ -330,7 +330,8 @@
                                 }
                             }
                             if (!result.autofill.address && fsResult.address) {
-                                result.autofill.address = fsResult.address;
+                                const addrCheck = root?.JiaCommunity?.validateAddress ? root.JiaCommunity.validateAddress(fsResult.address) : { valid: true, normalized: fsResult.address };
+                                result.autofill.address = addrCheck.valid ? addrCheck.normalized : fsResult.address;
                                 result.provenance.address = 'Foursquare';
                             }
                         }

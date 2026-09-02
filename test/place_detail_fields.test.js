@@ -100,7 +100,14 @@ global.imageSafety = imageSafety;
   assert.deepStrictEqual(normLegacy.categories, ['麵食水餃'], 'Mapped singular legacy category');
   console.log('✅ Test 3 Passed: Legacy schema backward compatibility and mapping.');
 
-  // Test 4: Full Contribution -> Admin Review -> Partial PATCH Data Chain
+  // Test 4: Address Normalization for Foreign/Duplicate segments (e.g. Foursquare Pingtung)
+  const rawAddr = '屏東市福建路124號, 屏東縣, 屏東縣, 900';
+  const normAddrCheck = CommunityData.validateAddress(rawAddr);
+  assert(normAddrCheck.valid, 'Address is valid');
+  assert.strictEqual(normAddrCheck.normalized, '屏東縣屏東市福建路124號');
+  console.log('✅ Test 4 Passed: Provider address normalization removes duplicates and postal codes.');
+
+  // Test 5: Full Contribution -> Admin Review -> Partial PATCH Data Chain with autoAssist
   const baseCanonical = {
     jiaPlaceId: 'jia_contrib_test',
     name: '測試餐廳',
@@ -108,42 +115,58 @@ global.imageSafety = imageSafety;
     communityStats: { averageSpend: 0, spendCount: 0 }
   };
 
-  // User submits 5 fields
+  // User submits 5 fields (including autoAssist flags)
   const cSpend = CommunityData.createContributionRecord({
     jiaPlaceId: 'jia_contrib_test',
     uid: 'u1',
     userName: 'Tester',
     field: 'averageSpend',
-    value: 250
+    value: 250,
+    autoAssist: false,
+    autoSources: []
   });
   const cAddr = CommunityData.createContributionRecord({
     jiaPlaceId: 'jia_contrib_test',
     uid: 'u1',
     userName: 'Tester',
     field: 'address',
-    value: '高雄市左營區測試路123號'
+    value: '高雄市左營區測試路123號',
+    autoAssist: true,
+    autoSources: ['Foursquare']
   });
   const cPhone = CommunityData.createContributionRecord({
     jiaPlaceId: 'jia_contrib_test',
     uid: 'u1',
     userName: 'Tester',
     field: 'phone',
-    value: '07-123-4567'
+    value: '07-123-4567',
+    autoAssist: true,
+    autoSources: ['Foursquare']
   });
   const cCat = CommunityData.createContributionRecord({
     jiaPlaceId: 'jia_contrib_test',
     uid: 'u1',
     userName: 'Tester',
     field: 'category',
-    value: '咖啡廳'
+    value: '咖啡廳',
+    autoAssist: true,
+    autoSources: ['Foursquare']
   });
   const cHours = CommunityData.createContributionRecord({
     jiaPlaceId: 'jia_contrib_test',
     uid: 'u1',
     userName: 'Tester',
     field: 'openingHours',
-    value: '週一～週五 11:00–20:00'
+    value: '週一～週五 11:00–20:00',
+    autoAssist: false,
+    autoSources: []
   });
+
+  // Check Schema Equality between Manual and Auto Assist records
+  assert.strictEqual(typeof cSpend.autoAssist, 'boolean');
+  assert.strictEqual(typeof cAddr.autoAssist, 'boolean');
+  assert(Array.isArray(cAddr.autoSources));
+  assert.deepStrictEqual(Object.keys(cSpend).sort(), Object.keys(cAddr).sort(), 'Manual and Auto payloads share identical schema');
 
   // Admin approves all 5
   let patched = { ...baseCanonical };
@@ -168,13 +191,13 @@ global.imageSafety = imageSafety;
   assert.strictEqual(patchedNorm.phone, '07-123-4567');
   assert.strictEqual(patchedNorm.openingHours, '週一～週五 11:00–20:00');
   assert.deepStrictEqual(patchedNorm.categories, ['咖啡廳']);
-  console.log('✅ Test 4 Passed: Contribution -> Admin Partial PATCH -> Detail Normalization data chain.');
+  console.log('✅ Test 5 Passed: Contribution -> Admin Partial PATCH -> Detail Normalization data chain.');
 
-  // Test 5: RestaurantCard 2.0 View Model rendering with averageSpend & Category
+  // Test 6: RestaurantCard 2.0 View Model rendering with averageSpend & Category
   const cardHtml = RestaurantCard.render(patched);
   assert(cardHtml.includes('約 NT$250 / 人'), 'Card renders average spend correctly');
   assert(cardHtml.includes('咖啡廳'), 'Card renders primary category correctly');
-  console.log('✅ Test 5 Passed: RestaurantCard correctly displays averageSpend & category.');
+  console.log('✅ Test 6 Passed: RestaurantCard correctly displays averageSpend & category.');
 
   console.log('🎉 All Place Detail Fields & Normalization Tests passed successfully!');
 })();
