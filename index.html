@@ -594,15 +594,32 @@
     <div id="password-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60 modal-backdrop fade-in">
         <div class="bg-white rounded-3xl p-7 w-11/12 max-w-sm shadow-2xl relative">
             <button onclick="window.closeModal('password-modal')" class="absolute top-4 right-5 text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark text-xl"></i></button>
-            <div class="text-center mb-6">
+            <div class="text-center mb-5">
                 <div class="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-3 text-orange-500 text-2xl shadow-inner"><i class="fa-solid fa-shield-halved"></i></div>
-                <h2 class="text-xl font-bold text-gray-800 tracking-wider">主揪專屬後台</h2>
-                <p class="text-gray-500 text-xs mt-1.5 leading-relaxed">此區域僅供主揪進入管理，請輸入後台密碼</p>
+                <h2 class="text-xl font-bold text-gray-800 tracking-wider">主揪管理員登入</h2>
+                <p class="text-gray-500 text-xs mt-1.5 leading-relaxed">請登入已綁定之永久主揪帳號，以取得伺服端認證權限</p>
             </div>
-            <div class="space-y-4">
-                <input type="password" id="admin-password" onkeypress="if(event.key === 'Enter') window.verifyPassword()" placeholder="請輸入後台密碼" class="w-full px-4 py-3.5 border-2 border-gray-100 rounded-2xl text-center text-base tracking-widest focus:border-orange-400 focus:outline-none transition font-bold">
-                <button onclick="window.verifyPassword()" class="w-full bg-orange-500 text-white font-bold py-3.5 rounded-2xl shadow-md hover:bg-orange-600 active:scale-95 transition tracking-wider">進入控制台</button>
-                <p id="password-error" class="text-red-500 text-xs text-center hidden font-bold"><i class="fa-solid fa-triangle-exclamation mr-1"></i>後台密碼不正確喔！</p>
+            <div class="space-y-3">
+                <div id="admin-auth-status-badge" class="hidden p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-center text-xs font-bold text-amber-800">
+                    <i class="fa-solid fa-circle-check text-emerald-500 mr-1"></i>已登入為認證管理員
+                </div>
+                <div>
+                    <label class="block text-[11px] font-bold text-gray-600 mb-1">主揪管理員帳號 (Email)</label>
+                    <input type="email" id="admin-email-input" value="b7516555@gmail.com" class="w-full px-3.5 py-2.5 border-2 border-gray-100 rounded-xl text-sm focus:border-orange-400 focus:outline-none font-bold" placeholder="請輸入主揪帳號">
+                </div>
+                <div>
+                    <label class="block text-[11px] font-bold text-gray-600 mb-1">主揪管理員密碼</label>
+                    <input type="password" id="admin-password" onkeypress="if(event.key === 'Enter') window.loginPersistentAdmin()" placeholder="請輸入管理員密碼" class="w-full px-3.5 py-2.5 border-2 border-gray-100 rounded-xl text-sm focus:border-orange-400 focus:outline-none transition font-bold">
+                </div>
+                <button type="button" id="btn-admin-persistent-login" onclick="window.loginPersistentAdmin()" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-xl shadow-md active:scale-95 transition tracking-wider flex items-center justify-center gap-1.5 text-xs">
+                    <i class="fa-solid fa-lock-open"></i>
+                    <span>登入主揪後台</span>
+                </button>
+                <div class="pt-2 border-t border-gray-100 flex items-center justify-between text-[11px]">
+                    <span class="text-gray-400">訪客體驗模式</span>
+                    <button type="button" onclick="window.verifyPasswordAsGuest()" class="text-orange-600 hover:underline font-bold">以通行碼快速查看</button>
+                </div>
+                <p id="password-error" class="text-red-500 text-xs text-center hidden font-bold"><i class="fa-solid fa-triangle-exclamation mr-1"></i><span id="password-error-text">後台登入失敗，請確認密碼！</span></p>
             </div>
         </div>
     </div>
@@ -2408,7 +2425,10 @@
                         <div class="bg-gray-900 text-white p-6 md:p-8 rounded-3xl shadow-lg flex items-center justify-between relative overflow-hidden">
                             <div class="absolute right-0 top-0 opacity-5 text-7xl transform translate-x-4 -translate-y-4"><i class="fa-solid fa-crown"></i></div>
                             <div class="z-10"><h2 class="text-xl md:text-2xl font-bold text-orange-300">主揪控制台</h2><p class="text-xs md:text-sm text-gray-300 mt-1">目前收錄 <span id="db-count" class="text-white font-bold mx-1">0</span> 間好店</p></div>
-                            <button onclick="window.lockAdmin()" class="z-10 bg-white/10 hover:bg-white/20 p-3 rounded-full transition backdrop-blur-sm"><i class="fa-solid fa-lock w-5 h-5 text-orange-200"></i></button>
+                            <div class="z-10 flex items-center gap-2">
+                                <button onclick="window.logoutPersistentAdmin()" class="bg-red-500/80 hover:bg-red-600 text-white text-xs font-bold px-3 py-1.5 rounded-xl shadow-sm transition flex items-center gap-1"><i class="fa-solid fa-arrow-right-from-bracket"></i><span>登出管理員</span></button>
+                                <button onclick="window.lockAdmin()" class="bg-white/10 hover:bg-white/20 p-2.5 rounded-xl transition backdrop-blur-sm" title="鎖定後台"><i class="fa-solid fa-lock w-4 h-4 text-orange-200"></i></button>
+                            </div>
                         </div>
                         
                         <div class="bg-white p-5 md:p-8 rounded-3xl shadow-sm border border-gray-100">
@@ -2634,7 +2654,7 @@
     <!-- Firebase & 核心邏輯 -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp, doc, setDoc, getDoc, getDocs, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         let deferredPrompt;

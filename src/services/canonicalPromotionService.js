@@ -25,14 +25,15 @@
     const ALLOWED_PROMOTION_FIELDS = ['phone', 'address', 'openingHours', 'categories', 'website', 'officialSocial'];
 
     /**
-     * Checks if current actor has valid admin privileges
+     * Checks if current actor has valid admin privileges backed by Firebase Custom Claim
      */
     function verifyAdminAuthorization(actor = {}) {
         if (!actor) return false;
-        // Host / Admin role check
-        if (actor.isAdmin === true) return true;
-        if (actor.role === 'admin' || actor.group === '主揪') return true;
-        if (actor.name === '黃政誥' || actor.uid === 'admin_verified') return true;
+        // Strictly require verified Firebase admin claim or verified admin UID
+        if (actor.hasAdminClaim === true) return true;
+        if (actor.token && (actor.token.admin === true || actor.token.role === 'admin')) return true;
+        if (actor.claims && (actor.claims.admin === true || actor.claims.role === 'admin')) return true;
+        if (actor.uid === '4LaLMcGSoZW1NtBUBHOizLC6xJx1' && actor.isAdmin === true) return true;
         return false;
     }
 
