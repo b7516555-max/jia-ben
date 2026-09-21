@@ -405,6 +405,9 @@ async function runAllTests() {
 
     for (const f of trackedFiles) {
       if (!fs.existsSync(f)) continue;
+      // The security test contains the literal detector patterns above as test fixtures.
+      // Scan tracked application/configuration files, not the test corpus itself.
+      if (f.startsWith('test/')) continue;
       // Skip binary files
       if (f.endsWith('.png') || f.endsWith('.ico') || f.endsWith('.jpg') || f.endsWith('.webp')) continue;
       const content = fs.readFileSync(f, 'utf8');
