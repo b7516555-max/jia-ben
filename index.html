@@ -595,15 +595,32 @@
     <div id="password-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60 modal-backdrop fade-in">
         <div class="bg-white rounded-3xl p-7 w-11/12 max-w-sm shadow-2xl relative">
             <button onclick="window.closeModal('password-modal')" class="absolute top-4 right-5 text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark text-xl"></i></button>
-            <div class="text-center mb-6">
+            <div class="text-center mb-5">
                 <div class="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-3 text-orange-500 text-2xl shadow-inner"><i class="fa-solid fa-shield-halved"></i></div>
-                <h2 class="text-xl font-bold text-gray-800 tracking-wider">主揪專屬後台</h2>
-                <p class="text-gray-500 text-xs mt-1.5 leading-relaxed">此區域僅供主揪進入管理，請輸入後台密碼</p>
+                <h2 class="text-xl font-bold text-gray-800 tracking-wider">主揪管理員登入</h2>
+                <p class="text-gray-500 text-xs mt-1.5 leading-relaxed">請登入已綁定之永久主揪帳號，以取得伺服端認證權限</p>
             </div>
-            <div class="space-y-4">
-                <input type="password" id="admin-password" onkeypress="if(event.key === 'Enter') window.verifyPassword()" placeholder="請輸入後台密碼" class="w-full px-4 py-3.5 border-2 border-gray-100 rounded-2xl text-center text-base tracking-widest focus:border-orange-400 focus:outline-none transition font-bold">
-                <button onclick="window.verifyPassword()" class="w-full bg-orange-500 text-white font-bold py-3.5 rounded-2xl shadow-md hover:bg-orange-600 active:scale-95 transition tracking-wider">進入控制台</button>
-                <p id="password-error" class="text-red-500 text-xs text-center hidden font-bold"><i class="fa-solid fa-triangle-exclamation mr-1"></i>後台密碼不正確喔！</p>
+            <div class="space-y-3">
+                <div id="admin-auth-status-badge" class="hidden p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-center text-xs font-bold text-amber-800">
+                    <i class="fa-solid fa-circle-check text-emerald-500 mr-1"></i>已登入為認證管理員
+                </div>
+                <div>
+                    <label class="block text-[11px] font-bold text-gray-600 mb-1">主揪管理員帳號 (Email)</label>
+                    <input type="email" id="admin-email-input" class="w-full px-3.5 py-2.5 border-2 border-gray-100 rounded-xl text-sm focus:border-orange-400 focus:outline-none font-bold" placeholder="請輸入主揪帳號 (Email)">
+                </div>
+                <div>
+                    <label class="block text-[11px] font-bold text-gray-600 mb-1">主揪管理員密碼</label>
+                    <input type="password" id="admin-password" onkeypress="if(event.key === 'Enter') window.loginPersistentAdmin()" placeholder="請輸入管理員密碼" class="w-full px-3.5 py-2.5 border-2 border-gray-100 rounded-xl text-sm focus:border-orange-400 focus:outline-none transition font-bold">
+                </div>
+                <button type="button" id="btn-admin-persistent-login" onclick="window.loginPersistentAdmin()" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-xl shadow-md active:scale-95 transition tracking-wider flex items-center justify-center gap-1.5 text-xs">
+                    <i class="fa-solid fa-lock-open"></i>
+                    <span>登入主揪後台</span>
+                </button>
+                <div class="pt-2 border-t border-gray-100 flex items-center justify-between text-[11px]">
+                    <span class="text-gray-400">訪客體驗模式</span>
+                    <button type="button" onclick="window.verifyPasswordAsGuest()" class="text-orange-600 hover:underline font-bold">以通行碼快速查看</button>
+                </div>
+                <p id="password-error" class="text-red-500 text-xs text-center hidden font-bold"><i class="fa-solid fa-triangle-exclamation mr-1"></i><span id="password-error-text">後台登入失敗，請確認帳號與密碼！</span></p>
             </div>
         </div>
     </div>
@@ -2438,7 +2455,10 @@
                         <div class="bg-gray-900 text-white p-6 md:p-8 rounded-3xl shadow-lg flex items-center justify-between relative overflow-hidden">
                             <div class="absolute right-0 top-0 opacity-5 text-7xl transform translate-x-4 -translate-y-4"><i class="fa-solid fa-crown"></i></div>
                             <div class="z-10"><h2 class="text-xl md:text-2xl font-bold text-orange-300">主揪控制台</h2><p class="text-xs md:text-sm text-gray-300 mt-1">目前收錄 <span id="db-count" class="text-white font-bold mx-1">0</span> 間好店</p></div>
-                            <button onclick="window.lockAdmin()" class="z-10 bg-white/10 hover:bg-white/20 p-3 rounded-full transition backdrop-blur-sm"><i class="fa-solid fa-lock w-5 h-5 text-orange-200"></i></button>
+                            <div class="z-10 flex items-center gap-2">
+                                <button onclick="window.logoutPersistentAdmin()" class="bg-red-500/80 hover:bg-red-600 text-white text-xs font-bold px-3 py-1.5 rounded-xl shadow-sm transition flex items-center gap-1"><i class="fa-solid fa-arrow-right-from-bracket"></i><span>登出管理員</span></button>
+                                <button onclick="window.lockAdmin()" class="bg-white/10 hover:bg-white/20 p-2.5 rounded-xl transition backdrop-blur-sm" title="鎖定後台"><i class="fa-solid fa-lock w-4 h-4 text-orange-200"></i></button>
+                            </div>
                         </div>
                         
                         <div class="bg-white p-5 md:p-8 rounded-3xl shadow-sm border border-gray-100">
@@ -2664,7 +2684,7 @@
     <!-- Firebase & 核心邏輯 -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously, signInWithEmailAndPassword, signOut, onAuthStateChanged, getIdTokenResult } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp, doc, setDoc, getDoc, getDocs, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         let deferredPrompt;
@@ -4150,32 +4170,122 @@
             }
         };
 
-        window.attemptAdminAccess = function() {
-            if (isAdminUnlocked) { 
+        window.getCurrentAdminAuthState = async function() {
+            if (!auth || !auth.currentUser) return { isAdmin: false, user: null, claims: {} };
+            if (auth.currentUser.isAnonymous) return { isAdmin: false, user: auth.currentUser, claims: {} };
+            try {
+                const tokenResult = await getIdTokenResult(auth.currentUser, true);
+                const isAdmin = Boolean(tokenResult?.claims?.admin === true || tokenResult?.claims?.role === 'admin');
+                return { isAdmin, claims: tokenResult?.claims || {}, user: auth.currentUser };
+            } catch (e) {
+                console.warn("無法取得 Admin Claims:", e);
+                return { isAdmin: false, user: auth.currentUser, claims: {} };
+            }
+        };
+
+        window.loginPersistentAdmin = async function() {
+            const emailInput = document.getElementById('admin-email-input');
+            const passInput = document.getElementById('admin-password');
+            const errBadge = document.getElementById('password-error');
+            const errText = document.getElementById('password-error-text');
+            const btn = document.getElementById('btn-admin-persistent-login');
+
+            const email = (emailInput?.value || '').trim();
+            const password = (passInput?.value || '').trim();
+
+            if (!email || !password) {
+                if (errText) errText.textContent = '請輸入主揪帳號與密碼！';
+                errBadge?.classList.remove('hidden');
+                return;
+            }
+
+            const originalHtml = btn ? btn.innerHTML : '';
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span> 登入驗證中...</span>';
+            }
+
+            try {
+                const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                currentUser = userCredential.user;
+
+                // 檢查是否具有 Firebase Custom Claim admin / role: admin
+                const authState = await window.getCurrentAdminAuthState();
+                if (!authState.isAdmin) {
+                    if (errText) errText.textContent = '該帳號不具備管理員權限 (Missing Admin Claim)！';
+                    errBadge?.classList.remove('hidden');
+                    return;
+                }
+
+                isAdminUnlocked = true;
+                errBadge?.classList.add('hidden');
+                if (passInput) passInput.value = '';
+                window.closeModal('password-modal');
+                window.showCustomMsg("✅ 成功登入主揪後台 (已取得管理員權限)");
+
+                if (pendingInteraction) openInteractionModal();
+                else if (pendingPartyAction) pendingPartyAction();
+                else window.switchTab('admin');
+            } catch (err) {
+                console.error("管理員登入失敗:", err);
+                if (errText) {
+                    if (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found') {
+                        errText.textContent = '後台登入失敗，帳號或密碼錯誤！';
+                    } else {
+                        errText.textContent = `登入失敗：${err.message || '請確認網路連線'}`;
+                    }
+                }
+                errBadge?.classList.remove('hidden');
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = originalHtml;
+                }
+            }
+        };
+
+        window.logoutPersistentAdmin = async function() {
+            try {
+                isAdminUnlocked = false;
+                pendingInteraction = null;
+                await signOut(auth);
+                await signInAnonymously(auth);
+                window.switchTab(previousTab || 'explore');
+                window.showCustomMsg("👋 已成功登出主揪管理員，已恢復訪客身分。");
+            } catch (err) {
+                console.error("登出失敗:", err);
+                window.showCustomMsg("登出時發生問題，請重新整理網頁。");
+            }
+        };
+
+        window.verifyPasswordAsGuest = function() {
+            const pass = (document.getElementById('admin-password')?.value || '').trim();
+            if (pass === 'Bb19960930' || pass === (window.appConfig?.adminPassword || 'Bb19960930')) {
+                document.getElementById('password-error')?.classList.add('hidden');
+                window.closeModal('password-modal');
+                document.getElementById('admin-password').value = '';
+                isAdminUnlocked = true;
+                window.showCustomMsg("ℹ️ 已進入訪客查看模式 (非 Firebase 認證管理員)");
+                window.switchTab('admin');
+            } else {
+                const errText = document.getElementById('password-error-text');
+                if (errText) errText.textContent = '通行碼錯誤！';
+                document.getElementById('password-error')?.classList.remove('hidden');
+            }
+        };
+
+        window.attemptAdminAccess = async function() {
+            const authState = await window.getCurrentAdminAuthState();
+            if (authState.isAdmin || isAdminUnlocked) { 
                 window.switchTab('admin'); 
             } else { 
                 document.getElementById('password-modal')?.classList.remove('hidden'); 
-                document.getElementById('admin-password')?.focus(); 
+                document.getElementById('admin-email-input')?.focus(); 
             }
         };
         
         window.verifyPassword = function() {
-            if (document.getElementById('admin-password').value === window.getAdminPassword()) { 
-                document.getElementById('password-error').classList.add('hidden'); 
-                window.closeModal('password-modal'); 
-                document.getElementById('admin-password').value = ''; 
-                isAdminUnlocked = true; 
-                
-                if (db && currentUser) {
-                    setDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'settings', 'auth'), { unlocked: true }, { merge: true }).catch(e=>{});
-                }
-
-                if(pendingInteraction) openInteractionModal(); 
-                else if(pendingPartyAction) pendingPartyAction(); 
-                else window.switchTab('admin'); 
-            } else { 
-                document.getElementById('password-error').classList.remove('hidden'); 
-            }
+            window.loginPersistentAdmin();
         };
         
         window.openQuizModal = function() {
@@ -4189,14 +4299,14 @@
                 btn.classList.remove('bg-white', 'text-gray-600', 'border-gray-200');
                 btn.classList.add('bg-emerald-500', 'text-white', 'border-emerald-500');
                 window.closeModal('quiz-modal');
-                window.showCustomMsg('🎉 破關成功！\n\n系統已自動為您輸入邀請碼，即將開啟大門！');
-                document.getElementById('admin-password').value = APP_PASSWORD;
+                window.showCustomMsg('🎉 破關成功！\n\n系統已為您開啟訪客查看大門！');
+                isAdminUnlocked = true;
                 
                 setTimeout(() => {
-                    window.verifyPassword();
                     window.closeModal('custom-alert-modal');
                     btn.classList.remove('bg-emerald-500', 'text-white', 'border-emerald-500');
                     btn.classList.add('bg-white', 'text-gray-600', 'border-gray-200');
+                    window.switchTab('admin');
                 }, 2000);
             } else {
                 const err = document.getElementById('quiz-error');
@@ -6734,31 +6844,32 @@
         // ==========================================
         let pendingAdminAction = null;
 
-        // 通用主揪密碼驗證執行器
-        window.requireAdminAuthForAction = function(actionDesc, callback) {
-            const adminPass = typeof window.getAdminPassword === 'function' ? window.getAdminPassword() : 'Bb19960930';
-            const sub = document.getElementById('admin-action-auth-sub');
-            if (sub) sub.textContent = actionDesc || '執行主揪管理操作請輸入主揪密碼';
-            const passInput = document.getElementById('admin-action-auth-pass');
-            if (passInput) passInput.value = '';
-            document.getElementById('admin-action-auth-error')?.classList.add('hidden');
-            pendingAdminAction = callback;
-            document.getElementById('admin-action-auth-modal').classList.remove('hidden');
-            setTimeout(() => passInput?.focus(), 100);
-        };
-
-        window.verifyAdminActionPassword = function() {
-            const inputPass = (document.getElementById('admin-action-auth-pass')?.value || '').trim();
-            const adminPass = typeof window.getAdminPassword === 'function' ? window.getAdminPassword() : 'Bb19960930';
-            if (inputPass !== adminPass && inputPass !== 'Bb19960930') {
-                document.getElementById('admin-action-auth-error')?.classList.remove('hidden');
+        // 通用主揪權限驗證執行器 (基於 Firebase Custom Claim)
+        window.requireAdminAuthForAction = async function(actionDesc, callback) {
+            const authState = await window.getCurrentAdminAuthState();
+            if (authState.isAdmin) {
+                if (typeof callback === 'function') callback();
                 return;
             }
+            // 若尚未登入 Firebase Admin，開啟管理員登入 Modal
+            window.showCustomMsg(`⚠️ 此操作需要管理員權限：\n${actionDesc || '請先登入主揪管理員帳號'}`);
+            pendingAdminAction = callback;
+            document.getElementById('password-modal')?.classList.remove('hidden');
+            document.getElementById('admin-email-input')?.focus();
+        };
+
+        window.verifyAdminActionPassword = async function() {
+            // 相容性過渡：提示改用 Firebase Admin 登入
             window.closeModal('admin-action-auth-modal');
-            if (typeof pendingAdminAction === 'function') {
-                const action = pendingAdminAction;
-                pendingAdminAction = null;
-                action();
+            const authState = await window.getCurrentAdminAuthState();
+            if (authState.isAdmin) {
+                if (typeof pendingAdminAction === 'function') {
+                    const action = pendingAdminAction;
+                    pendingAdminAction = null;
+                    action();
+                }
+            } else {
+                document.getElementById('password-modal')?.classList.remove('hidden');
             }
         };
 
@@ -10470,11 +10581,14 @@
 
             window.requireAdminAuthForAction(`您正在以主揪身分${isApproved ? '採用' : '退回'}社群貢獻`, async () => {
                 try {
-                    const jiaPlace = (window.jiaPlacesData || []).find(p => p.jiaPlaceId === contrib.jiaPlaceId || p.name === contrib.placeName);
+                    const adminAuth = await window.getCurrentAdminAuthState();
                     const reviewer = {
                         name: window.myIdentity?.name || '黃政誥',
                         role: 'admin',
-                        isAdmin: true
+                        isAdmin: Boolean(adminAuth.isAdmin),
+                        hasAdminClaim: Boolean(adminAuth.isAdmin),
+                        claims: adminAuth.claims || {},
+                        uid: adminAuth.user?.uid
                     };
 
                     if (isApproved && jiaPlace) {
@@ -10547,8 +10661,15 @@
             window.requireAdminAuthForAction('您正在執行店家歷史欄位回滾', async () => {
                 try {
                     const jiaPlace = (window.jiaPlacesData || []).find(p => p.jiaPlaceId === jiaPlaceId);
-                    if (!jiaPlace) throw new Error('找不到指定店家');
-                    const reviewer = { name: window.myIdentity?.name || '黃政誥', role: 'admin', isAdmin: true };
+                    const adminAuth = await window.getCurrentAdminAuthState();
+                    const reviewer = { 
+                        name: window.myIdentity?.name || '黃政誥', 
+                        role: 'admin', 
+                        isAdmin: Boolean(adminAuth.isAdmin),
+                        hasAdminClaim: Boolean(adminAuth.isAdmin),
+                        claims: adminAuth.claims || {},
+                        uid: adminAuth.user?.uid
+                    };
                     
                     const res = window.JiaCanonicalPromotionService.rollbackFieldPromotion({
                         canonicalPlace: jiaPlace,
