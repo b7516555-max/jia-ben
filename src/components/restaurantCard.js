@@ -140,7 +140,7 @@
         // 評分與評價數 (只呈現真實 Jia-ben 社群統計，無資料不偽造)
         let ratingHtml = '';
         if (vm.hasRating) {
-            ratingHtml = `<span class="text-orange-500 font-black text-xs bg-orange-50 px-2 py-0.5 rounded-lg border border-orange-200/80 inline-flex items-center gap-1 shadow-2xs"><i class="fa-solid fa-star text-amber-400 text-[10px]"></i><span>${vm.ratingAvg.toFixed(1)}</span><span class="text-gray-400 text-[10px] font-normal">(${vm.ratingCount} 則)</span></span>`;
+            ratingHtml = `<span class="text-orange-500 font-black text-xs bg-orange-50 px-2 py-0.5 rounded-lg border border-orange-200/80 inline-flex items-center gap-1 shadow-2xs"><i class="fa-solid fa-star text-amber-400 text-[10px]"></i><span class="numeric-value">${vm.ratingAvg.toFixed(1)}</span><span class="text-gray-400 text-[10px] font-normal numeric-value">(${vm.ratingCount} 則)</span></span>`;
         } else {
             ratingHtml = `<span class="text-gray-400 text-[11px] font-medium bg-gray-50 px-2 py-0.5 rounded-lg border border-gray-100">暫無 Jia-ben 評分</span>`;
         }
@@ -153,7 +153,7 @@
         // 平均每人消費 (若有資料才顯示)
         let priceHtml = '';
         if (vm.avgSpend > 0) {
-            priceHtml = `<span class="text-emerald-700 font-bold text-[11px] bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200/80 inline-flex items-center gap-1"><i class="fa-solid fa-coins text-emerald-500 text-[10px]"></i><span>約 NT$${vm.avgSpend} / 人</span></span>`;
+            priceHtml = `<span class="text-emerald-700 font-bold text-[11px] bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200/80 inline-flex items-center gap-1"><i class="fa-solid fa-coins text-emerald-500 text-[10px]"></i><span class="numeric-value">約 NT$${vm.avgSpend} / 人</span></span>`;
         }
 
         // 地址摘要 (單行 ellipsis)
@@ -190,7 +190,7 @@
                     </div>
                     ${priceHtml ? `<div>${priceHtml}</div>` : ''}
                     ${addressHtml}
-                    ${vm.openingHours ? `<p class="text-[11px] text-emerald-700 font-medium break-words flex items-start gap-1 leading-snug"><i class="fa-solid fa-clock text-emerald-500 text-[10px] shrink-0 mt-0.5"></i><span class="break-anywhere">${escapeHtml(vm.openingHours)}</span></p>` : ''}
+                    ${vm.openingHours ? `<p class="text-[11px] text-emerald-700 font-medium break-words flex items-start gap-1 leading-snug"><i class="fa-solid fa-clock text-emerald-500 text-[10px] shrink-0 mt-0.5"></i><span class="break-anywhere numeric-value">${escapeHtml(vm.openingHours)}</span></p>` : ''}
                     ${recBadgeHtml}
                 </div>
                 <div class="mt-2.5 pt-2 border-t border-gray-50 flex items-center justify-between gap-1.5 flex-wrap">
@@ -241,8 +241,8 @@
                         <span class="bg-amber-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full shrink-0 shadow-2xs">命運推薦</span>
                     </div>
                     ${vm.address ? `<p class="text-xs text-gray-500 line-clamp-1 mb-2 leading-relaxed"><i class="fa-solid fa-location-dot text-orange-400 mr-1"></i>${escapeHtml(vm.address)}</p>` : ''}
-                    <div class="flex items-center gap-2 flex-wrap">
-                        ${vm.hasRating ? `<span class="text-orange-500 font-bold text-xs bg-orange-50 px-2 py-0.5 rounded-lg border border-orange-100 flex items-center gap-1"><i class="fa-solid fa-star text-amber-400 text-[10px]"></i>${vm.ratingAvg.toFixed(1)} (${vm.ratingCount} 則)</span>` : '<span class="text-gray-400 text-xs bg-gray-50 px-2 py-0.5 rounded-lg">暫無 Jia-ben 評分</span>'}
+                        <div class="flex items-center gap-2 flex-wrap">
+                        ${vm.hasRating ? `<span class="text-orange-500 font-bold text-xs bg-orange-50 px-2 py-0.5 rounded-lg border border-orange-100 flex items-center gap-1"><i class="fa-solid fa-star text-amber-400 text-[10px]"></i><span class="numeric-value">${vm.ratingAvg.toFixed(1)} (${vm.ratingCount} 則)</span></span>` : '<span class="text-gray-400 text-xs bg-gray-50 px-2 py-0.5 rounded-lg">暫無 Jia-ben 評分</span>'}
                         ${vm.avgSpend > 0 ? `<span class="text-emerald-700 font-bold text-xs bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200 flex items-center gap-1"><i class="fa-solid fa-coins text-emerald-500 text-[10px]"></i>約 NT$${vm.avgSpend} / 人</span>` : ''}
                     </div>
                 </div>
