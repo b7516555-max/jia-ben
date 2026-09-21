@@ -67,6 +67,12 @@
         
         const categories = Array.isArray(place.categories) && place.categories.length > 0 ? place.categories : (place.category ? [place.category] : []);
         const address = place.address || place.formatted_address || (place.city ? `${place.city} ${place.district || ''}` : '') || '';
+        const rawOpeningHours = place.openingHours || place.hours || '';
+        const openingHours = typeof rawOpeningHours === 'string'
+            ? rawOpeningHours.trim()
+            : (Array.isArray(rawOpeningHours?.weekday_text) && rawOpeningHours.weekday_text.length > 0
+                ? rawOpeningHours.weekday_text[0]
+                : (rawOpeningHours?.text || ''));
         const recommenders = options.recommenders || place.recommenders || [];
 
         // Phase 2A: Resolve primary contribution CTA (Context-aware, single CTA)
@@ -99,6 +105,7 @@
             categories,
             primaryCategory: categories[0] || '',
             address,
+            openingHours,
             recommenders,
             city: place.city || '',
             ctaInfo
@@ -183,6 +190,7 @@
                     </div>
                     ${priceHtml ? `<div>${priceHtml}</div>` : ''}
                     ${addressHtml}
+                    ${vm.openingHours ? `<p class="text-[11px] text-emerald-700 font-medium break-words flex items-start gap-1 leading-snug"><i class="fa-solid fa-clock text-emerald-500 text-[10px] shrink-0 mt-0.5"></i><span class="break-anywhere">${escapeHtml(vm.openingHours)}</span></p>` : ''}
                     ${recBadgeHtml}
                 </div>
                 <div class="mt-2.5 pt-2 border-t border-gray-50 flex items-center justify-between gap-1.5 flex-wrap">
