@@ -46,6 +46,7 @@
     <script src="./src/services/reviewResolver.js?v=60"></script>
     <script src="./src/services/discoveryResolver.js?v=60"></script>
     <script src="./src/services/enrichment.js?v=2"></script>
+    <script src="./src/services/communityContributionUXService.js?v=1"></script>
     <script src="./src/services/communityData.js?v=2"></script>
     <script src="./src/services/canonicalPromotionService.js?v=1"></script>
     <script src="./src/services/personalization.js?v=2"></script>
@@ -1380,6 +1381,25 @@
                     <div id="detail-tags" class="flex flex-wrap gap-1.5"></div>
                 </div>
 
+                <!-- 🌟 Part A2: 店家資訊完整度清單 (自然語言，無技術字眼) -->
+                <div class="bg-gradient-to-r from-orange-50/70 to-amber-50/70 p-3.5 rounded-2xl border border-orange-200/80 shadow-2xs space-y-2.5">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-black text-gray-800 flex items-center gap-1.5">
+                            <i class="fa-solid fa-list-check text-orange-500"></i>店家資訊完整度
+                        </span>
+                        <span id="detail-completeness-score-badge" class="text-[10px] font-black px-2 py-0.5 rounded-full bg-white text-orange-700 border border-orange-200 shadow-2xs">檢查中...</span>
+                    </div>
+                    <div id="detail-completeness-checklist" class="grid grid-cols-2 gap-1.5 text-xs">
+                        <!-- 動態填入：地址、電話、營業時間、推薦料理等狀態 -->
+                    </div>
+                    <div id="detail-completeness-cta-wrap" class="pt-1 border-t border-orange-200/60 flex items-center justify-between">
+                        <span id="detail-completeness-hint" class="text-[11px] text-gray-600 font-medium">知道缺少的資訊嗎？幫大家補上</span>
+                        <button type="button" id="detail-completeness-primary-btn" onclick="window.openContributeModal()" class="px-2.5 py-1 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-xs font-bold transition flex items-center gap-1 shadow-2xs">
+                            <i class="fa-solid fa-hand-holding-heart text-[10px]"></i><span>幫忙補資料</span>
+                        </button>
+                    </div>
+                </div>
+
                 <div class="bg-white p-3.5 rounded-2xl border border-gray-100 shadow-2xs">
                     <div class="flex items-center justify-between mb-2">
                         <p class="text-xs font-bold text-gray-500"><i class="fa-solid fa-circle-info mr-1"></i>店家基本資訊</p>
@@ -1407,7 +1427,7 @@
         </div>
     </div>
 
-    <!-- 🌟 Part B & E: 社群補充店家資訊 Modal (Community Contribution Modal) -->
+    <!-- 🌟 Part B & E: 社群微補充店家資訊 Modal (Community Micro-Contribution Modal) -->
     <div id="place-contribute-modal" class="hidden fixed inset-0 z-[105] flex items-center justify-center bg-black/60 modal-backdrop fade-in">
         <div class="bg-white rounded-3xl w-11/12 max-w-lg shadow-2xl relative overflow-hidden flex flex-col max-h-[90vh]">
             <div class="p-4 border-b border-gray-100 flex items-center justify-between">
@@ -1416,7 +1436,7 @@
                         <i class="fa-solid fa-hand-holding-heart"></i>
                     </div>
                     <div>
-                        <h3 class="text-sm sm:text-base font-black text-gray-800">補充店家資訊</h3>
+                        <h3 class="text-sm sm:text-base font-black text-gray-800">幫店家補資料</h3>
                         <p id="contribute-place-title" class="text-[11px] text-gray-400 truncate max-w-[240px]"></p>
                     </div>
                 </div>
@@ -1426,148 +1446,158 @@
             </div>
             
             <div class="p-4 md:p-5 overflow-y-auto no-scrollbar space-y-4 flex-1 bg-gray-50">
-                <div class="bg-blue-50 border border-blue-200 p-3 rounded-2xl text-[11px] text-blue-800 flex items-start gap-2">
-                    <i class="fa-solid fa-shield-halved text-blue-600 text-sm mt-0.5 shrink-0"></i>
-                    <div class="flex-1">
-                        <p class="font-bold">社群共建守護機制</p>
-                        <p class="text-blue-700 leading-relaxed mt-0.5">您補充的資料將進入待審核清單，經主揪/管理員審核採用後將正式更新至店家卡片！</p>
+                <!-- 🌟 Step 1: 選擇想補充的欄位 (按鈕切換，選一項就能送，降低負擔) -->
+                <div>
+                    <label class="block text-xs font-black text-gray-700 mb-1.5 flex items-center justify-between">
+                        <span>你想幫大家補充哪一項？</span>
+                        <span class="text-[10px] text-gray-400 font-normal">選一項即可快速送出</span>
+                    </label>
+                    <div class="grid grid-cols-3 gap-1.5" id="contrib-field-tabs">
+                        <button type="button" onclick="window.switchContributeField('openingHours')" id="tab-contrib-openingHours" class="py-2 px-1.5 rounded-xl border text-xs font-bold transition flex flex-col items-center gap-1 shadow-2xs bg-orange-50 border-orange-300 text-orange-700">
+                            <i class="fa-solid fa-clock text-sm"></i><span>營業時間</span>
+                        </button>
+                        <button type="button" onclick="window.switchContributeField('address')" id="tab-contrib-address" class="py-2 px-1.5 rounded-xl border text-xs font-bold transition flex flex-col items-center gap-1 shadow-2xs bg-white border-gray-200 text-gray-700 hover:bg-gray-50">
+                            <i class="fa-solid fa-location-dot text-sm text-rose-500"></i><span>詳細門牌</span>
+                        </button>
+                        <button type="button" onclick="window.switchContributeField('phone')" id="tab-contrib-phone" class="py-2 px-1.5 rounded-xl border text-xs font-bold transition flex flex-col items-center gap-1 shadow-2xs bg-white border-gray-200 text-gray-700 hover:bg-gray-50">
+                            <i class="fa-solid fa-phone text-sm text-blue-500"></i><span>店家電話</span>
+                        </button>
+                        <button type="button" onclick="window.switchContributeField('recommendedDishes')" id="tab-contrib-recommendedDishes" class="py-2 px-1.5 rounded-xl border text-xs font-bold transition flex flex-col items-center gap-1 shadow-2xs bg-white border-gray-200 text-gray-700 hover:bg-gray-50">
+                            <i class="fa-solid fa-utensils text-sm text-amber-500"></i><span>推薦菜色</span>
+                        </button>
+                        <button type="button" onclick="window.switchContributeField('averageSpend')" id="tab-contrib-averageSpend" class="py-2 px-1.5 rounded-xl border text-xs font-bold transition flex flex-col items-center gap-1 shadow-2xs bg-white border-gray-200 text-gray-700 hover:bg-gray-50">
+                            <i class="fa-solid fa-coins text-sm text-emerald-500"></i><span>人均花費</span>
+                        </button>
+                        <button type="button" onclick="window.switchContributeField('category')" id="tab-contrib-category" class="py-2 px-1.5 rounded-xl border text-xs font-bold transition flex flex-col items-center gap-1 shadow-2xs bg-white border-gray-200 text-gray-700 hover:bg-gray-50">
+                            <i class="fa-solid fa-tag text-sm text-purple-500"></i><span>料理分類</span>
+                        </button>
                     </div>
                 </div>
 
-                <!-- 🌟 Auto Place Info Assist 快速自動尋找店家資訊按鈕 -->
-                <div class="bg-gradient-to-r from-orange-50 via-amber-50 to-orange-50 border border-orange-200 p-3 rounded-2xl shadow-2xs space-y-2">
-                    <div class="flex items-center justify-between gap-2">
-                        <div class="flex items-center gap-2">
-                            <span class="w-6 h-6 rounded-lg bg-orange-500 text-white flex items-center justify-center text-xs shadow-2xs"><i class="fa-solid fa-wand-magic-sparkles"></i></span>
-                            <span class="text-xs font-black text-gray-800">店家公開資訊自動搜尋</span>
+                <div id="auto-assist-status-msg" class="text-[11px] text-gray-500 leading-normal bg-white p-2.5 rounded-xl border border-gray-100">
+                    請填寫下方資訊，確認後送出。
+                </div>
+
+                <!-- 🌟 Field Panel 1: 營業時間 (結構化 UI + 大概時間切換) -->
+                <div id="panel-contrib-openingHours" class="contrib-field-panel space-y-3">
+                    <div class="bg-white p-3.5 rounded-2xl border border-gray-200 shadow-2xs space-y-2.5">
+                        <div class="flex items-center justify-between">
+                            <label class="text-xs font-black text-gray-800 flex items-center gap-1.5">
+                                <i class="fa-solid fa-clock text-emerald-600"></i>每週營業時段設定
+                            </label>
+                            <button type="button" onclick="window.applyHoursToAllDays()" class="text-[10px] font-bold text-orange-600 hover:underline">
+                                套用到每一天
+                            </button>
                         </div>
-                        <button type="button" id="btn-auto-place-info" onclick="window.handleAutoPlaceInfoAssist()" class="px-3 py-1.5 bg-orange-500 hover:bg-orange-600 active:scale-95 text-white text-xs font-black rounded-xl shadow-xs transition flex items-center gap-1.5 shrink-0">
-                            <i class="fa-solid fa-magnifying-glass"></i>
-                            <span id="btn-auto-place-info-text">自動尋找店家資訊</span>
-                        </button>
-                    </div>
-                    <p id="auto-assist-status-msg" class="text-[11px] text-gray-500 leading-normal pl-8">
-                        點擊後系統將從 Jia-ben、OpenStreetMap 與公開資料庫自動比對地址、電話、營業時間與料理分類。
-                    </p>
-                </div>
+                        
+                        <div id="structured-hours-editor" class="space-y-1.5 text-xs">
+                            <!-- 動態渲染週一到週日的時段編輯列 -->
+                        </div>
 
-                <!-- 1. 你這次每人大約花多少？ -->
-                <div class="bg-white p-3.5 rounded-2xl border border-gray-200 shadow-2xs space-y-2">
-                    <label class="block text-xs font-bold text-gray-700 flex items-center justify-between">
-                        <span><i class="fa-solid fa-coins text-amber-500 mr-1.5"></i>你這次每人大約花多少？ (NT$)</span>
-                        <span class="text-[10px] text-gray-400 font-normal">選填 · 1~100,000 整數</span>
-                    </label>
-                    <div class="flex items-center bg-gray-50 border border-gray-200 rounded-xl px-3 py-2">
-                        <span class="text-xs text-gray-400 font-bold mr-2">NT$</span>
-                        <input type="number" id="contrib-spend" placeholder="例如：250" min="1" max="100000" class="w-full bg-transparent text-xs sm:text-sm font-bold text-gray-800 focus:outline-none">
+                        <div class="pt-2 border-t border-gray-100">
+                            <details class="cursor-pointer group text-xs text-gray-500">
+                                <summary class="font-bold hover:text-gray-700 transition">我只知道大概時間 / 自由文字備註 ▾</summary>
+                                <div class="mt-2 space-y-1">
+                                    <input type="text" id="contrib-hours-text" placeholder="例如：13:00~完售、週二偶爾休息" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-medium text-gray-800 focus:outline-none focus:border-orange-400">
+                                    <p class="text-[10px] text-gray-400">若填寫自由文字，審核時將作為輔助參考資料。</p>
+                                </div>
+                            </details>
+                        </div>
                     </div>
                 </div>
 
-                <!-- 2. 推薦餐點 -->
-                <div class="bg-white p-3.5 rounded-2xl border border-gray-200 shadow-2xs space-y-2">
-                    <label class="block text-xs font-bold text-gray-700 flex items-center justify-between">
-                        <span><i class="fa-solid fa-thumbs-up text-orange-500 mr-1.5"></i>推薦餐點 (以逗號分隔)</span>
-                        <span class="text-[10px] text-gray-400 font-normal">選填 · 如：餛飩湯、乾麵</span>
-                    </label>
-                    <input type="text" id="contrib-dishes" placeholder="例如：招牌餛飩、鮮蝦水餃、滷肉飯" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm font-medium text-gray-800 focus:outline-none focus:border-orange-400">
-                </div>
-
-                <!-- 3. 店家詳細地址 -->
-                <div class="bg-white p-3.5 rounded-2xl border border-gray-200 shadow-2xs space-y-2">
-                    <label class="block text-xs font-bold text-gray-700 flex items-center justify-between">
-                        <span class="flex items-center gap-1.5">
-                            <i class="fa-solid fa-location-dot text-rose-500"></i>店家地址 / 攤位位置
-                            <span id="badge-auto-address" class="hidden text-[9px] bg-emerald-100 text-emerald-800 font-bold px-1.5 py-0.2 rounded border border-emerald-200 shadow-2xs">✨ 自動找到</span>
-                        </span>
-                        <span class="text-[10px] text-gray-400 font-normal">完整門牌或夜市攤號</span>
-                    </label>
-                    <input type="text" id="contrib-address" placeholder="例如：高雄市鹽埕區新樂街163巷1號" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm font-medium text-gray-800 focus:outline-none focus:border-orange-400">
-                </div>
-
-                <!-- 4. 店家連絡電話 -->
-                <div class="bg-white p-3.5 rounded-2xl border border-gray-200 shadow-2xs space-y-2">
-                    <label class="block text-xs font-bold text-gray-700 flex items-center justify-between">
-                        <span class="flex items-center gap-1.5">
-                            <i class="fa-solid fa-phone text-blue-500"></i>店家連絡電話
-                            <span id="badge-auto-phone" class="hidden text-[9px] bg-emerald-100 text-emerald-800 font-bold px-1.5 py-0.2 rounded border border-emerald-200 shadow-2xs">✨ 自動找到</span>
-                        </span>
-                        <span class="text-[10px] text-gray-400 font-normal">例如：07-521-1398</span>
-                    </label>
-                    <input type="tel" id="contrib-phone" placeholder="例如：07-521-1398 或 0912-345-678" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm font-medium text-gray-800 focus:outline-none focus:border-orange-400">
-                </div>
-
-                <!-- 5. 料理分類 -->
-                <div class="bg-white p-3.5 rounded-2xl border border-gray-200 shadow-2xs space-y-2">
-                    <label class="block text-xs font-bold text-gray-700 flex items-center justify-between">
-                        <span class="flex items-center gap-1.5">
-                            <i class="fa-solid fa-utensils text-orange-500"></i>料理主要分類
-                            <span id="badge-auto-category" class="hidden text-[9px] bg-emerald-100 text-emerald-800 font-bold px-1.5 py-0.2 rounded border border-emerald-200 shadow-2xs">✨ 自動找到</span>
-                        </span>
-                        <span class="text-[10px] text-gray-400 font-normal">從字典選取</span>
-                    </label>
-                    <select id="contrib-category" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm font-bold text-gray-800 focus:outline-none focus:border-orange-400">
-                        <option value="">-- 請選擇分類 --</option>
-                    </select>
-                </div>
-
-                <!-- 6. 營業時間 (支援文字或每週簡易時段) -->
-                <div class="bg-white p-3.5 rounded-2xl border border-gray-200 shadow-2xs space-y-2">
-                    <label class="block text-xs font-bold text-gray-700 flex items-center justify-between">
-                        <span class="flex items-center gap-1.5">
-                            <i class="fa-solid fa-clock text-emerald-600"></i>每週主要營業時段
-                            <span id="badge-auto-hours" class="hidden text-[9px] bg-emerald-100 text-emerald-800 font-bold px-1.5 py-0.2 rounded border border-emerald-200 shadow-2xs">✨ 自動找到</span>
-                        </span>
-                        <span class="text-[10px] text-gray-400 font-normal">例如 11:30~14:00, 17:00~21:00</span>
-                    </label>
-                    <input type="text" id="contrib-hours-text" placeholder="例如：週一至週五 14:00-20:30, 週六日 11:30-20:00 (週二公休)" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm font-medium text-gray-800 focus:outline-none focus:border-orange-400">
-                </div>
-
-                <!-- 7. 官方網站 / 社群 (選填) -->
-                <div class="bg-white p-3.5 rounded-2xl border border-gray-200 shadow-2xs space-y-2">
-                    <label class="block text-xs font-bold text-gray-700 flex items-center justify-between">
-                        <span class="flex items-center gap-1.5">
-                            <i class="fa-solid fa-globe text-indigo-500"></i>官方網站 / 社群連結 (選填)
-                        </span>
-                        <span class="text-[10px] text-gray-400 font-normal">核准前標示為參考連結</span>
-                    </label>
-                    <input type="url" id="contrib-website" placeholder="官方網站：https://..." class="w-full px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-medium text-gray-800 focus:outline-none focus:border-orange-400 mb-1.5">
-                    <input type="url" id="contrib-facebook" placeholder="官方 Facebook：https://facebook.com/..." class="w-full px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-medium text-gray-800 focus:outline-none focus:border-orange-400 mb-1.5">
-                    <input type="url" id="contrib-instagram" placeholder="官方 Instagram：https://instagram.com/..." class="w-full px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-medium text-gray-800 focus:outline-none focus:border-orange-400">
-                </div>
-
-                <!-- 8. 分享店家或餐點真實照片 (選填) -->
-                <div class="bg-white p-3.5 rounded-2xl border border-gray-200 shadow-2xs space-y-2">
-                    <label class="block text-xs font-bold text-gray-700 flex items-center justify-between">
-                        <span class="flex items-center gap-1.5">
-                            <i class="fa-solid fa-camera text-orange-500"></i>分享這間店的真實照片 (選填)
-                        </span>
-                        <span class="text-[10px] text-gray-400 font-normal">通過審核後加入相簿</span>
-                    </label>
-                    <input type="file" id="contrib-photo-file" accept="image/jpeg,image/png,image/webp" class="hidden" onchange="window.handleContribPhotoSelected(this)">
-                    <div class="flex items-center gap-2">
-                        <button type="button" onclick="document.getElementById('contrib-photo-file').click()" class="px-3 py-2 bg-orange-50 hover:bg-orange-100 text-orange-600 border border-orange-200 rounded-xl text-xs font-bold transition flex items-center gap-1">
-                            <i class="fa-solid fa-image"></i> 選擇照片
-                        </button>
-                        <span id="contrib-photo-status" class="text-xs text-gray-400">未選取照片</span>
-                    </div>
-                    <div id="contrib-photo-preview-wrap" class="hidden relative aspect-video rounded-xl overflow-hidden border border-gray-200 max-h-40 bg-gray-100">
-                        <img id="contrib-photo-preview" src="" class="w-full h-full object-cover">
-                        <button type="button" onclick="window.clearContribPhoto()" class="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/60 text-white flex items-center justify-center text-xs">
-                            <i class="fa-solid fa-xmark"></i>
-                        </button>
+                <!-- 🌟 Field Panel 2: 店家詳細地址 -->
+                <div id="panel-contrib-address" class="contrib-field-panel hidden space-y-3">
+                    <div class="bg-white p-3.5 rounded-2xl border border-gray-200 shadow-2xs space-y-2.5">
+                        <label class="block text-xs font-black text-gray-800 flex items-center justify-between">
+                            <span class="flex items-center gap-1.5">
+                                <i class="fa-solid fa-location-dot text-rose-500"></i>店家詳細門牌
+                            </span>
+                            <span id="badge-auto-address" class="hidden text-[9px] bg-emerald-100 text-emerald-800 font-bold px-1.5 py-0.2 rounded border border-emerald-200">✨ 自動帶入</span>
+                        </label>
+                        <p id="contrib-address-prefix-hint" class="text-[11px] text-gray-500"></p>
+                        <input type="text" id="contrib-address" placeholder="例如：新樂街163巷1號 (或完整地址)" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm font-medium text-gray-800 focus:outline-none focus:border-orange-400">
+                        <p class="text-[10px] text-gray-400">請填寫路街巷弄及門牌，方便大家使用地圖導航找到。</p>
                     </div>
                 </div>
+
+                <!-- 🌟 Field Panel 3: 店家連絡電話 -->
+                <div id="panel-contrib-phone" class="contrib-field-panel hidden space-y-3">
+                    <div class="bg-white p-3.5 rounded-2xl border border-gray-200 shadow-2xs space-y-2.5">
+                        <label class="block text-xs font-black text-gray-800 flex items-center justify-between">
+                            <span class="flex items-center gap-1.5">
+                                <i class="fa-solid fa-phone text-blue-500"></i>店家連絡電話
+                            </span>
+                            <span id="badge-auto-phone" class="hidden text-[9px] bg-emerald-100 text-emerald-800 font-bold px-1.5 py-0.2 rounded border border-emerald-200">✨ 自動帶入</span>
+                        </label>
+                        <input type="tel" inputmode="tel" id="contrib-phone" oninput="window.handlePhoneInputPreview(this)" placeholder="例如：07-521-1398 或 0912-345-678" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm font-medium text-gray-800 focus:outline-none focus:border-orange-400">
+                        <div id="contrib-phone-preview" class="text-[11px] text-blue-700 font-bold hidden bg-blue-50/70 p-2 rounded-lg border border-blue-100">
+                            正規化預覽：<span id="contrib-phone-normalized-text"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 🌟 Field Panel 4: 推薦菜色 -->
+                <div id="panel-contrib-recommendedDishes" class="contrib-field-panel hidden space-y-3">
+                    <div class="bg-white p-3.5 rounded-2xl border border-gray-200 shadow-2xs space-y-2.5">
+                        <label class="block text-xs font-black text-gray-800 flex items-center justify-between">
+                            <span><i class="fa-solid fa-utensils text-amber-500 mr-1.5"></i>你推薦這家吃什麼？(1~3道)</span>
+                            <span class="text-[10px] text-gray-400 font-normal">社群口碑，非官方菜單</span>
+                        </label>
+                        <div class="space-y-1.5">
+                            <input type="text" id="contrib-dish-1" placeholder="推薦菜色 1 (例如：餛飩湯)" class="w-full px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-medium text-gray-800 focus:outline-none focus:border-orange-400">
+                            <input type="text" id="contrib-dish-2" placeholder="推薦菜色 2 (選填，如：乾麵)" class="w-full px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-medium text-gray-800 focus:outline-none focus:border-orange-400">
+                            <input type="text" id="contrib-dish-3" placeholder="推薦菜色 3 (選填，如：滷味小菜)" class="w-full px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-medium text-gray-800 focus:outline-none focus:border-orange-400">
+                        </div>
+                        <input type="hidden" id="contrib-dishes">
+                    </div>
+                </div>
+
+                <!-- 🌟 Field Panel 5: 每人消費 -->
+                <div id="panel-contrib-averageSpend" class="contrib-field-panel hidden space-y-3">
+                    <div class="bg-white p-3.5 rounded-2xl border border-gray-200 shadow-2xs space-y-2.5">
+                        <label class="block text-xs font-black text-gray-800 flex items-center justify-between">
+                            <span><i class="fa-solid fa-coins text-emerald-500 mr-1.5"></i>這次大約每人花多少？</span>
+                            <span class="text-[10px] text-gray-400 font-normal">NT$1 ~ 100,000 整數</span>
+                        </label>
+                        <div class="flex items-center bg-gray-50 border border-gray-200 rounded-xl px-3 py-2">
+                            <span class="text-xs text-gray-400 font-bold mr-2">NT$</span>
+                            <input type="number" id="contrib-spend" placeholder="例如：250" min="1" max="100000" class="w-full bg-transparent text-xs sm:text-sm font-bold text-gray-800 focus:outline-none">
+                        </div>
+                        <p class="text-[10px] text-gray-400">填寫個人消費經驗，多人回報後系統將統計人均花費給其他吃貨參考。</p>
+                    </div>
+                </div>
+
+                <!-- 🌟 Field Panel 6: 料理分類 -->
+                <div id="panel-contrib-category" class="contrib-field-panel hidden space-y-3">
+                    <div class="bg-white p-3.5 rounded-2xl border border-gray-200 shadow-2xs space-y-2.5">
+                        <label class="block text-xs font-black text-gray-800 flex items-center justify-between">
+                            <span class="flex items-center gap-1.5">
+                                <i class="fa-solid fa-tag text-purple-500"></i>料理主要分類
+                            </span>
+                            <span id="badge-auto-category" class="hidden text-[9px] bg-emerald-100 text-emerald-800 font-bold px-1.5 py-0.2 rounded border border-emerald-200">✨ 自動帶入</span>
+                        </label>
+                        <select id="contrib-category" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm font-bold text-gray-800 focus:outline-none focus:border-orange-400">
+                            <option value="">-- 請選擇分類 --</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Hidden inputs for existing compatibility -->
+                <input type="hidden" id="contrib-website">
+                <input type="hidden" id="contrib-facebook">
+                <input type="hidden" id="contrib-instagram">
             </div>
 
             <div class="p-3.5 bg-white border-t border-gray-100 flex gap-2">
                 <button type="button" onclick="window.closeModal('place-contribute-modal')" class="flex-1 py-2.5 rounded-xl border border-gray-200 text-xs font-bold text-gray-600 hover:bg-gray-50 transition">
                     取消
                 </button>
-                <button type="button" id="contrib-submit-btn" onclick="window.submitPlaceContribution(false)" class="flex-1 py-2.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-xs font-black text-gray-700 shadow-xs transition flex items-center justify-center gap-1">
+                <button type="button" id="contrib-submit-btn" onclick="window.submitPlaceContribution(false)" class="flex-1 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-xs font-black text-white shadow-xs transition flex items-center justify-center gap-1">
                     <i class="fa-solid fa-paper-plane"></i>
-                    <span>送出待審核</span>
+                    <span>送出回報</span>
                 </button>
-                <button type="button" id="btn-contrib-direct-accept" onclick="window.submitPlaceContribution(true)" class="hidden flex-1 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-xs font-black text-white shadow-xs transition flex items-center justify-center gap-1">
+                <button type="button" id="btn-contrib-direct-accept" onclick="window.submitPlaceContribution(true)" class="hidden flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-xs font-black text-white shadow-xs transition flex items-center justify-center gap-1">
                     <i class="fa-solid fa-bolt"></i>
                     <span>儲存並採用</span>
                 </button>
@@ -8062,7 +8092,11 @@
             const priceText = document.getElementById('detail-price-text');
             if (priceBadge && priceText) {
                 if (pNorm.averageSpend) {
-                    priceText.textContent = `平均每人約 NT$${pNorm.averageSpend}${pNorm.spendCount ? `（${pNorm.spendCount} 筆）` : ''}`;
+                    const spendCount = Number(pNorm.spendCount || 1);
+                    const formattedSpend = window.JiaCommunityContributionUX?.formatAverageSpendDisplay
+                        ? window.JiaCommunityContributionUX.formatAverageSpendDisplay(pNorm.averageSpend, spendCount)
+                        : (spendCount <= 1 ? `1 位吃貨回報，人均約 NT$${pNorm.averageSpend}` : `社群回報人均約 NT$${pNorm.averageSpend}`);
+                    priceText.textContent = formattedSpend;
                     priceBadge.classList.remove('hidden');
                 } else if (rawPlace.priceLevel) {
                     priceText.textContent = `消費價位等級：${rawPlace.priceLevel}`;
@@ -8071,6 +8105,63 @@
                     priceBadge.classList.add('hidden');
                 }
             }
+
+            // 🌟 JIA-BEN 6.0J Phase 2A: 渲染店家資訊完整度清單 (自然語言，無技術字眼)
+            const checklistContainer = document.getElementById('detail-completeness-checklist');
+            const completenessScoreBadge = document.getElementById('detail-completeness-score-badge');
+            const primaryCtaBtn = document.getElementById('detail-completeness-primary-btn');
+            const hintText = document.getElementById('detail-completeness-hint');
+
+            if (checklistContainer) {
+                const isAddrOk = window.JiaCommunityContributionUX?.isAddressComplete ? window.JiaCommunityContributionUX.isAddressComplete(rawPlace) : Boolean(rawPlace.address);
+                const isPhoneOk = window.JiaCommunityContributionUX?.isPhoneComplete ? window.JiaCommunityContributionUX.isPhoneComplete(rawPlace) : Boolean(rawPlace.phone);
+                const isHoursOk = window.JiaCommunityContributionUX?.isHoursComplete ? window.JiaCommunityContributionUX.isHoursComplete(rawPlace) : Boolean(rawPlace.openingHours);
+                const hasDishes = Boolean(rawPlace.recommendedDishes && rawPlace.recommendedDishes.length > 0);
+
+                const items = [
+                    { label: '門牌地址', ok: isAddrOk, icon: 'fa-location-dot', field: 'address' },
+                    { label: '店家電話', ok: isPhoneOk, icon: 'fa-phone', field: 'phone' },
+                    { label: '營業時間', ok: isHoursOk, icon: 'fa-clock', field: 'openingHours' },
+                    { label: '推薦菜色', ok: hasDishes, icon: 'fa-utensils', field: 'recommendedDishes' }
+                ];
+
+                checklistContainer.innerHTML = items.map(it => `
+                    <div class="flex items-center justify-between p-1.5 rounded-lg bg-white/90 border border-orange-100 shadow-2xs">
+                        <span class="flex items-center gap-1.5 text-gray-700 font-bold">
+                            <i class="fa-solid ${it.icon} text-xs ${it.ok ? 'text-emerald-500' : 'text-gray-400'}"></i>
+                            <span>${it.label}</span>
+                        </span>
+                        ${it.ok
+                            ? '<span class="text-[10px] font-black text-emerald-600 flex items-center gap-0.5"><i class="fa-solid fa-check"></i>已完整</span>'
+                            : `<button type="button" onclick="window.openContributeModal(null, '${it.field}')" class="text-[10px] font-black text-orange-600 hover:underline">缺漏，點此補上</button>`
+                        }
+                    </div>
+                `).join('');
+
+                const completeCount = items.filter(it => it.ok).length;
+                if (completenessScoreBadge) {
+                    completenessScoreBadge.textContent = `${completeCount} / ${items.length} 項完整`;
+                }
+
+                if (primaryCtaBtn && window.JiaCommunityContributionUX?.getPrimaryContributionCTA) {
+                    const ctaInfo = window.JiaCommunityContributionUX.getPrimaryContributionCTA(rawPlace, {
+                        currentUserUid: currentUser?.uid || window.myIdentity?.name,
+                        contributions: window.placeContributions || []
+                    });
+                    if (ctaInfo && ctaInfo.label) {
+                        primaryCtaBtn.innerHTML = `${ctaInfo.icon} <span>${ctaInfo.label}</span>`;
+                        primaryCtaBtn.onclick = function() {
+                            window.openContributeModal(rawPlace, ctaInfo.field);
+                        };
+                        if (ctaInfo.state === 'USER_PENDING') {
+                            primaryCtaBtn.className = "px-2.5 py-1 bg-blue-100 text-blue-700 rounded-lg text-xs font-bold transition flex items-center gap-1 shadow-2xs cursor-default";
+                        } else {
+                            primaryCtaBtn.className = "px-2.5 py-1 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-xs font-bold transition flex items-center gap-1 shadow-2xs";
+                        }
+                    }
+                }
+            }
+
 
             // 2. 構建「店家基本資訊」卡片內部所有完整欄位
             const rows = [];
@@ -8927,66 +9018,309 @@
             }
         };
 
-        window.openContributeModal = function() {
-            const place = window.currentDetailPlace || { name: document.getElementById('detail-name')?.textContent || '' };
-            if (!place || !place.name) return;
+        // ============================================================
+        // JIA-BEN 6.0J Phase 2A: 社群微貢獻流程 UI 互動與狀態控制
+        // ============================================================
+        window._currentContributeField = 'openingHours';
+        window._pendingContributionDraft = null;
 
-            window.requireIdentity(() => {
-                const titleEl = document.getElementById('contribute-place-title');
-                if (titleEl) titleEl.textContent = place.name;
-                
-                // 填充分類字典
-                const catSelect = document.getElementById('contrib-category');
-                if (catSelect && window.JiaCommunity?.CATEGORY_DICTIONARY) {
-                    catSelect.innerHTML = '<option value="">-- 請選擇料理分類 --</option>' +
-                        window.JiaCommunity.CATEGORY_DICTIONARY.map(c => `<option value="${c}">${c}</option>`).join('');
-                }
-
-                // 預填既有資料
-                if (document.getElementById('contrib-spend')) document.getElementById('contrib-spend').value = '';
-                if (document.getElementById('contrib-address')) document.getElementById('contrib-address').value = place.address || '';
-                if (document.getElementById('contrib-phone')) document.getElementById('contrib-phone').value = place.phone || '';
-                if (document.getElementById('contrib-hours-text')) document.getElementById('contrib-hours-text').value = typeof place.openingHours === 'string' ? place.openingHours : '';
-                if (catSelect && place.categories && place.categories[0]) {
-                    catSelect.value = place.categories[0];
-                }
-
-                // 檢查目前使用者是否具備主揪/Admin 權限以顯示「儲存並採用」按鈕
-                const isHost = window.myIdentity?.name === '黃政誥' || window.myIdentity?.group === '主揪' || (typeof isAdminUnlocked !== 'undefined' && isAdminUnlocked);
-                const directAcceptBtn = document.getElementById('btn-contrib-direct-accept');
-                const submitBtn = document.getElementById('contrib-submit-btn');
-                if (directAcceptBtn) {
-                    directAcceptBtn.classList.toggle('hidden', !isHost);
-                }
-                if (submitBtn) {
-                    submitBtn.querySelector('span').textContent = isHost ? '送出待審核' : '送出補充資料';
-                }
-
-                // 檢查是否已有該使用者對該店家的待審核資料
-                const myPending = (window.placeContributions || []).filter(c => 
-                    (c.jiaPlaceId === place.jiaPlaceId || c.placeName === place.name) && 
-                    (c.uid === (currentUser?.uid || window.myIdentity?.name)) && 
-                    c.status === 'pending'
-                );
-
-                // 重設自動帶入標籤與提示
-                ['badge-auto-address', 'badge-auto-phone', 'badge-auto-category', 'badge-auto-hours'].forEach(id => {
-                    document.getElementById(id)?.classList.add('hidden');
-                });
-                const statusMsg = document.getElementById('auto-assist-status-msg');
-                if (statusMsg) {
-                    if (myPending.length > 0) {
-                        statusMsg.className = "text-[11px] text-blue-700 font-bold leading-normal pl-8";
-                        statusMsg.innerHTML = `<i class="fa-solid fa-clock-rotate-left mr-1"></i> 您先前已有 ${myPending.length} 項補充資訊正在審核中，可直接修改並再次送出。`;
+        // 🌟 單一欄位切換 (Single-field Panel Switcher)
+        window.switchContributeField = function(fieldName) {
+            window._currentContributeField = fieldName;
+            
+            // 更新 Tab 按鈕高亮樣式
+            const allTabs = ['openingHours', 'address', 'phone', 'recommendedDishes', 'averageSpend', 'category'];
+            allTabs.forEach(f => {
+                const tabBtn = document.getElementById(`tab-contrib-${f}`);
+                const panel = document.getElementById(`panel-contrib-${f}`);
+                if (tabBtn) {
+                    if (f === fieldName) {
+                        tabBtn.className = "py-2 px-1.5 rounded-xl border text-xs font-bold transition flex flex-col items-center gap-1 shadow-2xs bg-orange-50 border-orange-300 text-orange-700";
                     } else {
-                        statusMsg.className = "text-[11px] text-gray-500 leading-normal pl-8";
-                        statusMsg.textContent = "點擊後系統將從 Jia-ben、OpenStreetMap 與公開資料庫自動比對地址、電話、營業時間與料理分類。";
+                        tabBtn.className = "py-2 px-1.5 rounded-xl border text-xs font-bold transition flex flex-col items-center gap-1 shadow-2xs bg-white border-gray-200 text-gray-700 hover:bg-gray-50";
                     }
                 }
-
-                document.getElementById('place-contribute-modal')?.classList.remove('hidden');
+                if (panel) {
+                    panel.classList.toggle('hidden', f !== fieldName);
+                }
             });
         };
+
+        // 🌟 結構化營業時間編輯器渲染 (週一 ~ 週日，支援雙時段與休息日)
+        window.renderStructuredHoursEditor = function(initialHoursObj) {
+            const container = document.getElementById('structured-hours-editor');
+            if (!container) return;
+
+            const baseObj = (initialHoursObj && typeof initialHoursObj === 'object')
+                ? initialHoursObj
+                : (window.JiaCommunityContributionUX?.createEmptyStructuredHours ? window.JiaCommunityContributionUX.createEmptyStructuredHours() : {
+                    monday: [], tuesday: [], wednesday: [], thursday: [], friday: [], saturday: [], sunday: []
+                });
+
+            const dayNames = {
+                monday: '週一',
+                tuesday: '週二',
+                wednesday: '週三',
+                thursday: '週四',
+                friday: '週五',
+                saturday: '週六',
+                sunday: '週日'
+            };
+
+            const html = Object.keys(dayNames).map(day => {
+                const dayShifts = Array.isArray(baseObj[day]) ? baseObj[day] : [];
+                const isClosed = dayShifts.length === 0;
+                const shift1 = dayShifts[0] || { open: '11:00', close: '20:00' };
+                const shift2 = dayShifts[1] || null;
+
+                return `
+                <div class="p-2 rounded-xl border border-gray-100 bg-gray-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5" data-day="${day}">
+                    <div class="flex items-center gap-2 shrink-0">
+                        <span class="w-8 font-black text-gray-800 text-xs">${dayNames[day]}</span>
+                        <label class="inline-flex items-center gap-1 cursor-pointer text-[11px] text-gray-600">
+                            <input type="checkbox" class="hours-open-toggle accent-orange-500" data-day="${day}" ${!isClosed ? 'checked' : ''} onchange="window.toggleDayClosedState('${day}', this.checked)">
+                            <span>營業</span>
+                        </label>
+                    </div>
+                    <div id="shifts-wrap-${day}" class="flex items-center gap-1.5 flex-wrap flex-1 justify-end ${isClosed ? 'hidden' : ''}">
+                        <div class="flex items-center gap-1">
+                            <input type="time" class="shift-open-1 px-1.5 py-1 bg-white border border-gray-200 rounded-lg text-xs font-bold text-gray-800 focus:outline-none" value="${shift1.open || '11:00'}">
+                            <span class="text-gray-400 text-[10px]">~</span>
+                            <input type="time" class="shift-close-1 px-1.5 py-1 bg-white border border-gray-200 rounded-lg text-xs font-bold text-gray-800 focus:outline-none" value="${shift1.close || '20:00'}">
+                        </div>
+                        <div id="shift-2-wrap-${day}" class="flex items-center gap-1 ${shift2 ? '' : 'hidden'}">
+                            <span class="text-gray-300 text-[10px]">/</span>
+                            <input type="time" class="shift-open-2 px-1.5 py-1 bg-white border border-gray-200 rounded-lg text-xs font-bold text-gray-800 focus:outline-none" value="${shift2 ? shift2.open : '17:00'}">
+                            <span class="text-gray-400 text-[10px]">~</span>
+                            <input type="time" class="shift-close-2 px-1.5 py-1 bg-white border border-gray-200 rounded-lg text-xs font-bold text-gray-800 focus:outline-none" value="${shift2 ? shift2.close : '21:00'}">
+                        </div>
+                        <button type="button" onclick="window.toggleSecondShift('${day}')" class="text-[10px] text-orange-600 hover:underline px-1 py-0.5">
+                            <span id="shift-2-btn-text-${day}">${shift2 ? '- 移除二段' : '+ 二段'}</span>
+                        </button>
+                    </div>
+                    <div id="closed-label-${day}" class="text-[11px] text-gray-400 font-medium ${isClosed ? '' : 'hidden'}">
+                        公休 / 未營業
+                    </div>
+                </div>
+                `;
+            }).join('');
+
+            container.innerHTML = html;
+        };
+
+        window.toggleDayClosedState = function(day, isOpen) {
+            const shiftsWrap = document.getElementById(`shifts-wrap-${day}`);
+            const closedLabel = document.getElementById(`closed-label-${day}`);
+            if (shiftsWrap) shiftsWrap.classList.toggle('hidden', !isOpen);
+            if (closedLabel) closedLabel.classList.toggle('hidden', isOpen);
+        };
+
+        window.toggleSecondShift = function(day) {
+            const shift2Wrap = document.getElementById(`shift-2-wrap-${day}`);
+            const btnText = document.getElementById(`shift-2-btn-text-${day}`);
+            if (!shift2Wrap || !btnText) return;
+            const isHidden = shift2Wrap.classList.contains('hidden');
+            shift2Wrap.classList.toggle('hidden', !isHidden);
+            btnText.textContent = isHidden ? '- 移除二段' : '+ 二段';
+        };
+
+        // 快速將週一的時段套用到週二至週日
+        window.applyHoursToAllDays = function() {
+            const monRow = document.querySelector('[data-day="monday"]');
+            if (!monRow) return;
+            const isOpen = monRow.querySelector('.hours-open-toggle')?.checked;
+            const open1 = monRow.querySelector('.shift-open-1')?.value || '11:00';
+            const close1 = monRow.querySelector('.shift-close-1')?.value || '20:00';
+            const hasShift2 = !document.getElementById('shift-2-wrap-monday')?.classList.contains('hidden');
+            const open2 = monRow.querySelector('.shift-open-2')?.value || '17:00';
+            const close2 = monRow.querySelector('.shift-close-2')?.value || '21:00';
+
+            const days = ['tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+            days.forEach(d => {
+                const toggle = document.querySelector(`[data-day="${d}"] .hours-open-toggle`);
+                if (toggle) {
+                    toggle.checked = Boolean(isOpen);
+                    window.toggleDayClosedState(d, Boolean(isOpen));
+                }
+                const o1 = document.querySelector(`[data-day="${d}"] .shift-open-1`);
+                const c1 = document.querySelector(`[data-day="${d}"] .shift-close-1`);
+                if (o1) o1.value = open1;
+                if (c1) c1.value = close1;
+
+                const shift2Wrap = document.getElementById(`shift-2-wrap-${d}`);
+                const btnText = document.getElementById(`shift-2-btn-text-${d}`);
+                if (shift2Wrap) shift2Wrap.classList.toggle('hidden', !hasShift2);
+                if (btnText) btnText.textContent = hasShift2 ? '- 移除二段' : '+ 二段';
+                const o2 = document.querySelector(`[data-day="${d}"] .shift-open-2`);
+                const c2 = document.querySelector(`[data-day="${d}"] .shift-close-2`);
+                if (o2) o2.value = open2;
+                if (c2) c2.value = close2;
+            });
+            window.showCustomMsg("✨ 已將週一營業設定同步套用至全週各日！");
+        };
+
+        // 從結構化 UI 擷取 hours object
+        window.getStructuredHoursFromEditor = function() {
+            const result = {};
+            const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+            days.forEach(d => {
+                const row = document.querySelector(`[data-day="${d}"]`);
+                if (!row) {
+                    result[d] = [];
+                    return;
+                }
+                const isOpen = row.querySelector('.hours-open-toggle')?.checked;
+                if (!isOpen) {
+                    result[d] = [];
+                    return;
+                }
+                const shifts = [];
+                const o1 = row.querySelector('.shift-open-1')?.value?.trim();
+                const c1 = row.querySelector('.shift-close-1')?.value?.trim();
+                if (o1 && c1) {
+                    shifts.push({ open: o1, close: c1 });
+                }
+                const hasShift2 = !document.getElementById(`shift-2-wrap-${d}`)?.classList.contains('hidden');
+                if (hasShift2) {
+                    const o2 = row.querySelector('.shift-open-2')?.value?.trim();
+                    const c2 = row.querySelector('.shift-close-2')?.value?.trim();
+                    if (o2 && c2) {
+                        shifts.push({ open: o2, close: c2 });
+                    }
+                }
+                result[d] = shifts;
+            });
+            return result;
+        };
+
+        // 🌟 電話輸入即時正規化預覽
+        window.handlePhoneInputPreview = function(inputEl) {
+            const val = inputEl?.value?.trim() || '';
+            const previewWrap = document.getElementById('contrib-phone-preview');
+            const previewText = document.getElementById('contrib-phone-normalized-text');
+            if (!previewWrap || !previewText) return;
+
+            if (!val) {
+                previewWrap.classList.add('hidden');
+                return;
+            }
+
+            const check = window.JiaCommunity?.validateAndNormalizePhone 
+                ? window.JiaCommunity.validateAndNormalizePhone(val)
+                : { valid: true, normalized: val };
+
+            if (check.valid && check.normalized) {
+                previewText.textContent = check.normalized;
+                previewWrap.className = "text-[11px] text-blue-700 font-bold bg-blue-50/70 p-2 rounded-lg border border-blue-100 flex items-center gap-1";
+                previewWrap.classList.remove('hidden');
+            } else {
+                previewText.textContent = check.message || '請輸入正確的台灣市話或手機號碼格式';
+                previewWrap.className = "text-[11px] text-amber-700 font-medium bg-amber-50/70 p-2 rounded-lg border border-amber-100 flex items-center gap-1";
+                previewWrap.classList.remove('hidden');
+            }
+        };
+
+        // 🌟 JIA-BEN 6.0J Phase 2A: 延遲驗證 (Delayed Authentication)
+        // 開啟 Contribution Modal：無須登入即可開啟、填寫、切換欄位；僅在按「送出」時驗證身分！
+        window.openContributeModal = function(placeOverride, targetField) {
+            const place = placeOverride || window.currentDetailPlace || { name: document.getElementById('detail-name')?.textContent || '' };
+            if (!place || !place.name) return window.showCustomMsg("請先選擇店家。");
+
+            window.currentDetailPlace = place;
+            const titleEl = document.getElementById('contribute-place-title');
+            if (titleEl) titleEl.textContent = place.name;
+
+            // 填充分類字典
+            const catSelect = document.getElementById('contrib-category');
+            if (catSelect && window.JiaCommunity?.CATEGORY_DICTIONARY) {
+                catSelect.innerHTML = '<option value="">-- 請選擇料理分類 --</option>' +
+                    window.JiaCommunity.CATEGORY_DICTIONARY.map(c => `<option value="${c}">${c}</option>`).join('');
+                if (place.categories && place.categories[0]) {
+                    catSelect.value = place.categories[0];
+                }
+            }
+
+            // 地址前綴提示
+            const addrPrefixEl = document.getElementById('contrib-address-prefix-hint');
+            if (addrPrefixEl) {
+                const prefix = [place.city, place.district].filter(Boolean).join(' ');
+                if (prefix) {
+                    addrPrefixEl.innerHTML = `📍 目前地圖已知區域：<strong class="text-gray-700">${prefix}</strong>，請補充路名、巷弄與門牌。`;
+                    addrPrefixEl.classList.remove('hidden');
+                } else {
+                    addrPrefixEl.classList.add('hidden');
+                }
+            }
+            if (document.getElementById('contrib-address')) {
+                document.getElementById('contrib-address').value = place.address || '';
+            }
+
+            // 電話預填
+            if (document.getElementById('contrib-phone')) {
+                document.getElementById('contrib-phone').value = place.phone || '';
+                window.handlePhoneInputPreview(document.getElementById('contrib-phone'));
+            }
+
+            // 營業時間結構化編輯器初始化
+            let initialHours = null;
+            if (typeof place.openingHours === 'object' && place.openingHours !== null) {
+                initialHours = place.openingHours;
+            } else if (typeof place.openingHours === 'string' && window.JiaCommunityContributionUX?.parseOpeningHours) {
+                const parsed = window.JiaCommunityContributionUX.parseOpeningHours(place.openingHours);
+                if (parsed.hasStructure) initialHours = parsed.structured;
+            }
+            window.renderStructuredHoursEditor(initialHours);
+            if (document.getElementById('contrib-hours-text')) {
+                document.getElementById('contrib-hours-text').value = typeof place.openingHours === 'string' ? place.openingHours : '';
+            }
+
+            // 推薦料理預填
+            if (document.getElementById('contrib-dish-1')) document.getElementById('contrib-dish-1').value = '';
+            if (document.getElementById('contrib-dish-2')) document.getElementById('contrib-dish-2').value = '';
+            if (document.getElementById('contrib-dish-3')) document.getElementById('contrib-dish-3').value = '';
+
+            // 人均消費預填
+            if (document.getElementById('contrib-spend')) document.getElementById('contrib-spend').value = '';
+
+            // 檢查使用者是否已有 Pending 投稿
+            const myPending = (window.placeContributions || []).filter(c => 
+                (c.jiaPlaceId === place.jiaPlaceId || c.placeName === place.name) && 
+                (c.uid === (currentUser?.uid || window.myIdentity?.name)) && 
+                c.status === 'pending'
+            );
+
+            // 狀態說明
+            const statusMsg = document.getElementById('auto-assist-status-msg');
+            if (statusMsg) {
+                if (myPending.length > 0) {
+                    const fields = myPending.map(p => p.field === 'openingHours' ? '營業時間' : p.field === 'address' ? '門牌地址' : p.field === 'phone' ? '電話' : p.field).join('、');
+                    statusMsg.className = "text-[11px] text-blue-700 font-bold leading-normal bg-blue-50/70 p-2.5 rounded-xl border border-blue-200";
+                    statusMsg.innerHTML = `<i class="fa-solid fa-clock-rotate-left mr-1"></i> 您先前已有 <strong>${fields}</strong> 正在審核中。若有最新異動可直接填寫再次送出！`;
+                } else {
+                    statusMsg.className = "text-[11px] text-gray-500 leading-normal bg-white p-2.5 rounded-xl border border-gray-100";
+                    statusMsg.textContent = "選擇一項想為大家補充的店家資訊，填妥後點擊下方送出即可。";
+                }
+            }
+
+            // 若有指定目標欄位或 Context-aware CTA 傳入，直接切換至該欄位 Panel
+            const chosenField = targetField || (window.JiaCommunityContributionUX?.getPrimaryContributionCTA
+                ? window.JiaCommunityContributionUX.getPrimaryContributionCTA(place, { currentUserUid: currentUser?.uid || window.myIdentity?.name, contributions: window.placeContributions || [] }).field
+                : 'openingHours');
+            window.switchContributeField(chosenField || 'openingHours');
+
+            // 檢查管理員身分
+            const isHost = window.myIdentity?.name === '黃政誥' || window.myIdentity?.group === '主揪' || (typeof isAdminUnlocked !== 'undefined' && isAdminUnlocked);
+            const directAcceptBtn = document.getElementById('btn-contrib-direct-accept');
+            const submitBtn = document.getElementById('contrib-submit-btn');
+            if (directAcceptBtn) directAcceptBtn.classList.toggle('hidden', !isHost);
+            if (submitBtn) {
+                const labelSpan = submitBtn.querySelector('span');
+                if (labelSpan) labelSpan.textContent = isHost ? '送出待審核' : '送出回報';
+            }
+
+            document.getElementById('place-contribute-modal')?.classList.remove('hidden');
+        };
+
 
         // 🌟 Auto Place Info Assist 執行函數 (點擊自動搜尋並帶入表單，由使用者確認後送出)
         window.handleAutoPlaceInfoAssist = async function() {
@@ -9904,146 +10238,7 @@
             }
         };
 
-        // 開啟社群補充店家資訊 Modal
-        window.openContributeModal = function(placeOverride) {
-            const place = placeOverride || window.currentDetailPlace || { name: document.getElementById('detail-name')?.textContent || '' };
-            if (!place || !place.name) return window.showCustomMsg("請先選擇店家。");
-
-            window.requireIdentity(() => {
-                const titleEl = document.getElementById('contribute-place-title');
-                if (titleEl) titleEl.textContent = place.name;
-                
-                // 填充分類字典
-                const catSelect = document.getElementById('contrib-category');
-                if (catSelect && window.JiaCommunity?.CATEGORY_DICTIONARY) {
-                    catSelect.innerHTML = '<option value="">-- 請選擇料理分類 --</option>' +
-                        window.JiaCommunity.CATEGORY_DICTIONARY.map(c => `<option value="${c}">${c}</option>`).join('');
-                }
-
-                // 預填既有資料
-                if (document.getElementById('contrib-spend')) document.getElementById('contrib-spend').value = '';
-                if (document.getElementById('contrib-address')) document.getElementById('contrib-address').value = place.address || '';
-                if (document.getElementById('contrib-phone')) document.getElementById('contrib-phone').value = place.phone || '';
-                if (document.getElementById('contrib-hours-text')) document.getElementById('contrib-hours-text').value = typeof place.openingHours === 'string' ? place.openingHours : '';
-                if (catSelect && place.categories && place.categories[0]) {
-                    catSelect.value = place.categories[0];
-                }
-
-                // 檢查是否已有該使用者對該店家的待審核資料
-                const myPending = (window.placeContributions || []).filter(c => 
-                    (c.jiaPlaceId === place.jiaPlaceId || c.placeName === place.name) && 
-                    (c.uid === (currentUser?.uid || window.myIdentity?.name)) && 
-                    c.status === 'pending'
-                );
-
-                // 重設自動帶入標籤與提示
-                ['badge-auto-address', 'badge-auto-phone', 'badge-auto-category', 'badge-auto-hours'].forEach(id => {
-                    document.getElementById(id)?.classList.add('hidden');
-                });
-                const statusMsg = document.getElementById('auto-assist-status-msg');
-                if (statusMsg) {
-                    if (myPending.length > 0) {
-                        statusMsg.className = "text-[11px] text-blue-700 font-bold leading-normal pl-8";
-                        statusMsg.innerHTML = `<i class="fa-solid fa-clock-rotate-left mr-1"></i> 您先前已有 ${myPending.length} 項補充資訊正在審核中，可直接修改並再次送出。`;
-                    } else {
-                        statusMsg.className = "text-[11px] text-gray-500 leading-normal pl-8";
-                        statusMsg.textContent = "點擊後系統將從 Jia-ben、OpenStreetMap 與公開資料庫自動比對地址、電話、營業時間與料理分類。";
-                    }
-                }
-
-                document.getElementById('place-contribute-modal')?.classList.remove('hidden');
-            });
-        };
-
-        // 🌟 Auto Place Info Assist 執行函數 (點擊自動搜尋並帶入表單，由使用者確認後送出)
-        window.handleAutoPlaceInfoAssist = async function() {
-            const place = window.currentDetailPlace || { name: document.getElementById('detail-name')?.textContent || document.getElementById('contribute-place-title')?.textContent || '' };
-            if (!place || !place.name) return window.showCustomMsg("請先選擇店家。");
-
-            const btn = document.getElementById('btn-auto-place-info');
-            const btnText = document.getElementById('btn-auto-place-info-text');
-            const statusMsg = document.getElementById('auto-assist-status-msg');
-
-            if (btn) btn.disabled = true;
-            if (btnText) btnText.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> 正在尋找…';
-            if (statusMsg) {
-                statusMsg.className = "text-[11px] text-orange-600 font-bold leading-normal pl-8";
-                statusMsg.textContent = "正在自動檢索公開店家情資 (Jia-ben / OpenStreetMap / Foursquare)...";
-            }
-
-            try {
-                if (!window.JiaPlaceIntelligence) {
-                    throw new Error("Place Intelligence 模組載入中，請稍候重試");
-                }
-
-                const result = await window.JiaPlaceIntelligence.discoverPlaceInfo(place);
-                
-                let filledCount = 0;
-                if (result && result.status === 'success' && result.autofill) {
-                    const af = result.autofill;
-                    window._lastAutoAssistProvenance = result.provenance || {};
-                    window._lastAutoAssistSources = result.sources || [];
-                    
-                    if (af.address) {
-                        const addrEl = document.getElementById('contrib-address');
-                        if (addrEl) {
-                            addrEl.value = af.address;
-                            document.getElementById('badge-auto-address')?.classList.remove('hidden');
-                            filledCount++;
-                        }
-                    }
-
-                    if (af.phone) {
-                        const phoneEl = document.getElementById('contrib-phone');
-                        if (phoneEl) {
-                            phoneEl.value = af.phone;
-                            document.getElementById('badge-auto-phone')?.classList.remove('hidden');
-                            filledCount++;
-                        }
-                    }
-
-                    if (af.category) {
-                        const catEl = document.getElementById('contrib-category');
-                        if (catEl) {
-                            catEl.value = af.category;
-                            document.getElementById('badge-auto-category')?.classList.remove('hidden');
-                            filledCount++;
-                        }
-                    }
-
-                    if (af.openingHours) {
-                        const hoursEl = document.getElementById('contrib-hours-text');
-                        if (hoursEl) {
-                            hoursEl.value = af.openingHours;
-                            document.getElementById('badge-auto-hours')?.classList.remove('hidden');
-                            filledCount++;
-                        }
-                    }
-
-                    if (statusMsg) {
-                        const srcText = result.sources.length ? `（來源：${result.sources.join('、')}）` : '';
-                        statusMsg.className = "text-[11px] text-emerald-700 font-black leading-normal pl-8";
-                        statusMsg.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-500 mr-1"></i> 已自動填入 ${filledCount} 項公開店家資訊 ${srcText}，請確認無誤後送出！`;
-                    }
-                } else {
-                    if (statusMsg) {
-                        statusMsg.className = "text-[11px] text-amber-700 font-medium leading-normal pl-8";
-                        statusMsg.textContent = "暫時找不到可靠的公開店家資訊，你仍可以手動補充。";
-                    }
-                }
-            } catch (err) {
-                console.warn("自動尋找店家資訊失敗:", err);
-                if (statusMsg) {
-                    statusMsg.className = "text-[11px] text-gray-500 leading-normal pl-8";
-                    statusMsg.textContent = "暫時找不到可靠的公開店家資訊，你仍可以手動補充。";
-                }
-            } finally {
-                if (btn) btn.disabled = false;
-                if (btnText) btnText.innerHTML = '自動尋找店家資訊';
-            }
-        };
-
-        // 照片暫存狀態
+        // 照片暫存狀態 (Photo upload deferred in Phase 2A)
         let currentContribPhotoBase64 = '';
         window.handleContribPhotoSelected = async function(input) {
             if (!input.files || input.files.length === 0) return;
@@ -10073,153 +10268,198 @@
             if (fileInput) fileInput.value = '';
         };
 
-        // 送出社群補充資料 (寫入 placeContributions 審核待審區，絕不直寫 canonical)
-        window.submitPlaceContribution = async function() {
+        // 🌟 JIA-BEN 6.0J Phase 2A: 送出微貢獻資料 (Delayed Auth + Single-Field + Fact Moderated)
+        window.submitPlaceContribution = async function(directApply = false) {
             const place = window.currentDetailPlace || { name: document.getElementById('detail-name')?.textContent || '' };
             if (!place || !place.name) return;
 
-            const spendVal = document.getElementById('contrib-spend')?.value.trim();
-            const dishesVal = document.getElementById('contrib-dishes')?.value.trim();
-            const addressVal = document.getElementById('contrib-address')?.value.trim();
-            const phoneVal = document.getElementById('contrib-phone')?.value.trim();
-            const categoryVal = document.getElementById('contrib-category')?.value;
-            const hoursVal = document.getElementById('contrib-hours-text')?.value.trim();
-            const websiteVal = document.getElementById('contrib-website')?.value.trim();
-            const facebookVal = document.getElementById('contrib-facebook')?.value.trim();
-            const instagramVal = document.getElementById('contrib-instagram')?.value.trim();
-            const hasPhoto = Boolean(currentContribPhotoBase64);
+            const targetField = window._currentContributeField || 'openingHours';
+            let contribRecordPayload = null;
 
-            if (!spendVal && !dishesVal && !addressVal && !phoneVal && !categoryVal && !hoursVal && !websiteVal && !facebookVal && !instagramVal && !hasPhoto) {
-                return window.showCustomMsg("請至少填寫一項想為大家補充的店家資訊或照片喔！");
+            // 根據目前啟用的 Field 抓取資料並進行格式驗證
+            if (targetField === 'openingHours') {
+                const textHours = document.getElementById('contrib-hours-text')?.value?.trim();
+                const structuredHours = window.getStructuredHoursFromEditor ? window.getStructuredHoursFromEditor() : null;
+                
+                let isHoursValid = false;
+                let finalVal = null;
+                let isFreeText = false;
+
+                if (textHours) {
+                    finalVal = textHours;
+                    isFreeText = true;
+                    isHoursValid = true;
+                } else if (structuredHours) {
+                    const validation = window.JiaCommunityContributionUX?.validateStructuredOpeningHours
+                        ? window.JiaCommunityContributionUX.validateStructuredOpeningHours(structuredHours)
+                        : { valid: true };
+                    if (!validation.valid) {
+                        return window.showCustomMsg(`⚠️ 營業時間格式有誤：${validation.message}`);
+                    }
+                    finalVal = structuredHours;
+                    isHoursValid = true;
+                }
+
+                if (!isHoursValid || !finalVal) {
+                    return window.showCustomMsg("請設定每週營業時間或填寫自由文字備註。");
+                }
+
+                contribRecordPayload = {
+                    field: 'openingHours',
+                    value: finalVal,
+                    note: isFreeText ? '自由文字備註營業時間 (低結構可信度)' : '每週結構化營業時間'
+                };
+            } else if (targetField === 'address') {
+                const addrVal = document.getElementById('contrib-address')?.value?.trim();
+                if (!addrVal) return window.showCustomMsg("請填寫詳細門牌地址。");
+                const check = window.JiaCommunity?.validateAddress ? window.JiaCommunity.validateAddress(addrVal) : { valid: true, normalized: addrVal };
+                if (!check.valid) return window.showCustomMsg(`⚠️ 地址不符規範：${check.message}`);
+                contribRecordPayload = {
+                    field: 'address',
+                    value: check.normalized || addrVal,
+                    note: '補充詳細地址門牌'
+                };
+            } else if (targetField === 'phone') {
+                const phoneVal = document.getElementById('contrib-phone')?.value?.trim();
+                if (!phoneVal) return window.showCustomMsg("請填寫店家連絡電話。");
+                const check = window.JiaCommunity?.validateAndNormalizePhone ? window.JiaCommunity.validateAndNormalizePhone(phoneVal) : { valid: true, normalized: phoneVal };
+                if (!check.valid) return window.showCustomMsg(`⚠️ 電話不符規範：${check.message}`);
+                contribRecordPayload = {
+                    field: 'phone',
+                    value: check.normalized || phoneVal,
+                    note: '補充店家連絡電話'
+                };
+            } else if (targetField === 'recommendedDishes') {
+                const d1 = document.getElementById('contrib-dish-1')?.value?.trim() || '';
+                const d2 = document.getElementById('contrib-dish-2')?.value?.trim() || '';
+                const d3 = document.getElementById('contrib-dish-3')?.value?.trim() || '';
+                const rawList = [d1, d2, d3];
+                const dishes = window.JiaCommunityContributionUX?.cleanRecommendedDishesInput
+                    ? window.JiaCommunityContributionUX.cleanRecommendedDishesInput(rawList)
+                    : rawList.filter(Boolean);
+                if (dishes.length === 0) return window.showCustomMsg("請至少填寫一道您推薦的招牌菜色。");
+                contribRecordPayload = {
+                    field: 'recommendedDishes',
+                    value: dishes,
+                    note: '社群推薦菜色 (非官方菜單)'
+                };
+            } else if (targetField === 'averageSpend') {
+                const spendVal = document.getElementById('contrib-spend')?.value?.trim();
+                if (!spendVal) return window.showCustomMsg("請填寫大約每人花費金額。");
+                const check = window.JiaCommunity?.validateSpend ? window.JiaCommunity.validateSpend(spendVal) : { valid: true, value: Number(spendVal) };
+                if (!check.valid) return window.showCustomMsg(`⚠️ 消費金額不符規範：${check.message}`);
+                contribRecordPayload = {
+                    field: 'averageSpend',
+                    value: check.value,
+                    note: '個人人均花費回報 (社群口碑)'
+                };
+            } else if (targetField === 'category') {
+                const catVal = document.getElementById('contrib-category')?.value;
+                if (!catVal) return window.showCustomMsg("請選擇料理分類。");
+                contribRecordPayload = {
+                    field: 'category',
+                    value: [catVal],
+                    note: '補充料理分類'
+                };
             }
 
-            const btn = document.getElementById('contrib-submit-btn');
+            if (!contribRecordPayload) {
+                return window.showCustomMsg("請填寫想為大家補充的店家資訊。");
+            }
+
+            // 🌟 延遲身分驗證 (Delayed Authentication Gate)
+            // 如果當前尚未登入或無身分，將草稿保留至記憶體，喚起登入；登入成功後自動恢復並送出！
+            if (!currentUser && !window.myIdentity?.name) {
+                window._pendingContributionDraft = {
+                    place,
+                    payload: contribRecordPayload,
+                    directApply
+                };
+                return window.requireIdentity(() => {
+                    if (window._pendingContributionDraft) {
+                        const draft = window._pendingContributionDraft;
+                        window._pendingContributionDraft = null;
+                        window.submitPlaceContribution(draft.directApply);
+                    }
+                });
+            }
+
+            const btn = document.getElementById(directApply ? 'btn-contrib-direct-accept' : 'contrib-submit-btn');
+            const originalBtnHtml = btn ? btn.innerHTML : '';
             if (btn) { btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> 傳送中...'; btn.disabled = true; }
 
             try {
-                const contributions = [];
                 const jiaPlaceId = place.jiaPlaceId || `jia_${Math.random().toString(36).slice(2, 10)}`;
                 const userName = window.myIdentity?.name || '熱心吃貨';
                 const uid = currentUser?.uid || userName;
-                const autoSources = window._lastAutoAssistSources || [];
 
-                // 1. 每人消費
-                if (spendVal) {
-                    const check = window.JiaCommunity?.validateSpend ? window.JiaCommunity.validateSpend(spendVal) : { valid: true, value: Number(spendVal) };
-                    if (!check.valid) throw new Error(check.message);
-                    contributions.push({ field: 'averageSpend', value: check.value, autoAssist: false, autoSources: [] });
+                // Anti-spam duplicate check (Same UID, same place, same field, same normalized value)
+                const isDup = window.JiaCommunity?.isDuplicateContribution
+                    ? window.JiaCommunity.isDuplicateContribution(window.placeContributions || [], {
+                        jiaPlaceId,
+                        uid,
+                        field: contribRecordPayload.field,
+                        value: contribRecordPayload.value
+                    })
+                    : false;
+
+                if (isDup) {
+                    return window.showCustomMsg("您先前已回報過完全相同的資訊，系統正在審核確認中，無需重複提交喔！");
                 }
 
-                // 2. 推薦餐點
-                if (dishesVal) {
-                    const dishItems = dishesVal.split(/[,，、]/).map(s => s.trim()).filter(Boolean);
-                    if (dishItems.length > 0) {
-                        contributions.push({ field: 'recommendedDishes', value: dishItems, autoAssist: false, autoSources: [] });
-                    }
+                const record = window.JiaCommunity?.createContributionRecord ? 
+                    window.JiaCommunity.createContributionRecord({
+                        jiaPlaceId,
+                        uid,
+                        userName,
+                        field: contribRecordPayload.field,
+                        value: contribRecordPayload.value,
+                        note: contribRecordPayload.note || `補充 ${place.name} 的 ${contribRecordPayload.field}`,
+                        autoAssist: false,
+                        autoSources: []
+                    }) : {
+                        contributionId: `contrib_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+                        jiaPlaceId,
+                        placeName: place.name,
+                        uid,
+                        userName,
+                        field: contribRecordPayload.field,
+                        value: contribRecordPayload.value,
+                        status: 'pending',
+                        createdAt: new Date().toISOString()
+                    };
+                record.placeName = place.name;
+
+                if (db && currentUser) {
+                    const docRef = await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'placeContributions'), {
+                        ...record,
+                        timestamp: serverTimestamp()
+                    });
+                    record.id = docRef.id;
                 }
 
-                // 3. 地址驗證
-                if (addressVal && addressVal !== place.address) {
-                    const check = window.JiaCommunity?.validateAddress ? window.JiaCommunity.validateAddress(addressVal) : { valid: true, normalized: addressVal };
-                    if (!check.valid) throw new Error(check.message);
-                    const isAuto = Boolean(document.getElementById('badge-auto-address') && !document.getElementById('badge-auto-address').classList.contains('hidden'));
-                    contributions.push({ field: 'address', value: check.normalized, autoAssist: isAuto, autoSources: isAuto ? autoSources : [] });
-                }
+                window.placeContributions = window.placeContributions || [];
+                window.placeContributions.unshift(record);
 
-                // 4. 電話驗證
-                if (phoneVal && phoneVal !== place.phone) {
-                    const check = window.JiaCommunity?.validateAndNormalizePhone ? window.JiaCommunity.validateAndNormalizePhone(phoneVal) : { valid: true, normalized: phoneVal };
-                    if (!check.valid) throw new Error(check.message);
-                    const isAuto = Boolean(document.getElementById('badge-auto-phone') && !document.getElementById('badge-auto-phone').classList.contains('hidden'));
-                    contributions.push({ field: 'phone', value: check.normalized, autoAssist: isAuto, autoSources: isAuto ? autoSources : [] });
-                }
-
-                // 5. 分類
-                if (categoryVal && (!place.categories || !place.categories.includes(categoryVal))) {
-                    const isAuto = Boolean(document.getElementById('badge-auto-category') && !document.getElementById('badge-auto-category').classList.contains('hidden'));
-                    contributions.push({ field: 'categories', value: [categoryVal], autoAssist: isAuto, autoSources: isAuto ? autoSources : [] });
-                }
-
-                // 6. 營業時間
-                if (hoursVal && hoursVal !== place.openingHours) {
-                    const isAuto = Boolean(document.getElementById('badge-auto-hours') && !document.getElementById('badge-auto-hours').classList.contains('hidden'));
-                    contributions.push({ field: 'openingHours', value: hoursVal, autoAssist: isAuto, autoSources: isAuto ? autoSources : [] });
-                }
-
-                // 7. 網站 / 社群
-                if (websiteVal) {
-                    contributions.push({ field: 'website', value: websiteVal, autoAssist: false, autoSources: [] });
-                }
-                if (facebookVal || instagramVal) {
-                    const socialObj = {};
-                    if (facebookVal) socialObj.facebook = facebookVal;
-                    if (instagramVal) socialObj.instagram = instagramVal;
-                    contributions.push({ field: 'officialSocial', value: socialObj, autoAssist: false, autoSources: [] });
-                }
-
-                // 8. 真實照片
-                if (hasPhoto) {
-                    contributions.push({ field: 'photo', value: currentContribPhotoBase64, autoAssist: false, autoSources: [] });
-                }
-
-                if (contributions.length === 0) {
-                    return window.showCustomMsg("您填寫的資料與既有店家資訊相同，無需重複補充！");
-                }
-
-                let submittedCount = 0;
-                for (const c of contributions) {
-                    // Anti-spam duplicate check
-                    if (window.JiaCommunity?.isDuplicateContribution && window.JiaCommunity.isDuplicateContribution(window.placeContributions || [], { jiaPlaceId, uid, field: c.field, value: c.value })) {
-                        console.log(`跳過重複提交: ${c.field}`);
-                        continue;
-                    }
-
-                    const record = window.JiaCommunity?.createContributionRecord ? 
-                        window.JiaCommunity.createContributionRecord({
-                            jiaPlaceId,
-                            uid,
-                            userName,
-                            field: c.field,
-                            value: c.value,
-                            note: `補充 ${place.name} 的 ${c.field}`,
-                            autoAssist: c.autoAssist,
-                            autoSources: c.autoSources
-                        }) : {
-                            contributionId: `contrib_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-                            jiaPlaceId,
-                            placeName: place.name,
-                            uid,
-                            userName,
-                            field: c.field,
-                            value: c.value,
-                            autoAssist: c.autoAssist || false,
-                            autoSources: c.autoSources || [],
-                            status: 'pending',
-                            createdAt: new Date().toISOString()
-                        };
-                    record.placeName = place.name;
-
-                    if (db && currentUser) {
-                        const docRef = await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'placeContributions'), {
-                            ...record,
-                            timestamp: serverTimestamp()
-                        });
-                        record.id = docRef.id;
-                    }
-                    window.placeContributions = window.placeContributions || [];
-                    window.placeContributions.unshift(record);
-                    submittedCount++;
-                }
-
-                window.clearContribPhoto();
                 window.closeModal('place-contribute-modal');
-                window.showCustomMsg(`🎉 店家資訊已成功送出！\n\n已提交 ${submittedCount} 項資料，待管理員審核通過後將正式更新店家卡片。`);
+                
+                // 區分 Fact vs Experience 提示語
+                const isExperience = ['recommendedDishes', 'averageSpend'].includes(contribRecordPayload.field);
+                if (isExperience) {
+                    window.showCustomMsg("✓ 謝謝你的分享！\n\n你的美食經驗已收錄，將幫助更多吃貨！");
+                } else {
+                    window.showCustomMsg("✓ 已收到你的回報！\n\n確認後會更新給所有吃貨參考。");
+                }
+
                 if (typeof window.renderAdminDataList === 'function') window.renderAdminDataList();
+                if (window.currentDetailPlace) {
+                    window.loadPlaceDetails({ name: window.currentDetailPlace.name, jiaPlace: window.currentDetailPlace });
+                }
             } catch (err) {
                 console.error("提交貢獻失敗:", err);
                 window.showCustomMsg(`⚠️ 提交失敗：${err.message || err}`);
             } finally {
-                if (btn) { btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> <span>送出補充資料</span>'; btn.disabled = false; }
+                if (btn) { btn.innerHTML = originalBtnHtml; btn.disabled = false; }
             }
         };
 
@@ -10240,6 +10480,7 @@
                     if (isApproved && jiaPlace) {
                         let updatedPlace = null;
                         let auditedContribution = null;
+
 
                         if (window.JiaCanonicalPromotionService && window.JiaCanonicalPromotionService.ALLOWED_PROMOTION_FIELDS.includes(contrib.field)) {
                             const promoRes = window.JiaCanonicalPromotionService.prepareFieldPromotion({
@@ -10380,6 +10621,15 @@
                         const currentVal = matchedPlace ? matchedPlace[c.field] : null;
                         const hasCurrent = currentVal !== undefined && currentVal !== null && currentVal !== '';
 
+                        const formatValSafe = (val, field) => {
+                            if (val === undefined || val === null || val === '') return '<span class="text-gray-400 italic">尚未有資料</span>';
+                            if (field === 'openingHours' && typeof val === 'object' && window.JiaCommunityContributionUX?.formatStructuredHoursForDisplay) {
+                                return window.escapeHtml(window.JiaCommunityContributionUX.formatStructuredHoursForDisplay(val));
+                            }
+                            if (Array.isArray(val)) return window.escapeHtml(val.join('、'));
+                            return window.escapeHtml(typeof val === 'object' ? JSON.stringify(val) : String(val));
+                        };
+
                         return `
                         <div class="bg-amber-50/50 p-3.5 rounded-2xl border border-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
                             <div class="min-w-0 flex-1">
@@ -10391,18 +10641,19 @@
                                 <div class="mt-1.5 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                                     <div class="bg-gray-50 p-2 rounded-xl border border-gray-200">
                                         <span class="text-[10px] font-bold text-gray-400 block">目前正式庫：</span>
-                                        <p class="font-medium text-gray-700 truncate mt-0.5">
-                                            ${hasCurrent ? window.escapeHtml(typeof currentVal === 'object' ? JSON.stringify(currentVal) : String(currentVal)) : '<span class="text-gray-400 italic">尚未有資料</span>'}
+                                        <p class="font-medium text-gray-700 mt-0.5 whitespace-pre-line text-xs">
+                                            ${formatValSafe(currentVal, c.field)}
                                         </p>
                                     </div>
                                     <div class="bg-white p-2 rounded-xl border border-amber-200 shadow-2xs">
                                         <span class="text-[10px] font-bold text-amber-600 block">社群投稿：</span>
-                                        <p class="font-bold text-gray-900 truncate mt-0.5">
-                                            ${c.field === 'photo' ? `<img src="${c.value}" class="h-16 w-24 object-cover rounded-lg border border-amber-200">` : window.escapeHtml(typeof c.value === 'object' ? JSON.stringify(c.value) : String(c.value))}
+                                        <p class="font-bold text-gray-900 mt-0.5 whitespace-pre-line text-xs">
+                                            ${c.field === 'photo' ? `<img src="${c.value}" class="h-16 w-24 object-cover rounded-lg border border-amber-200">` : formatValSafe(c.value, c.field)}
                                         </p>
                                     </div>
                                 </div>
                             </div>
+
                             <div class="flex items-center gap-2 shrink-0">
                                 <button onclick="window.reviewContribution('${c.contributionId || c.id}', true)" class="bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold px-3 py-1.5 rounded-xl shadow-xs transition flex items-center gap-1">
                                     <i class="fa-solid fa-check"></i> 採用

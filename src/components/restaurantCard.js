@@ -69,6 +69,18 @@
         const address = place.address || place.formatted_address || (place.city ? `${place.city} ${place.district || ''}` : '') || '';
         const recommenders = options.recommenders || place.recommenders || [];
 
+        // Phase 2A: Resolve primary contribution CTA (Context-aware, single CTA)
+        let ctaInfo = null;
+        const uxHelper = (typeof window !== 'undefined' && window.JiaCommunityContributionUX) 
+            || (typeof window !== 'undefined' && window.JiaCommunity?.getPrimaryContributionCTA ? window.JiaCommunity : null)
+            || (typeof require === 'function' ? require('../services/communityContributionUXService.js') : null);
+        
+        if (uxHelper && typeof uxHelper.getPrimaryContributionCTA === 'function') {
+            const currentUid = options.currentUid || (typeof window !== 'undefined' ? (window.currentUser?.uid || window.myIdentity?.name || '') : '');
+            const userContributions = options.userContributions || (typeof window !== 'undefined' ? (window.placeContributions || []) : []);
+            ctaInfo = uxHelper.getPrimaryContributionCTA(place, { currentUid, userContributions });
+        }
+
         return {
             id: place.jiaPlaceId || place.id || '',
             name,
@@ -88,7 +100,8 @@
             primaryCategory: categories[0] || '',
             address,
             recommenders,
-            city: place.city || ''
+            city: place.city || '',
+            ctaInfo
         };
     }
 
@@ -172,11 +185,22 @@
                     ${addressHtml}
                     ${recBadgeHtml}
                 </div>
-                <div class="mt-2.5 pt-2 border-t border-gray-50 flex items-center justify-between gap-1.5">
-                    <span class="text-[11px] font-bold text-orange-600 group-hover:text-orange-700 flex items-center gap-1 transition">
-                        查看詳情 <i class="fa-solid fa-chevron-right text-[9px] transition-transform group-hover:translate-x-0.5"></i>
-                    </span>
-                    <div class="flex items-center gap-1" onclick="event.stopPropagation()">
+                <div class="mt-2.5 pt-2 border-t border-gray-50 flex items-center justify-between gap-1.5 flex-wrap">
+                    <div class="flex items-center gap-1.5 min-w-0">
+                        <span class="text-[11px] font-bold text-orange-600 group-hover:text-orange-700 flex items-center gap-1 transition shrink-0">
+                            查看詳情 <i class="fa-solid fa-chevron-right text-[9px] transition-transform group-hover:translate-x-0.5"></i>
+                        </span>
+                        ${vm.ctaInfo && !vm.ctaInfo.disabled ? `
+                        <button type="button" onclick="event.stopPropagation(); if (window.openContributeModal) { window.openContributeModal({ name: '${vm.safeName}', jiaPlaceId: '${vm.id}' }, '${vm.ctaInfo.field}'); }" class="contribution-context-cta h-6 px-2 rounded-md bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200/80 text-[10px] font-black flex items-center gap-1 transition shadow-2xs truncate max-w-[130px]" title="${escapeHtml(vm.ctaInfo.tooltip || vm.ctaInfo.label)}">
+                            <i class="fa-solid ${escapeHtml(vm.ctaInfo.icon)} text-amber-600 text-[9px]"></i><span class="truncate">${escapeHtml(vm.ctaInfo.label)}</span>
+                        </button>
+                        ` : (vm.ctaInfo && vm.ctaInfo.state === 'USER_PENDING' ? `
+                        <span class="h-6 px-2 rounded-md bg-blue-50 text-blue-700 border border-blue-200/60 text-[9px] font-bold inline-flex items-center gap-1 shadow-2xs" title="${escapeHtml(vm.ctaInfo.tooltip)}">
+                            <i class="fa-solid fa-check text-blue-500 text-[8px]"></i><span>已回報確認中</span>
+                        </span>
+                        ` : '')}
+                    </div>
+                    <div class="flex items-center gap-1 shrink-0" onclick="event.stopPropagation()">
                         <button type="button" onclick="window.toggleUserPlaceState ? window.toggleUserPlaceState('${vm.id}', 'ate', '${vm.safeName}') : null;" class="h-7 px-2 rounded-lg bg-gray-50 hover:bg-emerald-50 text-gray-500 hover:text-emerald-600 border border-gray-200 text-[10px] font-bold flex items-center gap-1 transition shadow-2xs" title="標記我吃過這家">
                             <i class="fa-solid fa-circle-check text-[10px]"></i><span>吃過</span>
                         </button>

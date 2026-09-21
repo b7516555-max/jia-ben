@@ -414,17 +414,22 @@
             if (c.uid !== newContrib.uid) return false;
             if (c.field !== newContrib.field) return false;
             if (JSON.stringify(c.value) !== JSON.stringify(newContrib.value)) return false;
-            const cTime = new Date(c.createdAt || 0).getTime();
+            if (c.status === 'pending') return true;
+            const cTime = c.createdAt ? new Date(c.createdAt).getTime() : now;
             return (now - cTime) < windowMs;
         });
     }
+
+
+    const UXService = typeof require === 'function' ? require('./communityContributionUXService.js') : (typeof window !== 'undefined' ? window.JiaCommunityContributionUX : null);
 
     const CommunityService = {
         CATEGORY_DICTIONARY,
         sanitizeText,
         validateAndNormalizePhone,
         validateAddress,
-        validateOpeningHoursSchema,
+        validateOpeningHoursSchema: UXService ? UXService.validateStructuredOpeningHours : validateOpeningHoursSchema,
+        validateStructuredOpeningHours: UXService ? UXService.validateStructuredOpeningHours : validateOpeningHoursSchema,
         validateSpend,
         calculateRobustAverageSpend,
         normalizeRecommendedDish,
@@ -432,7 +437,13 @@
         isDuplicateContribution,
         calculatePlaceCompleteness,
         createContributionRecord,
-        applyContributionToPlace
+        applyContributionToPlace,
+        // Phase 2A UX Helpers
+        getPrimaryContributionCTA: UXService ? UXService.getPrimaryContributionCTA : null,
+        parseOpeningHours: UXService ? UXService.parseOpeningHours : null,
+        formatStructuredHoursForDisplay: UXService ? UXService.formatStructuredHoursForDisplay : null,
+        formatAverageSpendDisplay: UXService ? UXService.formatAverageSpendDisplay : null,
+        cleanRecommendedDishesInput: UXService ? UXService.cleanRecommendedDishesInput : null
     };
 
     if (typeof module !== 'undefined' && module.exports) {
