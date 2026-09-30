@@ -58,6 +58,7 @@
     <script src="./src/services/smartSearch.js?v=2"></script>
     <script src="./src/services/smartWheel.js?v=2"></script>
     <script src="./src/services/restaurantViewModel.js?v=1"></script>
+    <script src="./src/services/openingHoursService.js?v=1"></script>
     <script src="./src/services/mapRestaurantContract.js?v=1"></script>
     <script src="./src/services/interactiveMap.js?v=1"></script>
     <script src="./src/components/restaurantCard.js?v=2"></script>
@@ -84,6 +85,16 @@
         window.closeModal = function(id) {
             var m = document.getElementById(id);
             if (m) m.classList.add('hidden');
+            if (id === 'detail-lightbox') { m?.classList.remove('flex'); }
+            if (id === 'card-detail-modal' && window.__JIA_DETAIL_RETURN_CONTEXT) {
+                const context = window.__JIA_DETAIL_RETURN_CONTEXT;
+                window.__JIA_DETAIL_RETURN_CONTEXT = null;
+                if (context.activeTab === 'map' && window.switchTab) {
+                    window.switchTab('map', true);
+                    if (context.restaurantId) window.JiaInteractiveMap?.selectRestaurant(context.restaurantId, { pan: false });
+                }
+                context.focus?.focus?.();
+            }
         };
         document.addEventListener('DOMContentLoaded', function() {
             var searchArea = document.getElementById('jia-map-search-area');
@@ -1463,6 +1474,36 @@
                         <div id="detail-hours" class="mt-2 space-y-1 text-xs text-gray-500 leading-relaxed"></div>
                     </details>
                 </div>
+
+                <section id="detail-opening-section" class="bg-white p-3.5 rounded-2xl border border-gray-100 shadow-2xs" aria-labelledby="detail-opening-title">
+                    <div class="flex items-center justify-between gap-2 mb-2">
+                        <h3 id="detail-opening-title" class="text-xs font-black text-gray-700"><i class="fa-solid fa-clock text-emerald-500 mr-1"></i>營業狀態</h3>
+                        <span id="detail-opening-status" class="text-xs font-black px-2 py-1 rounded-full bg-gray-100 text-gray-600">讀取中…</span>
+                    </div>
+                    <p id="detail-today-hours" class="text-xs text-gray-600 break-words">今日營業時間載入中</p>
+                    <p id="detail-next-opening" class="text-[11px] text-gray-400 mt-1"></p>
+                </section>
+
+                <section id="detail-community-section" class="bg-white p-3.5 rounded-2xl border border-gray-100 shadow-2xs" aria-labelledby="detail-community-title">
+                    <h3 id="detail-community-title" class="text-xs font-black text-gray-700 mb-2"><i class="fa-solid fa-people-group text-orange-500 mr-1"></i>社群資訊</h3>
+                    <div id="detail-community-summary" class="grid grid-cols-2 gap-2 text-xs"></div>
+                    <div id="detail-dishes-list" class="flex flex-wrap gap-1.5 mt-2"></div>
+                </section>
+
+                <section id="detail-photo-section" class="bg-white p-3.5 rounded-2xl border border-gray-100 shadow-2xs" aria-labelledby="detail-photo-title">
+                    <div class="flex items-center justify-between mb-2"><h3 id="detail-photo-title" class="text-xs font-black text-gray-700"><i class="fa-solid fa-images text-sky-500 mr-1"></i>照片</h3><span class="text-[10px] text-gray-400">社群提供</span></div>
+                    <div id="detail-photo-gallery" class="grid grid-cols-3 gap-1.5"></div>
+                </section>
+
+                <section id="detail-reviews-section" class="bg-white p-3.5 rounded-2xl border border-gray-100 shadow-2xs" aria-labelledby="detail-reviews-title">
+                    <div class="flex items-center justify-between mb-2"><h3 id="detail-reviews-title" class="text-xs font-black text-gray-700"><i class="fa-solid fa-comments text-violet-500 mr-1"></i>評價摘要</h3><span id="detail-review-count" class="text-[10px] text-gray-400"></span></div>
+                    <div id="detail-reviews-preview" class="space-y-2"></div>
+                </section>
+
+                <section id="detail-gatherings-section" class="bg-white p-3.5 rounded-2xl border border-gray-100 shadow-2xs" aria-labelledby="detail-gatherings-title">
+                    <h3 id="detail-gatherings-title" class="text-xs font-black text-gray-700 mb-2"><i class="fa-solid fa-calendar-days text-rose-500 mr-1"></i>相關揪團</h3>
+                    <div id="detail-gatherings-list" class="space-y-2"></div>
+                </section>
                 
                 <div class="grid grid-cols-2 gap-2.5 pt-1">
                     <a id="detail-nav-btn" href="#" target="_blank" rel="noopener noreferrer" class="col-span-2 text-center bg-blue-500 text-white py-2.5 md:py-3 rounded-xl font-bold hover:bg-blue-600 transition shadow-sm tracking-wide flex items-center justify-center gap-2 text-sm"><i class="fa-solid fa-map-location-dot"></i> OpenStreetMap 地圖</a>
@@ -1473,6 +1514,11 @@
                 </div>
             </div>
         </div>
+    </div>
+
+    <div id="detail-lightbox" class="hidden fixed inset-0 z-[130] bg-black/90 items-center justify-center p-4" role="dialog" aria-modal="true" aria-label="照片預覽">
+        <button type="button" id="detail-lightbox-close" class="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/15 text-white text-xl" aria-label="關閉照片預覽"><i class="fa-solid fa-xmark"></i></button>
+        <img id="detail-lightbox-img" src="" alt="" class="max-w-full max-h-[86vh] object-contain rounded-xl">
     </div>
 
     <!-- 🌟 Part B & E: 社群微補充店家資訊 Modal (Community Micro-Contribution Modal) -->
@@ -7914,7 +7960,16 @@
             });
         };
 
-        window.openRestaurantDetailByName = function(nameOrEncoded) {
+        window.openRestaurantDetailById = function(restaurantId) {
+            const id = String(restaurantId || '');
+            const place = (window.jiaPlacesData || []).find(item => String(item.jiaPlaceId || item.id || '') === id)
+                || (window.restaurantData || []).find(item => String(item.jiaPlaceId || '') === id);
+            if (!place) return false;
+            return window.openRestaurantDetailByName(encodeURIComponent(place.name), { canonicalId: id, jiaPlace: place });
+        };
+
+        window.openRestaurantDetailByName = function(nameOrEncoded, options) {
+            options = options || {};
             const perfEnabled = window.__JIA_BEN_ENABLE_PERF === true;
             const perf = perfEnabled ? { name: '', t0: performance.now() } : null;
             if (perf) window.__jiaBenDetailPerf = perf;
@@ -7929,8 +7984,12 @@
 
             const matches = window.restaurantData.filter(item => item.name === name);
             const restaurant = matches[0] || {};
-            let jiaPlace = (window.jiaPlacesData || []).find(item => item.jiaPlaceId === restaurant.jiaPlaceId)
+            let jiaPlace = options.jiaPlace || (window.jiaPlacesData || []).find(item => item.jiaPlaceId === restaurant.jiaPlaceId)
                 || (window.jiaPlacesData || []).find(item => String(item.normalizedName || '').toLowerCase() === String(name).normalize('NFKC').toLowerCase().replace(/\s+/g,''));
+            const canonicalId = options.canonicalId || jiaPlace?.jiaPlaceId || restaurant.jiaPlaceId || '';
+            const mapState = window.JiaInteractiveMap?.getState?.();
+            const mapView = document.getElementById('jia-map-view');
+            window.__JIA_DETAIL_RETURN_CONTEXT = { activeTab: mapState && mapView && !mapView.classList.contains('hidden') ? 'map' : null, restaurantId: canonicalId, mapState, focus: document.activeElement };
             const mUrl = restaurant.mapLink || window.getOsmSearchUrl(name);
             const recommenders = [];
             matches.forEach(item => {
@@ -7959,7 +8018,8 @@
                 tags: tags,
                 ratingHtml: jiaPlace?.communityStats?.ratingCount ? `<i class="fa-solid fa-star mr-1 text-amber-400"></i> Jia-ben ${Number(jiaPlace.communityStats.ratingAverage).toFixed(1)} <span class="text-gray-500 text-xs ml-1 font-normal">(${jiaPlace.communityStats.ratingCount} 則)</span>` : '<span class="text-gray-400 text-xs">暫無 Jia-ben 評分</span>',
                 lineText: window.escapeForBtn(`這家看起來不錯，要約一下嗎？\n${name}\n🗺️ 地圖: ${mUrl}\n---\n來自「呷奔 Jia ben」\n${appUrl}`),
-                pDataStr: window.escapeForBtn(JSON.stringify({ name: name })),
+                jiaPlaceId: canonicalId,
+                pDataStr: window.escapeForBtn(JSON.stringify({ name: name, jiaPlaceId: canonicalId })),
                 safeNameStr: safeNameStr
             };
             if (perf) perf.t2 = performance.now();
@@ -8513,6 +8573,49 @@
 
             infoEl.innerHTML = rows.join('');
 
+            // 7.0C Information Hub：所有區塊均以 canonical jiaPlaceId 對齊，不以顯示名稱猜測資料。
+            const canonicalId = rawPlace.jiaPlaceId || data.jiaPlaceId || '';
+            const opening = window.JiaOpeningHours?.getStatus(rawPlace);
+            const openingBadge = document.getElementById('detail-opening-status');
+            const todayHours = document.getElementById('detail-today-hours');
+            const nextOpening = document.getElementById('detail-next-opening');
+            if (openingBadge && opening) {
+                openingBadge.textContent = opening.label;
+                openingBadge.className = `text-xs font-black px-2 py-1 rounded-full ${opening.isOpen ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`;
+            }
+            if (todayHours && opening && window.JiaOpeningHours) {
+                const day = opening.today || window.JiaOpeningHours.extract(rawPlace)[new Date().getDay()];
+                todayHours.textContent = `今日：${day?.closed ? '休息' : (day?.ranges || []).map(range => `${window.JiaOpeningHours.formatTime(range.open)}${range.close == null ? '' : `–${window.JiaOpeningHours.formatTime(range.close)}`}`).join('、') || '休息'}`;
+            }
+            if (nextOpening) nextOpening.textContent = opening?.nextOpening ? `下次營業：${opening.nextOpening}` : (opening?.closesAt ? `預計 ${opening.closesAt} 打烊` : '');
+
+            const stats = rawPlace.communityStats || {};
+            const communitySummary = document.getElementById('detail-community-summary');
+            if (communitySummary) communitySummary.innerHTML = [
+                Number(stats.averageSpend) > 0 ? `<div class="rounded-xl bg-emerald-50 border border-emerald-100 p-2"><span class="block text-[10px] text-emerald-700">社群人均</span><strong class="text-emerald-800">NT$${window.escapeHtml(stats.averageSpend)}</strong></div>` : '',
+                Number(stats.ratingCount) > 0 ? `<div class="rounded-xl bg-amber-50 border border-amber-100 p-2"><span class="block text-[10px] text-amber-700">Jia-ben 評分</span><strong class="text-amber-800">${Number(stats.ratingAverage || 0).toFixed(1)} / 5</strong><span class="block text-[10px] text-amber-700">${stats.ratingCount} 則</span></div>` : ''
+            ].filter(Boolean).join('') || '<p class="col-span-2 text-xs text-gray-400">尚無社群統計，歡迎留下第一筆資料。</p>';
+            const dishes = Array.isArray(stats.recommendedDishes) ? stats.recommendedDishes : (Array.isArray(rawPlace.recommendedDishes) ? rawPlace.recommendedDishes : []);
+            const dishesEl = document.getElementById('detail-dishes-list');
+            if (dishesEl) dishesEl.innerHTML = dishes.length ? dishes.slice(0, 10).map(item => `<span class="px-2 py-1 rounded-lg bg-orange-50 border border-orange-100 text-orange-800 text-[11px] font-bold">${window.escapeHtml(item.name || item)}</span>`).join('') : '<span class="text-xs text-gray-400">尚無推薦菜色</span>';
+
+            const photos = window.imageSafety?.filterSafeImages ? window.imageSafety.filterSafeImages([...(rawPlace.communityPhotos || []), ...(rawPlace.photos || [])]) : [];
+            const gallery = document.getElementById('detail-photo-gallery');
+            if (gallery) gallery.innerHTML = photos.length ? photos.slice(0, 9).map((photo, index) => { const url = typeof photo === 'string' ? photo : photo.url; return `<button type="button" class="aspect-square overflow-hidden rounded-xl bg-gray-100" aria-label="查看第 ${index + 1} 張照片" onclick="window.openDetailLightbox('${window.escapeForBtn(url)}')"><img src="${window.escapeHtml(url)}" alt="${window.escapeHtml(data.name)} 的社群照片" class="w-full h-full object-cover" loading="lazy" onerror="this.closest('button').remove()"></button>`; }).join('') : '<p class="col-span-3 text-xs text-gray-400 py-2">尚無社群照片，歡迎分享第一張。</p>';
+
+            const reviews = Array.isArray(rawPlace.communityReviews) ? rawPlace.communityReviews.filter(item => item && item.status !== 'rejected') : (Array.isArray(rawPlace.reviews) ? rawPlace.reviews : []);
+            const reviewPreview = document.getElementById('detail-reviews-preview');
+            const reviewCount = document.getElementById('detail-review-count');
+            if (reviewCount) reviewCount.textContent = reviews.length ? `${reviews.length} 則近期心得` : (stats.ratingCount ? `${stats.ratingCount} 則評分` : '尚無評價');
+            if (reviewPreview) reviewPreview.innerHTML = reviews.length ? reviews.slice(0, 3).map(review => `<article class="rounded-xl bg-violet-50/60 border border-violet-100 p-2.5"><div class="flex justify-between gap-2 text-[11px] font-bold text-violet-900"><span>${window.escapeHtml(review.userName || review.creator || 'Jia-ben 吃貨')}</span><span>${review.rating ? `⭐ ${window.escapeHtml(review.rating)}` : ''}</span></div><p class="text-xs text-gray-700 mt-1 break-words">${window.escapeHtml(review.text || review.content || '留下了這間店的評價。')}</p></article>`).join('') : '<p class="text-xs text-gray-400">尚無文字心得，歡迎成為第一位分享者。</p>';
+
+            const gatherings = (window.partyData || []).filter(party => {
+                const partyId = party.jiaPlaceId || party.restaurantId || party.placeId || '';
+                return (canonicalId && String(partyId) === String(canonicalId)) || [party.location, party.title].some(value => String(value || '').trim() === String(data.name || '').trim());
+            });
+            const gatheringEl = document.getElementById('detail-gatherings-list');
+            if (gatheringEl) gatheringEl.innerHTML = gatherings.length ? gatherings.slice(0, 3).map(party => `<article class="rounded-xl bg-rose-50/60 border border-rose-100 p-2.5"><div class="text-xs font-black text-rose-900">${window.escapeHtml(party.title || data.name)}</div><div class="text-[11px] text-gray-600 mt-1">${window.escapeHtml(`${party.date || ''} ${party.time || ''}`.trim() || '日期待定')} · ${window.escapeHtml(party.location || data.name)}</div></article>`).join('') : '<p class="text-xs text-gray-400">目前沒有對應的揪團，歡迎發起一起吃飯。</p>';
+
             // 詳細營業時間折疊區
             if (pNorm.weekdayText && pNorm.weekdayText.length > 0) {
                 hoursEl.innerHTML = pNorm.weekdayText.map(line => `<p class="leading-relaxed">${window.escapeHtml(line)}</p>`).join('');
@@ -8526,6 +8629,21 @@
             window._currentPlaceId = rawPlace.sourceIds?.osm || '';
             return;
         };
+
+        window.openDetailLightbox = function(url) {
+            const modal = document.getElementById('detail-lightbox'), image = document.getElementById('detail-lightbox-img');
+            if (!modal || !image || !url) return;
+            image.src = url; image.alt = document.getElementById('detail-name')?.textContent || '餐廳照片';
+            modal.classList.remove('hidden'); modal.classList.add('flex');
+            document.getElementById('detail-lightbox-close')?.focus();
+        };
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('detail-lightbox-close')?.addEventListener('click', () => window.closeModal('detail-lightbox'));
+            document.getElementById('detail-lightbox')?.addEventListener('click', event => { if (event.target.id === 'detail-lightbox') window.closeModal('detail-lightbox'); });
+        });
+        document.addEventListener('keydown', event => {
+            if (event.key === 'Escape' && !document.getElementById('detail-lightbox')?.classList.contains('hidden')) window.closeModal('detail-lightbox');
+        });
 
         window.triggerDetailPhotoUpload = function() {
             const detailName = document.getElementById('detail-name')?.textContent || '';

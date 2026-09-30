@@ -1,0 +1,15 @@
+const assert = require('assert');
+const fs = require('fs');
+const path = require('path');
+const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+const map = fs.readFileSync(path.join(__dirname, '..', 'src/services/interactiveMap.js'), 'utf8');
+assert.ok(html.includes('openingHoursService.js'), 'opening-hour service loaded');
+assert.ok(html.includes('detail-opening-status') && html.includes('detail-photo-gallery'), 'detail hub sections present');
+assert.ok(html.includes('detail-gatherings-list') && html.includes('detail-reviews-preview'), 'community sections present');
+assert.ok(html.includes('openRestaurantDetailById'), 'canonical ID detail entry exists');
+assert.ok(html.includes('__JIA_DETAIL_RETURN_CONTEXT'), 'map return context is captured');
+assert.ok(html.includes('JiaOpeningHours?.getStatus'), 'detail uses centralized opening status');
+assert.ok(html.includes('openDetailLightbox'), 'gallery lightbox action exists');
+assert.ok(map.includes('openRestaurantDetailById'), 'map detail click preserves canonical ID');
+assert.ok(/window\.openDetailModal\(detailData\)/.test(html), 'immediate detail shell call is preserved');
+console.log('✅ phase 7C detail contract checks passed');
