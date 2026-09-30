@@ -373,13 +373,18 @@
 
     window.JiaPlaces = { searchPlaces, lookupPlace, selectPlace, configureFirebase, searchFirebase, quota, metrics, config, PlacesService, AutocompleteService, LatLng };
     window.OSMPlaces = window.JiaPlaces;
-    window.google = window.google || {};
-    window.google.maps = {
-        LatLng,
-        places: {
-            PlacesService,
-            AutocompleteService,
-            PlacesServiceStatus: { OK: 'OK', ZERO_RESULTS: 'ZERO_RESULTS', UNKNOWN_ERROR: 'UNKNOWN_ERROR' }
-        }
-    };
+    // 7.0A: no Google-shaped global compatibility shim in the default runtime.
+    // Historical callers must migrate to JiaPlaces; an explicit opt-in is kept only
+    // for isolated legacy fixtures and is never enabled by the production page.
+    if (window.__JIA_ENABLE_LEGACY_GOOGLE_COMPAT__ === true) {
+        window.google = window.google || {};
+        window.google.maps = {
+            LatLng,
+            places: {
+                PlacesService,
+                AutocompleteService,
+                PlacesServiceStatus: { OK: 'OK', ZERO_RESULTS: 'ZERO_RESULTS', UNKNOWN_ERROR: 'UNKNOWN_ERROR' }
+            }
+        };
+    }
 })();

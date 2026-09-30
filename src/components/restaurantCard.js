@@ -1,6 +1,9 @@
 (function () {
     'use strict';
 
+    const canonical = (typeof window !== 'undefined' && window.JiaRestaurantViewModel)
+        || (typeof require === 'function' ? require('../services/restaurantViewModel.js') : null);
+
     function escapeHtml(str) {
         if (!str) return '';
         return String(str)
@@ -55,9 +58,10 @@
      * Single View Model Builder for Restaurant Cards
      */
     function buildRestaurantCardViewModel(place = {}, options = {}) {
-        const name = place.name || '未命名餐廳';
+        const normalized = canonical ? canonical.normalize(place, options) : place;
+        const name = normalized.name || place.name || '未命名餐廳';
         const imageInfo = selectBestPlacePhoto(place);
-        const distKm = options.distanceKm != null ? options.distanceKm : (place._distKm != null ? place._distKm : (place.dist != null ? place.dist : null));
+        const distKm = options.distanceKm != null ? options.distanceKm : (normalized.distance ?? place._distKm ?? place.dist ?? null);
         
         const stats = place.communityStats || {};
         const ratingAvg = Number(stats.ratingAverage || 0);
@@ -65,14 +69,9 @@
         const avgSpend = Number(stats.averageSpend || 0);
         const spendCount = Number(stats.spendCount || 0);
         
-        const categories = Array.isArray(place.categories) && place.categories.length > 0 ? place.categories : (place.category ? [place.category] : []);
-        const address = place.address || place.formatted_address || (place.city ? `${place.city} ${place.district || ''}` : '') || '';
-        const rawOpeningHours = place.openingHours || place.hours || '';
-        const openingHours = typeof rawOpeningHours === 'string'
-            ? rawOpeningHours.trim()
-            : (Array.isArray(rawOpeningHours?.weekday_text) && rawOpeningHours.weekday_text.length > 0
-                ? rawOpeningHours.weekday_text[0]
-                : (rawOpeningHours?.text || ''));
+        const categories = normalized.categories || (Array.isArray(place.categories) ? place.categories : (place.category ? [place.category] : []));
+        const address = normalized.address || '';
+        const openingHours = normalized.openingHours || '';
         const recommenders = options.recommenders || place.recommenders || [];
 
         // Phase 2A: Resolve primary contribution CTA (Context-aware, single CTA)
@@ -88,7 +87,7 @@
         }
 
         return {
-            id: place.jiaPlaceId || place.id || '',
+            id: normalized.id || place.jiaPlaceId || place.id || '',
             name,
             safeName: escapeForBtn(name),
             photoUrl: imageInfo.url || getFallbackImage(name),
@@ -106,6 +105,7 @@
             primaryCategory: categories[0] || '',
             address,
             openingHours,
+            openStatus: normalized.openStatus || '',
             recommenders,
             city: place.city || '',
             ctaInfo
@@ -171,7 +171,7 @@
         }
 
         return `
-        <div class="restaurant-card group bg-white rounded-2xl md:rounded-3xl shadow-xs hover:shadow-lg border border-gray-100 hover:border-orange-200 overflow-hidden cursor-pointer transition-all duration-300 flex flex-col h-full active:scale-[0.98]" onclick="window.openRestaurantDetailByName('${vm.safeName}')">
+        <div class="restaurant-card group bg-white rounded-2xl md:rounded-3xl shadow-xs hover:shadow-lg border border-gray-100 hover:border-orange-200 overflow-hidden cursor-pointer transition-all duration-300 flex flex-col h-full active:scale-[0.98]" data-restaurant-id="${escapeHtml(vm.id)}" role="button" tabindex="0" aria-label="查看 ${escapeHtml(vm.name)} 詳情" onclick="window.openRestaurantDetailByName('${vm.safeName}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault(); window.openRestaurantDetailByName('${vm.safeName}');}">
             <div class="relative aspect-[16/10] sm:aspect-[16/9] w-full overflow-hidden bg-gray-100 shrink-0">
                 <img src="${vm.photoUrl}" onerror="this.onerror=null; this.src=window.getFallbackImage ? window.getFallbackImage('${vm.safeName}') : './assets/place-placeholder.svg';" alt="${escapeHtml(vm.name)}" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy">
                 <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
@@ -190,6 +190,7 @@
                     </div>
                     ${priceHtml ? `<div>${priceHtml}</div>` : ''}
                     ${addressHtml}
+                    ${vm.openStatus ? `<p class="text-[11px] ${/休息|關閉|closed/i.test(vm.openStatus) ? 'text-gray-500' : 'text-emerald-700'} font-bold flex items-center gap-1"><i class="fa-solid fa-circle text-[7px]"></i><span>${escapeHtml(vm.openStatus)}</span></p>` : ''}
                     ${vm.openingHours ? `<p class="text-[11px] text-emerald-700 font-medium break-words flex items-start gap-1 leading-snug"><i class="fa-solid fa-clock text-emerald-500 text-[10px] shrink-0 mt-0.5"></i><span class="break-anywhere numeric-value">${escapeHtml(vm.openingHours)}</span></p>` : ''}
                     ${recBadgeHtml}
                 </div>

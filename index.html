@@ -14,12 +14,14 @@
 
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="./src/styles/design-tokens.css?v=1">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Color+Emoji&display=swap" rel="stylesheet">
     <!-- OpenStreetMap / Nominatim 地點搜尋相容層（無需付費金鑰） -->
     <script src="./osm-adapter.js?v=5"></script>
     <script src="./src/utils/imageSafety.js?v=2"></script>
+    <script src="./src/utils/googlePlacesGuard.js?v=1"></script>
     <script src="./src/utils/placeMatch.js?v=2"></script>
     <script src="./src/utils/taiwanAddressNormalizer.js?v=60"></script>
     <script src="./src/utils/taiwanPhoneNormalizer.js?v=60"></script>
@@ -53,8 +55,12 @@
     <script src="./src/services/placeIntelligence.js?v=60"></script>
     <script src="./src/services/smartSearch.js?v=2"></script>
     <script src="./src/services/smartWheel.js?v=2"></script>
+    <script src="./src/services/restaurantViewModel.js?v=1"></script>
+    <script src="./src/services/mapRestaurantContract.js?v=1"></script>
     <script src="./src/components/restaurantCard.js?v=2"></script>
     <script>
+        window.JiaGooglePlacesGuard?.install();
+        window.NO_GOOGLE_PLACES_RUNTIME = true;
         window.enterApp = function() {
             var intro = document.getElementById('intro-screen');
             var mainApp = document.getElementById('main-app');
@@ -5587,22 +5593,22 @@
             }
         };
         
-        function executeGoogleSearch(lat, lng, k, rad, vT) { 
-            if (typeof google !== 'undefined' && google.maps && google.maps.places) { 
-                try {
-                    const request = { location: new google.maps.LatLng(lat, lng), radius: rad, query: k };
-
-                    new google.maps.places.PlacesService(document.createElement('div')).textSearch(request, (res, status) => { 
-                        if (status === 'OK' && res.length > 0) { 
-                            handleGoogleResults(res, vT, lat, lng); 
-                        } else { 
-                            displayNoResults(vT); 
-                        } 
-                    }); 
-                } catch(e) { useFallback(vT, lat, lng); }
-            } else { 
-                useFallback(vT, lat, lng);
-            } 
+        function executeGoogleSearch(lat, lng, k, rad, vT) {
+            // 7.0A: this historical function name is retained for callers only.
+            // Search is local-first/OSM-backed; Google Places is never a runtime provider.
+            const search = window.JiaPlaces?.searchPlaces;
+            if (typeof search !== 'function') return useFallback(vT, lat, lng);
+            search({ query: k, location: { lat, lng }, radius: Number(rad) || 50000, desiredResults: 30 })
+                .then(results => {
+                    const normalized = (results || []).map(place => {
+                        const coords = window.JiaRestaurantViewModel?.coordinates(place);
+                        return { ...place, geometry: { location: { lat: () => coords?.lat, lng: () => coords?.lng } }, dist: place._distKm ?? null,
+                            openStatus: place.openStatus === -1 ? -1 : (place.openStatus === 1 ? 1 : 0),
+                            formatted_address: place.formatted_address || place.address || '' };
+                    }).filter(place => Number.isFinite(place.geometry.location.lat()) && Number.isFinite(place.geometry.location.lng()));
+                    if (normalized.length) handleGoogleResults(normalized, vT, lat, lng); else displayNoResults(vT);
+                })
+                .catch(() => useFallback(vT, lat, lng));
         }
 
         function handleGoogleResults(res, vT, mLat, mLng) { 
