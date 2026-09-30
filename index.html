@@ -15,6 +15,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="./src/styles/design-tokens.css?v=1">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <link rel="stylesheet" href="./src/styles/interactive-map.css?v=1">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Color+Emoji&display=swap" rel="stylesheet">
@@ -57,6 +59,7 @@
     <script src="./src/services/smartWheel.js?v=2"></script>
     <script src="./src/services/restaurantViewModel.js?v=1"></script>
     <script src="./src/services/mapRestaurantContract.js?v=1"></script>
+    <script src="./src/services/interactiveMap.js?v=1"></script>
     <script src="./src/components/restaurantCard.js?v=2"></script>
     <script>
         window.JiaGooglePlacesGuard?.install();
@@ -82,6 +85,18 @@
             var m = document.getElementById(id);
             if (m) m.classList.add('hidden');
         };
+        document.addEventListener('DOMContentLoaded', function() {
+            var searchArea = document.getElementById('jia-map-search-area');
+            var locate = document.getElementById('jia-map-locate');
+            if (searchArea) searchArea.addEventListener('click', function() { window.JiaInteractiveMap?.searchThisArea(); });
+            if (locate) locate.addEventListener('click', function() { window.JiaInteractiveMap?.locateUser(); });
+            window.JiaInteractiveMap?.subscribe(function(next) {
+                var count = document.getElementById('jia-map-result-count');
+                var button = document.getElementById('jia-map-search-area');
+                if (count) count.textContent = next.filteredRestaurantIds.length ? `(${next.filteredRestaurantIds.length})` : '';
+                if (button) button.classList.toggle('hidden', !next.isSearchAreaAvailable);
+            });
+        });
     </script>
     <style>
         *, *::before, *::after {
@@ -1971,6 +1986,7 @@
                 <i class="fa-solid fa-utensils drop-shadow-sm"></i>
             </div>
             <button onclick="window.switchTab('explore')" id="tab-explore" class="tab-btn active flex-1 md:flex-none py-2 md:py-3 flex flex-col items-center gap-1 transition md:w-[84px] md:mx-auto md:hover:bg-orange-50 md:hover:text-orange-400"><i class="fa-solid fa-compass text-[18px] md:text-[20px] mb-0.5"></i><span>找餐廳</span></button>
+            <button onclick="window.switchTab('map')" id="tab-map" class="tab-btn flex-1 md:flex-none py-2 md:py-3 flex flex-col items-center gap-1 transition md:w-[84px] md:mx-auto md:hover:bg-orange-50 md:hover:text-orange-400" aria-label="地圖找餐廳"><i class="fa-solid fa-map-location-dot text-[18px] md:text-[20px] mb-0.5"></i><span>地圖</span></button>
             <button onclick="window.switchTab('nearby')" id="tab-nearby" class="tab-btn flex-1 md:flex-none py-2 md:py-3 flex flex-col items-center gap-1 transition md:w-[84px] md:mx-auto md:hover:bg-orange-50 md:hover:text-orange-400"><i class="fa-solid fa-dharmachakra text-[18px] md:text-[20px] mb-0.5"></i><span>輪盤</span></button>
             <button onclick="window.switchTab('history')" id="tab-history" class="tab-btn flex-1 md:flex-none py-2 md:py-3 flex flex-col items-center gap-1 transition md:w-[84px] md:mx-auto md:hover:bg-orange-50 md:hover:text-orange-400"><i class="fa-solid fa-clock-rotate-left text-[18px] md:text-[20px] mb-0.5"></i><span>吃過</span></button>
             <button onclick="window.switchTab('party')" id="tab-party" class="tab-btn flex-1 md:flex-none py-2 md:py-3 flex flex-col items-center gap-1 transition md:w-[84px] md:mx-auto md:hover:bg-orange-50 md:hover:text-orange-400 relative"><i class="fa-solid fa-fire text-[18px] md:text-[20px] mb-0.5"></i><span>揪團</span></button>
@@ -2138,6 +2154,23 @@
                                 <div class="text-center text-gray-300 py-10 mt-2 col-span-full"><i class="fa-solid fa-mug-hot text-5xl mb-3 opacity-30"></i><p class="text-xs font-medium text-gray-400">正在探索好店...</p></div>
                             </div>
                         </div>
+                    </div>
+                </div>
+
+                <!-- 7.0B: OSM interactive restaurant map -->
+                <div id="jia-map-view" class="hidden fade-in h-full flex flex-col relative w-full overflow-hidden">
+                    <div class="jia-map-layout flex-1">
+                        <section id="jia-map-sheet" class="jia-map-panel" data-state="half" aria-label="餐廳地圖清單">
+                            <div id="jia-map-sheet-handle" aria-label="拖曳餐廳清單"></div>
+                            <h2 class="text-lg font-black text-gray-800 flex items-center gap-2"><i class="fa-solid fa-utensils text-orange-500"></i><span>地圖找餐廳</span><span id="jia-map-result-count" class="text-xs font-bold text-gray-400"></span></h2>
+                            <div id="jia-map-results" class="jia-map-results" aria-live="polite"></div>
+                        </section>
+                        <section class="jia-map-canvas-wrap flex-1 relative" aria-label="OpenStreetMap 互動地圖">
+                            <div id="jia-map-canvas" role="application" aria-label="OpenStreetMap 餐廳地圖"></div>
+                            <div class="jia-map-controls"><button id="jia-map-search-area" type="button" class="hidden" aria-label="搜尋此區域"><i class="fa-solid fa-magnifying-glass mr-1"></i>搜尋此區域</button></div>
+                            <button id="jia-map-locate" type="button" class="jia-map-locate" aria-label="回到目前位置" title="回到目前位置"><i class="fa-solid fa-location-crosshairs"></i></button>
+                            <div id="jia-map-selected-preview" class="jia-map-selected-preview hidden"></div>
+                        </section>
                     </div>
                 </div>
 
@@ -3806,7 +3839,7 @@
 
         window.switchTab = function(tabName, forceRefresh = false) {
             if (!forceRefresh && document.getElementById('tab-' + tabName) && document.getElementById('tab-' + tabName).classList.contains('active')) return;
-            ['explore', 'nearby', 'history', 'random', 'party', 'feed', 'chat', 'list', 'admin', 'guide'].forEach(name => { 
+            ['explore', 'map', 'nearby', 'history', 'random', 'party', 'feed', 'chat', 'list', 'admin', 'guide'].forEach(name => {
                 document.getElementById('view-' + name)?.classList.add('hidden'); 
                 if(document.getElementById('tab-' + name)) document.getElementById('tab-' + name).classList.remove('active'); 
             });
@@ -3820,6 +3853,10 @@
             if(tabName === 'party') window.renderParties();
             if(tabName === 'chat') window.renderChatMessages(true);
             if(tabName === 'admin') window.renderAdminDataList();
+            if(tabName === 'map') {
+                window.JiaInteractiveMap?.open(window.jiaPlacesData || window.restaurantData || []);
+                setTimeout(() => window.JiaInteractiveMap?.initialize({ places: window.jiaPlacesData || window.restaurantData || [] }), 0);
+            }
         };
 
         window.switchAdminSubTab = function(tab) {
