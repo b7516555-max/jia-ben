@@ -4519,6 +4519,8 @@
         window.openIdentityModal = function() {
             updateConfigDropdowns();
             window.toggleIdTab('old');
+            // 每次開啟都先建立可見的人偶選項，避免只切換分頁時 picker 尚未初始化而呈現空白。
+            window.renderAvatarPicker(window.getDefaultAvatarId(window.myIdentity?.name || '新朋友'), window.myIdentity?.customAvatarUrl || '');
             const passInput = document.getElementById('id-password-only');
             if (passInput) passInput.value = '';
             const newPassInput = document.getElementById('new-id-password');
