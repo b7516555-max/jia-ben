@@ -1,0 +1,26 @@
+const fs = require('fs');
+const path = require('path');
+const { chromium } = require('playwright-core');
+const root = path.resolve(__dirname, '..');
+const evidence = path.join(root, 'reports', 'evidence', 'phase7d'); fs.mkdirSync(evidence, { recursive: true });
+const viewports = process.env.PHASE7D_VIEWPORTS ? process.env.PHASE7D_VIEWPORTS.split(',').map(x => x.split('x').map(Number)) : [[320,700],[360,800],[375,812],[390,844],[414,896],[768,1024],[820,1180],[1366,768],[1440,900],[1920,1080]];
+const reviews = Array.from({ length: 20 }, (_, i) => ({ id:`review-${i+1}`, reviewId:`review-${i+1}`, jiaPlaceId:'qa-1', restaurantId:'qa-1', userId:`user-${i+1}`, displayName:`測試吃貨 ${i+1}`, creator:`測試吃貨 ${i+1}`, rating: (i % 5) + 1, ratingNumeric:(i % 5) + 1, content: i === 0 ? '<script>alert(1)</script> 很好吃\n第二行' : `第 ${i+1} 則評論`, text: i === 0 ? '<script>alert(1)</script> 很好吃\n第二行' : `第 ${i+1} 則評論`, photos: [0,4].includes(i) ? ['./assets/place-placeholder.svg'] : [], createdAt:`2026-09-${String((i % 9) + 1).padStart(2,'0')}T00:00:00Z`, updatedAt:i === 0 ? '2026-09-20T00:00:00Z' : undefined, status:'PUBLISHED', moderationStatus:'PUBLISHED', helpfulCount:i, helpfulBy:[] }));
+const fixture = [{ jiaPlaceId:'qa-1', name:'7.0D Review 測試餐廳', address:'屏東市測試路 1 號', city:'屏東市', categories:['麵店'], location:{lat:22.6761,lng:120.4942}, openingHours:'11:00–21:00', communityReviews:reviews, communityStats:{ratingAverage:3,ratingCount:20,averageSpend:240,spendCount:5}, coverPhoto:'./assets/place-placeholder.svg' }];
+(async()=>{
+  const browser=await chromium.launch({headless:true, executablePath:'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe'}); const rows=[];
+  for(const [width,height] of viewports){
+    const context=await browser.newContext({viewport:{width,height},serviceWorkers:'block'}); const page=await context.newPage(); page.setDefaultTimeout(10000); const errors=[], google=[];
+    page.on('pageerror',e=>errors.push(e.message)); page.on('console',m=>{if(m.type()==='error'&&!/Failed to load resource/i.test(m.text())) errors.push(m.text());}); page.on('request',r=>{if(/maps\.googleapis\.com|places\.googleapis\.com|maps\.google\.com/i.test(r.url()))google.push(r.url());});
+    await page.goto(`http://127.0.0.1:4175/index.html?phase7d=${width}`,{waitUntil:'domcontentloaded',timeout:30000}); await page.evaluate(()=>document.querySelectorAll('link[href*="fonts.googleapis.com"],link[href*="cdnjs.cloudflare.com"]').forEach(n=>n.remove())); await page.waitForTimeout(400); await page.getByRole('button',{name:/直接進入網頁版/}).click().catch(()=>{});
+    await page.evaluate(data=>{window.jiaPlacesData=data;window.restaurantData=data;window.feedData=data[0].communityReviews;window.JiaInteractiveMap?.setPlaces(data);window.switchTab?.('map',true);},fixture); await page.waitForTimeout(700); await page.locator('[data-map-restaurant-id="qa-1"]').click(); await page.locator('[data-map-detail="qa-1"]').click(); await page.waitForTimeout(120);
+    const visible=async selector=>page.locator(selector).isVisible().catch(()=>false);
+    const summary=await visible('#detail-rating-summary'), distribution=await page.locator('#detail-rating-summary [aria-label="評分分布"]').count()>0, list=await visible('#detail-review-list'), listCount=await page.locator('#detail-review-list [data-review-id]').count(), sort=await visible('#detail-review-sort'), write=await visible('#detail-review-write');
+    await page.locator('#detail-review-sort').selectOption('highest'); const sortedFirst=await page.locator('#detail-review-list [data-review-id]').first().getAttribute('data-review-id').catch(()=>null);
+    const photoButton=page.locator('#detail-review-list button[onclick*="openDetailLightbox"]').first(); await photoButton.click().catch(()=>{}); const lightbox=await visible('#detail-lightbox'); await page.keyboard.press('Escape');
+    await page.locator('#detail-review-write').click(); await page.waitForTimeout(50); const composer=await visible('#interaction-modal'), rating=await visible('#int-rating-options'), text=await visible('#int-notes'), submit=await visible('#btn-confirm-int');
+    if([320,375,390,414,1440].includes(width)) await page.screenshot({path:path.join(evidence,`reviews-${width}.png`),animations:'disabled'}); if(width===1440) await page.screenshot({path:path.join(evidence,'composer-1440.png'),animations:'disabled'});
+    await page.locator('#interaction-modal button').first().click().catch(()=>{}); await page.locator('#card-detail-modal button').first().click().catch(()=>{}); await page.waitForTimeout(100); const mapReturned=await page.evaluate(()=>!document.getElementById('jia-map-view')?.classList.contains('hidden'));
+    const overflow=await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1); rows.push({viewport:[width,height],summary,distribution,list,listCount,sort,sortedFirst,write,lightbox,composer,rating,text,submit,mapReturned,overflow,googleRequests:google,errors}); await context.close();
+  }
+  await browser.close(); console.log(JSON.stringify(rows,null,2)); if(rows.some(r=>!r.summary||!r.distribution||!r.list||r.listCount<5||!r.sort||!r.write||!r.lightbox||!r.composer||!r.rating||!r.text||!r.submit||!r.mapReturned||!r.overflow||r.googleRequests.length||r.errors.length))process.exitCode=1;
+})();

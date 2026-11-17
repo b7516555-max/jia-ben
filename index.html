@@ -46,6 +46,7 @@
     <script src="./src/services/taiwanPlaceIdentityResolver.js?v=60"></script>
     <script src="./src/services/taiwanPoiCache.js?v=60"></script>
     <script src="./src/services/communityReviewService.js?v=60"></script>
+    <script src="./src/services/reviewViewModel.js?v=1"></script>
     <script src="./src/services/completenessScorer.js?v=60"></script>
     <script src="./src/services/reviewResolver.js?v=60"></script>
     <script src="./src/services/discoveryResolver.js?v=60"></script>
@@ -1051,7 +1052,7 @@
     </div>
 
     <!-- 4. 社群互動模態框 (評價/收藏) -->
-    <div id="interaction-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 modal-backdrop fade-in">
+    <div id="interaction-modal" class="hidden fixed inset-0 z-[115] flex items-center justify-center bg-black/60 modal-backdrop fade-in" role="dialog" aria-modal="true" aria-labelledby="interaction-title">
         <div class="bg-white rounded-3xl p-6 w-11/12 max-w-sm shadow-2xl relative max-h-[90vh] overflow-y-auto no-scrollbar modal-dialog">
             <button onclick="window.closeModal('interaction-modal')" class="absolute top-4 right-5 text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark text-xl"></i></button>
             <div class="mb-4 text-center">
@@ -1496,8 +1497,13 @@
                 </section>
 
                 <section id="detail-reviews-section" class="bg-white p-3.5 rounded-2xl border border-gray-100 shadow-2xs" aria-labelledby="detail-reviews-title">
-                    <div class="flex items-center justify-between mb-2"><h3 id="detail-reviews-title" class="text-xs font-black text-gray-700"><i class="fa-solid fa-comments text-violet-500 mr-1"></i>評價摘要</h3><span id="detail-review-count" class="text-[10px] text-gray-400"></span></div>
+                    <div class="flex items-center justify-between mb-2 gap-2"><h3 id="detail-reviews-title" class="text-xs font-black text-gray-700"><i class="fa-solid fa-comments text-violet-500 mr-1"></i>社群評價</h3><span id="detail-review-count" class="text-[10px] text-gray-400"></span></div>
+                    <div id="detail-rating-summary" class="grid grid-cols-[auto_1fr] gap-3 items-center mb-3"></div>
+                    <div class="flex items-center justify-between gap-2 mb-2"><span class="text-[10px] text-gray-400">只顯示可公開的社群評價</span><select id="detail-review-sort" class="text-[11px] border border-gray-200 rounded-lg px-2 py-1 bg-white" aria-label="評價排序"><option value="latest">最新</option><option value="highest">評分最高</option><option value="lowest">評分最低</option><option value="helpful">最有幫助</option></select></div>
                     <div id="detail-reviews-preview" class="space-y-2"></div>
+                    <div id="detail-review-list" class="space-y-2 mt-2"></div>
+                    <button id="detail-review-load-more" type="button" class="hidden w-full mt-2 text-xs font-bold text-violet-700 bg-violet-50 border border-violet-100 rounded-xl py-2">載入更多評價</button>
+                    <button id="detail-review-write" type="button" class="w-full mt-3 bg-violet-600 hover:bg-violet-700 text-white rounded-xl py-2.5 text-xs font-black"><i class="fa-solid fa-pen mr-1"></i>寫一則社群評價</button>
                 </section>
 
                 <section id="detail-gatherings-section" class="bg-white p-3.5 rounded-2xl border border-gray-100 shadow-2xs" aria-labelledby="detail-gatherings-title">
@@ -6044,10 +6050,9 @@
                 console.error('評價店家資料解析失敗:', parseErr);
                 return window.showCustomMsg('⚠️ 無法讀取店家資料，請重新開啟店家後再試一次。');
             }
-            window.requireIdentity(() => {
-                pendingInteraction = { type: type, placeData: pD || {} };
-                openInteractionModal();
-            });
+            // Review composer uses delayed authentication: draft fields are usable before submit.
+            pendingInteraction = { type: type, placeData: pD || {} };
+            openInteractionModal();
         };
         window.selectIntRating = function(v) {
             const selected = window.getReviewRatingMeta(v).id;
@@ -6226,12 +6231,17 @@
             document.getElementById('interaction-title').innerHTML = isS ? '把好店收進口袋' : '留下你的美食足跡'; 
             document.getElementById('interaction-rating-section').classList.toggle('hidden', isS); 
             document.getElementById('btn-confirm-int').innerHTML = isS ? '收進口袋名單' : '發布至動態牆'; 
-            document.getElementById('int-notes').value = ''; 
-            document.getElementById('int-spend').value = '';
+            const draftKey = `jia-review-draft:${pendingInteraction.placeData.jiaPlaceId || pendingInteraction.placeData.name || ''}`;
+            const draft = window.__JIA_REVIEW_DRAFTS?.[draftKey] || {};
+            document.getElementById('int-notes').value = draft.text || ''; 
+            document.getElementById('int-spend').value = draft.spend || '';
             document.getElementById('int-spend-wrap').classList.toggle('hidden', isS);
             currentIntPhotos = [];
             window.renderIntPhotosGrid();
             window.selectIntRating('good'); 
+            const saveDraft = () => { window.__JIA_REVIEW_DRAFTS = window.__JIA_REVIEW_DRAFTS || {}; window.__JIA_REVIEW_DRAFTS[draftKey] = { text: document.getElementById('int-notes')?.value || '', spend: document.getElementById('int-spend')?.value || '', rating: document.getElementById('int-rating-value')?.value || 'good' }; };
+            if (document.getElementById('int-notes')) document.getElementById('int-notes').oninput = saveDraft;
+            if (document.getElementById('int-spend')) document.getElementById('int-spend').oninput = saveDraft;
             document.getElementById('interaction-modal').classList.remove('hidden'); 
         }
 
@@ -6252,6 +6262,52 @@
                 return false;
             }
         }
+
+        window.openJiaReviewComposer = function(place) {
+            const canonicalId = place?.jiaPlaceId || place?.restaurantId || '';
+            if (!canonicalId) return window.showCustomMsg('⚠️ 這間店目前缺少 canonical 餐廳 ID，暫時無法安全對應評價。');
+            const userKey = String(currentUser?.uid || window.myIdentity?.name || '');
+            const existing = (window.feedData || []).map(item => window.JiaReviewService?.normalize(item)).find(item => item && item.restaurantId === String(canonicalId) && item.userId === userKey && window.JiaReviewService.isPublic(item));
+            if (existing && existing.reviewId && window.feedData.some(item => String(item.id) === String(existing.reviewId))) return window.editJiaReview(existing.reviewId, canonicalId);
+            window.initInteraction('review', { ...place, jiaPlaceId: canonicalId, name: place.name });
+        };
+        window.recalculateJiaPlaceRating = async function(canonicalId) {
+            if (!canonicalId || !db || !currentUser) return;
+            const reviews = window.JiaReviewService.forRestaurant(window.feedData || [], canonicalId);
+            const aggregate = window.JiaReviewService.aggregate(reviews);
+            const place = (window.jiaPlacesData || []).find(item => item.jiaPlaceId === canonicalId);
+            if (!place) return;
+            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'jiaPlaces', canonicalId), { communityStats: { ratingAverage: aggregate.average, ratingCount: aggregate.count, ratingDistribution: aggregate.distribution, updatedAt: new Date().toISOString() } }, { merge: true });
+        };
+        window.toggleJiaReviewHelpful = async function(reviewId, canonicalId) {
+            const run = async () => {
+                const userKey = String(currentUser?.uid || window.myIdentity?.name || '');
+                const item = (window.feedData || []).find(entry => String(entry.id) === String(reviewId));
+                const normalized = item && window.JiaReviewService.normalize(item);
+                if (!normalized || normalized.restaurantId !== String(canonicalId)) return window.showCustomMsg('⚠️ 評價與餐廳不一致，未執行操作。');
+                const result = window.JiaReviewService.toggleHelpful(normalized, userKey);
+                if (!result.changed) return window.showCustomMsg('這則評價不能由自己標記為有幫助。');
+                item.helpfulCount = result.review.helpfulCount; item.helpfulBy = result.review.helpfulBy;
+                if (db && currentUser && typeof item.id === 'string') await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'feed', item.id), { helpfulCount: item.helpfulCount, helpfulBy: item.helpfulBy });
+                window.refreshJiaReviewDetail(canonicalId);
+            };
+            if (currentUser || window.myIdentity?.name) return run().catch(error => { console.error('Helpful 更新失敗:', error); window.showCustomMsg('⚠️ 暫時無法更新有幫助狀態。'); });
+            window.requireIdentity(run);
+        };
+        window.refreshJiaReviewDetail = function(canonicalId) {
+            const place = (window.jiaPlacesData || []).find(item => item.jiaPlaceId === canonicalId) || window.currentDetailPlace;
+            if (place && document.getElementById('card-detail-modal') && !document.getElementById('card-detail-modal').classList.contains('hidden')) window.loadPlaceDetails({ name: place.name, jiaPlace: place, jiaPlaceId: canonicalId });
+        };
+        window.editJiaReview = function(reviewId, canonicalId) {
+            const item = (window.feedData || []).find(entry => String(entry.id) === String(reviewId));
+            if (!item || String(item.jiaPlaceId || '') !== String(canonicalId)) return window.showCustomMsg('⚠️ 評價與餐廳不一致，未開啟編輯。');
+            window.openFeedItemEditModal(item.id);
+        };
+        window.deleteJiaReview = function(reviewId, canonicalId) {
+            const item = (window.feedData || []).find(entry => String(entry.id) === String(reviewId));
+            if (!item || String(item.jiaPlaceId || '') !== String(canonicalId)) return window.showCustomMsg('⚠️ 評價與餐廳不一致，未執行刪除。');
+            window.deleteFeedItemWithAuth(item.id);
+        };
 
         window.confirmInteraction = async function() {
             if(!pendingInteraction) return; 
@@ -6309,15 +6365,34 @@
                         const ratingNumeric = ({ good:5, tasty:4.5, nice:4, fair:3, poor:2, awful:1.5, bad:1 })[validRating] || null;
                         const relatedJiaPlace = (window.jiaPlacesData||[]).find(item=>item.jiaPlaceId===pData.jiaPlaceId)
                             || (window.jiaPlacesData||[]).find(item=>String(item.normalizedName||'')===String(pData.name||'').normalize('NFKC').toLowerCase().replace(/\s+/g,''));
+                        const reviewRestaurantId = relatedJiaPlace?.jiaPlaceId || pData.jiaPlaceId || '';
+                        const reviewUserId = String(currentUser?.uid || window.myIdentity?.name || c || '');
+                        const duplicateReview = window.JiaReviewService?.forRestaurant(window.feedData || [], reviewRestaurantId).find(item => item.userId === reviewUserId && item.reviewId !== pendingInteraction?.reviewId);
+                        if (!reviewRestaurantId) throw new Error('canonical_restaurant_id_required');
+                        if (duplicateReview) {
+                            window.closeModal('interaction-modal');
+                            return window.showCustomMsg('你已經評價過這間店囉！請從評價卡片選擇「編輯」，不會重複灌分。');
+                        }
                         
                         const reviewItem = { 
+                            reviewId: `review_${reviewRestaurantId}_${reviewUserId}_${Date.now()}`,
+                            restaurantId: reviewRestaurantId,
+                            userId: reviewUserId,
+                            displayName: c || 'Jia-ben 吃貨',
+                            source: 'jia-ben-community',
+                            schemaVersion: 2,
+                            moderationStatus: 'PUBLISHED',
+                            helpfulCount: 0,
+                            helpfulBy: [],
+                            createdAt: new Date().toISOString(),
+                            updatedAt: new Date().toISOString(),
                             restaurantName: pData.name || '美食好店', 
                             group: g || window.myIdentity?.group || '好友', 
                             creator: c || window.myIdentity?.name || '朋友', 
                             rating: validRating, 
                             ratingNumeric: ratingNumeric,
                             perPersonSpend: perPersonSpend,
-                            jiaPlaceId: relatedJiaPlace?.jiaPlaceId || '',
+                            jiaPlaceId: reviewRestaurantId,
                             content: n, 
                             city: cityVal, 
                             country: countryVal, 
@@ -6331,8 +6406,8 @@
                             customAvatarUrl: window.myIdentity?.customAvatarUrl || ''
                         };
 
-                        if (relatedJiaPlace?.jiaPlaceId && db && currentUser) {
-                            const stats=relatedJiaPlace.communityStats||{},oldRatingCount=Number(stats.ratingCount||0),oldSpendCount=Number(stats.spendCount||0);
+                        if (reviewRestaurantId && db && currentUser) {
+                            const stats=relatedJiaPlace?.communityStats||{},oldRatingCount=Number(stats.ratingCount||0),oldSpendCount=Number(stats.spendCount||0);
                             const communityPhotos=window.imageSafety.filterSafeImages([...(relatedJiaPlace.communityPhotos||[]),...finalPhotos]);
                             const nextStats={ratingAverage:ratingNumeric?Number((((Number(stats.ratingAverage||0)*oldRatingCount)+ratingNumeric)/(oldRatingCount+1)).toFixed(2)):stats.ratingAverage||null,ratingCount:oldRatingCount+(ratingNumeric?1:0),averageSpend:perPersonSpend?Math.round(((Number(stats.averageSpend||0)*oldSpendCount)+perPersonSpend)/(oldSpendCount+1)):stats.averageSpend||null,spendCount:oldSpendCount+(perPersonSpend?1:0),photoCount:new Set(communityPhotos).size};
                             await setDoc(doc(db,'artifacts',appId,'public','data','jiaPlaces',relatedJiaPlace.jiaPlaceId),{communityStats:nextStats,communityPhotos:communityPhotos,updatedAt:new Date().toISOString()},{merge:true});
@@ -7021,14 +7096,19 @@
             try {
                 item.content = newContent;
                 item.rating = newRating;
+                item.ratingNumeric = window.JiaReviewService?.LEGACY_RATINGS?.[newRating] || null;
+                item.updatedAt = new Date().toISOString();
                 if (db && currentUser && typeof feedId === 'string') {
                     await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'feed', feedId), {
                         content: newContent,
-                        rating: newRating
+                        rating: newRating,
+                        ratingNumeric: item.ratingNumeric,
+                        updatedAt: item.updatedAt
                     });
                 }
                 window.closeModal('feed-item-edit-modal');
                 window.renderFeed();
+                if (item.jiaPlaceId) { await window.recalculateJiaPlaceRating(item.jiaPlaceId).catch(() => {}); window.refreshJiaReviewDetail(item.jiaPlaceId); }
                 window.showCustomMsg("✅ 評價內容已成功更新！");
             } catch(e) {
                 console.error("更新評價失敗:", e);
@@ -7053,6 +7133,7 @@
                         window.feedData = window.feedData.filter(f => f.id !== feedId);
                         window.renderFeed();
                         if (typeof window.renderAdminDataList === 'function') window.renderAdminDataList();
+                        if (item.jiaPlaceId) { await window.recalculateJiaPlaceRating(item.jiaPlaceId).catch(() => {}); window.refreshJiaReviewDetail(item.jiaPlaceId); }
                         window.showCustomMsg("🗑️ 已成功移除該筆評價動態。");
                     } catch (e) {
                         console.error("刪除動態失敗:", e);
@@ -8201,6 +8282,7 @@
             if (reviewBtn) {
                 const pStr = data.pDataStr || window.escapeForBtn(JSON.stringify({ name: data.name }));
                 reviewBtn.onclick = function() {
+                    if (window.openJiaReviewComposer && window.currentDetailPlace?.jiaPlaceId) return window.openJiaReviewComposer(window.currentDetailPlace);
                     window.initInteraction('review', decodeURIComponent(pStr));
                     window.closeModal('card-detail-modal');
                 };
@@ -8603,11 +8685,48 @@
             const gallery = document.getElementById('detail-photo-gallery');
             if (gallery) gallery.innerHTML = photos.length ? photos.slice(0, 9).map((photo, index) => { const url = typeof photo === 'string' ? photo : photo.url; return `<button type="button" class="aspect-square overflow-hidden rounded-xl bg-gray-100" aria-label="查看第 ${index + 1} 張照片" onclick="window.openDetailLightbox('${window.escapeForBtn(url)}')"><img src="${window.escapeHtml(url)}" alt="${window.escapeHtml(data.name)} 的社群照片" class="w-full h-full object-cover" loading="lazy" onerror="this.closest('button').remove()"></button>`; }).join('') : '<p class="col-span-3 text-xs text-gray-400 py-2">尚無社群照片，歡迎分享第一張。</p>';
 
-            const reviews = Array.isArray(rawPlace.communityReviews) ? rawPlace.communityReviews.filter(item => item && item.status !== 'rejected') : (Array.isArray(rawPlace.reviews) ? rawPlace.reviews : []);
+            const reviewSource = [
+                ...(Array.isArray(rawPlace.communityReviews) ? rawPlace.communityReviews : []),
+                ...(Array.isArray(rawPlace.reviews) ? rawPlace.reviews : []),
+                ...(Array.isArray(window.feedData) ? window.feedData : [])
+            ];
+            const reviews = window.JiaReviewService?.forRestaurant(reviewSource, canonicalId) || [];
+            const ratingAggregate = window.JiaReviewService?.aggregate(reviews) || { average: null, count: 0, distribution: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 } };
+            const ratingSummary = document.getElementById('detail-rating-summary');
+            if (ratingSummary) {
+                const aggregateSource = ratingAggregate.count ? ratingAggregate : (rawPlace.communityStats?.ratingCount ? { average: Number(rawPlace.communityStats.ratingAverage), count: Number(rawPlace.communityStats.ratingCount), distribution: null } : ratingAggregate);
+                const score = Number.isFinite(aggregateSource.average) && aggregateSource.count ? `<strong class="text-2xl font-black text-violet-800">${aggregateSource.average.toFixed(1)} <span class="text-sm">★</span></strong><span class="block text-[10px] text-gray-500">${aggregateSource.count} 則評價</span>` : '<strong class="text-sm font-black text-gray-500">尚無評價</strong>';
+                const distribution = aggregateSource.distribution ? Object.keys(aggregateSource.distribution).sort((a, b) => b - a).map(star => { const count = aggregateSource.distribution[star], percent = aggregateSource.count ? Math.round((count / aggregateSource.count) * 100) : 0; return `<div class="flex items-center gap-1 text-[10px] text-gray-600"><span class="w-7 shrink-0">${star} ★</span><span class="h-2 rounded-full bg-gray-100 flex-1 overflow-hidden"><span class="block h-full bg-amber-400" style="width:${percent}%"></span></span><span class="w-12 text-right">${count}（${percent}%）</span></div>`; }).join('') : '<p class="text-[10px] text-gray-400">分布資料待補充</p>';
+                ratingSummary.innerHTML = `<div class="text-center">${score}</div><div class="space-y-1" aria-label="評分分布">${distribution}</div>`;
+            }
             const reviewPreview = document.getElementById('detail-reviews-preview');
             const reviewCount = document.getElementById('detail-review-count');
-            if (reviewCount) reviewCount.textContent = reviews.length ? `${reviews.length} 則近期心得` : (stats.ratingCount ? `${stats.ratingCount} 則評分` : '尚無評價');
-            if (reviewPreview) reviewPreview.innerHTML = reviews.length ? reviews.slice(0, 3).map(review => `<article class="rounded-xl bg-violet-50/60 border border-violet-100 p-2.5"><div class="flex justify-between gap-2 text-[11px] font-bold text-violet-900"><span>${window.escapeHtml(review.userName || review.creator || 'Jia-ben 吃貨')}</span><span>${review.rating ? `⭐ ${window.escapeHtml(review.rating)}` : ''}</span></div><p class="text-xs text-gray-700 mt-1 break-words">${window.escapeHtml(review.text || review.content || '留下了這間店的評價。')}</p></article>`).join('') : '<p class="text-xs text-gray-400">尚無文字心得，歡迎成為第一位分享者。</p>';
+            if (reviewCount) reviewCount.textContent = ratingAggregate.count ? `${ratingAggregate.count} 則評價` : (stats.ratingCount ? `${stats.ratingCount} 則評分` : '尚無評價');
+            const reviewList = document.getElementById('detail-review-list');
+            const reviewSort = document.getElementById('detail-review-sort');
+            const reviewLoadMore = document.getElementById('detail-review-load-more');
+            let reviewLimit = 5;
+            const renderReviewList = () => {
+                const sorted = window.JiaReviewService?.sort(reviews, reviewSort?.value || 'latest') || reviews;
+                const visible = sorted.slice(0, reviewLimit);
+                const renderCard = review => {
+                    const own = review.userId && review.userId === String(currentUser?.uid || window.myIdentity?.name || '');
+                    const edited = window.JiaReviewService && window.JiaReviewService.formatDate(review.updatedAt) !== window.JiaReviewService.formatDate(review.createdAt);
+                    const photo = review.photos?.[0] ? `<button type="button" class="mt-2 w-16 h-16 rounded-lg overflow-hidden" onclick="window.openDetailLightbox('${window.escapeForBtn(window.resolveReviewImage(review.photos[0], data.name))}')"><img src="${window.escapeHtml(window.resolveReviewImage(review.photos[0], data.name))}" alt="評價照片" class="w-full h-full object-cover"></button>` : '';
+                    return `<article class="rounded-xl border border-gray-100 bg-white p-3" data-review-id="${window.escapeHtml(review.reviewId)}"><div class="flex items-start justify-between gap-2"><div class="min-w-0"><strong class="text-xs text-gray-800">${window.escapeHtml(review.displayName)}</strong><div class="text-[10px] text-gray-400">${window.JiaReviewService.formatDate(review.createdAt)}${edited ? ' · 已編輯' : ''}</div></div><span class="text-xs font-black text-amber-600">${review.rating ? `${review.rating} ★` : ''}</span></div><p class="text-xs text-gray-700 mt-2 whitespace-pre-wrap break-words ${review.text.length > 420 ? 'line-clamp-5' : ''}">${window.JiaReviewService.escapeText(review.text)}</p>${photo}<div class="flex items-center gap-2 mt-2 text-[10px]"><button type="button" class="review-helpful-btn text-gray-500 hover:text-violet-700" data-review-helpful="${window.escapeHtml(review.reviewId)}" ${own ? 'disabled title="不能替自己的評價按有幫助"' : ''}><i class="fa-regular fa-thumbs-up mr-1"></i>${review.helpfulCount ? `${review.helpfulCount} 人覺得有幫助` : '有幫助'}</button>${own ? `<button type="button" class="text-violet-600 font-bold" data-review-edit="${window.escapeHtml(review.reviewId)}">編輯</button><button type="button" class="text-rose-600 font-bold" data-review-delete="${window.escapeHtml(review.reviewId)}">刪除</button>` : ''}</div></article>`;
+                };
+                if (reviewList) reviewList.innerHTML = visible.length ? visible.map(renderCard).join('') : '<p class="text-xs text-gray-400">尚無評價，歡迎成為第一位分享者。</p>';
+                if (reviewPreview) reviewPreview.innerHTML = '';
+                if (reviewLoadMore) reviewLoadMore.classList.toggle('hidden', sorted.length <= reviewLimit);
+                reviewList?.querySelectorAll('[data-review-helpful]').forEach(button => button.onclick = () => window.toggleJiaReviewHelpful?.(button.dataset.reviewHelpful, canonicalId));
+                reviewList?.querySelectorAll('[data-review-edit]').forEach(button => button.onclick = () => window.editJiaReview?.(button.dataset.reviewEdit, canonicalId));
+                reviewList?.querySelectorAll('[data-review-delete]').forEach(button => button.onclick = () => window.deleteJiaReview?.(button.dataset.reviewDelete, canonicalId));
+            };
+            renderReviewList();
+            if (reviewSort) reviewSort.onchange = renderReviewList;
+            if (reviewLoadMore) reviewLoadMore.onclick = () => { reviewLimit += 5; renderReviewList(); };
+            const writeReviewButton = document.getElementById('detail-review-write');
+            if (writeReviewButton) writeReviewButton.onclick = () => window.openJiaReviewComposer?.(rawPlace);
 
             const gatherings = (window.partyData || []).filter(party => {
                 const partyId = party.jiaPlaceId || party.restaurantId || party.placeId || '';

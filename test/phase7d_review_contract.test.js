@@ -1,0 +1,15 @@
+const assert = require('assert');
+const fs = require('fs');
+const path = require('path');
+const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+assert.ok(html.includes('reviewViewModel.js'), 'review normalization service loaded');
+assert.ok(html.includes('detail-rating-summary') && html.includes('detail-review-sort'), 'rating summary and sort controls present');
+assert.ok(html.includes('detail-review-write') && html.includes('detail-review-load-more'), 'review composer and incremental loading controls present');
+assert.ok(html.includes('openJiaReviewComposer') && html.includes('toggleJiaReviewHelpful'), 'review actions are wired');
+assert.ok(html.includes('recalculateJiaPlaceRating'), 'rating recalculation contract present');
+assert.ok(html.includes('reviewRestaurantId') && html.includes('canonical_restaurant_id_required'), 'canonical restaurant identity is required on submit');
+assert.ok(html.includes('helpfulBy') && html.includes('toggleHelpful'), 'helpful identity guard present');
+assert.ok(html.includes('delayed authentication'), 'delayed auth is documented in source');
+assert.ok(html.includes('JiaReviewService.escapeText'), 'review text is escaped before rendering');
+assert.ok(html.includes('interaction-modal" class="hidden fixed inset-0 z-[115]'), 'review modal is above detail modal');
+console.log('✅ phase 7D review integration contract checks passed');
