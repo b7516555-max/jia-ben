@@ -1,0 +1,21 @@
+(function (root, factory) {
+  const api = factory();
+  if (typeof module === 'object' && module.exports) module.exports = api;
+  if (root) root.JiaOpenDataRegistry = api;
+})(typeof window !== 'undefined' ? window : null, function () {
+  'use strict';
+  const sources = {
+    taiwan_tourism_restaurant: { sourceName:'交通部觀光署餐飲資料', sourceType:'official-open-data', officialURL:'https://data.gov.tw/dataset/7779', license:'政府資料開放授權條款-第1版', commercialUse:'allowed-by-dataset-license', redistributionAllowed:true, attributionRequired:true, storagePolicy:'retain-source-id-and-provenance', refreshPolicy:'daily', rateLimit:'dataset-download; no runtime query', enabled:true, status:'verified' },
+    taiwan_local_government: { sourceName:'台灣地方政府美食開放資料', sourceType:'official-open-data', officialURL:'https://data.gov.tw/', license:'per-dataset-license-required', commercialUse:'unknown-until-dataset-audit', redistributionAllowed:false, attributionRequired:true, storagePolicy:'staging-only-until-license-verified', refreshPolicy:'per-dataset', rateLimit:'dataset-specific', enabled:false, status:'requires-dataset-selection' },
+    taiwan_fda_food: { sourceName:'食藥署食品業者登錄資料', sourceType:'verification-source', officialURL:'https://data.gov.tw/dataset/8938', license:'政府資料開放授權條款-第1版', commercialUse:'allowed-by-dataset-license', redistributionAllowed:true, attributionRequired:true, storagePolicy:'verification-fields-only; no unnecessary personal-data', refreshPolicy:'monthly', rateLimit:'dataset-download', enabled:true, status:'verification-only' },
+    taiwan_commercial_registry: { sourceName:'經濟部商業登記餐廳餐館', sourceType:'verification-source', officialURL:'https://data.gov.tw/dataset/108355', license:'政府資料開放授權條款-第1版', commercialUse:'allowed-by-dataset-license', redistributionAllowed:true, attributionRequired:true, storagePolicy:'verification-fields-only', refreshPolicy:'monthly', rateLimit:'dataset-download', enabled:true, status:'verification-only' },
+    overture_places: { sourceName:'Overture Maps Places', sourceType:'open-dataset', officialURL:'https://docs.overturemaps.org/guides/places/', license:'CDLA-Permissive-2.0 or Apache-2.0 by source lineage', commercialUse:'allowed-by-applicable-lineage-license', redistributionAllowed:true, attributionRequired:true, storagePolicy:'retain-lineage-per-record', refreshPolicy:'release-based', rateLimit:'bulk-download', enabled:false, status:'staging-only-license-lineage-required' },
+    foursquare_os_places: { sourceName:'Foursquare Open Source Places', sourceType:'open-dataset', officialURL:'https://docs.foursquare.com/data-products/docs/fsq-places-open-source', license:'Apache-2.0 (schema/code; dataset terms must be checked per release)', commercialUse:'release-terms-required', redistributionAllowed:false, attributionRequired:true, storagePolicy:'do-not-import-until-release-channel-confirmed', refreshPolicy:'release-based', rateLimit:'portal-or-supported-distribution', enabled:false, status:'blocked-until-distribution-review' },
+    openstreetmap_poi: { sourceName:'OpenStreetMap POI', sourceType:'community-open-data', officialURL:'https://www.openstreetmap.org/copyright', license:'ODbL-1.0', commercialUse:'allowed-with-ODbL-compliance', redistributionAllowed:true, attributionRequired:true, storagePolicy:'separate-derived-layer-or-ODbL-compliant-collective-database', refreshPolicy:'extract-based', rateLimit:'no-high-frequency-public-overpass-scan', enabled:false, status:'staging-only-ODbL-review' },
+    jia_ben: { sourceName:'Jia-ben canonical/community', sourceType:'first-party', officialURL:'https://b7516555-max.github.io/jia-ben/', license:'Jia-ben controlled data', commercialUse:'project-owned', redistributionAllowed:false, attributionRequired:false, storagePolicy:'canonical-and-community', refreshPolicy:'event-driven', rateLimit:'Firebase rules', enabled:true, status:'canonical' }
+  };
+  function get(id) { return sources[id] || null; }
+  function list() { return Object.values(sources).map(item => ({ ...item })); }
+  function canUse(id, mode = 'staging') { const source = get(id); if (!source || !source.enabled) return false; return mode === 'staging' || source.redistributionAllowed === true || source.sourceType === 'first-party'; }
+  return { sources, get, list, canUse };
+});

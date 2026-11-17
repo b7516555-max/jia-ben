@@ -1,0 +1,10 @@
+(function (root, factory) {
+  const api = factory(root?.JiaRestaurantViewModel || (typeof require === 'function' ? require('./restaurantViewModel.js') : null));
+  if (typeof module === 'object' && module.exports) module.exports = api;
+  if (root) root.JiaCanonicalRestaurant = api;
+})(typeof window !== 'undefined' ? window : null, function (viewModel) {
+  'use strict';
+  function canonicalize(place, options={}) { const raw=place||{}, id=String(raw.restaurantId||raw.jiaPlaceId||raw.id||''); const vm=viewModel?.normalize?viewModel.normalize(raw):raw; return { restaurantId:id, name:vm.name||raw.name||'未命名餐廳', aliases:Array.isArray(raw.aliases)?raw.aliases:[], brand:raw.brand||'', branchName:raw.branchName||'', category:vm.category||'', cuisine:raw.cuisine||vm.categories||[], latitude:vm.latitude??null, longitude:vm.longitude??null, address:vm.address||'', phone:vm.phone||'', website:raw.website||'', socialLinks:raw.socialLinks||raw.social||{}, openingHours:raw.openingHours||'', businessStatus:raw.businessStatus||'UNKNOWN', primaryPhoto:vm.primaryPhoto||'', photos:Array.isArray(raw.photos)?raw.photos:[], rating:raw.communityStats?.ratingAverage??raw.rating??null, reviewCount:raw.communityStats?.ratingCount??raw.reviewCount??0, averageSpend:raw.communityStats?.averageSpend??raw.averageSpend??null, recommendedDishes:raw.recommendedDishes||[], sources:Array.isArray(raw.sources)?raw.sources:[], fieldProvenance:raw.fieldProvenance||{}, confidence:raw.confidence??0, moderationStatus:raw.moderationStatus||'CANDIDATE', createdAt:raw.createdAt||null, updatedAt:raw.updatedAt||null, lastVerifiedAt:raw.lastVerifiedAt||null, raw } }
+  function preserveId(existing, incoming) { if(!existing?.restaurantId)return canonicalize(incoming); const next=canonicalize(incoming); return {...next,restaurantId:existing.restaurantId,legacyRestaurantIds:[...(existing.legacyRestaurantIds||[]),next.restaurantId].filter(Boolean),communityStats:existing.communityStats,communityReviews:existing.communityReviews,communityPhotos:existing.communityPhotos}; }
+  return { canonicalize, preserveId };
+});
