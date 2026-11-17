@@ -1435,6 +1435,8 @@
                     <div class="flex items-center gap-1.5 flex-wrap mb-1">
                         <span id="detail-city" class="hidden bg-black/60 backdrop-blur-md text-white text-[10px] px-2 py-0.5 rounded-md shadow-sm font-bold tracking-wider border border-white/20"></span>
                         <span id="detail-category-badge" class="hidden bg-orange-500 text-white text-[10px] px-2 py-0.5 rounded-md shadow-sm font-black tracking-wider"></span>
+                        <span id="detail-verified-badge" class="hidden bg-emerald-500 text-white text-[10px] px-2 py-0.5 rounded-full shadow-sm font-black"><i class="fa-solid fa-check mr-1"></i>店家認證</span>
+                        <span id="detail-food-truck-badge" class="hidden bg-sky-500 text-white text-[10px] px-2 py-0.5 rounded-full shadow-sm font-black"></span>
                     </div>
                     <h2 id="detail-name" class="text-lg md:text-xl font-black text-white leading-snug drop-shadow-md break-words line-clamp-3"></h2>
                 </div>
@@ -1536,6 +1538,20 @@
                     <p id="detail-next-opening" class="text-[11px] text-gray-400 mt-1"></p>
                 </section>
 
+                <section id="detail-owner-announcement-section" class="hidden bg-emerald-50 p-3.5 rounded-2xl border border-emerald-200 shadow-2xs">
+                    <h3 class="text-xs font-black text-emerald-800 mb-1"><i class="fa-solid fa-bullhorn mr-1"></i>老闆公告</h3>
+                    <p id="detail-owner-announcement" class="text-xs text-emerald-900 whitespace-pre-line leading-relaxed"></p>
+                </section>
+
+                <section id="detail-food-truck-section" class="hidden bg-sky-50 p-3.5 rounded-2xl border border-sky-200 shadow-2xs">
+                    <div class="flex items-center justify-between gap-2 mb-1"><h3 class="text-xs font-black text-sky-800"><i class="fa-solid fa-truck mr-1"></i>今日出攤動態</h3><span id="detail-truck-status" class="text-[10px] font-black px-2 py-0.5 rounded-full bg-gray-600 text-white"></span></div>
+                    <p id="detail-truck-location" class="text-xs text-sky-900"></p>
+                    <p id="detail-truck-time" class="text-[11px] text-sky-700 mt-1"></p>
+                    <p id="detail-truck-updated" class="text-[10px] text-gray-500 mt-1"></p>
+                    <a id="detail-truck-nav" class="hidden mt-2 text-xs font-bold text-blue-700 underline" target="_blank" rel="noopener noreferrer"><i class="fa-solid fa-location-arrow mr-1"></i>導航到今日出攤位置</a>
+                    <button id="detail-truck-update-btn" type="button" class="hidden mt-2 w-full py-2 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-black"><i class="fa-solid fa-location-dot mr-1"></i>更新今日出攤動態</button>
+                </section>
+
                 <section id="detail-community-section" class="bg-white p-3.5 rounded-2xl border border-gray-100 shadow-2xs" aria-labelledby="detail-community-title">
                     <h3 id="detail-community-title" class="text-xs font-black text-gray-700 mb-2"><i class="fa-solid fa-people-group text-orange-500 mr-1"></i>社群資訊</h3>
                     <div id="detail-community-summary" class="grid grid-cols-2 gap-2 text-xs"></div>
@@ -1568,8 +1584,42 @@
                     <button id="detail-review-btn" class="bg-white text-gray-700 font-bold py-2.5 md:py-3 rounded-xl border border-gray-200 hover:bg-gray-50 transition shadow-sm flex items-center justify-center gap-2 text-xs sm:text-sm"><i class="fa-solid fa-comment-dots text-orange-400"></i> 寫評價</button>
                     
                     <button id="detail-share-btn" class="bg-[#00B900] text-white font-bold py-2.5 md:py-3 rounded-xl hover:bg-[#009900] transition shadow-sm flex items-center justify-center gap-2 text-xs sm:text-sm"><i class="fa-brands fa-line text-base"></i> 分享給好友</button>
+                    <button id="detail-claim-btn" class="col-span-2 bg-amber-50 text-amber-800 font-bold py-2.5 rounded-xl border border-amber-200 hover:bg-amber-100 transition text-xs sm:text-sm"><i class="fa-solid fa-store mr-1"></i>我是老闆，免費認領／更新資料</button>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <div id="restaurant-claim-modal" class="hidden fixed inset-0 z-[115] flex items-center justify-center bg-black/60 modal-backdrop fade-in">
+        <div class="bg-white rounded-3xl p-5 w-11/12 max-w-md shadow-2xl relative max-h-[90vh] overflow-y-auto">
+            <button onclick="window.closeModal('restaurant-claim-modal')" class="absolute top-4 right-5 text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark text-xl"></i></button>
+            <h2 class="text-lg font-black text-gray-800 mb-1"><i class="fa-solid fa-store text-amber-500 mr-1"></i>免費認領／更新店家資料</h2>
+            <p class="text-[11px] text-gray-500 mb-4">不涉及任何付款；送出後由主揪審核。</p>
+            <input type="hidden" id="claim-place-id">
+            <input type="hidden" id="claim-place-name">
+            <label class="block text-xs font-bold text-gray-600 mb-1">店家</label>
+            <input id="claim-place-display" readonly class="w-full px-3 py-2 bg-gray-100 border border-gray-200 rounded-xl text-sm font-bold mb-3">
+            <label class="block text-xs font-bold text-gray-600 mb-1">聯絡稱呼 *</label>
+            <input id="claim-contact-name" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm mb-3" placeholder="例如：王老闆">
+            <label class="block text-xs font-bold text-gray-600 mb-1">粉專／IG／LINE 驗證連結</label>
+            <input id="claim-contact-link" type="url" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm mb-3" placeholder="https://...">
+            <label class="block text-xs font-bold text-gray-600 mb-1">營業或優惠備註</label>
+            <textarea id="claim-note" rows="3" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm mb-4" placeholder="例如：每週一公休、老闆公告…"></textarea>
+            <button onclick="window.submitRestaurantClaim()" class="w-full py-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-black">送出免費認領申請</button>
+        </div>
+    </div>
+
+    <div id="food-truck-update-modal" class="hidden fixed inset-0 z-[115] flex items-center justify-center bg-black/60 modal-backdrop fade-in">
+        <div class="bg-white rounded-3xl p-5 w-11/12 max-w-md shadow-2xl relative">
+            <button onclick="window.closeModal('food-truck-update-modal')" class="absolute top-4 right-5 text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark text-xl"></i></button>
+            <h2 class="text-lg font-black text-gray-800 mb-4"><i class="fa-solid fa-truck text-sky-500 mr-1"></i>更新今日出攤動態</h2>
+            <input type="hidden" id="truck-update-place-id">
+            <select id="truck-update-status" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm mb-3"><option value="出攤中">🟢 今日出攤中</option><option value="即將開賣">🟡 即將開賣</option><option value="休息">⚫ 今日休息</option></select>
+            <input id="truck-update-location" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm mb-3" placeholder="今日出攤地點">
+            <div class="grid grid-cols-2 gap-2 mb-3"><input id="truck-update-start" type="time" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm"><input id="truck-update-end" type="time" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm"></div>
+            <input type="hidden" id="truck-update-lat"><input type="hidden" id="truck-update-lng">
+            <button type="button" onclick="window.useCurrentTruckLocation()" class="w-full py-2 mb-3 rounded-xl border border-sky-200 text-sky-700 font-bold text-xs hover:bg-sky-50"><i class="fa-solid fa-location-crosshairs mr-1"></i>帶入目前 GPS 定位</button>
+            <button onclick="window.submitFoodTruckUpdate()" class="w-full py-3 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-black">同步今日出攤資訊</button>
         </div>
     </div>
 
@@ -2409,6 +2459,7 @@
                                         <option value="咖啡">咖啡/甜點</option>
                                         <option value="早午餐">早午餐</option>
                                         <option value="壽司">日料/壽司</option>
+                                        <option value="行動餐車">🚚 行動餐車</option>
                                     </select>
                                 </div>
                             </div>
@@ -2658,6 +2709,7 @@
                                     <button onclick="window.switchAdminSubTab('feed')" id="admin-subtab-feed" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-gray-100 text-gray-600 hover:bg-gray-200 transition">動態評價 (<span id="admin-feed-count">0</span>)</button>
                                     <button onclick="window.switchAdminSubTab('members')" id="admin-subtab-members" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-gray-100 text-gray-600 hover:bg-gray-200 transition"><i class="fa-solid fa-key mr-1"></i>成員密碼 (<span id="admin-members-count">0</span>)</button>
                                     <button onclick="window.switchAdminSubTab('pending-groups')" id="admin-subtab-pending-groups" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-gray-100 text-gray-600 hover:bg-gray-200 transition"><i class="fa-solid fa-layer-group mr-1"></i>待審核群組 (<span id="admin-pending-groups-count">0</span>)</button>
+                                    <button onclick="window.switchAdminSubTab('claims')" id="admin-subtab-claims" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-gray-100 text-gray-600 hover:bg-gray-200 transition"><i class="fa-solid fa-store mr-1"></i>店家認領 (<span id="admin-claims-count">0</span>)</button>
                                 </div>
                             </div>
 
@@ -2713,6 +2765,11 @@
                                     </div>
                                 </div>
                                 <div id="admin-pending-groups-container" class="space-y-2"></div>
+                            </div>
+
+                            <div id="admin-data-list-claims" class="hidden space-y-2.5 max-h-96 overflow-y-auto pr-1">
+                                <div class="bg-emerald-50 p-3 rounded-2xl border border-emerald-200 mb-3 text-xs text-emerald-800"><p class="font-bold"><i class="fa-solid fa-shield-heart mr-1"></i>免費店家認證審核</p><p class="text-[11px] mt-1">僅核准店家身分與公告資料，不涉及任何付款或收費。</p></div>
+                                <div id="admin-claims-container" class="space-y-2"></div>
                             </div>
                         </div>
 
@@ -2944,7 +3001,7 @@
         let db, auth, appId, currentUser = null, googleProvider = null, realtimeSyncUserId = '', googleProfileSyncedUid = '';
         const GAS_API_URL = "https://script.google.com/macros/s/AKfycbwTg7lmireS-npCAzvDZVPVmI7u5jAFpslg7SNL59Ab3ulLOUr7cPB5wzIaTSyTUJpl/exec";
         window.JIA_ENRICHMENT_PROXY_URL = GAS_API_URL;
-        window.restaurantData = []; window.feedData = []; window.partyData = []; window.chatData = [];
+        window.restaurantData = []; window.feedData = []; window.partyData = []; window.chatData = []; window.restaurantClaims = [];
         window.appConfig = { deleteCode: '850930', appUrl: '', groups: ['主揪', '玉泉', '屏東', '高雄', '台北', '老服', '社發'], creators: ['黃政誥'], membersMap: null, userPasswords: { '黃政誥': 'Bb19960930' }, memberAvatars: {} }; 
         window.myIdentity = { group: '', name: '', password: '' }; 
 
@@ -3972,6 +4029,11 @@
             onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'chat'), (snap) => { 
                 window.chatData = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); 
                 if (!document.getElementById('view-chat').classList.contains('hidden')) window.renderChatMessages(); 
+            }, handleSyncError);
+
+            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'restaurantClaims'), (snap) => {
+                window.restaurantClaims = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                if (!document.getElementById('view-admin').classList.contains('hidden')) window.renderAdminDataList();
             }, handleSyncError);
 
             // 🌟 即時監聽與同步 userPlaceStates
@@ -8715,6 +8777,54 @@
             if (modal) modal.classList.remove('hidden');
         };
 
+        window.openRestaurantClaimModal = function(place) {
+            const item = place || window.currentDetailPlace || {};
+            document.getElementById('claim-place-id').value = item.jiaPlaceId || item.id || '';
+            document.getElementById('claim-place-name').value = item.name || '';
+            document.getElementById('claim-place-display').value = item.name || '';
+            document.getElementById('claim-contact-name').value = '';
+            document.getElementById('claim-contact-link').value = '';
+            document.getElementById('claim-note').value = '';
+            document.getElementById('restaurant-claim-modal').classList.remove('hidden');
+        };
+
+        window.submitRestaurantClaim = async function() {
+            const placeId = document.getElementById('claim-place-id').value;
+            const placeName = document.getElementById('claim-place-name').value;
+            const contactName = document.getElementById('claim-contact-name').value.trim();
+            if (!placeName || !contactName) return window.showCustomMsg('請填寫店家與聯絡稱呼。');
+            if (!db || !currentUser) return window.showCustomMsg('目前尚未連線，請稍後再試。');
+            const record = { placeId, placeName, contactName, contactLink: document.getElementById('claim-contact-link').value.trim(), note: document.getElementById('claim-note').value.trim(), applicantUid: currentUser.uid, applicantName: window.myIdentity?.name || currentUser.displayName || '訪客', status: 'pending', createdAt: new Date().toISOString() };
+            try {
+                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'restaurantClaims'), record);
+                window.closeModal('restaurant-claim-modal');
+                window.showCustomMsg('✅ 免費認領申請已送出，待主揪審核。');
+            } catch (error) { window.showCustomMsg(`送出失敗：${error.message || error}`); }
+        };
+
+        window.openFoodTruckUpdateModal = function(place) {
+            const item = place || window.currentDetailPlace || {};
+            document.getElementById('truck-update-place-id').value = item.jiaPlaceId || item.id || '';
+            document.getElementById('truck-update-status').value = item.truckStatus || '出攤中';
+            document.getElementById('truck-update-location').value = item.truckTodayLocation || '';
+            document.getElementById('truck-update-start').value = item.truckTodayStart || '';
+            document.getElementById('truck-update-end').value = item.truckTodayEnd || '';
+            document.getElementById('truck-update-lat').value = item.truckLat ?? item.location?.lat ?? '';
+            document.getElementById('truck-update-lng').value = item.truckLng ?? item.location?.lng ?? '';
+            document.getElementById('food-truck-update-modal').classList.remove('hidden');
+        };
+        window.useCurrentTruckLocation = function() {
+            if (!navigator.geolocation) return window.showCustomMsg('此裝置不支援 GPS 定位。');
+            navigator.geolocation.getCurrentPosition(position => { document.getElementById('truck-update-lat').value = position.coords.latitude; document.getElementById('truck-update-lng').value = position.coords.longitude; window.showCustomMsg('✅ 已帶入目前 GPS 定位。'); }, () => window.showCustomMsg('無法取得定位，請確認瀏覽器定位權限。'));
+        };
+        window.submitFoodTruckUpdate = async function() {
+            const placeId = document.getElementById('truck-update-place-id').value;
+            const place = (window.jiaPlacesData || []).find(item => String(item.jiaPlaceId || item.id) === String(placeId));
+            if (!place || !db || !currentUser) return window.showCustomMsg('找不到店家或目前尚未連線。');
+            const update = { isFoodTruck: true, truckStatus: document.getElementById('truck-update-status').value, truckTodayLocation: document.getElementById('truck-update-location').value.trim(), truckTodayStart: document.getElementById('truck-update-start').value, truckTodayEnd: document.getElementById('truck-update-end').value, truckLat: Number(document.getElementById('truck-update-lat').value) || null, truckLng: Number(document.getElementById('truck-update-lng').value) || null, truckUpdatedAt: new Date().toISOString() };
+            try { await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'jiaPlaces', place.jiaPlaceId), update, { merge: true }); Object.assign(place, update); window.closeModal('food-truck-update-modal'); window.loadPlaceDetails({ name: place.name, jiaPlace: place }); window.renderHomeForYou?.(); window.showCustomMsg('✅ 今日出攤資訊已同步。'); } catch (error) { window.showCustomMsg(`更新失敗：${error.message || error}`); }
+        };
+
         window.loadPlaceDetails = function(data) {
             const infoEl = document.getElementById('detail-place-info');
             const hoursWrap = document.getElementById('detail-hours-wrap');
@@ -8762,6 +8872,33 @@
                     catBadgeEl.classList.add('hidden');
                 }
             }
+
+            const verifiedBadgeEl = document.getElementById('detail-verified-badge');
+            if (verifiedBadgeEl) verifiedBadgeEl.classList.toggle('hidden', !(rawPlace.isVerified || rawPlace.verifiedOwner));
+            const foodTruckBadgeEl = document.getElementById('detail-food-truck-badge');
+            const isFoodTruck = Boolean(rawPlace.isFoodTruck || pNorm.categories?.some(category => /餐車|攤車|行動攤販/.test(String(category))));
+            if (foodTruckBadgeEl) { foodTruckBadgeEl.textContent = isFoodTruck ? `🚚 ${rawPlace.truckStatus || '行動餐車'}` : ''; foodTruckBadgeEl.classList.toggle('hidden', !isFoodTruck); }
+            const announcementSection = document.getElementById('detail-owner-announcement-section');
+            const announcementEl = document.getElementById('detail-owner-announcement');
+            if (announcementSection && announcementEl) { announcementEl.textContent = rawPlace.ownerAnnouncement || ''; announcementSection.classList.toggle('hidden', !rawPlace.ownerAnnouncement); }
+            const truckSection = document.getElementById('detail-food-truck-section');
+            document.getElementById('detail-truck-update-btn')?.classList.add('hidden');
+            if (truckSection) {
+                truckSection.classList.toggle('hidden', !isFoodTruck);
+                if (isFoodTruck) {
+                    const status = rawPlace.truckStatus || '休息';
+                    const statusEl = document.getElementById('detail-truck-status');
+                    if (statusEl) { statusEl.textContent = status === '出攤中' ? '🟢 今日出攤中' : status === '即將開賣' ? '🟡 即將開賣' : '⚫ 今日休息'; statusEl.className = `text-[10px] font-black px-2 py-0.5 rounded-full text-white ${status === '出攤中' ? 'bg-emerald-600' : status === '即將開賣' ? 'bg-amber-600' : 'bg-gray-600'}`; }
+                    document.getElementById('detail-truck-location').textContent = rawPlace.truckTodayLocation ? `地點：${rawPlace.truckTodayLocation}` : '今日地點尚未提供';
+                    document.getElementById('detail-truck-time').textContent = rawPlace.truckTodayStart ? `時段：${rawPlace.truckTodayStart} - ${rawPlace.truckTodayEnd || ''}` : '時段尚未提供';
+                    document.getElementById('detail-truck-updated').textContent = rawPlace.truckUpdatedAt ? `最後更新：${new Date(rawPlace.truckUpdatedAt).toLocaleString('zh-TW')}` : '';
+                    const nav = document.getElementById('detail-truck-nav'); const hasCoords = Number.isFinite(Number(rawPlace.truckLat)) && Number.isFinite(Number(rawPlace.truckLng));
+                    if (nav) { nav.classList.toggle('hidden', !hasCoords); if (hasCoords) nav.href = `https://www.openstreetmap.org/?mlat=${rawPlace.truckLat}&mlon=${rawPlace.truckLng}#map=18/${rawPlace.truckLat}/${rawPlace.truckLng}`; }
+                    const truckUpdateButton = document.getElementById('detail-truck-update-btn');
+                    if (truckUpdateButton) { truckUpdateButton.classList.toggle('hidden', !(rawPlace.isVerified || rawPlace.verifiedOwner || window.isAdminUnlocked || currentUser)); truckUpdateButton.onclick = () => window.openFoodTruckUpdateModal(rawPlace); }
+                }
+            }
+            document.getElementById('detail-claim-btn')?.addEventListener('click', () => window.openRestaurantClaimModal(rawPlace), { once: true });
 
             const detailCityEl = document.getElementById('detail-city');
             if (detailCityEl) {
@@ -11370,7 +11507,7 @@
 
         // 🌟 Admin Subtabs 切換 (口袋店家 / 社群補充審核 / 正式店家庫 / 動態評價 / 成員密碼 / 待審核群組)
         window.switchAdminSubTab = function(tabName) {
-            const tabs = ['restaurants', 'contributions', 'places', 'feed', 'members', 'pending-groups'];
+            const tabs = ['restaurants', 'contributions', 'places', 'feed', 'members', 'pending-groups', 'claims'];
             tabs.forEach(t => {
                 const btn = document.getElementById(`admin-subtab-${t === 'restaurants' ? 'res' : t}`);
                 const list = document.getElementById(`admin-data-list-${t}`);
@@ -11399,6 +11536,9 @@
             if (resCountEl) resCountEl.textContent = (window.restaurantData || []).length;
             if (feedCountEl) feedCountEl.textContent = (window.feedData || []).length;
             if (placesCountEl) placesCountEl.textContent = (window.jiaPlacesData || []).length;
+            const claimsCountEl = document.getElementById('admin-claims-count');
+            if (claimsCountEl) claimsCountEl.textContent = (window.restaurantClaims || []).filter(c => c.status === 'pending').length;
+            window.renderRestaurantClaims?.();
 
             const pendingContribs = (window.placeContributions || []).filter(c => c.status === 'pending');
             if (contribCountEl) contribCountEl.textContent = pendingContribs.length;
@@ -11483,6 +11623,33 @@
                     `;
                 }).join('');
             }
+        };
+
+        window.reviewRestaurantClaim = function(claimId, approve) {
+            window.requireAdminAuthForAction('審核店家認領申請', async () => {
+                const claim = (window.restaurantClaims || []).find(item => item.id === claimId);
+                if (!claim) return;
+                const place = (window.jiaPlacesData || []).find(item => String(item.jiaPlaceId || item.id) === String(claim.placeId)) || (window.jiaPlacesData || []).find(item => item.name === claim.placeName);
+                try {
+                    if (approve && place && db && currentUser) {
+                        const update = { isVerified: true, verifiedOwner: true, ownerAnnouncement: claim.note || '', verifiedAt: new Date().toISOString(), verifiedBy: currentUser.uid };
+                        await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'jiaPlaces', place.jiaPlaceId), update, { merge: true });
+                        Object.assign(place, update);
+                    }
+                    if (db && currentUser) await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'restaurantClaims', claim.id), { status: approve ? 'approved' : 'rejected', reviewedAt: new Date().toISOString(), reviewedBy: currentUser.uid });
+                    claim.status = approve ? 'approved' : 'rejected';
+                    window.renderAdminDataList();
+                    if (approve && place && window.currentDetailPlace?.name === place.name) window.loadPlaceDetails({ name: place.name, jiaPlace: place });
+                    window.showCustomMsg(approve ? `✅ 已核准「${claim.placeName}」店家認證。` : '已駁回店家認領申請。');
+                } catch (error) { window.showCustomMsg(`審核失敗：${error.message || error}`); }
+            });
+        };
+
+        window.renderRestaurantClaims = function() {
+            const container = document.getElementById('admin-claims-container');
+            if (!container) return;
+            const pending = (window.restaurantClaims || []).filter(item => item.status === 'pending');
+            container.innerHTML = pending.length ? pending.map(claim => `<div class="bg-white p-3 rounded-2xl border border-emerald-200 flex flex-col gap-2"><div class="flex items-center justify-between gap-2"><div><p class="text-sm font-black text-gray-800">${window.escapeHtml(claim.placeName)}</p><p class="text-[11px] text-gray-500">${window.escapeHtml(claim.contactName)} · ${window.escapeHtml(claim.applicantName || '訪客')}</p></div><span class="text-[10px] bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-bold">待審核</span></div><p class="text-xs text-gray-700 whitespace-pre-line">${window.escapeHtml(claim.note || '無備註')}</p>${claim.contactLink ? `<a href="${window.escapeForBtn(claim.contactLink)}" target="_blank" rel="noopener noreferrer" class="text-xs text-blue-600 underline break-all">${window.escapeHtml(claim.contactLink)}</a>` : ''}<div class="flex gap-2"><button onclick="window.reviewRestaurantClaim('${window.escapeForBtn(claim.id)}', true)" class="flex-1 py-2 rounded-xl bg-emerald-500 text-white text-xs font-black">核准認證</button><button onclick="window.reviewRestaurantClaim('${window.escapeForBtn(claim.id)}', false)" class="flex-1 py-2 rounded-xl bg-gray-100 text-gray-700 text-xs font-black border border-gray-200">駁回</button></div></div>`).join('') : '<div class="text-center text-gray-400 py-6 text-xs">目前沒有待審核的店家認領申請。</div>';
         };
 
         function setupMockData() { 

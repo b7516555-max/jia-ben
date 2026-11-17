@@ -1,0 +1,32 @@
+const assert = require('assert');
+const fs = require('fs');
+const path = require('path');
+const Card = require('../src/components/restaurantCard.js');
+
+const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+const sw = fs.readFileSync(path.join(__dirname, '..', 'sw.js'), 'utf8');
+
+const card = Card.render({
+  jiaPlaceId: 'truck-1',
+  name: '測試餐車',
+  category: '行動餐車',
+  isFoodTruck: true,
+  isVerified: true,
+  truckStatus: '出攤中',
+  truckTodayLocation: '中央公園入口',
+  truckTodayStart: '11:00',
+  truckTodayEnd: '18:00'
+});
+
+assert.ok(card.includes('店家認證'), 'Verified restaurant card shows the free verification badge');
+assert.ok(card.includes('出攤中'), 'Food truck card shows today status');
+assert.ok(card.includes('中央公園入口'), 'Food truck card shows today location');
+assert.ok(html.includes('restaurantClaims'), 'Restaurant claim collection is wired');
+assert.ok(html.includes('核准認證'), 'Admin claim approval action is present');
+assert.ok(html.includes('isVerified: true'), 'Approval writes verified status');
+assert.ok(html.includes('detail-owner-announcement'), 'Detail view supports owner announcements');
+assert.ok(html.includes('detail-truck-nav'), 'Detail view supports truck navigation');
+assert.ok(html.includes('navigator.geolocation'), 'Truck update supports current GPS location');
+assert.strictEqual((sw.match(/together-eat-shell-v116/g) || []).length, 1, 'Service Worker cache is v116');
+
+console.log('✅ Verified badge, claim review, and food truck contracts passed');

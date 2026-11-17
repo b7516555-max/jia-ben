@@ -76,6 +76,9 @@
         const address = normalized.address || '';
         const openingHours = normalized.openingHours || '';
         const recommenders = options.recommenders || place.recommenders || [];
+        const isVerified = Boolean(place.isVerified || place.verifiedOwner);
+        const isFoodTruck = Boolean(place.isFoodTruck || categories.some(category => /餐車|攤車|行動攤販/.test(String(category))));
+        const truckStatus = place.truckStatus || (isFoodTruck ? '休息' : '');
 
         // Phase 2A: Resolve primary contribution CTA (Context-aware, single CTA)
         let ctaInfo = null;
@@ -112,6 +115,16 @@
             recommenders,
             city: place.city || '',
             ctaInfo
+            ,isVerified
+            ,ownerAnnouncement: place.ownerAnnouncement || ''
+            ,isFoodTruck
+            ,truckStatus
+            ,truckTodayLocation: place.truckTodayLocation || ''
+            ,truckTodayStart: place.truckTodayStart || ''
+            ,truckTodayEnd: place.truckTodayEnd || ''
+            ,truckUpdatedAt: place.truckUpdatedAt || ''
+            ,truckLat: place.truckLat ?? place.location?.lat ?? null
+            ,truckLng: place.truckLng ?? place.location?.lng ?? null
         };
     }
 
@@ -138,6 +151,12 @@
         // 示意圖 / AI 示意圖 Badge (清楚但低調標示，避免誤認真實照片)
         const placeholderBadgeHtml = vm.isPlaceholder
             ? `<span class="absolute top-2.5 right-2.5 z-10 bg-black/55 backdrop-blur-xs text-white/90 text-[9px] font-bold px-2 py-0.5 rounded-full border border-white/20 shadow-2xs">${escapeHtml(vm.imageLabel || 'AI 示意圖')}</span>`
+            : '';
+        const verifiedBadgeHtml = vm.isVerified
+            ? '<span class="inline-flex items-center gap-1 bg-emerald-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full shadow-sm"><i class="fa-solid fa-check"></i>店家認證</span>'
+            : '';
+        const foodTruckBadgeHtml = vm.isFoodTruck
+            ? `<span class="inline-flex items-center gap-1 ${vm.truckStatus === '出攤中' ? 'bg-emerald-500' : vm.truckStatus === '即將開賣' ? 'bg-amber-500' : 'bg-gray-600'} text-white text-[9px] font-black px-2 py-0.5 rounded-full shadow-sm">🚚 ${escapeHtml(vm.truckStatus || '行動餐車')}</span>`
             : '';
 
         // 評分與評價數 (只呈現真實 Jia-ben 社群統計，無資料不偽造)
@@ -180,6 +199,7 @@
                 <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
                 ${distBadgeHtml}
                 ${placeholderBadgeHtml}
+                <div class="absolute top-2.5 right-2.5 z-10 flex flex-col items-end gap-1">${verifiedBadgeHtml}${foodTruckBadgeHtml}</div>
             <div class="absolute bottom-2 left-3 right-3 flex items-end justify-between gap-1 z-10">
                     <h3 title="${escapeHtml(vm.name)}" class="text-sm sm:text-base font-black text-white drop-shadow-md line-clamp-2 leading-snug tracking-tight">${escapeHtml(vm.name)}</h3>
                 </div>
@@ -195,6 +215,7 @@
                     ${addressHtml}
                     ${vm.openStatus ? `<p class="text-[11px] ${/休息|關閉|closed/i.test(vm.openStatus) ? 'text-gray-500' : 'text-emerald-700'} font-bold flex items-center gap-1"><i class="fa-solid fa-circle text-[7px]"></i><span>${escapeHtml(vm.openStatus)}</span></p>` : ''}
                     ${vm.openingHours ? `<p class="time-value text-[11px] text-emerald-700 font-medium break-words flex items-start gap-1 leading-snug"><i class="fa-solid fa-clock text-emerald-500 text-[10px] shrink-0 mt-0.5"></i><span class="break-anywhere numeric-value">${escapeHtml(vm.openingHours)}</span></p>` : ''}
+                    ${vm.isFoodTruck && vm.truckTodayLocation ? `<p class="text-[11px] text-sky-700 font-bold flex items-start gap-1"><i class="fa-solid fa-truck text-sky-500 mt-0.5"></i><span class="break-anywhere">${escapeHtml(vm.truckTodayLocation)}${vm.truckTodayStart ? ` · ${escapeHtml(vm.truckTodayStart)}-${escapeHtml(vm.truckTodayEnd)}` : ''}</span></p>` : ''}
                     ${recBadgeHtml}
                 </div>
                 <div class="mt-2.5 pt-2 border-t border-gray-50 flex items-center justify-between gap-1.5 flex-wrap">

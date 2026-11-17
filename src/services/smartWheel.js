@@ -192,6 +192,7 @@
         if (context.category && context.category !== 'all') {
             const catTarget = String(context.category).toLowerCase();
             filtered = filtered.filter(p => {
+                if (catTarget.includes('餐車')) return Boolean(p.isFoodTruck || (p.categories || []).some(c => /餐車|攤車|行動攤販/.test(String(c))));
                 const categories = (p.categories || []).map(c => String(c).toLowerCase());
                 return categories.some(c => c.includes(catTarget) || catTarget.includes(c)) || String(p.name).toLowerCase().includes(catTarget);
             });
