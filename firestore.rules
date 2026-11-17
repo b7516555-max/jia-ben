@@ -16,7 +16,11 @@ service cloud.firestore {
     function isAdmin() {
       return isSignedIn() && (
         request.auth.token.admin == true ||
-        request.auth.token.role == 'admin'
+        request.auth.token.role == 'admin' ||
+        (
+          request.auth.token.email_verified == true &&
+          request.auth.token.email == 'b7516555@gmail.com'
+        )
       );
     }
 
