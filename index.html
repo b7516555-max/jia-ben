@@ -227,6 +227,16 @@
             word-spacing: 0 !important;
             font-variant-numeric: tabular-nums;
         }
+        .address-value, .time-value, .date-value,
+        .address-value *, .time-value *, .date-value * {
+            letter-spacing: normal !important;
+            word-spacing: normal !important;
+            font-variant-numeric: normal;
+        }
+        nav .tab-btn:focus, nav .tab-btn:focus-visible {
+            outline: none !important;
+            box-shadow: none !important;
+        }
         #calc-result {
             letter-spacing: normal !important;
             font-variant-numeric: tabular-nums;
@@ -2168,7 +2178,7 @@
                             <div class="flex items-center justify-between">
                                 <div class="flex items-center gap-2">
                                     <div class="w-7 h-7 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center text-xs font-black">
-                                        <i class="fa-solid fa-sparkles"></i>
+                                        <i class="fa-solid fa-utensils"></i>
                                     </div>
                                     <div>
                                         <h3 class="text-base sm:text-lg font-black text-gray-800 leading-none">為你推薦</h3>
@@ -3171,7 +3181,7 @@
             if (window.isValidUrl(loc)) {
                 const targetUrl = loc.startsWith('http') ? loc : `https://${loc}`;
                 const isMap = /openstreetmap\.org|maps\.(google|app\.goo\.gl)|goo\.gl\/maps/i.test(loc);
-                const labelText = isMap ? '📍 查看地點' : '📍 查看地點連結';
+                const labelText = isMap ? '查看地點' : '查看地點連結';
                 return `<a href="${window.escapeHtml(targetUrl)}" target="_blank" rel="noopener noreferrer" class="text-blue-500 hover:text-blue-700 transition font-bold underline inline-flex items-center gap-1.5 break-anywhere" title="點擊開啟地圖或地點連結"><span>${window.escapeHtml(labelText)}</span> <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i></a>`;
             } else {
                 const searchUrl = window.getOsmSearchUrl(loc);
@@ -3943,10 +3953,13 @@
             if (!forceRefresh && document.getElementById('tab-' + tabName) && document.getElementById('tab-' + tabName).classList.contains('active')) return;
             ['explore', 'map', 'nearby', 'history', 'random', 'party', 'feed', 'chat', 'list', 'admin', 'guide'].forEach(name => {
                 document.getElementById('view-' + name)?.classList.add('hidden'); 
-                if(document.getElementById('tab-' + name)) document.getElementById('tab-' + name).classList.remove('active'); 
+                const navButton = document.getElementById('tab-' + name);
+                if(navButton) { navButton.classList.remove('active'); navButton.blur(); }
             });
             document.getElementById('view-' + tabName)?.classList.remove('hidden'); 
-            if(document.getElementById('tab-' + tabName)) document.getElementById('tab-' + tabName).classList.add('active');
+            const activeNavButton = document.getElementById('tab-' + tabName);
+            if(activeNavButton) { activeNavButton.classList.add('active'); activeNavButton.blur(); }
+            document.querySelectorAll('nav .tab-btn').forEach(button => button.blur());
             const tabTitles = { explore: '找餐廳', map: '地圖找餐廳', nearby: '美食輪盤', history: '吃過紀錄', party: '揪團活動', feed: '美食動態牆', chat: '留言板', list: '口袋名單', admin: '主揪後台', guide: '使用指南' };
             const titleEl = document.getElementById('app-header-title');
             if (titleEl && tabTitles[tabName]) titleEl.textContent = `呷奔 • ${tabTitles[tabName]}`;
@@ -5270,7 +5283,7 @@
                         </div>
                     </div>
                     <div class="space-y-1.5 mb-4 text-sm font-medium text-gray-600">
-                        <p class="flex items-center"><i class="fa-regular fa-calendar text-orange-400 w-5 text-center mr-1"></i> <span class="numeric-value">${p.date} (${p.time})</span></p>
+                        <p class="date-value flex items-center"><i class="fa-regular fa-calendar text-orange-400 w-5 text-center mr-1"></i> <span class="numeric-value">${p.date} (${p.time})</span></p>
                         <div class="flex items-center gap-1.5 min-w-0" style="overflow-wrap: anywhere; word-break: break-word; max-width: 100%;"><i class="fa-solid fa-location-dot text-orange-400 w-5 text-center shrink-0"></i> <div class="min-w-0 flex-1 break-anywhere">${window.formatLocationDisplay(p.location)}</div></div>
                     </div>
                     <div class="bg-gray-50 p-4 rounded-2xl border border-gray-100 mb-4 flex-1"><div class="flex justify-between items-center mb-3"><p class="text-xs font-bold text-gray-500"><i class="fa-solid fa-check-to-slot mr-1 text-blue-500"></i>大家想做什麼？ (點擊投票)</p><span class="text-[10px] text-gray-400 bg-white px-2 py-0.5 border border-gray-200 rounded-full">總共 ${totalVotes} 票</span></div>${optionsHtml}</div>
@@ -7817,10 +7830,10 @@
                                 ${window.formatGroupBadgeHtml(c.group)}
                             </div>
                             <div class="flex items-center gap-1">
-                                <button onclick="window.openFeedCommentEditModal('${item.id}', ${cIdx})" class="text-gray-400 hover:text-blue-500 text-[10px] px-1.5 py-0.5 rounded hover:bg-blue-50 transition font-bold" title="編輯留言">
+                                <button onclick="window.openFeedCommentEditModal('${item.id}', ${cIdx})" class="${window.canManageFeedItem({ ...item, creator: c.creator }) ? '' : 'hidden'} text-gray-400 hover:text-blue-500 text-[10px] px-1.5 py-0.5 rounded hover:bg-blue-50 transition font-bold" title="編輯留言">
                                     <i class="fa-solid fa-pen"></i>
                                 </button>
-                                <button onclick="window.deleteFeedCommentWithAuth('${item.id}', ${cIdx})" class="text-gray-400 hover:text-red-500 text-[10px] px-1.5 py-0.5 rounded hover:bg-red-50 transition font-bold" title="刪除留言">
+                                <button onclick="window.deleteFeedCommentWithAuth('${item.id}', ${cIdx})" class="${window.canManageFeedItem({ ...item, creator: c.creator }) ? '' : 'hidden'} text-gray-400 hover:text-red-500 text-[10px] px-1.5 py-0.5 rounded hover:bg-red-50 transition font-bold" title="刪除留言">
                                     <i class="fa-solid fa-trash-can"></i>
                                 </button>
                             </div>
@@ -7874,7 +7887,7 @@
                                 <i class="fa-solid fa-magnifying-glass-plus"></i> 點擊放大
                             </span>
                         </div>
-                        <button onclick="event.stopPropagation(); window.openFeedPhotoEditModal('${item.id}')" class="absolute bottom-2 right-2 bg-black/60 hover:bg-black/80 text-white text-[10px] font-bold px-2 py-1 rounded-lg backdrop-blur-xs shadow transition flex items-center gap-1 z-10">
+                        <button onclick="event.stopPropagation(); window.openFeedPhotoEditModal('${item.id}')" class="${window.canManageFeedItem(item) ? '' : 'hidden'} absolute bottom-2 right-2 bg-black/60 hover:bg-black/80 text-white text-[10px] font-bold px-2 py-1 rounded-lg backdrop-blur-xs shadow transition flex items-center gap-1 z-10">
                             <i class="fa-solid fa-camera"></i> 補/換照片
                         </button>
                     </div>`;
@@ -7895,7 +7908,7 @@
                         </div>
                         <div class="flex justify-between items-center mt-1 px-0.5">
                             <span class="text-[10px] text-gray-400 font-bold"><i class="fa-solid fa-images text-orange-400 mr-1"></i>共 ${allPhotos.length} 張照片 (點擊可放大)</span>
-                            <button onclick="window.openFeedPhotoEditModal('${item.id}')" class="text-orange-500 hover:text-orange-600 text-[10px] font-bold flex items-center gap-0.5">
+                            <button onclick="window.openFeedPhotoEditModal('${item.id}')" class="${window.canManageFeedItem(item) ? '' : 'hidden'} text-orange-500 hover:text-orange-600 text-[10px] font-bold flex items-center gap-0.5">
                                 <i class="fa-solid fa-pen-to-square"></i> 管理照片
                             </button>
                         </div>
@@ -7921,7 +7934,7 @@
                             <div class="flex items-center gap-1.5 flex-wrap">
                                 <span class="text-[11px] text-gray-400 font-medium whitespace-nowrap mr-0.5">${dateStr}</span>
                                 ${badgeRating}
-                                <button onclick="window.openFeedItemEditModal('${item.id}')" class="w-7 h-7 rounded-lg bg-white border border-gray-200 hover:border-blue-400 text-gray-500 hover:text-blue-600 flex items-center justify-center text-xs shadow-2xs transition shrink-0" title="編輯此評價">
+                                <button onclick="window.openFeedItemEditModal('${item.id}')" class="${window.canManageFeedItem(item) ? '' : 'hidden'} w-7 h-7 rounded-lg bg-white border border-gray-200 hover:border-blue-400 text-gray-500 hover:text-blue-600 flex items-center justify-center text-xs shadow-2xs transition shrink-0" title="編輯此評價">
                                     <i class="fa-solid fa-pen-to-square"></i>
                                 </button>
                                 <button onclick="window.deleteFeedItemWithAuth('${item.id}')" class="${window.canManageFeedItem(item) ? '' : 'hidden'} w-7 h-7 rounded-lg bg-white border border-gray-200 hover:border-red-400 text-gray-500 hover:text-red-600 flex items-center justify-center text-xs shadow-2xs transition shrink-0" title="刪除此評價">
@@ -7957,7 +7970,7 @@
                             </button>
                         </div>
                         <div class="flex items-center gap-1">
-                            <button onclick="window.openFeedPhotoEditModal('${item.id}')" class="flex items-center gap-1 px-2.5 py-1 rounded-xl hover:bg-amber-50 text-amber-600 transition text-[11px] font-bold" title="為這則留言/動態事後補充或更換最多5張照片">
+                            <button onclick="window.openFeedPhotoEditModal('${item.id}')" class="${window.canManageFeedItem(item) ? '' : 'hidden'} flex items-center gap-1 px-2.5 py-1 rounded-xl hover:bg-amber-50 text-amber-600 transition text-[11px] font-bold" title="為這則留言/動態事後補充或更換最多5張照片">
                                 <i class="fa-solid fa-camera"></i>
                                 <span>${allPhotos.length > 0 ? `照片 (${allPhotos.length})` : '補照片'}</span>
                             </button>
@@ -8274,7 +8287,10 @@
                 const safeNameStr = window.escapeForBtn(i.name);
                 const listJiaPlace = (window.jiaPlacesData || []).find(place => place.jiaPlaceId === i.jiaPlaceId)
                     || (window.jiaPlacesData || []).find(place => String(place.normalizedName || '').toLowerCase() === String(i.name || '').normalize('NFKC').toLowerCase().replace(/\s+/g,''));
-                const displayRecord = window.normalizeJiaPlaceForDisplay({ ...(listJiaPlace || {}), ...i });
+                const districtOnly = /^(中區|東區|南區|西區|北區|左營區|苓雅區|安平區|信義區|大安區|三民區)$/.test(String(i.city || '').trim());
+                const sourceAddress = (i.address && !districtOnly ? i.address : (listJiaPlace?.address || i.address || ''));
+                const inferredCity = districtOnly ? (extractCity(sourceAddress) || listJiaPlace?.countryCity || '') : (i.city || listJiaPlace?.city || '');
+                const displayRecord = window.normalizeJiaPlaceForDisplay({ ...(listJiaPlace || {}), ...i, city: inferredCity, address: sourceAddress });
                 
                 if (window.JiaRestaurantCard) {
                     return window.JiaRestaurantCard.render({

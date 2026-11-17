@@ -161,7 +161,7 @@
 
         // 地址摘要 (單行 ellipsis)
         const addressHtml = vm.address
-            ? `<p class="text-[11px] text-gray-500 truncate mt-1 flex items-center gap-1 leading-snug"><i class="fa-solid fa-location-dot text-orange-400 text-[10px] shrink-0"></i><span class="truncate">${escapeHtml(vm.address)}</span></p>`
+            ? `<p class="address-value text-[11px] text-gray-500 truncate mt-1 flex items-center gap-1 leading-snug"><i class="fa-solid fa-location-dot text-orange-400 text-[10px] shrink-0"></i><span class="truncate">${escapeHtml(vm.address)}</span></p>`
             : '';
 
         // 推薦者 (若有)
@@ -194,7 +194,7 @@
                     ${priceHtml ? `<div>${priceHtml}</div>` : ''}
                     ${addressHtml}
                     ${vm.openStatus ? `<p class="text-[11px] ${/休息|關閉|closed/i.test(vm.openStatus) ? 'text-gray-500' : 'text-emerald-700'} font-bold flex items-center gap-1"><i class="fa-solid fa-circle text-[7px]"></i><span>${escapeHtml(vm.openStatus)}</span></p>` : ''}
-                    ${vm.openingHours ? `<p class="text-[11px] text-emerald-700 font-medium break-words flex items-start gap-1 leading-snug"><i class="fa-solid fa-clock text-emerald-500 text-[10px] shrink-0 mt-0.5"></i><span class="break-anywhere numeric-value">${escapeHtml(vm.openingHours)}</span></p>` : ''}
+                    ${vm.openingHours ? `<p class="time-value text-[11px] text-emerald-700 font-medium break-words flex items-start gap-1 leading-snug"><i class="fa-solid fa-clock text-emerald-500 text-[10px] shrink-0 mt-0.5"></i><span class="break-anywhere numeric-value">${escapeHtml(vm.openingHours)}</span></p>` : ''}
                     ${recBadgeHtml}
                 </div>
                 <div class="mt-2.5 pt-2 border-t border-gray-50 flex items-center justify-between gap-1.5 flex-wrap">
