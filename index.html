@@ -3971,25 +3971,25 @@
             if(document.getElementById('system-url')) document.getElementById('system-url').value = window.appConfig.appUrl || '';
         }
 
+        window.syncNavigationState = function(tabName) {
+            const activeId = `tab-${tabName}`;
+            document.querySelectorAll('nav .tab-btn').forEach(button => {
+                const navButton = button;
+                const isActive = button.id === activeId;
+                button.classList.toggle('active', isActive);
+                if (isActive) button.setAttribute('aria-current', 'page');
+                else button.removeAttribute('aria-current');
+                navButton.blur();
+            });
+        };
+
         window.switchTab = function(tabName, forceRefresh = false) {
             if (!forceRefresh && document.getElementById('tab-' + tabName) && document.getElementById('tab-' + tabName).classList.contains('active')) return;
             ['explore', 'map', 'nearby', 'history', 'random', 'party', 'feed', 'chat', 'list', 'admin', 'guide'].forEach(name => {
                 document.getElementById('view-' + name)?.classList.add('hidden'); 
-                const navButton = document.getElementById('tab-' + name);
-                if(navButton) {
-                    navButton.classList.remove('active');
-                    navButton.removeAttribute('aria-current');
-                    navButton.blur();
-                }
             });
             document.getElementById('view-' + tabName)?.classList.remove('hidden'); 
-            const activeNavButton = document.getElementById('tab-' + tabName);
-            if(activeNavButton) {
-                activeNavButton.classList.add('active');
-                activeNavButton.setAttribute('aria-current', 'page');
-                activeNavButton.blur();
-            }
-            document.querySelectorAll('nav .tab-btn').forEach(button => button.blur());
+            window.syncNavigationState(tabName);
             const tabTitles = { explore: '找餐廳', map: '地圖找餐廳', nearby: '美食輪盤', history: '吃過紀錄', party: '揪團活動', feed: '美食動態牆', chat: '留言板', list: '口袋名單', admin: '主揪後台', guide: '使用指南' };
             const titleEl = document.getElementById('app-header-title');
             if (titleEl && tabTitles[tabName]) titleEl.textContent = `呷奔 • ${tabTitles[tabName]}`;
