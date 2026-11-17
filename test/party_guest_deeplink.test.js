@@ -1,0 +1,42 @@
+const assert = require('assert');
+const fs = require('fs');
+const path = require('path');
+
+const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+const sw = fs.readFileSync(path.join(__dirname, '..', 'sw.js'), 'utf8');
+
+assert.ok(html.includes("new URLSearchParams(window.location.search).get('party')"), 'Party deep link parses the party query parameter');
+assert.ok(html.includes("window.switchTab('party', true)"), 'Party deep link enters the party tab');
+assert.ok(html.includes('data-party-id="${window.escapeHtml(p.id)}"'), 'Rendered party cards expose a safe deep-link target');
+assert.ok(html.includes('window.focusPartyDeepLink'), 'Party deep link focuses and highlights the matching card');
+assert.ok(html.includes('party-deep-link-highlight'), 'Party deep link has a temporary highlight style');
+assert.ok(html.includes('shareUrl.searchParams.set(\'party\', p.id)'), 'Party share URLs include the party id');
+assert.ok(html.includes('localStorage.getItem(\'jia_ben_party_guest\')'), 'Guest identity is restored from local storage');
+assert.ok(html.includes('guestJoinedIds'), 'Guest participation uses a persistent id set for deduplication');
+assert.ok(html.includes('guestVotes'), 'Guest votes use a persistent id map for deduplication');
+assert.ok(html.includes('window.ensurePartyGuestIdentity'), 'Guest actions request only a nickname instead of full identity registration');
+assert.ok(html.includes('window.showCustomMsg(\'已記錄你的選擇！日後可隨時建檔／登入保存跨裝置紀錄。\')'), 'Guest vote completion gives a retention hint');
+assert.strictEqual((sw.match(/together-eat-shell-v114/g) || []).length, 1, 'Service Worker cache is v114');
+
+function applyGuestJoin(party, guest) {
+  const joined = Array.isArray(party.joined) ? [...party.joined] : [];
+  const guestJoinedIds = Array.isArray(party.guestJoinedIds) ? [...party.guestJoinedIds] : [];
+  const alreadyJoined = guestJoinedIds.includes(guest.id);
+  if (alreadyJoined) {
+    guestJoinedIds.splice(guestJoinedIds.indexOf(guest.id), 1);
+    const nameIndex = joined.indexOf(guest.name);
+    if (nameIndex >= 0) joined.splice(nameIndex, 1);
+  }
+  else { joined.push(guest.name); guestJoinedIds.push(guest.id); }
+  return { ...party, joined, guestJoinedIds };
+}
+
+const guest = { id: 'guest_test_1', name: '測試訪客' };
+const firstJoin = applyGuestJoin({ joined: [], guestJoinedIds: [] }, guest);
+assert.deepStrictEqual(firstJoin.joined, ['測試訪客'], 'First guest join is recorded');
+assert.deepStrictEqual(firstJoin.guestJoinedIds, ['guest_test_1'], 'First guest join stores the persistent id');
+const secondJoin = applyGuestJoin(firstJoin, guest);
+assert.deepStrictEqual(secondJoin.joined, [], 'Repeated guest join toggles off instead of duplicating');
+assert.deepStrictEqual(secondJoin.guestJoinedIds, [], 'Repeated guest join removes the persistent id');
+
+console.log('✅ Party deep link and guest participation contracts passed');

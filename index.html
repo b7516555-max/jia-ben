@@ -348,6 +348,8 @@
         body.map-view-active .map-attribution { display: block; }
         .producer-credit { color: #92400e !important; }
         .party-ended-badge { background: #e5e7eb; color: #374151; }
+        .party-deep-link-highlight { animation: partyDeepLinkPulse 1.8s ease-out; box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.35), 0 18px 36px rgba(249, 115, 22, 0.18) !important; }
+        @keyframes partyDeepLinkPulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0); } 20% { box-shadow: 0 0 0 5px rgba(249, 115, 22, 0.42), 0 18px 36px rgba(249, 115, 22, 0.2); } }
         .avatar-choice.is-selected { border-color: #f97316; box-shadow: 0 0 0 3px rgba(249,115,22,.18); transform: translateY(-2px); }
         .wheel-stage { width: min(68vw, 32vh, 290px); aspect-ratio: 1; }
         @media (max-height: 700px) {
@@ -2968,6 +2970,10 @@
 
         let pendingInteraction = null; let itemToDelete = null; let pendingPartyAction = null;
         let isAdminUnlocked = false; let previousTab = 'explore';  
+        const partyDeepLinkId = new URLSearchParams(window.location.search).get('party')?.trim() || '';
+        let partyDeepLinkHandled = false;
+        let partyDataReady = false;
+        window.partyGuestIdentity = null;
         window.getAdminPassword = function() { return window.appConfig.adminPassword || "Bb19960930"; };
 
         // 🌟 60 級與 12 層專屬美食勳章體系定義 (每 5 級進階一層勳章)
@@ -3595,6 +3601,7 @@
             setTimeout(() => {
                 intro.classList.add('hidden');
                 document.getElementById('main-app').classList.remove('hidden');
+                if (partyDeepLinkId && window.switchTab) window.switchTab('party', true);
             }, 800);
         };
 
@@ -3643,6 +3650,7 @@
             }
         }
         initFirebase();
+        if (partyDeepLinkId) window.enterApp();
 
         window.saveConfigToCloud = async function() {
             if (db && currentUser) {
@@ -3848,7 +3856,8 @@
             }, handleSyncError);
             
             onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'parties'), (snap) => { 
-                window.partyData = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); 
+                window.partyData = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                partyDataReady = true;
                 if (!document.getElementById('view-party').classList.contains('hidden')) window.renderParties(); 
             }, handleSyncError);
 
@@ -5279,17 +5288,77 @@
             }
         };
         
+        window.getPartyActor = function() {
+            if (window.myIdentity?.name) {
+                return { kind: 'member', id: String(currentUser?.uid || window.myIdentity.name), name: window.myIdentity.name };
+            }
+            return window.partyGuestIdentity ? { kind: 'guest', ...window.partyGuestIdentity } : null;
+        };
+
+        window.ensurePartyGuestIdentity = function(callback) {
+            if (window.myIdentity?.name) return callback(window.getPartyActor());
+            try {
+                const saved = JSON.parse(localStorage.getItem('jia_ben_party_guest') || 'null');
+                if (saved?.id && saved?.name) {
+                    window.partyGuestIdentity = saved;
+                    return callback(window.getPartyActor());
+                }
+            } catch (error) {
+                console.warn('讀取訪客揪團身分失敗:', error);
+            }
+
+            window.showCustomPrompt('加入揪團前，請輸入暱稱', '讓大家認得你的暱稱', (name) => {
+                const cleanName = String(name || '').trim().slice(0, 30);
+                if (!cleanName) return window.showCustomMsg('請先輸入暱稱，才方便大家認出你喔！');
+                const guest = { id: `guest_${crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}_${Math.random().toString(36).slice(2)}`}`, name: cleanName };
+                window.partyGuestIdentity = guest;
+                try { localStorage.setItem('jia_ben_party_guest', JSON.stringify(guest)); } catch (error) { console.warn('儲存訪客揪團身分失敗:', error); }
+                callback(window.getPartyActor());
+            });
+        };
+
+        window.focusPartyDeepLink = function() {
+            if (!partyDeepLinkId || partyDeepLinkHandled || !document.getElementById('view-party') || document.getElementById('view-party').classList.contains('hidden')) return;
+            if (!partyDataReady) return;
+            const card = document.querySelector(`[data-party-id="${CSS.escape(partyDeepLinkId)}"]`);
+            if (!card) {
+                if (window.partyData?.length && !partyDeepLinkHandled) {
+                    partyDeepLinkHandled = true;
+                    window.showCustomMsg('找不到這個揪團，可能已被刪除或連結已失效。');
+                }
+                return;
+            }
+            partyDeepLinkHandled = true;
+            card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            card.classList.add('party-deep-link-highlight');
+            setTimeout(() => card.classList.remove('party-deep-link-highlight'), 2200);
+        };
+
         window.renderParties = function() {
-            const container = document.getElementById('party-container'); if (window.partyData.length === 0) return container.innerHTML = '<div class="text-center text-gray-400 py-10 col-span-full"><i class="fa-solid fa-face-grin-beam-sweat text-5xl mb-4 opacity-30"></i><p class="text-sm">目前還沒有人發起聚會喔！</p></div>';
+            const container = document.getElementById('party-container');
+            if (window.partyData.length === 0) {
+                container.innerHTML = '<div class="text-center text-gray-400 py-10 col-span-full"><i class="fa-solid fa-face-grin-beam-sweat text-5xl mb-4 opacity-30"></i><p class="text-sm">目前還沒有人發起聚會喔！</p></div>';
+                if (partyDeepLinkId) setTimeout(() => window.focusPartyDeepLink(), 0);
+                return;
+            }
             container.innerHTML = [...window.partyData].sort((a,b) => new Date(a.date) - new Date(b.date)).map(p => {
-                const isJoined = p.joined && p.joined.includes(window.myIdentity.name); const joinCount = p.joined ? p.joined.length : 0;
+                const actor = window.getPartyActor();
+                const isGuestJoined = actor?.kind === 'guest' && Array.isArray(p.guestJoinedIds) && p.guestJoinedIds.includes(actor.id);
+                const isJoined = Boolean((p.joined && actor?.name && p.joined.includes(actor.name)) || isGuestJoined);
+                const joinCount = p.joined ? p.joined.length : 0;
                 const isEnded = p.date && new Date(`${p.date}T${p.time || '23:59'}`).getTime() < Date.now();
                 const canManage = Boolean(window.isAdminUnlocked || (window.myIdentity?.name && p.creator === window.myIdentity.name));
                 let costStr = ''; if(p.costMode === 'split') { const perPerson = joinCount > 0 ? Math.ceil(p.amount / joinCount) : p.amount; costStr = `總額 $${p.amount} · <span class="text-orange-600 font-bold">每人約 $${perPerson}</span>`; } else { costStr = `每人固定 <span class="text-orange-600 font-bold">$${p.amount}</span> · 已收 $${p.amount * joinCount}`; }
-                let totalVotes = 0; const voteCounts = {}; p.options.forEach(opt => voteCounts[opt] = 0); if(p.votes) { Object.values(p.votes).forEach(opt => { if(voteCounts[opt] !== undefined) { voteCounts[opt]++; totalVotes++; } }); }
-                const optionsHtml = p.options.map(opt => { const count = voteCounts[opt]; const percent = totalVotes > 0 ? (count / totalVotes) * 100 : 0; const isMyVote = (p.votes && p.votes[window.myIdentity.name] === opt); return `<button onclick="window.voteParty('${p.id}', decodeURIComponent('${window.escapeForBtn(opt)}'))" class="w-full relative overflow-hidden border ${isMyVote ? "border-orange-400 text-orange-600 bg-orange-50 shadow-inner" : "border-gray-200 text-gray-600 hover:border-orange-200 bg-white"} rounded-xl py-2.5 px-4 text-left transition text-sm flex justify-between items-center group mb-2"><div class="vote-bar" style="width: ${percent}%"></div><span class="relative z-10 font-bold ${isMyVote ? 'text-orange-600' : ''}">${isMyVote ? '<i class="fa-solid fa-circle-check mr-1.5"></i>' : ''}${opt}</span><span class="relative z-10 text-xs font-bold ${isMyVote ? 'text-orange-500' : 'text-gray-400 group-hover:text-orange-400'}">${count} 票</span></button>`; }).join('');
-                const appUrl = window.appConfig.appUrl || window.location.href;
-                const lineText = `🔥 【揪團通知】${p.title}\n📅 時間: ${p.date} ${p.time}\n📍 地點: ${p.location}\n---\n👇 趕快開啟「呷奔 Jia ben」投票＋報名：\n${appUrl}`;
+                let totalVotes = 0; const voteCounts = {}; p.options.forEach(opt => voteCounts[opt] = 0);
+                if (p.votes) Object.values(p.votes).forEach(opt => { if (voteCounts[opt] !== undefined) { voteCounts[opt]++; totalVotes++; } });
+                if (p.guestVotes) Object.values(p.guestVotes).forEach(opt => { if (voteCounts[opt] !== undefined) { voteCounts[opt]++; totalVotes++; } });
+                const myVote = actor?.kind === 'guest' ? p.guestVotes?.[actor.id] : p.votes?.[actor?.name];
+                const optionsHtml = p.options.map(opt => { const count = voteCounts[opt]; const percent = totalVotes > 0 ? (count / totalVotes) * 100 : 0; const isMyVote = myVote === opt; return `<button onclick="window.voteParty('${p.id}', decodeURIComponent('${window.escapeForBtn(opt)}'))" class="w-full relative overflow-hidden border ${isMyVote ? "border-orange-400 text-orange-600 bg-orange-50 shadow-inner" : "border-gray-200 text-gray-600 hover:border-orange-200 bg-white"} rounded-xl py-2.5 px-4 text-left transition text-sm flex justify-between items-center group mb-2"><div class="vote-bar" style="width: ${percent}%"></div><span class="relative z-10 font-bold ${isMyVote ? 'text-orange-600' : ''}">${isMyVote ? '<i class="fa-solid fa-circle-check mr-1.5"></i>' : ''}${opt}</span><span class="relative z-10 text-xs font-bold ${isMyVote ? 'text-orange-500' : 'text-gray-400 group-hover:text-orange-400'}">${count} 票</span></button>`; }).join('');
+                const shareUrl = new URL(window.appConfig.appUrl || window.location.href, window.location.href);
+                shareUrl.search = '';
+                shareUrl.hash = '';
+                shareUrl.searchParams.set('party', p.id);
+                const lineText = `🔥 【揪團通知】${p.title}\n📅 時間: ${p.date} ${p.time}\n📍 地點: ${p.location}\n📊 目前投票: ${totalVotes} 票／已參加: ${joinCount} 人\n---\n👇 點擊直達揪團投票：\n${shareUrl.toString()}`;
                 
                 // 封面照片區塊 (若無封面則顯示優雅簡約標頭)
                 const coverPhotoHtml = p.coverPhoto ? `
@@ -5300,7 +5369,7 @@
                 </div>` : '';
 
                 return `
-                <div class="restaurant-card soft-card bg-white rounded-[24px] border ${p.creator === '黃政誥' ? 'border-orange-200 host-highlight' : 'border-gray-100'} p-5 relative overflow-hidden h-full flex flex-col transition">
+                <div class="restaurant-card soft-card bg-white rounded-[24px] border ${p.creator === '黃政誥' ? 'border-orange-200 host-highlight' : 'border-gray-100'} p-5 relative overflow-hidden h-full flex flex-col transition" data-party-id="${window.escapeHtml(p.id)}">
                     ${coverPhotoHtml}
                     <div class="flex items-start justify-between gap-2 mb-2">
                         <div class="flex-1 min-w-0">
@@ -5336,9 +5405,48 @@
                     </div>
                 </div>`;
             }).join('');
+            if (partyDeepLinkId) setTimeout(() => window.focusPartyDeepLink(), 0);
         };
-        window.toggleJoinParty = function(pid) { window.requireIdentity(async () => { const party = window.partyData.find(p => p.id === pid); if(!party) return; let newJoined = party.joined || []; if(newJoined.includes(window.myIdentity.name)) { newJoined = newJoined.filter(n => n !== window.myIdentity.name); } else { newJoined.push(window.myIdentity.name); } if (db && currentUser) { await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'parties', pid), { joined: newJoined }); } else { party.joined = newJoined; window.renderParties(); } }); };
-        window.voteParty = function(pid, option) { window.requireIdentity(async () => { const party = window.partyData.find(p => p.id === pid); if(!party) return; if(!party.joined || !party.joined.includes(window.myIdentity.name)) { return window.showCustomMsg("要先點擊「算我一個」報名才能投票喔！"); } let newVotes = party.votes || {}; newVotes[window.myIdentity.name] = option; if (db && currentUser) { await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'parties', pid), { votes: newVotes }); } else { party.votes = newVotes; window.renderParties(); } }); };
+        window.toggleJoinParty = function(pid) {
+            const run = async (actor) => {
+                const party = window.partyData.find(p => p.id === pid); if (!party) return;
+                const newJoined = Array.isArray(party.joined) ? [...party.joined] : [];
+                const guestJoinedIds = Array.isArray(party.guestJoinedIds) ? [...party.guestJoinedIds] : [];
+                const alreadyJoined = actor.kind === 'guest' ? guestJoinedIds.includes(actor.id) : newJoined.includes(actor.name);
+                if (alreadyJoined) {
+                    if (actor.kind === 'guest') guestJoinedIds.splice(guestJoinedIds.indexOf(actor.id), 1);
+                    const nameIndex = newJoined.indexOf(actor.name); if (nameIndex >= 0) newJoined.splice(nameIndex, 1);
+                } else {
+                    newJoined.push(actor.name);
+                    if (actor.kind === 'guest') guestJoinedIds.push(actor.id);
+                }
+                const update = { joined: newJoined, guestJoinedIds };
+                if (db && currentUser) await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'parties', pid), update);
+                else { Object.assign(party, update); window.renderParties(); }
+                window.showCustomMsg(alreadyJoined ? '已取消參加。' : '已記錄你的參加！日後可隨時建檔／登入保存跨裝置紀錄。');
+            };
+            if (window.myIdentity?.name) run(window.getPartyActor()).catch(error => window.showCustomMsg(`操作失敗：${error.message}`));
+            else window.ensurePartyGuestIdentity(actor => run(actor).catch(error => window.showCustomMsg(`操作失敗：${error.message}`)));
+        };
+        window.voteParty = function(pid, option) {
+            const run = async (actor) => {
+                const party = window.partyData.find(p => p.id === pid); if (!party) return;
+                const guestJoined = actor.kind === 'guest' && party.guestJoinedIds?.includes(actor.id);
+                if (!(party.joined || []).includes(actor.name) && !guestJoined) return window.showCustomMsg('要先點擊「算我一個」報名才能投票喔！');
+                if (actor.kind === 'guest') {
+                    const guestVotes = { ...(party.guestVotes || {}), [actor.id]: option };
+                    if (db && currentUser) await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'parties', pid), { guestVotes });
+                    else { party.guestVotes = guestVotes; window.renderParties(); }
+                } else {
+                    const votes = { ...(party.votes || {}), [actor.name]: option };
+                    if (db && currentUser) await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'parties', pid), { votes });
+                    else { party.votes = votes; window.renderParties(); }
+                }
+                window.showCustomMsg('已記錄你的選擇！日後可隨時建檔／登入保存跨裝置紀錄。');
+            };
+            if (window.myIdentity?.name) run(window.getPartyActor()).catch(error => window.showCustomMsg(`投票失敗：${error.message}`));
+            else window.ensurePartyGuestIdentity(actor => run(actor).catch(error => window.showCustomMsg(`投票失敗：${error.message}`)));
+        };
 
         function useFallback(vT, lat, lng) {
             setTimeout(() => { 
@@ -11268,7 +11376,8 @@
         };
 
         function setupMockData() { 
-            updateConfigDropdowns(); 
+            updateConfigDropdowns();
+            partyDataReady = true;
             window.partyData = [{ id: 'p1', title: "期末考後解脫大爆吃", date: "2026-06-25", time: "18:30", location: "台北市大安區", group: "社發", options: ["叫披薩", "買火鍋料自己煮", "熱炒店"], costMode: "split", amount: 2000, creator: "黃政誥", joined: ["黃政誥", "小華"], votes: {"黃政誥": "叫披薩"} }];
             window.feedData = [
                 { id: 1, type: 'system_welcome', creator: "小華", group: "社發", inviter: "黃政誥", timestamp: new Date() },
