@@ -30,7 +30,8 @@
       "author": {
         "@type": "Person",
         "name": "黃政誥",
-        "email": "b7516555@gmail.com"
+        "email": "b7516555@gmail.com",
+        "url": "https://b7516555.netlify.app/"
       }
     }
     </script>
@@ -99,7 +100,7 @@
     <script src="./src/services/mapRestaurantContract.js?v=1"></script>
     <script src="./src/services/interactiveMap.js?v=1"></script>
     <script src="./src/components/restaurantCard.js?v=2"></script>
-    <script src="./src/config/appVersion.js?v=118"></script>
+    <script src="./src/config/appVersion.js?v=120"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const versionEl = document.getElementById('intro-version');
@@ -738,7 +739,10 @@
             </div>
         </div>
         <div class="absolute bottom-4 sm:bottom-10 left-0 right-0 text-center animate-[fadeInSlow_2s_ease-out_forwards] px-4" style="animation-delay: 0.5s; opacity: 0;">
-            <button type="button" onclick="window.openProducerModal()" class="producer-credit text-[10px] tracking-[0.25em] uppercase font-medium hover:text-orange-600 transition underline-offset-4 hover:underline">製作人 <span class="font-bold ml-1">黃政誥</span> <span class="ml-1 font-semibold opacity-80">since 2026</span></button>
+            <div class="flex items-center justify-center gap-2 flex-wrap">
+                <button type="button" onclick="window.openProducerModal()" class="producer-credit text-[10px] tracking-[0.25em] uppercase font-medium hover:text-orange-600 transition underline-offset-4 hover:underline">製作人 <span class="font-bold ml-1">黃政誥</span> <span class="ml-1 font-semibold opacity-80">since 2026</span></button>
+                <a href="https://b7516555.netlify.app/" target="_blank" rel="noopener noreferrer" class="text-[10px] font-semibold text-gray-500 hover:text-orange-600 underline underline-offset-2">個人網站</a>
+            </div>
             <p class="mt-1 text-[10px] tracking-[0.12em] font-semibold text-gray-500" id="intro-version">版本</p>
         </div>
     </div>
@@ -759,6 +763,7 @@
                     <div class="rounded-2xl bg-gray-50 border border-gray-100 p-3"><span class="block text-gray-400">更新日期</span><strong class="text-gray-700">2026-11-17</strong></div>
                 </div>
                 <p><strong class="text-gray-800">聯絡方式：</strong><a href="mailto:b7516555@gmail.com" class="text-orange-600 underline break-all">b7516555@gmail.com</a></p>
+                <p><strong class="text-gray-800">個人網站：</strong><a href="https://b7516555.netlify.app/" target="_blank" rel="noopener noreferrer" class="text-orange-600 underline break-all">b7516555.netlify.app</a></p>
                 <p class="text-xs text-gray-500">歡迎提供使用意見、功能建議或合作聯繫。</p>
             </div>
             <button type="button" onclick="window.closeModal('producer-modal')" class="w-full mt-5 py-3 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold transition">關閉</button>
