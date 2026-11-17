@@ -82,6 +82,17 @@ service cloud.firestore {
           allow update, delete: if isAdmin();
         }
 
+        // --- FREE RESTAURANT CLAIMS (restaurantClaims) ---
+        // A signed-in or anonymous Firebase Auth user may submit a claim;
+        // only an admin may review it. The app's claim listener needs read access.
+        match /restaurantClaims/{claimId} {
+          allow read: if isSignedIn();
+          allow create: if isSignedIn()
+            && request.resource.data.applicantUid == request.auth.uid
+            && request.resource.data.status == 'pending';
+          allow update, delete: if isAdmin();
+        }
+
         // --- REVIEWS & FEED (feed) ---
         match /feed/{feedId} {
           allow read: if true;

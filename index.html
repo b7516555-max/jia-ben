@@ -1599,6 +1599,7 @@
             <input type="hidden" id="claim-place-name">
             <label class="block text-xs font-bold text-gray-600 mb-1">店家</label>
             <input id="claim-place-display" readonly class="w-full px-3 py-2 bg-gray-100 border border-gray-200 rounded-xl text-sm font-bold mb-3">
+            <label class="flex items-center gap-2 mb-3 text-xs font-bold text-sky-800 cursor-pointer"><input type="checkbox" id="claim-is-food-truck" class="accent-sky-500"> 🚚 同時標記為行動餐車</label>
             <label class="block text-xs font-bold text-gray-600 mb-1">聯絡稱呼 *</label>
             <input id="claim-contact-name" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm mb-3" placeholder="例如：王老闆">
             <label class="block text-xs font-bold text-gray-600 mb-1">粉專／IG／LINE 驗證連結</label>
@@ -1879,11 +1880,12 @@
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-gray-500 mb-1">分類</label>
-                        <select id="input-category" class="w-full px-3 py-2.5 bg-gray-50 border border-gray-100 rounded-xl text-sm"><option value="麵食">麵食</option><option value="小吃">小吃</option><option value="飯食">飯食</option><option value="鍋物">鍋物</option><option value="甜點/飲料">甜點/飲料</option><option value="異國料理">異國料理</option><option value="其他餐廳">其他餐廳</option><option value="未分類" selected>未分類</option></select>
+                        <select id="input-category" class="w-full px-3 py-2.5 bg-gray-50 border border-gray-100 rounded-xl text-sm"><option value="麵食">麵食</option><option value="小吃">小吃</option><option value="飯食">飯食</option><option value="鍋物">鍋物</option><option value="甜點/飲料">甜點/飲料</option><option value="異國料理">異國料理</option><option value="行動餐車">🚚 行動餐車</option><option value="其他餐廳">其他餐廳</option><option value="未分類" selected>未分類</option></select>
                     </div>
                     <div class="col-span-2"><label class="block text-xs font-bold text-gray-500 mb-1">地圖連結 (可空白，系統會自動產生)</label><input type="text" id="input-map" class="w-full px-3 py-2.5 bg-gray-50 border border-gray-100 rounded-xl text-sm" placeholder="https://maps.google.com/... (可留空)"></div>
                 </div>
                 
+                <label class="flex items-center gap-2 mb-4 px-3 py-2.5 rounded-xl border border-sky-100 bg-sky-50/60 text-xs font-bold text-sky-800 cursor-pointer"><input type="checkbox" id="input-is-food-truck" class="accent-sky-500"> 🚚 這是行動餐車／移動攤商（可在詳情頁更新今日出攤）</label>
                 <div class="bg-gray-50 p-3.5 rounded-2xl border border-gray-100 mb-4">
                     <div class="grid grid-cols-3 gap-2 hidden"><input type="text" id="input-lat"><input type="text" id="input-lng"><input type="text" id="input-place-id"><input type="hidden" id="input-photo"></div>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -2240,6 +2242,7 @@
                                     <button onclick="window.runQuickSearch('燒肉')" class="pill-chip shrink-0 rounded-full border border-orange-100 bg-orange-50/60 hover:bg-orange-100 px-2.5 py-0.5 text-[10px] font-bold text-orange-700 shadow-2xs">🥩 燒肉</button>
                                     <button onclick="window.runQuickSearch('小吃')" class="pill-chip shrink-0 rounded-full border border-orange-100 bg-orange-50/60 hover:bg-orange-100 px-2.5 py-0.5 text-[10px] font-bold text-orange-700 shadow-2xs">🥢 台灣小吃</button>
                                     <button onclick="window.runQuickSearch('甜點')" class="pill-chip shrink-0 rounded-full border border-orange-100 bg-orange-50/60 hover:bg-orange-100 px-2.5 py-0.5 text-[10px] font-bold text-orange-700 shadow-2xs">☕ 咖啡/甜點</button>
+                                    <button onclick="window.filterFoodTrucks()" class="pill-chip shrink-0 rounded-full border border-sky-100 bg-sky-50/70 hover:bg-sky-100 px-2.5 py-0.5 text-[10px] font-bold text-sky-700 shadow-2xs">🚚 行動餐車</button>
                                 </div>
                                 <div class="flex items-center gap-1 text-xs text-gray-500 shrink-0">
                                     <span class="font-bold text-[11px]"><i class="fa-solid fa-coins text-amber-500 mr-0.5"></i>預算</span>
@@ -6050,6 +6053,22 @@
             window.searchGooglePlaces('explore');
         };
 
+        window.filterFoodTrucks = function() {
+            const places = Array.isArray(window.jiaPlacesData) ? window.jiaPlacesData : [];
+            const results = places.filter(place => {
+                const categories = Array.isArray(place.categories) ? place.categories : [place.category];
+                return place.isFoodTruck === true || categories.some(category => /行動餐車|餐車|攤車|移動攤販/.test(String(category || '')));
+            });
+            const container = document.getElementById('explore-results-container');
+            const feedback = document.getElementById('explore-results-feedback');
+            if (!container) return;
+            if (feedback) feedback.textContent = results.length ? `找到 ${results.length} 筆行動餐車` : '目前尚無已標記的行動餐車。';
+            container.innerHTML = results.length
+                ? results.map(place => window.JiaRestaurantCard ? window.JiaRestaurantCard.render(place) : '').join('')
+                : '<div class="text-center text-gray-500 py-10 col-span-full"><i class="fa-solid fa-truck text-3xl text-sky-400 mb-2"></i><br>目前沒有找到行動餐車，歡迎在新增餐廳時標記 🚚 行動餐車。</div>';
+            container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        };
+
         window.drawRandomFromGoogle = function() { 
             const priceRange = window.getSearchPriceRange('random');
             if (priceRange === null) return;
@@ -8785,6 +8804,7 @@
             document.getElementById('claim-contact-name').value = '';
             document.getElementById('claim-contact-link').value = '';
             document.getElementById('claim-note').value = '';
+            document.getElementById('claim-is-food-truck').checked = Boolean(item.isFoodTruck || String(item.category || '').includes('餐車'));
             document.getElementById('restaurant-claim-modal').classList.remove('hidden');
         };
 
@@ -8794,7 +8814,7 @@
             const contactName = document.getElementById('claim-contact-name').value.trim();
             if (!placeName || !contactName) return window.showCustomMsg('請填寫店家與聯絡稱呼。');
             if (!db || !currentUser) return window.showCustomMsg('目前尚未連線，請稍後再試。');
-            const record = { placeId, placeName, contactName, contactLink: document.getElementById('claim-contact-link').value.trim(), note: document.getElementById('claim-note').value.trim(), applicantUid: currentUser.uid, applicantName: window.myIdentity?.name || currentUser.displayName || '訪客', status: 'pending', createdAt: new Date().toISOString() };
+            const record = { placeId, placeName, contactName, contactLink: document.getElementById('claim-contact-link').value.trim(), note: document.getElementById('claim-note').value.trim(), isFoodTruck: document.getElementById('claim-is-food-truck').checked, applicantUid: currentUser.uid, applicantName: window.myIdentity?.name || currentUser.displayName || '訪客', status: 'pending', createdAt: new Date().toISOString() };
             try {
                 await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'restaurantClaims'), record);
                 window.closeModal('restaurant-claim-modal');
@@ -9838,7 +9858,8 @@
                     rating: ratingVal, 
                     photoUrl: window.isGoogleMapsPhotoUrl(photoVal) ? "" : photoVal,
                     group: groupVal, 
-                    creator: creatorVal 
+                    creator: creatorVal,
+                    isFoodTruck: Boolean(document.getElementById('input-is-food-truck')?.checked || categoryVal === '行動餐車')
                 };
                 
                 if (!duplicateRestaurant) {
@@ -11632,7 +11653,7 @@
                 const place = (window.jiaPlacesData || []).find(item => String(item.jiaPlaceId || item.id) === String(claim.placeId)) || (window.jiaPlacesData || []).find(item => item.name === claim.placeName);
                 try {
                     if (approve && place && db && currentUser) {
-                        const update = { isVerified: true, verifiedOwner: true, ownerAnnouncement: claim.note || '', verifiedAt: new Date().toISOString(), verifiedBy: currentUser.uid };
+                        const update = { isVerified: true, verifiedOwner: true, isFoodTruck: claim.isFoodTruck === true || place.isFoodTruck === true, ownerAnnouncement: claim.note || '', verifiedAt: new Date().toISOString(), verifiedBy: currentUser.uid };
                         await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'jiaPlaces', place.jiaPlaceId), update, { merge: true });
                         Object.assign(place, update);
                     }
