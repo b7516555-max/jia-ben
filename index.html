@@ -69,6 +69,13 @@
     <script src="./src/services/mapRestaurantContract.js?v=1"></script>
     <script src="./src/services/interactiveMap.js?v=1"></script>
     <script src="./src/components/restaurantCard.js?v=2"></script>
+    <script src="./src/config/appVersion.js?v=118"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const versionEl = document.getElementById('intro-version');
+            if (versionEl && window.JIA_BEN_VERSION) versionEl.textContent = `版本 ${window.JIA_BEN_VERSION}`;
+        });
+    </script>
     <script>
         window.JiaGooglePlacesGuard?.install();
         window.NO_GOOGLE_PLACES_RUNTIME = true;
@@ -220,6 +227,13 @@
             box-sizing: border-box !important;
             padding-bottom: max(1.5rem, env(safe-area-inset-bottom)) !important;
         }
+        /* All modal direct children share the same short-viewport safety net. */
+        .modal-backdrop > :first-child {
+            max-height: 90dvh;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            margin-block: max(.75rem, env(safe-area-inset-top)) max(.75rem, env(safe-area-inset-bottom));
+        }
 
         /* 長字串與地圖 URL 強制換行避免破版 */
         .break-anywhere {
@@ -265,6 +279,9 @@
         .tab-btn.active { color: #f97316; }
         @media (max-width: 767px) {
             .tab-btn.active { border-bottom: 2px solid #f97316; background: transparent !important; box-shadow: none !important; }
+            nav { justify-content: flex-start !important; overflow-x: auto !important; overflow-y: hidden !important; scrollbar-width: none; }
+            nav::-webkit-scrollbar { display: none; }
+            nav .tab-btn { flex: 0 0 3.25rem !important; min-width: 3.25rem !important; }
             /* 手機版完美防擠壓設定 */
             #main-app { border-radius: 0 !important; border: 0 !important; box-shadow: none !important; }
             nav { padding-bottom: max(0.5rem, env(safe-area-inset-bottom)) !important; shrink: 0 !important; }
@@ -295,9 +312,18 @@
                 min-height: fit-content !important;
             }
             #party-container { grid-template-columns: 1fr !important; gap: 1rem !important; }
-            #list-container { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 0.75rem !important; }
-            #list-container .restaurant-card { height: 11rem !important; min-height: 11rem !important; }
+            #list-container { grid-template-columns: 1fr !important; gap: 0.75rem !important; }
+            #list-container .restaurant-card { height: auto !important; min-height: 9.5rem !important; }
             #explore-results-container, #nearby-container { grid-template-columns: 1fr !important; gap: 1rem !important; }
+        }
+        @media (min-width: 768px) and (max-width: 1023px) {
+            #nearby-container { flex-direction: column !important; justify-content: flex-start !important; gap: 1rem !important; overflow-y: auto !important; padding-block: 1rem !important; }
+            #wheel-result-container { max-width: min(88vw, 30rem) !important; }
+            #party-container, #feed-container { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+        }
+        @media (min-width: 1024px) {
+            #home-for-you-container, #home-want-container, #explore-results-container,
+            #party-container, #feed-container, #list-container { max-width: 80rem; margin-inline: auto; width: 100%; }
         }
         @media (min-width: 768px) { .tab-btn.active { background-color: #fff7ed; border-radius: 1rem; } }
         @media (min-width: 768px) {
@@ -645,7 +671,7 @@
     </div>
 
     <!-- 🌟 0. 專業美食揪團神器前導頁 -->
-    <div id="intro-screen" class="fixed inset-0 z-[100] bg-white flex flex-col items-center justify-center w-full shadow-2xl transition-all duration-700">
+    <div id="intro-screen" class="fixed inset-0 z-[100] min-h-[100dvh] bg-white flex flex-col items-center justify-center w-full px-4 py-8 sm:py-10 shadow-2xl transition-all duration-700">
         <div class="absolute inset-0 bg-gradient-to-br from-amber-50 via-white to-orange-50 opacity-90"></div>
         <div class="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
             <div class="absolute -top-[10%] -right-[10%] w-96 h-96 bg-amber-200/40 rounded-full blur-3xl animate-[pulse_6s_ease-in-out_infinite]"></div>
@@ -663,7 +689,7 @@
             </div>
             <h1 class="text-5xl font-black tracking-widest text-gray-800 mb-2 drop-shadow-sm text-center w-full">呷奔</h1>
             <p class="text-xs uppercase tracking-[0.35em] text-orange-500 font-extrabold mb-4 text-center">Jia ben</p>
-            <p class="text-base text-gray-500 font-bold tracking-widest mb-12 text-center leading-loose">找尋隱藏好店<br>轉出聚餐驚喜的美食輪盤</p>
+            <p class="text-sm sm:text-base text-gray-500 font-bold tracking-[0.12em] sm:tracking-widest mb-12 text-center leading-loose max-w-full break-words">找尋隱藏好店<br><span class="inline-block max-w-full">轉出聚餐驚喜的美食輪盤</span></p>
             
             <div class="w-full flex flex-col items-center space-y-4 relative z-10">
                 <button id="btn-install-app" onclick="window.handleInstallClick()" class="w-full group relative px-8 py-4 text-base bg-orange-500 text-white rounded-full font-bold tracking-widest shadow-[0_10px_30px_rgba(249,115,22,0.3)] hover:bg-orange-600 transition-all duration-300 hover:scale-105 active:scale-95 flex items-center justify-center gap-3 overflow-hidden cursor-pointer">
@@ -675,8 +701,9 @@
                 </button>
             </div>
         </div>
-        <div class="absolute bottom-10 left-0 right-0 text-center animate-[fadeInSlow_2s_ease-out_forwards]" style="animation-delay: 0.5s; opacity: 0;">
+        <div class="absolute bottom-4 sm:bottom-10 left-0 right-0 text-center animate-[fadeInSlow_2s_ease-out_forwards] px-4" style="animation-delay: 0.5s; opacity: 0;">
             <p class="producer-credit text-[10px] tracking-[0.25em] uppercase font-medium">製作人 <span class="font-bold ml-1">黃政誥</span> <span class="ml-1 font-semibold opacity-80">since 2026</span></p>
+            <p class="mt-1 text-[10px] tracking-[0.12em] font-semibold text-gray-500" id="intro-version">版本</p>
         </div>
     </div>
 

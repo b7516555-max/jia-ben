@@ -25,11 +25,14 @@ assert.ok(html.includes('restaurantClaims'), 'Restaurant claim collection is wir
 assert.ok(html.includes('window.filterFoodTrucks()'), 'Homepage has a food truck quick filter');
 assert.ok(html.includes('id="input-is-food-truck"'), 'New restaurant form can mark food trucks');
 assert.ok(html.includes('id="claim-is-food-truck"'), 'Claim form can mark food trucks');
+assert.ok(html.includes('id="intro-version"'), 'Welcome screen shows the app version');
+assert.ok(html.includes('min-h-[100dvh]'), 'Welcome screen uses dynamic viewport height');
+assert.ok(html.includes('window.filterFoodTrucks()'), 'Food truck entry remains available');
 assert.ok(html.includes('核准認證'), 'Admin claim approval action is present');
 assert.ok(html.includes('isVerified: true'), 'Approval writes verified status');
 assert.ok(html.includes('detail-owner-announcement'), 'Detail view supports owner announcements');
 assert.ok(html.includes('detail-truck-nav'), 'Detail view supports truck navigation');
 assert.ok(html.includes('navigator.geolocation'), 'Truck update supports current GPS location');
-assert.strictEqual((sw.match(/together-eat-shell-v117/g) || []).length, 1, 'Service Worker cache is v117');
+assert.strictEqual((sw.match(/together-eat-shell-v118/g) || []).length, 1, 'Service Worker cache is v118');
 
 console.log('✅ Verified badge, claim review, and food truck contracts passed');

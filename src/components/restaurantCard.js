@@ -193,7 +193,7 @@
         }
 
         return `
-        <div class="restaurant-card group bg-white rounded-2xl md:rounded-3xl shadow-xs hover:shadow-lg border border-gray-100 hover:border-orange-200 overflow-hidden cursor-pointer transition-all duration-300 flex flex-col h-full active:scale-[0.98]" data-restaurant-id="${escapeHtml(vm.id)}" role="button" tabindex="0" aria-label="查看 ${escapeHtml(vm.name)} 詳情" onclick="window.openRestaurantDetailByName('${vm.safeName}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault(); window.openRestaurantDetailByName('${vm.safeName}');}">
+        <div class="restaurant-card group min-w-0 w-full bg-white rounded-2xl md:rounded-3xl shadow-xs hover:shadow-lg border border-gray-100 hover:border-orange-200 overflow-hidden cursor-pointer transition-all duration-300 flex flex-col h-full active:scale-[0.98]" data-restaurant-id="${escapeHtml(vm.id)}" role="button" tabindex="0" aria-label="查看 ${escapeHtml(vm.name)} 詳情" onclick="window.openRestaurantDetailByName('${vm.safeName}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault(); window.openRestaurantDetailByName('${vm.safeName}');}">
             <div class="relative aspect-[16/10] sm:aspect-[16/9] w-full overflow-hidden bg-gray-100 shrink-0">
                 <img src="${vm.photoUrl}" onerror="this.onerror=null; this.src=window.getFallbackImage ? window.getFallbackImage('${vm.safeName}') : './assets/place-placeholder.svg';" alt="${escapeHtml(vm.name)}" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy">
                 <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
@@ -204,7 +204,7 @@
                     <h3 title="${escapeHtml(vm.name)}" class="text-sm sm:text-base font-black text-white drop-shadow-md line-clamp-2 leading-snug tracking-tight">${escapeHtml(vm.name)}</h3>
                 </div>
             </div>
-            <div class="p-3.5 sm:p-4 flex-1 flex flex-col justify-between bg-white min-h-[110px]">
+            <div class="p-3.5 sm:p-4 flex-1 flex flex-col justify-between bg-white min-w-0 min-h-[110px]">
                 <div class="space-y-1.5">
                     ${reasonHtml}
                     <div class="flex items-center justify-between gap-1.5 flex-wrap">
@@ -218,7 +218,7 @@
                     ${vm.isFoodTruck && vm.truckTodayLocation ? `<p class="text-[11px] text-sky-700 font-bold flex items-start gap-1"><i class="fa-solid fa-truck text-sky-500 mt-0.5"></i><span class="break-anywhere">${escapeHtml(vm.truckTodayLocation)}${vm.truckTodayStart ? ` · ${escapeHtml(vm.truckTodayStart)}-${escapeHtml(vm.truckTodayEnd)}` : ''}</span></p>` : ''}
                     ${recBadgeHtml}
                 </div>
-                <div class="mt-2.5 pt-2 border-t border-gray-50 flex items-center justify-between gap-1.5 flex-wrap">
+                <div class="mt-2.5 pt-2 border-t border-gray-50 flex items-center justify-between gap-1.5 flex-wrap min-w-0">
                     <div class="flex items-center gap-1.5 min-w-0">
                         <span class="text-[11px] font-bold text-orange-600 group-hover:text-orange-700 flex items-center gap-1 transition shrink-0">
                             查看詳情 <i class="fa-solid fa-chevron-right text-[9px] transition-transform group-hover:translate-x-0.5"></i>

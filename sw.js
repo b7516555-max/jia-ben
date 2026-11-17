@@ -1,4 +1,5 @@
-const CACHE_NAME = 'together-eat-shell-v117';
+// Keep this value synchronized with src/config/appVersion.js when releasing a new version.
+const CACHE_NAME = 'together-eat-shell-v118';
 const APP_SHELL = [
   './', 
   './index.html', 
@@ -37,6 +38,7 @@ const APP_SHELL = [
   './src/services/smartSearch.js?v=2',
   './src/services/smartWheel.js?v=2',
   './src/components/restaurantCard.js?v=2',
+  './src/config/appVersion.js?v=118',
   './assets/place-placeholder.svg',
   './assets/food/lu_rou_fan.jpg',
   './assets/food/ramen.jpg',
