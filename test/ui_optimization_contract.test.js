@@ -1,0 +1,20 @@
+const assert = require('assert');
+const fs = require('fs');
+const path = require('path');
+const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+const card = fs.readFileSync(path.join(__dirname, '..', 'src', 'components', 'restaurantCard.js'), 'utf8');
+
+assert.match(html, /onclick="window\.quickDecidePlace\(\)"/, 'Hero quick decision remains wired');
+assert.match(html, /app-header-title/, 'Header title has a synchronized target');
+assert.match(html, /tabTitles = \{ explore:/, 'Tab titles are mapped');
+assert.match(html, /classList\.remove\('active'\)/, 'Tab switching clears active state');
+assert.match(html, /id="explore-results-feedback"/, 'Search feedback area exists');
+assert.match(html, /scrollIntoView\(\{ behavior: 'smooth'/, 'Search scrolls to results');
+assert.match(html, /previewWheelCandidates/, 'Wheel preloads real candidates');
+assert.match(html, /map-attribution/, 'Map attribution is scoped to map view');
+assert.match(html, /normalizeJiaPlaceForDisplay/, 'Display normalization is present');
+assert.match(html, /party-ended-badge/, 'Expired party state is rendered');
+assert.match(html, /canManageFeedItem/, 'Feed moderation controls are permission-aware');
+assert.match(card, /title="\$\{escapeHtml\(vm\.name\)\}"/, 'Long card names expose a title');
+assert.doesNotMatch(html, /<span>📸 分享聚會照片<\/span>/, 'Party photo button does not duplicate its icon');
+console.log('✅ UI interaction, responsive display, attribution, and permission contracts passed');

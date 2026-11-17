@@ -223,7 +223,8 @@
 
         /* Numeric content should remain compact even inside wide-tracking labels/badges. */
         .numeric-value {
-            letter-spacing: normal !important;
+            letter-spacing: 0 !important;
+            word-spacing: 0 !important;
             font-variant-numeric: tabular-nums;
         }
         #calc-result {
@@ -305,12 +306,19 @@
         .modal-backdrop { backdrop-filter: blur(10px); }
         .img-overlay { background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 100%); }
         .foodie-avatar { background-size: 110%; background-position: center 15%; background-repeat: no-repeat; background-color: #f1f5f9; aspect-ratio: 1 / 1; }
-        .foodie-avatar-host { background-image: url('https://b7516555-max.github.io/jia-ben/assets/avatars/host.png'); }
-        .foodie-avatar-explorer { background-image: url('https://b7516555-max.github.io/jia-ben/assets/avatars/explorer.png'); }
-        .foodie-avatar-cook { background-image: url('https://b7516555-max.github.io/jia-ben/assets/avatars/cook.png'); }
-        .foodie-avatar-dessert { background-image: url('https://b7516555-max.github.io/jia-ben/assets/avatars/dessert.png'); }
-        .foodie-avatar-night { background-image: url('https://b7516555-max.github.io/jia-ben/assets/avatars/night.png'); }
-        .foodie-avatar-camera { background-image: url('https://b7516555-max.github.io/jia-ben/assets/avatars/camera.png'); }
+        .foodie-avatar-host { background-image: url('./assets/avatars/host.png'); }
+        .foodie-avatar-explorer { background-image: url('./assets/avatars/explorer.png'); }
+        .foodie-avatar-cook { background-image: url('./assets/avatars/cook.png'); }
+        .foodie-avatar-dessert { background-image: url('./assets/avatars/dessert.png'); }
+        .foodie-avatar-night { background-image: url('./assets/avatars/night.png'); }
+        .foodie-avatar-camera { background-image: url('./assets/avatars/camera.png'); }
+        #tab-id-old, #tab-id-new { position: relative; }
+        #tab-id-old.active::after, #tab-id-new.active::after { content: ''; position: absolute; left: 18%; right: 18%; bottom: 0; height: 3px; border-radius: 999px; background: #f97316; }
+        #explore-results-feedback { min-height: 1.25rem; }
+        .map-attribution { display: none; }
+        body.map-view-active .map-attribution { display: block; }
+        .producer-credit { color: #92400e !important; }
+        .party-ended-badge { background: #e5e7eb; color: #374151; }
         .avatar-choice.is-selected { border-color: #f97316; box-shadow: 0 0 0 3px rgba(249,115,22,.18); transform: translateY(-2px); }
         .wheel-stage { width: min(68vw, 32vh, 290px); aspect-ratio: 1; }
         @media (max-height: 700px) {
@@ -636,7 +644,7 @@
             </div>
         </div>
         <div class="absolute bottom-10 left-0 right-0 text-center animate-[fadeInSlow_2s_ease-out_forwards]" style="animation-delay: 0.5s; opacity: 0;">
-            <p class="text-[10px] text-gray-400 tracking-[0.25em] uppercase font-medium">製作人 <span class="font-bold text-gray-700 ml-1">黃政誥</span> <span class="ml-1 font-semibold text-gray-400">since 2026</span></p>
+            <p class="producer-credit text-[10px] tracking-[0.25em] uppercase font-medium">製作人 <span class="font-bold ml-1">黃政誥</span> <span class="ml-1 font-semibold opacity-80">since 2026</span></p>
         </div>
     </div>
 
@@ -2060,7 +2068,7 @@
                 </button>
                 <div class="text-center leading-none">
                     <p class="text-[10px] uppercase tracking-[0.28em] opacity-80">Jia ben</p>
-                    <h1 class="text-[16px] font-bold tracking-widest leading-none mt-1">呷奔 • 找餐廳</h1>
+                    <h1 id="app-header-title" class="text-[16px] font-bold tracking-widest leading-none mt-1">呷奔 • 找餐廳</h1>
                 </div>
                 <div class="flex items-center gap-1.5">
                     <button id="header-avatar-btn" onclick="window.handleHeaderAvatarClick()" class="w-10 h-10 rounded-full border-2 border-white/80 shadow-xs flex items-center justify-center bg-white/20 hover:scale-105 transition overflow-hidden p-0.5" title="個人專屬後台與等級徽章">
@@ -2208,6 +2216,7 @@
                                     </div>
                                 </div>
                             </div>
+                            <p id="explore-results-feedback" class="text-xs text-gray-400"></p>
                             <div id="explore-results-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-stretch content-start pb-8">
                                 <div class="text-center text-gray-300 py-10 mt-2 col-span-full"><i class="fa-solid fa-mug-hot text-5xl mb-3 opacity-30"></i><p class="text-xs font-medium text-gray-400">正在探索好店...</p></div>
                             </div>
@@ -3066,14 +3075,49 @@
         ];
         
         window.getFallbackImage = function(name) {
+            const place = name && typeof name === 'object' ? name : { name: name };
             if (window.imageSafety?.getAiFoodImageForPlace) {
-                return window.imageSafety.getAiFoodImageForPlace({ name: name });
+                return window.imageSafety.getAiFoodImageForPlace(place);
             }
-            if (!name) return FOOD_IMAGES[0];
+            if (!place.name) return FOOD_IMAGES[0];
             let hash = 0;
-            for (let i = 0; i < name.length; i++) hash += name.charCodeAt(i);
+            for (let i = 0; i < String(place.name).length; i++) hash += String(place.name).charCodeAt(i);
             return FOOD_IMAGES[hash % FOOD_IMAGES.length];
         };
+
+        // 顯示層正規化：不改寫 Firestore 原始資料，只修正畫面上的 provider 汙染與地名格式。
+        window.normalizeJiaPlaceForDisplay = function(place = {}) {
+            const next = { ...place };
+            const rawAddress = String(next.address || next.formatted_address || '').trim();
+            const cityMatch = rawAddress.match(/(基隆市|台北市|新北市|桃園市|新竹市|新竹縣|苗栗縣|台中市|彰化縣|南投縣|雲林縣|嘉義市|嘉義縣|台南市|高雄市|屏東縣|宜蘭縣|花蓮縣|台東縣|澎湖縣|金門縣|連江縣)/);
+            const city = next.city && !/^(西區|東區|左營區|苓雅區|中西區|安平區|信義區)$/.test(String(next.city)) ? next.city : (cityMatch?.[1] || next.city || '');
+            next.city = city;
+            next.address = rawAddress.replace(/^台灣\s*[•·|,-]?\s*/i, '').trim();
+            if (/Yuchih\s+Township/i.test(next.address) || /Yuchih\s+Township/i.test(String(next.city || ''))) {
+                next.city = '南投縣';
+                next.address = '南投縣魚池鄉';
+            }
+            if (next.name) {
+                const suffix = city ? new RegExp(`\\s*[•·|,-]?\\s*(台灣\\s*[•·|,-]?\\s*)?${city}\\s*$`, 'i') : null;
+                next.name = suffix ? String(next.name).replace(suffix, '').trim() : String(next.name).trim();
+            }
+            const categories = Array.isArray(next.categories) ? next.categories.map(String) : (next.category ? [String(next.category)] : []);
+            const categoryText = `${next.name || ''} ${categories.join(' ')}`;
+            const inferred = categoryText.match(/拉麵|火鍋|燒肉|咖啡|甜點|小吃|滷肉飯|麵食|鍋物|日式料理|台式料理/);
+            next.categories = categories.filter(item => !/縣|市$/.test(item));
+            if (inferred && !next.categories.length) next.categories = [inferred[0]];
+            if (!next.categories.length) next.categories = ['小吃'];
+            if (/^(西區|東區|左營區|苓雅區)$/.test(String(next.city || '')) && city) next.city = city;
+            return next;
+        };
+
+        window.addEventListener('error', function(event) {
+            const img = event.target;
+            if (img && img.tagName === 'IMG' && !img.dataset.jiaAvatarFallback && img.closest('.foodie-avatar, #profile-avatar, #header-avatar-icon, .avatar-choice')) {
+                img.dataset.jiaAvatarFallback = '1';
+                img.src = './assets/avatars/host.png';
+            }
+        }, true);
 
         window.getSafeImage = function(url, fallbackName) {
             if (!url || typeof url !== 'string') return window.getFallbackImage(fallbackName);
@@ -3608,7 +3652,7 @@
             const response = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
             if (!response.ok) throw new Error(`Firebase REST ${response.status}`);
             const payload = await response.json();
-            window.jiaPlacesData = (payload.documents || []).map(item => ({ jiaPlaceId: item.name.split('/').pop(), ...Object.fromEntries(Object.entries(item.fields || {}).map(([key, value]) => [key, decodeJiaFirestoreValue(value)])) }));
+            window.jiaPlacesData = (payload.documents || []).map(item => window.normalizeJiaPlaceForDisplay({ jiaPlaceId: item.name.split('/').pop(), ...Object.fromEntries(Object.entries(item.fields || {}).map(([key, value]) => [key, decodeJiaFirestoreValue(value)])) }));
             return window.jiaPlacesData;
         }
         async function saveExternalJiaPlace(place) {
@@ -3626,7 +3670,7 @@
             }).catch(error => console.error('jiaPlaces REST 讀取失敗:', error));
             onSnapshot(collection(db,'artifacts',appId,'public','data','jiaPlaces'), snap => { 
                 if(!snap.empty) {
-                    window.jiaPlacesData=snap.docs.map(item=>({jiaPlaceId:item.id,...item.data()})); 
+                    window.jiaPlacesData=snap.docs.map(item=>window.normalizeJiaPlaceForDisplay({jiaPlaceId:item.id,...item.data()}));
                     if (typeof window.renderHomeForYou === 'function') window.renderHomeForYou();
                 }
             }, error => console.error('jiaPlaces 同步失敗:',error));
@@ -3903,6 +3947,10 @@
             });
             document.getElementById('view-' + tabName)?.classList.remove('hidden'); 
             if(document.getElementById('tab-' + tabName)) document.getElementById('tab-' + tabName).classList.add('active');
+            const tabTitles = { explore: '找餐廳', map: '地圖找餐廳', nearby: '美食輪盤', history: '吃過紀錄', party: '揪團活動', feed: '美食動態牆', chat: '留言板', list: '口袋名單', admin: '主揪後台', guide: '使用指南' };
+            const titleEl = document.getElementById('app-header-title');
+            if (titleEl && tabTitles[tabName]) titleEl.textContent = `呷奔 • ${tabTitles[tabName]}`;
+            document.body.classList.toggle('map-view-active', tabName === 'map');
             if(tabName !== 'admin' && tabName !== 'guide') previousTab = tabName;
             if(tabName === 'explore') window.renderHomeForYou();
             if(tabName === 'history') window.renderHistoryView();
@@ -3910,6 +3958,7 @@
             if(tabName === 'feed') window.renderFeed(); 
             if(tabName === 'party') window.renderParties();
             if(tabName === 'chat') window.renderChatMessages(true);
+            if(tabName === 'nearby') window.previewWheelCandidates?.();
             if(tabName === 'admin') window.renderAdminDataList();
             if(tabName === 'map') {
                 window.JiaInteractiveMap?.open(window.jiaPlacesData || window.restaurantData || []);
@@ -4628,11 +4677,14 @@
         window.toggleIdTab = function(mode) {
             const btnOld = document.getElementById('tab-id-old'); const btnNew = document.getElementById('tab-id-new');
             const formOld = document.getElementById('form-id-old'); const formNew = document.getElementById('form-id-new');
+            [btnOld, btnNew].forEach(btn => btn?.classList.remove('active'));
             if(mode === 'old') {
+                btnOld?.classList.add('active');
                 btnOld.classList.add('bg-white', 'shadow-sm', 'text-orange-500'); btnOld.classList.remove('text-gray-500');
                 btnNew.classList.remove('bg-white', 'shadow-sm', 'text-orange-500'); btnNew.classList.add('text-gray-500');
                 formOld.classList.remove('hidden'); formNew.classList.add('hidden');
             } else {
+                btnNew?.classList.add('active');
                 btnNew.classList.add('bg-white', 'shadow-sm', 'text-orange-500'); btnNew.classList.remove('text-gray-500');
                 btnOld.classList.remove('bg-white', 'shadow-sm', 'text-orange-500'); btnOld.classList.add('text-gray-500');
                 formNew.classList.remove('hidden'); formOld.classList.add('hidden');
@@ -5186,6 +5238,8 @@
             const container = document.getElementById('party-container'); if (window.partyData.length === 0) return container.innerHTML = '<div class="text-center text-gray-400 py-10 col-span-full"><i class="fa-solid fa-face-grin-beam-sweat text-5xl mb-4 opacity-30"></i><p class="text-sm">目前還沒有人發起聚會喔！</p></div>';
             container.innerHTML = [...window.partyData].sort((a,b) => new Date(a.date) - new Date(b.date)).map(p => {
                 const isJoined = p.joined && p.joined.includes(window.myIdentity.name); const joinCount = p.joined ? p.joined.length : 0;
+                const isEnded = p.date && new Date(`${p.date}T${p.time || '23:59'}`).getTime() < Date.now();
+                const canManage = Boolean(window.isAdminUnlocked || (window.myIdentity?.name && p.creator === window.myIdentity.name));
                 let costStr = ''; if(p.costMode === 'split') { const perPerson = joinCount > 0 ? Math.ceil(p.amount / joinCount) : p.amount; costStr = `總額 $${p.amount} · <span class="text-orange-600 font-bold">每人約 $${perPerson}</span>`; } else { costStr = `每人固定 <span class="text-orange-600 font-bold">$${p.amount}</span> · 已收 $${p.amount * joinCount}`; }
                 let totalVotes = 0; const voteCounts = {}; p.options.forEach(opt => voteCounts[opt] = 0); if(p.votes) { Object.values(p.votes).forEach(opt => { if(voteCounts[opt] !== undefined) { voteCounts[opt]++; totalVotes++; } }); }
                 const optionsHtml = p.options.map(opt => { const count = voteCounts[opt]; const percent = totalVotes > 0 ? (count / totalVotes) * 100 : 0; const isMyVote = (p.votes && p.votes[window.myIdentity.name] === opt); return `<button onclick="window.voteParty('${p.id}', decodeURIComponent('${window.escapeForBtn(opt)}'))" class="w-full relative overflow-hidden border ${isMyVote ? "border-orange-400 text-orange-600 bg-orange-50 shadow-inner" : "border-gray-200 text-gray-600 hover:border-orange-200 bg-white"} rounded-xl py-2.5 px-4 text-left transition text-sm flex justify-between items-center group mb-2"><div class="vote-bar" style="width: ${percent}%"></div><span class="relative z-10 font-bold ${isMyVote ? 'text-orange-600' : ''}">${isMyVote ? '<i class="fa-solid fa-circle-check mr-1.5"></i>' : ''}${opt}</span><span class="relative z-10 text-xs font-bold ${isMyVote ? 'text-orange-500' : 'text-gray-400 group-hover:text-orange-400'}">${count} 票</span></button>`; }).join('');
@@ -5197,9 +5251,7 @@
                 <div class="relative w-full h-40 sm:h-44 rounded-2xl overflow-hidden mb-3.5 group bg-gray-100 shadow-2xs">
                     <img src="${window.resolveReviewImage(p.coverPhoto, p.title)}" onerror="this.onerror=null; this.src=window.getFallbackImage('${window.escapeForBtn(p.title)}');" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
                     <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20"></div>
-                    <button onclick="window.openEditPartyModal('${p.id}')" class="absolute top-2.5 right-2.5 bg-black/60 hover:bg-black/80 text-white text-[11px] font-bold px-2.5 py-1 rounded-xl backdrop-blur-xs shadow transition flex items-center gap-1 z-10">
-                        <i class="fa-solid fa-camera"></i> 換封面/編輯
-                    </button>
+                    ${canManage ? `<button onclick="window.openEditPartyModal('${p.id}')" class="absolute top-2.5 right-2.5 bg-black/60 hover:bg-black/80 text-white text-[11px] font-bold px-2.5 py-1 rounded-xl backdrop-blur-xs shadow transition flex items-center gap-1 z-10"><i class="fa-solid fa-camera"></i> 換封面/編輯</button>` : ''}
                 </div>` : '';
 
                 return `
@@ -5210,9 +5262,8 @@
                             <h3 class="text-xl font-bold text-gray-800 leading-tight">${p.title}</h3>
                         </div>
                         <div class="flex items-center gap-1 shrink-0">
-                            <button onclick="window.openEditPartyModal('${p.id}')" class="text-gray-400 hover:text-orange-600 hover:bg-orange-50 p-1.5 rounded-lg transition" title="編輯活動資訊 / 補封面照片">
-                                <i class="fa-solid fa-pen-to-square text-sm"></i>
-                            </button>
+                            ${canManage ? `<button onclick="window.openEditPartyModal('${p.id}')" class="text-gray-400 hover:text-orange-600 hover:bg-orange-50 p-1.5 rounded-lg transition" title="編輯活動資訊 / 補封面照片"><i class="fa-solid fa-pen-to-square text-sm"></i></button>` : ''}
+                            ${isEnded ? '<span class="party-ended-badge text-[9px] px-2 py-0.5 rounded font-black">已結束</span>' : ''}
                             ${p.creator === '黃政誥' ? '<span class="bg-orange-500 text-white text-[9px] px-2 py-0.5 rounded shadow-sm font-bold tracking-widest"><i class="fa-solid fa-crown mr-1"></i>主揪邀請</span>' : `<span class="bg-gray-100 text-gray-500 text-[9px] px-2 py-0.5 rounded shadow-sm font-bold tracking-widest">${p.group} 團</span>`}
                         </div>
                     </div>
@@ -5230,11 +5281,11 @@
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                             <button onclick="window.openPartyRecapModal('${p.id}')" class="party-recap-action w-full bg-amber-50 hover:bg-amber-100 text-amber-800 font-bold py-2 px-3 rounded-xl text-xs border border-amber-200 transition flex items-center justify-center gap-1.5 shadow-xs" title="聚會結束紀錄／分享現場照片至動態牆">
                                 <i class="fa-solid fa-camera-retro text-amber-600"></i>
-                                <span>📸 分享聚會照片</span>
+                                <span>分享聚會照片</span>
                             </button>
                             <button onclick="window.initInteraction('review', { name: '${window.escapeForBtn(p.location || p.title)}', mapLink: window.getOsmSearchUrl('${window.escapeForBtn(p.location || p.title)}') })" class="w-full bg-orange-50 hover:bg-orange-100 text-orange-800 font-bold py-2 px-3 rounded-xl text-xs border border-orange-200 transition flex items-center justify-center gap-1.5 shadow-xs" title="聚會吃完寫心得／評價店家">
                                 <i class="fa-solid fa-utensils text-orange-600"></i>
-                                <span>🍽️ 這次吃得如何？</span>
+                                <span>這次吃得如何？</span>
                             </button>
                         </div>
                     </div>
@@ -5479,8 +5530,11 @@
                     const executeLocalSmartSearch = (userLoc) => {
                         searchOpts.userLocation = userLoc;
                         const results = window.JiaSmartSearch.search(window.jiaPlacesData, searchOpts);
+                        const feedback = document.getElementById('explore-results-feedback');
+                        if (feedback) feedback.textContent = results.length ? `找到 ${results.length} 筆符合結果` : '沒有符合條件的餐廳，請調整關鍵字或篩選條件。';
                         if (results.length > 0) {
                             document.getElementById(cId).innerHTML = results.map(r => window.JiaRestaurantCard.render(r.place, { distanceKm: r.distanceKm })).join('');
+                            document.getElementById(cId).scrollIntoView({ behavior: 'smooth', block: 'start' });
                         } else {
                             displayNoResults('explore');
                         }
@@ -5591,6 +5645,9 @@
 
                 const winner = window.JiaSmartWheel.selectWeightedWinner(window.jiaPlacesData, context);
                 if (!winner) return displayNoResults('radar');
+
+                // Hero 按鈕在首頁觸發時，先切到結果所在的輪盤頁，讓推薦立即可見。
+                window.switchTab('nearby', true);
 
                 const resultEl = document.getElementById('wheel-result');
                 const statusEl = document.getElementById('wheel-status');
@@ -5747,6 +5804,9 @@
             } else { 
                 const cId = 'explore-results-container';
                 document.getElementById(cId).innerHTML = res.map(p => generatePlaceCardHtml(p)).join(''); 
+                const feedback = document.getElementById('explore-results-feedback');
+                if (feedback) feedback.textContent = `找到 ${res.length} 筆符合結果`;
+                document.getElementById(cId).scrollIntoView({ behavior: 'smooth', block: 'start' });
             } 
         }
 
@@ -5827,6 +5887,25 @@
                 ctx.restore();
             });
         };
+        window.previewWheelCandidates = function() {
+            const places = Array.isArray(window.jiaPlacesData) ? window.jiaPlacesData : [];
+            if (!places.length || !window.JiaSmartWheel) return;
+            const distance = document.getElementById('radar-filter-distance')?.value || '3';
+            const budget = document.getElementById('radar-filter-budget')?.value || 'all';
+            const category = document.getElementById('radar-filter-category')?.value || 'all';
+            const keyword = document.getElementById('radar-keyword')?.value?.trim() || '';
+            const candidates = window.JiaSmartWheel.getWheelCandidates(places, {
+                userLocation: { lat: 25.0330, lng: 121.5654 },
+                maxDistanceKm: distance !== 'all' ? Number(distance) : 100,
+                budgetRange: budget,
+                category: category !== 'all' ? category : (keyword || 'all')
+            });
+            if (candidates.length) {
+                window.drawRadarWheel(candidates);
+                const status = document.getElementById('wheel-status');
+                if (status) status.textContent = `已載入 ${candidates.length} 間符合條件的店家，點擊中間開始抽籤`;
+            }
+        };
         window.spinRadarWheel = function(places, context = {}) {
             const canvas = document.getElementById('restaurant-wheel');
             const statusEl = document.getElementById('wheel-status');
@@ -5879,7 +5958,12 @@
         
         function displayNoResults(vT) { 
             const msg = `<div class="text-center text-gray-500 py-10 col-span-full">附近找不到相關餐廳喔！<br>換個關鍵字試試？</div>`; 
-            if(vT === 'explore') document.getElementById('explore-results-container').innerHTML = msg; 
+            if(vT === 'explore') {
+                document.getElementById('explore-results-container').innerHTML = msg;
+                const feedback = document.getElementById('explore-results-feedback');
+                if (feedback) feedback.textContent = '沒有找到符合結果，請調整關鍵字或篩選條件。';
+                document.getElementById('explore-results-container')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
             if(vT === 'radar') {
                 document.getElementById('wheel-status').innerHTML = '附近找不到符合條件的餐廳，換個關鍵字或價位再轉一次吧！';
                 const btn = document.getElementById('radar-spin-btn');
@@ -7539,6 +7623,9 @@
             });
         };
 
+        window.canManageFeedItem = function(item = {}) {
+            return Boolean(window.isAdminUnlocked || (window.myIdentity?.name && item.creator === window.myIdentity.name));
+        };
         window.renderFeed = function() {
             const container = document.getElementById('feed-container'); 
             if (!container) return;
@@ -7574,7 +7661,7 @@
                                     <p class="text-[11px] text-gray-500 mt-0.5">(由 ${item.inviter} 引薦進來 🙌)</p>
                                 </div>
                             </div>
-                            <button onclick="window.deleteFeedItemWithAuth('${item.id}')" class="w-7 h-7 rounded-lg bg-white/80 hover:bg-white border border-blue-200 text-gray-400 hover:text-red-500 flex items-center justify-center text-xs shadow-2xs transition shrink-0" title="刪除此公告">
+                            <button onclick="window.deleteFeedItemWithAuth('${item.id}')" class="${window.canManageFeedItem(item) ? '' : 'hidden'} w-7 h-7 rounded-lg bg-white/80 hover:bg-white border border-blue-200 text-gray-400 hover:text-red-500 flex items-center justify-center text-xs shadow-2xs transition shrink-0" title="刪除此公告">
                                 <i class="fa-solid fa-trash-can"></i>
                             </button>
                         </div>
@@ -7613,7 +7700,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <button onclick="window.deleteFeedItemWithAuth('${item.id}')" class="w-7 h-7 rounded-lg bg-white/20 hover:bg-white/30 text-white flex items-center justify-center text-xs backdrop-blur-xs transition shrink-0 ml-1 mt-0.5" title="刪除此廣播">
+                            <button onclick="window.deleteFeedItemWithAuth('${item.id}')" class="${window.canManageFeedItem(item) ? '' : 'hidden'} w-7 h-7 rounded-lg bg-white/20 hover:bg-white/30 text-white flex items-center justify-center text-xs backdrop-blur-xs transition shrink-0 ml-1 mt-0.5" title="刪除此廣播">
                                 <i class="fa-solid fa-trash-can"></i>
                             </button>
                         </div>
@@ -7666,7 +7753,7 @@
                                 <span class="inline-flex items-center gap-1 bg-gradient-to-r from-amber-500 to-orange-500 text-white px-2.5 py-1 rounded-full font-bold text-[10px] shadow-sm shrink-0">
                                     <i class="fa-solid fa-fire text-[9px]"></i> 聚會記錄
                                 </span>
-                                <button onclick="window.deleteFeedItemWithAuth('${item.id}')" class="w-7 h-7 rounded-lg bg-white border border-amber-200 hover:border-red-400 text-gray-400 hover:text-red-500 flex items-center justify-center text-xs shadow-2xs transition" title="刪除此聚會花絮">
+                                <button onclick="window.deleteFeedItemWithAuth('${item.id}')" class="${window.canManageFeedItem(item) ? '' : 'hidden'} w-7 h-7 rounded-lg bg-white border border-amber-200 hover:border-red-400 text-gray-400 hover:text-red-500 flex items-center justify-center text-xs shadow-2xs transition" title="刪除此聚會花絮">
                                     <i class="fa-solid fa-trash-can"></i>
                                 </button>
                             </div>
@@ -7835,7 +7922,7 @@
                                 <button onclick="window.openFeedItemEditModal('${item.id}')" class="w-7 h-7 rounded-lg bg-white border border-gray-200 hover:border-blue-400 text-gray-500 hover:text-blue-600 flex items-center justify-center text-xs shadow-2xs transition shrink-0" title="編輯此評價">
                                     <i class="fa-solid fa-pen-to-square"></i>
                                 </button>
-                                <button onclick="window.deleteFeedItemWithAuth('${item.id}')" class="w-7 h-7 rounded-lg bg-white border border-gray-200 hover:border-red-400 text-gray-500 hover:text-red-600 flex items-center justify-center text-xs shadow-2xs transition shrink-0" title="刪除此評價">
+                                <button onclick="window.deleteFeedItemWithAuth('${item.id}')" class="${window.canManageFeedItem(item) ? '' : 'hidden'} w-7 h-7 rounded-lg bg-white border border-gray-200 hover:border-red-400 text-gray-500 hover:text-red-600 flex items-center justify-center text-xs shadow-2xs transition shrink-0" title="刪除此評價">
                                     <i class="fa-solid fa-trash-can"></i>
                                 </button>
                             </div>
@@ -8185,15 +8272,16 @@
                 const safeNameStr = window.escapeForBtn(i.name);
                 const listJiaPlace = (window.jiaPlacesData || []).find(place => place.jiaPlaceId === i.jiaPlaceId)
                     || (window.jiaPlacesData || []).find(place => String(place.normalizedName || '').toLowerCase() === String(i.name || '').normalize('NFKC').toLowerCase().replace(/\s+/g,''));
+                const displayRecord = window.normalizeJiaPlaceForDisplay({ ...(listJiaPlace || {}), ...i });
                 
                 if (window.JiaRestaurantCard) {
                     return window.JiaRestaurantCard.render({
-                        ...(listJiaPlace || {}),
-                        name: i.name,
-                        address: i.address || (i.city ? `${i.city} ${i.district || ''}` : ''),
-                        city: i.city || listJiaPlace?.city,
-                        coverPhoto: i.photoUrl || listJiaPlace?.coverPhoto,
-                        categories: i.category ? [i.category] : listJiaPlace?.categories
+                        ...displayRecord,
+                        name: displayRecord.name || i.name,
+                        address: displayRecord.address || (displayRecord.city ? `${displayRecord.city} ${displayRecord.district || ''}` : ''),
+                        city: displayRecord.city,
+                        coverPhoto: i.photoUrl || displayRecord.coverPhoto,
+                        categories: displayRecord.categories
                     }, { recommenders: i.recommenders });
                 }
 
@@ -8242,6 +8330,7 @@
                 }
             }
             if (!data || !data.name) return;
+            data = window.normalizeJiaPlaceForDisplay ? window.normalizeJiaPlaceForDisplay(data) : data;
 
             const safeName = data.safeNameStr || window.escapeForBtn(data.name);
             const liveCardImage = document.getElementById(`list-img-${safeName}`);
@@ -8249,8 +8338,8 @@
             
             const detailImgEl = document.getElementById('detail-img');
             if (detailImgEl) {
-                detailImgEl.src = data.img || window.getFallbackImage(data.name);
-                detailImgEl.onerror = function() { this.onerror = null; this.src = window.getFallbackImage(data.name); };
+                detailImgEl.src = data.img || window.getFallbackImage(data);
+                detailImgEl.onerror = function() { this.onerror = null; this.src = window.getFallbackImage(data); };
             }
             const imageLabel = document.getElementById('detail-image-label');
             if (imageLabel) {
@@ -10398,11 +10487,11 @@
             if (forYouContainer) {
                 let recs = [];
                 if (window.JiaPersonalization && tasteProfile) {
-                    recs = window.JiaPersonalization.getForYouRecommendations(places, tasteProfile, { limit: 6 });
+                    recs = window.JiaPersonalization.getForYouRecommendations(places, tasteProfile, { limit: 8 });
                 } else {
                     // 關閉個人化推薦或未登入時，使用隨機/熱門探索模式
                     const shuffled = [...places].sort(() => 0.5 - Math.random());
-                    recs = shuffled.slice(0, 6).map(p => ({ ...p, _recommendationReason: '✨ 人氣口碑推薦' }));
+                    recs = shuffled.slice(0, 8).map(p => ({ ...p, _recommendationReason: '✨ 人氣口碑推薦' }));
                 }
 
                 if (shuffle) {
@@ -10460,7 +10549,7 @@
                     <div class="text-center text-gray-400 py-16 col-span-full">
                         <i class="fa-solid fa-utensils text-5xl mb-3 opacity-20 block"></i>
                         <p class="text-sm font-bold text-gray-600">尚無吃過的美食紀錄</p>
-                        <p class="text-xs text-gray-400 mt-1">在店家卡片點擊「吃過 ✓」，就能在這裡隨時回顧您的美食足跡！</p>
+                        <p class="text-xs text-gray-400 mt-1">在店家卡片點擊「✓ 吃過」，就能在這裡隨時回顧您的美食足跡！</p>
                     </div>
                 `;
                 return;
@@ -11138,6 +11227,6 @@
             if(!document.getElementById('view-list').classList.contains('hidden')) window.renderList(); if(!document.getElementById('view-party').classList.contains('hidden')) window.renderParties(); if(!document.getElementById('view-feed').classList.contains('hidden')) window.renderFeed();
         }
     </script>
-    <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer" class="fixed bottom-1 right-2 z-30 rounded bg-white/80 px-1.5 py-0.5 text-[9px] text-gray-500 shadow-sm backdrop-blur" title="OpenStreetMap 資料授權">© OpenStreetMap contributors</a>
+    <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer" class="map-attribution fixed bottom-1 right-2 z-30 rounded bg-white/90 px-1.5 py-0.5 text-[9px] text-gray-600 shadow-sm backdrop-blur" title="OpenStreetMap 資料授權">© OpenStreetMap contributors</a>
 </body>
 </html>

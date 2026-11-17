@@ -58,6 +58,9 @@
      * Single View Model Builder for Restaurant Cards
      */
     function buildRestaurantCardViewModel(place = {}, options = {}) {
+        if (typeof window !== 'undefined' && typeof window.normalizeJiaPlaceForDisplay === 'function') {
+            place = window.normalizeJiaPlaceForDisplay(place);
+        }
         const normalized = canonical ? canonical.normalize(place, options) : place;
         const name = normalized.name || place.name || '未命名餐廳';
         const imageInfo = selectBestPlacePhoto(place);
@@ -177,8 +180,8 @@
                 <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
                 ${distBadgeHtml}
                 ${placeholderBadgeHtml}
-                <div class="absolute bottom-2 left-3 right-3 flex items-end justify-between gap-1 z-10">
-                    <h3 class="text-sm sm:text-base font-black text-white drop-shadow-md line-clamp-1 leading-snug tracking-tight">${escapeHtml(vm.name)}</h3>
+            <div class="absolute bottom-2 left-3 right-3 flex items-end justify-between gap-1 z-10">
+                    <h3 title="${escapeHtml(vm.name)}" class="text-sm sm:text-base font-black text-white drop-shadow-md line-clamp-2 leading-snug tracking-tight">${escapeHtml(vm.name)}</h3>
                 </div>
             </div>
             <div class="p-3.5 sm:p-4 flex-1 flex flex-col justify-between bg-white min-h-[110px]">
