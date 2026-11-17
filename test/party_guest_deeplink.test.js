@@ -15,7 +15,13 @@ assert.ok(html.includes('localStorage.getItem(\'jia_ben_party_guest\')'), 'Guest
 assert.ok(html.includes('guestJoinedIds'), 'Guest participation uses a persistent id set for deduplication');
 assert.ok(html.includes('guestVotes'), 'Guest votes use a persistent id map for deduplication');
 assert.ok(html.includes('window.ensurePartyGuestIdentity'), 'Guest actions request only a nickname instead of full identity registration');
-assert.ok(html.includes('window.showCustomMsg(\'已記錄你的選擇！日後可隨時建檔／登入保存跨裝置紀錄。\')'), 'Guest vote completion gives a retention hint');
+assert.ok(html.includes('window.showGuestRetentionMsg(\'已記錄你的選擇！日後可隨時建檔／登入保存跨裝置紀錄。\')'), 'Guest vote completion gives a retention hint');
+assert.ok(html.includes('GoogleAuthProvider'), 'Firebase Google provider is imported');
+assert.ok(html.includes('signInWithPopup') && html.includes('signInWithRedirect'), 'Google login supports popup and redirect fallback');
+assert.ok(html.includes('getRedirectResult'), 'Google redirect result is handled on load');
+assert.ok(html.includes('window.mergeGuestPartyRecords'), 'Guest party records are merged after account login');
+assert.ok(html.includes('googleUid: user.uid'), 'Google uid is synchronized to the existing profile structure');
+assert.ok(html.includes('custom-alert-google-btn'), 'Guest completion prompt offers Google login shortcut');
 assert.strictEqual((sw.match(/together-eat-shell-v114/g) || []).length, 1, 'Service Worker cache is v114');
 
 function applyGuestJoin(party, guest) {

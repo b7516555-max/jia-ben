@@ -433,6 +433,7 @@
             <div class="w-16 h-16 bg-orange-50 rounded-full flex items-center justify-center mb-4 text-orange-500 text-3xl shadow-inner"><i class="fa-solid fa-bell animate-pulse"></i></div>
             <h3 class="text-lg font-bold text-gray-800 mb-2 tracking-widest">系統廣播</h3>
             <p id="custom-alert-message" class="text-sm text-gray-600 leading-relaxed whitespace-pre-wrap mb-6 font-medium"></p>
+            <button id="custom-alert-google-btn" onclick="window.closeModal('custom-alert-modal'); window.openIdentityModal();" class="hidden w-full mb-2 bg-white text-gray-800 font-bold py-3 rounded-xl border border-gray-200 hover:bg-gray-50 transition"><span class="font-black mr-1">G</span> 使用 Google 登入保存紀錄</button>
             <button onclick="window.closeModal('custom-alert-modal')" class="w-full bg-gray-900 text-white font-bold py-3.5 rounded-xl shadow-md hover:bg-black active:scale-95 transition tracking-widest">我知道了</button>
         </div>
     </div>
@@ -770,6 +771,11 @@
                 <h2 class="text-lg font-bold text-gray-800">身分登入與建檔</h2>
                 <p class="text-gray-500 text-xs mt-1">老朋友直接輸入專屬密碼，自動帶入所有資料！</p>
             </div>
+            <button type="button" onclick="window.signInWithGoogle()" id="google-login-btn" class="w-full mb-4 py-3 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 font-bold text-sm shadow-sm transition flex items-center justify-center gap-2">
+                <span class="w-6 h-6 rounded-full bg-white border border-gray-200 flex items-center justify-center font-black text-sm">G</span>
+                使用 Google 帳號一鍵登入
+            </button>
+            <p id="google-login-hint" class="hidden text-[11px] text-amber-600 text-center mb-3"></p>
             <div class="flex mb-4 bg-gray-100 rounded-xl p-1">
                 <button onclick="window.toggleIdTab('old')" id="tab-id-old" class="flex-1 py-2 bg-white shadow-sm rounded-lg text-sm font-bold text-orange-500 transition">我是老朋友</button>
                 <button onclick="window.toggleIdTab('new')" id="tab-id-new" class="flex-1 py-2 text-gray-500 rounded-lg text-sm font-bold transition hover:text-orange-400">我是新朋友</button>
@@ -2831,7 +2837,7 @@
     <!-- Firebase & 核心邏輯 -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithEmailAndPassword, signOut, onAuthStateChanged, getIdTokenResult } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, GoogleAuthProvider, signInAnonymously, signInWithEmailAndPassword, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged, getIdTokenResult } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp, doc, setDoc, getDoc, getDocs, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         let deferredPrompt;
@@ -2935,7 +2941,7 @@
             }
         };
 
-        let db, auth, appId, currentUser = null;
+        let db, auth, appId, currentUser = null, googleProvider = null, realtimeSyncUserId = '', googleProfileSyncedUid = '';
         const GAS_API_URL = "https://script.google.com/macros/s/AKfycbwTg7lmireS-npCAzvDZVPVmI7u5jAFpslg7SNL59Ab3ulLOUr7cPB5wzIaTSyTUJpl/exec";
         window.JIA_ENRICHMENT_PROXY_URL = GAS_API_URL;
         window.restaurantData = []; window.feedData = []; window.partyData = []; window.chatData = [];
@@ -3608,6 +3614,12 @@
         window.closeModal = function(id) { document.getElementById(id).classList.add('hidden'); }
         window.showCustomMsg = function(msg) { 
             document.getElementById('custom-alert-message').textContent = msg;
+            document.getElementById('custom-alert-google-btn')?.classList.add('hidden');
+            document.getElementById('custom-alert-modal').classList.remove('hidden');
+        };
+        window.showGuestRetentionMsg = function(msg) {
+            document.getElementById('custom-alert-message').textContent = msg;
+            document.getElementById('custom-alert-google-btn')?.classList.remove('hidden');
             document.getElementById('custom-alert-modal').classList.remove('hidden');
         };
 
@@ -3627,6 +3639,89 @@
             };
         };
 
+        window.mergeGuestPartyRecords = async function() {
+            if (!currentUser || !db || !appId || !window.myIdentity?.name) return 0;
+            let guest = null;
+            try { guest = JSON.parse(localStorage.getItem('jia_ben_party_guest') || 'null'); } catch (error) { return 0; }
+            if (!guest?.id) return 0;
+
+            const snapshot = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'parties'));
+            let mergedCount = 0;
+            for (const partyDoc of snapshot.docs) {
+                const party = { id: partyDoc.id, ...partyDoc.data() };
+                const guestJoinedIds = Array.isArray(party.guestJoinedIds) ? [...party.guestJoinedIds] : [];
+                const guestVotes = { ...(party.guestVotes || {}) };
+                const wasJoined = guestJoinedIds.includes(guest.id);
+                const guestVote = guestVotes[guest.id];
+                if (!wasJoined && !guestVote) continue;
+
+                const joined = Array.isArray(party.joined) ? [...party.joined] : [];
+                const votes = { ...(party.votes || {}) };
+                if (wasJoined && !joined.includes(window.myIdentity.name)) joined.push(window.myIdentity.name);
+                if (guestVote && !votes[window.myIdentity.name]) votes[window.myIdentity.name] = guestVote;
+                const nextGuestJoinedIds = guestJoinedIds.filter(id => id !== guest.id);
+                delete guestVotes[guest.id];
+                const update = { joined, votes, guestJoinedIds: nextGuestJoinedIds, guestVotes };
+                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'parties', partyDoc.id), update);
+                const localParty = (window.partyData || []).find(item => String(item.id) === String(partyDoc.id));
+                if (localParty) Object.assign(localParty, update);
+                mergedCount++;
+            }
+
+            if (mergedCount > 0) {
+                try { localStorage.removeItem('jia_ben_party_guest'); } catch (error) {}
+                window.partyGuestIdentity = null;
+                window.renderParties?.();
+                window.showCustomMsg('✅ 已將你先前的揪團參加與投票紀錄同步保存至帳號！');
+            }
+            return mergedCount;
+        };
+
+        window.syncGoogleUserProfile = async function(user) {
+            if (!user || user.isAnonymous) return;
+            if (googleProfileSyncedUid === user.uid) return;
+            googleProfileSyncedUid = user.uid;
+            const displayName = user.displayName || user.email?.split('@')[0] || 'Google 使用者';
+            const existing = window.myIdentity || {};
+            window.myIdentity = {
+                ...existing,
+                name: existing.name || displayName,
+                group: existing.group || '好友',
+                avatarId: existing.avatarId || window.getDefaultAvatarId?.(displayName) || 'explorer',
+                customAvatarUrl: existing.customAvatarUrl || user.photoURL || '',
+                googleUid: user.uid,
+                authProvider: 'google'
+            };
+            try { localStorage.setItem('together_eat_saved_identity', JSON.stringify(window.myIdentity)); } catch (error) {}
+            await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'settings', 'profile'), window.myIdentity, { merge: true });
+            window.updateHeaderAvatarBadge?.();
+            await window.mergeGuestPartyRecords();
+            window.closeModal('identity-modal');
+            window.showCustomMsg(`✅ Google 登入成功！歡迎回來，${window.myIdentity.name}！`);
+        };
+
+        window.signInWithGoogle = async function() {
+            if (!auth || !googleProvider) return window.showCustomMsg('Google 登入服務尚未準備完成，請稍後再試。');
+            const button = document.getElementById('google-login-btn');
+            const hint = document.getElementById('google-login-hint');
+            if (button) { button.disabled = true; button.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Google 登入中...'; }
+            try {
+                const credential = await signInWithPopup(auth, googleProvider);
+                currentUser = credential.user;
+                await window.syncGoogleUserProfile(credential.user);
+            } catch (error) {
+                const popupBlocked = ['auth/popup-blocked', 'auth/operation-not-supported-in-this-environment'].includes(error?.code);
+                if (popupBlocked) {
+                    if (hint) { hint.textContent = '目前瀏覽器阻擋登入視窗，正在改用頁面跳轉登入…'; hint.classList.remove('hidden'); }
+                    try { await signInWithRedirect(auth, googleProvider); return; } catch (redirectError) { error = redirectError; }
+                }
+                console.error('Google 登入失敗:', error);
+                if (hint) { hint.textContent = 'Google 登入未完成，請改用外部瀏覽器或下方既有登入方式。'; hint.classList.remove('hidden'); }
+            } finally {
+                if (button) { button.disabled = false; button.innerHTML = '<span class="w-6 h-6 rounded-full bg-white border border-gray-200 flex items-center justify-center font-black text-sm">G</span> 使用 Google 帳號一鍵登入'; }
+            }
+        };
+
         async function initFirebase() {
             try {
                 const firebaseConfig = {
@@ -3638,10 +3733,23 @@
                     appId: "1:537413671646:web:a82209f52d79e736ac404f",
                     measurementId: "G-F5TCS4WMNG"
                 };
-                appId = firebaseConfig.projectId; 
-                const app = initializeApp(firebaseConfig); auth = getAuth(app); db = getFirestore(app);
-                await signInAnonymously(auth); 
-                onAuthStateChanged(auth, (user) => { currentUser = user; if (user) startRealtimeSync(); });
+                appId = firebaseConfig.projectId;
+                const app = initializeApp(firebaseConfig); auth = getAuth(app); db = getFirestore(app); googleProvider = new GoogleAuthProvider();
+                onAuthStateChanged(auth, (user) => {
+                    currentUser = user;
+                    if (user && realtimeSyncUserId !== user.uid) {
+                        realtimeSyncUserId = user.uid;
+                        startRealtimeSync();
+                    }
+                    if (user && !user.isAnonymous) window.syncGoogleUserProfile(user).catch(error => console.warn('Google 使用者資料同步失敗:', error));
+                });
+                const redirectResult = await getRedirectResult(auth);
+                if (redirectResult?.user) {
+                    currentUser = redirectResult.user;
+                    await window.syncGoogleUserProfile(redirectResult.user);
+                } else if (!auth.currentUser) {
+                    await signInAnonymously(auth);
+                }
             } catch (err) { 
                 if (err.code === 'auth/configuration-not-found' || err.code === 'auth/operation-not-allowed') {
                     window.showCustomMsg("⚠️ 資料庫連線失敗！\n\n主揪請注意：您尚未在 Firebase 開啟「匿名登入」權限。\n\n請到 Firebase 控制台 -> 點擊 Authentication (驗證) -> Sign-in method (登入方式) -> 啟用「匿名 (Anonymous)」，然後重新整理網頁！");
@@ -4971,6 +5079,7 @@
             }
 
             window.closeModal('identity-modal'); 
+            try { await window.mergeGuestPartyRecords(); } catch (error) { console.warn('訪客揪團紀錄合併失敗:', error); }
             if(pendingPartyAction) { pendingPartyAction(); pendingPartyAction = null; } 
             
             if (typeof window.renderHomeForYou === 'function') window.renderHomeForYou();
@@ -5423,7 +5532,8 @@
                 const update = { joined: newJoined, guestJoinedIds };
                 if (db && currentUser) await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'parties', pid), update);
                 else { Object.assign(party, update); window.renderParties(); }
-                window.showCustomMsg(alreadyJoined ? '已取消參加。' : '已記錄你的參加！日後可隨時建檔／登入保存跨裝置紀錄。');
+                if (alreadyJoined) window.showCustomMsg('已取消參加。');
+                else window.showGuestRetentionMsg('已記錄你的參加！日後可隨時建檔／登入保存跨裝置紀錄。');
             };
             if (window.myIdentity?.name) run(window.getPartyActor()).catch(error => window.showCustomMsg(`操作失敗：${error.message}`));
             else window.ensurePartyGuestIdentity(actor => run(actor).catch(error => window.showCustomMsg(`操作失敗：${error.message}`)));
@@ -5442,7 +5552,7 @@
                     if (db && currentUser) await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'parties', pid), { votes });
                     else { party.votes = votes; window.renderParties(); }
                 }
-                window.showCustomMsg('已記錄你的選擇！日後可隨時建檔／登入保存跨裝置紀錄。');
+                window.showGuestRetentionMsg('已記錄你的選擇！日後可隨時建檔／登入保存跨裝置紀錄。');
             };
             if (window.myIdentity?.name) run(window.getPartyActor()).catch(error => window.showCustomMsg(`投票失敗：${error.message}`));
             else window.ensurePartyGuestIdentity(actor => run(actor).catch(error => window.showCustomMsg(`投票失敗：${error.message}`)));
