@@ -240,8 +240,13 @@
             word-spacing: normal !important;
             font-variant-numeric: normal;
         }
-        nav .tab-btn:focus, nav .tab-btn:focus-visible {
+        nav .tab-btn:focus {
             outline: none !important;
+            box-shadow: none !important;
+        }
+        nav .tab-btn:focus-visible {
+            outline: 2px solid #f97316 !important;
+            outline-offset: 2px;
             box-shadow: none !important;
         }
         nav .tab-btn:not(.active), nav .tab-btn:not(.active):focus, nav .tab-btn:not(.active):focus-visible {
@@ -2075,14 +2080,14 @@
             <div class="hidden md:flex flex-col items-center mb-5 text-orange-500 text-3xl">
                 <i class="fa-solid fa-utensils drop-shadow-sm"></i>
             </div>
-            <button onclick="window.switchTab('explore')" id="tab-explore" class="tab-btn active flex-1 md:flex-none py-2 md:py-3 flex flex-col items-center gap-1 transition md:w-[84px] md:mx-auto md:hover:bg-orange-50 md:hover:text-orange-400"><i class="fa-solid fa-compass text-[18px] md:text-[20px] mb-0.5"></i><span>找餐廳</span></button>
-            <button onclick="window.switchTab('map')" id="tab-map" class="tab-btn flex-1 md:flex-none py-2 md:py-3 flex flex-col items-center gap-1 transition md:w-[84px] md:mx-auto md:hover:bg-orange-50 md:hover:text-orange-400" aria-label="地圖找餐廳"><i class="fa-solid fa-map-location-dot text-[18px] md:text-[20px] mb-0.5"></i><span>地圖</span></button>
-            <button onclick="window.switchTab('nearby')" id="tab-nearby" class="tab-btn flex-1 md:flex-none py-2 md:py-3 flex flex-col items-center gap-1 transition md:w-[84px] md:mx-auto md:hover:bg-orange-50 md:hover:text-orange-400"><i class="fa-solid fa-dharmachakra text-[18px] md:text-[20px] mb-0.5"></i><span>輪盤</span></button>
-            <button onclick="window.switchTab('history')" id="tab-history" class="tab-btn flex-1 md:flex-none py-2 md:py-3 flex flex-col items-center gap-1 transition md:w-[84px] md:mx-auto md:hover:bg-orange-50 md:hover:text-orange-400"><i class="fa-solid fa-clock-rotate-left text-[18px] md:text-[20px] mb-0.5"></i><span>吃過</span></button>
-            <button onclick="window.switchTab('party')" id="tab-party" class="tab-btn flex-1 md:flex-none py-2 md:py-3 flex flex-col items-center gap-1 transition md:w-[84px] md:mx-auto md:hover:bg-orange-50 md:hover:text-orange-400 relative"><i class="fa-solid fa-fire text-[18px] md:text-[20px] mb-0.5"></i><span>揪團</span></button>
-            <button onclick="window.switchTab('feed')" id="tab-feed" class="tab-btn flex-1 md:flex-none py-2 md:py-3 flex flex-col items-center gap-1 transition md:w-[84px] md:mx-auto md:hover:bg-orange-50 md:hover:text-orange-400"><i class="fa-solid fa-comments text-[18px] md:text-[20px] mb-0.5"></i><span>動態牆</span></button>
-            <button onclick="window.switchTab('chat')" id="tab-chat" class="tab-btn flex-1 md:flex-none py-2 md:py-3 flex flex-col items-center gap-1 transition md:w-[84px] md:mx-auto md:hover:bg-orange-50 md:hover:text-orange-400 relative"><i class="fa-solid fa-message text-[18px] md:text-[20px] mb-0.5"></i><span>留言板</span></button>
-            <button onclick="window.switchTab('list')" id="tab-list" class="tab-btn flex-1 md:flex-none py-2 md:py-3 flex flex-col items-center gap-1 transition md:w-[84px] md:mx-auto md:hover:bg-orange-50 md:hover:text-orange-400"><i class="fa-solid fa-book-open text-[18px] md:text-[20px] mb-0.5"></i><span>口袋名單</span></button>
+            <button onclick="window.switchTab('explore')" id="tab-explore" aria-current="page" class="tab-btn active flex-1 md:flex-none py-2 md:py-3 flex flex-col items-center gap-1 transition md:w-[84px] md:mx-auto"><i class="fa-solid fa-compass text-[18px] md:text-[20px] mb-0.5"></i><span>找餐廳</span></button>
+            <button onclick="window.switchTab('map')" id="tab-map" class="tab-btn flex-1 md:flex-none py-2 md:py-3 flex flex-col items-center gap-1 transition md:w-[84px] md:mx-auto" aria-label="地圖找餐廳"><i class="fa-solid fa-map-location-dot text-[18px] md:text-[20px] mb-0.5"></i><span>地圖</span></button>
+            <button onclick="window.switchTab('nearby')" id="tab-nearby" class="tab-btn flex-1 md:flex-none py-2 md:py-3 flex flex-col items-center gap-1 transition md:w-[84px] md:mx-auto"><i class="fa-solid fa-dharmachakra text-[18px] md:text-[20px] mb-0.5"></i><span>輪盤</span></button>
+            <button onclick="window.switchTab('history')" id="tab-history" class="tab-btn flex-1 md:flex-none py-2 md:py-3 flex flex-col items-center gap-1 transition md:w-[84px] md:mx-auto"><i class="fa-solid fa-clock-rotate-left text-[18px] md:text-[20px] mb-0.5"></i><span>吃過</span></button>
+            <button onclick="window.switchTab('party')" id="tab-party" class="tab-btn flex-1 md:flex-none py-2 md:py-3 flex flex-col items-center gap-1 transition md:w-[84px] md:mx-auto relative"><i class="fa-solid fa-fire text-[18px] md:text-[20px] mb-0.5"></i><span>揪團</span></button>
+            <button onclick="window.switchTab('feed')" id="tab-feed" class="tab-btn flex-1 md:flex-none py-2 md:py-3 flex flex-col items-center gap-1 transition md:w-[84px] md:mx-auto"><i class="fa-solid fa-comments text-[18px] md:text-[20px] mb-0.5"></i><span>動態牆</span></button>
+            <button onclick="window.switchTab('chat')" id="tab-chat" class="tab-btn flex-1 md:flex-none py-2 md:py-3 flex flex-col items-center gap-1 transition md:w-[84px] md:mx-auto relative"><i class="fa-solid fa-message text-[18px] md:text-[20px] mb-0.5"></i><span>留言板</span></button>
+            <button onclick="window.switchTab('list')" id="tab-list" class="tab-btn flex-1 md:flex-none py-2 md:py-3 flex flex-col items-center gap-1 transition md:w-[84px] md:mx-auto"><i class="fa-solid fa-book-open text-[18px] md:text-[20px] mb-0.5"></i><span>口袋名單</span></button>
         </nav>
 
         <div class="flex-1 flex flex-col h-full overflow-hidden relative order-first md:order-last bg-[#fafafa]">
@@ -3971,11 +3976,19 @@
             ['explore', 'map', 'nearby', 'history', 'random', 'party', 'feed', 'chat', 'list', 'admin', 'guide'].forEach(name => {
                 document.getElementById('view-' + name)?.classList.add('hidden'); 
                 const navButton = document.getElementById('tab-' + name);
-                if(navButton) { navButton.classList.remove('active'); navButton.blur(); }
+                if(navButton) {
+                    navButton.classList.remove('active');
+                    navButton.removeAttribute('aria-current');
+                    navButton.blur();
+                }
             });
             document.getElementById('view-' + tabName)?.classList.remove('hidden'); 
             const activeNavButton = document.getElementById('tab-' + tabName);
-            if(activeNavButton) { activeNavButton.classList.add('active'); activeNavButton.blur(); }
+            if(activeNavButton) {
+                activeNavButton.classList.add('active');
+                activeNavButton.setAttribute('aria-current', 'page');
+                activeNavButton.blur();
+            }
             document.querySelectorAll('nav .tab-btn').forEach(button => button.blur());
             const tabTitles = { explore: '找餐廳', map: '地圖找餐廳', nearby: '美食輪盤', history: '吃過紀錄', party: '揪團活動', feed: '美食動態牆', chat: '留言板', list: '口袋名單', admin: '主揪後台', guide: '使用指南' };
             const titleEl = document.getElementById('app-header-title');
