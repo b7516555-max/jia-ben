@@ -121,8 +121,15 @@
             box-sizing: border-box;
         }
 
+        :root {
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans TC', 'PingFang TC', '微軟正黑體', sans-serif;
+            font-variant-numeric: proportional-nums;
+            letter-spacing: normal;
+        }
         body {
-            font-family: 'Noto Color Emoji', 'Apple Color Emoji', 'Segoe UI Emoji', 'PingFang TC', '微軟正黑體', sans-serif;
+            font-family: inherit;
+            font-variant-numeric: proportional-nums;
+            letter-spacing: normal;
             background:
                 radial-gradient(circle at top left, rgba(251, 191, 36, 0.16) 0%, transparent 24%),
                 radial-gradient(circle at bottom right, rgba(249, 115, 22, 0.12) 0%, transparent 20%),
@@ -236,6 +243,13 @@
         nav .tab-btn:focus, nav .tab-btn:focus-visible {
             outline: none !important;
             box-shadow: none !important;
+        }
+        nav .tab-btn:not(.active), nav .tab-btn:not(.active):focus, nav .tab-btn:not(.active):focus-visible {
+            color: #9ca3af !important;
+            background: transparent !important;
+            border-color: transparent !important;
+            box-shadow: none !important;
+            outline: none !important;
         }
         #calc-result {
             letter-spacing: normal !important;
@@ -3100,13 +3114,16 @@
             const next = { ...place };
             const rawAddress = String(next.address || next.formatted_address || '').trim();
             const cityMatch = rawAddress.match(/(基隆市|台北市|新北市|桃園市|新竹市|新竹縣|苗栗縣|台中市|彰化縣|南投縣|雲林縣|嘉義市|嘉義縣|台南市|高雄市|屏東縣|宜蘭縣|花蓮縣|台東縣|澎湖縣|金門縣|連江縣)/);
-            const city = next.city && !/^(西區|東區|左營區|苓雅區|中西區|安平區|信義區)$/.test(String(next.city)) ? next.city : (cityMatch?.[1] || next.city || '');
+            const nameCityAlias = String(next.name || '').match(/(基隆|台北|新北|桃園|新竹|苗栗|台中|彰化|南投|雲林|嘉義|台南|高雄|屏東|宜蘭|花蓮|台東|澎湖|金門|連江)/);
+            const nameCityMap = { 基隆: '基隆市', 台北: '台北市', 新北: '新北市', 桃園: '桃園市', 新竹: '新竹市', 苗栗: '苗栗縣', 台中: '台中市', 彰化: '彰化縣', 南投: '南投縣', 雲林: '雲林縣', 嘉義: '嘉義市', 台南: '台南市', 高雄: '高雄市', 屏東: '屏東縣', 宜蘭: '宜蘭縣', 花蓮: '花蓮縣', 台東: '台東縣', 澎湖: '澎湖縣', 金門: '金門縣', 連江: '連江縣' };
+            const city = next.city && !/^(西區|東區|左營區|苓雅區|中西區|安平區|信義區)$/.test(String(next.city)) ? next.city : (cityMatch?.[1] || nameCityMap[nameCityAlias?.[1]] || next.city || '');
             next.city = city;
             next.address = rawAddress.replace(/^台灣\s*[•·|,-]?\s*/i, '').trim();
             if (/Yuchih\s+Township/i.test(next.address) || /Yuchih\s+Township/i.test(String(next.city || ''))) {
                 next.city = '南投縣';
                 next.address = '南投縣魚池鄉';
             }
+            next.address = next.address.replace(/(基隆市|台北市|新北市|桃園市|新竹市|新竹縣|苗栗縣|台中市|彰化縣|南投縣|雲林縣|嘉義市|嘉義縣|台南市|高雄市|屏東縣|宜蘭縣|花蓮縣|台東縣|澎湖縣|金門縣|連江縣|[\u4e00-\u9fff]{1,4}[市區鄉鎮])\s+\1/g, '$1').trim();
             if (next.name) {
                 const suffix = city ? new RegExp(`\\s*[•·|,-]?\\s*(台灣\\s*[•·|,-]?\\s*)?${city}\\s*$`, 'i') : null;
                 next.name = suffix ? String(next.name).replace(suffix, '').trim() : String(next.name).trim();
@@ -8290,13 +8307,15 @@
                 const districtOnly = /^(中區|東區|南區|西區|北區|左營區|苓雅區|安平區|信義區|大安區|三民區)$/.test(String(i.city || '').trim());
                 const sourceAddress = (i.address && !districtOnly ? i.address : (listJiaPlace?.address || i.address || ''));
                 const inferredCity = districtOnly ? (extractCity(sourceAddress) || listJiaPlace?.countryCity || '') : (i.city || listJiaPlace?.city || '');
-                const displayRecord = window.normalizeJiaPlaceForDisplay({ ...(listJiaPlace || {}), ...i, city: inferredCity, address: sourceAddress });
+                const displayRecord = window.normalizeJiaPlaceForDisplay({ ...(listJiaPlace || {}), ...i, city: inferredCity, district: districtOnly ? i.city : (i.district || listJiaPlace?.district || ''), address: sourceAddress });
+                const distinctDistrict = displayRecord.district && displayRecord.district !== displayRecord.city ? displayRecord.district : '';
+                const displayAddress = displayRecord.address || [displayRecord.city, distinctDistrict].filter(Boolean).join('');
                 
                 if (window.JiaRestaurantCard) {
                     return window.JiaRestaurantCard.render({
                         ...displayRecord,
                         name: displayRecord.name || i.name,
-                        address: displayRecord.address || (displayRecord.city ? `${displayRecord.city} ${displayRecord.district || ''}` : ''),
+                        address: displayAddress,
                         city: displayRecord.city,
                         coverPhoto: i.photoUrl || displayRecord.coverPhoto,
                         categories: displayRecord.categories
@@ -8586,7 +8605,8 @@
                         contributions: window.placeContributions || []
                     });
                     if (ctaInfo && ctaInfo.label) {
-                        primaryCtaBtn.innerHTML = `${ctaInfo.icon} <span>${ctaInfo.label}</span>`;
+                        const ctaIcon = String(ctaInfo.icon || 'fa-hand-holding-heart').replace(/[^a-z0-9- ]/gi, '').trim() || 'fa-hand-holding-heart';
+                        primaryCtaBtn.innerHTML = `<i class="fa-solid ${ctaIcon} text-[10px]"></i><span>${window.escapeHtml(ctaInfo.label)}</span>`;
                         primaryCtaBtn.onclick = function() {
                             window.openContributeModal(rawPlace, ctaInfo.field);
                         };

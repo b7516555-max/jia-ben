@@ -21,6 +21,10 @@ assert.match(html, /labelText = isMap \? '查看地點' : '查看地點連結'/,
 assert.match(html, /window\.canManageFeedItem\(item\).*openFeedItemEditModal/s, 'Feed edit control is permission-aware');
 assert.match(html, /address-value|time-value|date-value/, 'Address, time, and date spacing classes exist');
 assert.match(html, /districtOnly.*inferredCity/s, 'Pocket list resolves district-only locations to a city');
+assert.doesNotMatch(html, /primaryCtaBtn\.innerHTML\s*=\s*`\$\{ctaInfo\.icon\}/, 'Contribution CTA does not inject icon names as text');
+assert.match(html, /font-family: system-ui, -apple-system, 'Segoe UI', Roboto/, 'UI uses proportional system fonts first');
+assert.match(html, /font-variant-numeric: proportional-nums/, 'Global numeric font variant is proportional');
+assert.match(html, /ctaIcon = String\(ctaInfo\.icon/, 'Contribution CTA icon is rendered as an icon element');
 assert.match(card, /title="\$\{escapeHtml\(vm\.name\)\}"/, 'Long card names expose a title');
 assert.doesNotMatch(html, /<span>📸 分享聚會照片<\/span>/, 'Party photo button does not duplicate its icon');
 console.log('✅ UI interaction, responsive display, attribution, and permission contracts passed');
