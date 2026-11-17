@@ -3,7 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>呷奔 Jia ben</title>
+    <title>呷奔 Jia-ben｜找餐廳、美食輪盤與聚餐揪團</title>
+    <meta name="description" content="呷奔 Jia-ben 是免費的找餐廳、美食輪盤與聚餐揪團工具，幫你解決今天吃什麼，和朋友一起投票決定下一餐。">
+    <link rel="canonical" href="https://b7516555-max.github.io/jia-ben/">
+    <meta property="og:title" content="呷奔 Jia-ben｜找餐廳、美食輪盤與聚餐揪團">
+    <meta property="og:description" content="用美食輪盤找好店、發起聚餐揪團，和朋友一起輕鬆決定今天吃什麼。">
+    <meta property="og:url" content="https://b7516555-max.github.io/jia-ben/">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="呷奔 Jia-ben">
+    <meta property="og:locale" content="zh_TW">
+    <meta property="og:image" content="https://b7516555-max.github.io/jia-ben/assets/food/hotpot.jpg">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="呷奔 Jia-ben｜找餐廳、美食輪盤與聚餐揪團">
+    <meta name="twitter:description" content="免費找餐廳與聚餐揪團工具，和朋友一起投票決定下一餐。">
+    <meta name="twitter:image" content="https://b7516555-max.github.io/jia-ben/assets/food/hotpot.jpg">
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "呷奔 Jia-ben",
+      "url": "https://b7516555-max.github.io/jia-ben/",
+      "description": "免費找餐廳、美食輪盤與聚餐揪團工具，協助朋友一起決定今天吃什麼。",
+      "applicationCategory": "FoodEstablishmentReservation",
+      "operatingSystem": "Web browser, Android, iOS",
+      "inLanguage": "zh-TW",
+      "author": {
+        "@type": "Person",
+        "name": "黃政誥",
+        "email": "b7516555@gmail.com"
+      }
+    }
+    </script>
     
     <!-- 🌟 PWA 應用程式設定 (讓網頁變成真實 App 的關鍵) -->
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -74,6 +104,8 @@
         document.addEventListener('DOMContentLoaded', function () {
             const versionEl = document.getElementById('intro-version');
             if (versionEl && window.JIA_BEN_VERSION) versionEl.textContent = `版本 ${window.JIA_BEN_VERSION}`;
+            const producerVersionEl = document.getElementById('producer-version');
+            if (producerVersionEl && window.JIA_BEN_VERSION) producerVersionEl.textContent = window.JIA_BEN_VERSION;
         });
     </script>
     <script>
@@ -95,6 +127,10 @@
         window.openAddModal = function() {
             var m = document.getElementById('add-restaurant-modal');
             if (m) m.classList.remove('hidden');
+        };
+        window.openProducerModal = function() {
+            var modal = document.getElementById('producer-modal');
+            if (modal) modal.classList.remove('hidden');
         };
         window.closeModal = function(id) {
             var m = document.getElementById(id);
@@ -702,8 +738,30 @@
             </div>
         </div>
         <div class="absolute bottom-4 sm:bottom-10 left-0 right-0 text-center animate-[fadeInSlow_2s_ease-out_forwards] px-4" style="animation-delay: 0.5s; opacity: 0;">
-            <p class="producer-credit text-[10px] tracking-[0.25em] uppercase font-medium">製作人 <span class="font-bold ml-1">黃政誥</span> <span class="ml-1 font-semibold opacity-80">since 2026</span></p>
+            <button type="button" onclick="window.openProducerModal()" class="producer-credit text-[10px] tracking-[0.25em] uppercase font-medium hover:text-orange-600 transition underline-offset-4 hover:underline">製作人 <span class="font-bold ml-1">黃政誥</span> <span class="ml-1 font-semibold opacity-80">since 2026</span></button>
             <p class="mt-1 text-[10px] tracking-[0.12em] font-semibold text-gray-500" id="intro-version">版本</p>
+        </div>
+    </div>
+
+    <div id="producer-modal" class="hidden fixed inset-0 z-[125] flex items-center justify-center bg-black/60 modal-backdrop fade-in p-3">
+        <div class="bg-white rounded-3xl p-6 w-full max-w-md shadow-2xl relative modal-dialog max-h-[90dvh] overflow-y-auto">
+            <button type="button" onclick="window.closeModal('producer-modal')" class="absolute top-4 right-5 text-gray-400 hover:text-gray-600" aria-label="關閉製作人資訊"><i class="fa-solid fa-xmark text-xl"></i></button>
+            <div class="text-center mb-5">
+                <div class="w-14 h-14 bg-orange-100 text-orange-500 rounded-full flex items-center justify-center mx-auto mb-3 shadow-sm"><i class="fa-solid fa-utensils text-xl"></i></div>
+                <p class="text-[10px] uppercase tracking-[0.28em] text-orange-500 font-bold">About Jia-ben</p>
+                <h2 class="text-xl font-black text-gray-800 mt-1">關於製作人與呷奔</h2>
+            </div>
+            <div class="space-y-3 text-sm leading-7 text-gray-600">
+                <p><strong class="text-gray-800">製作人：</strong>黃政誥</p>
+                <p>呷奔 Jia-ben 想解決每天「今天吃什麼」的選擇困難，也讓朋友能快速發起聚餐、投票，轉出下一間一起吃飯的好店。</p>
+                <div class="grid grid-cols-2 gap-2 text-xs">
+                    <div class="rounded-2xl bg-orange-50 border border-orange-100 p-3"><span class="block text-gray-400">目前版本</span><strong id="producer-version" class="text-orange-700">v119</strong></div>
+                    <div class="rounded-2xl bg-gray-50 border border-gray-100 p-3"><span class="block text-gray-400">更新日期</span><strong class="text-gray-700">2026</strong></div>
+                </div>
+                <p><strong class="text-gray-800">聯絡方式：</strong><a href="mailto:b7516555@gmail.com" class="text-orange-600 underline break-all">b7516555@gmail.com</a></p>
+                <p class="text-xs text-gray-500">歡迎提供使用意見、功能建議或合作聯繫。</p>
+            </div>
+            <button type="button" onclick="window.closeModal('producer-modal')" class="w-full mt-5 py-3 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold transition">關閉</button>
         </div>
     </div>
 
@@ -2187,6 +2245,9 @@
                     <h1 id="app-header-title" class="text-[16px] font-bold tracking-widest leading-none mt-1">呷奔 • 找餐廳</h1>
                 </div>
                 <div class="flex items-center gap-1.5">
+                     <button onclick="window.openProducerModal()" class="w-9 h-9 flex items-center justify-center bg-white/20 backdrop-blur-sm rounded-full transition hover:bg-white/30" title="關於製作人與呷奔" aria-label="關於製作人與呷奔">
+                         <i class="fa-solid fa-circle-info text-base"></i>
+                     </button>
                     <button id="header-avatar-btn" onclick="window.handleHeaderAvatarClick()" class="w-10 h-10 rounded-full border-2 border-white/80 shadow-xs flex items-center justify-center bg-white/20 hover:scale-105 transition overflow-hidden p-0.5" title="個人專屬後台與等級徽章">
                         <div id="header-avatar-icon" class="foodie-avatar foodie-avatar-host w-full h-full rounded-full"></div>
                     </button>
