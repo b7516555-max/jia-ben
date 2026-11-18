@@ -1,6 +1,15 @@
 (function (root) {
     'use strict';
     root.JIA_BEN_RELEASE_NOTES = Object.freeze({
+        v125: {
+            date: '2026-11-18',
+            title: '🎉 地圖列表照片補齊啦',
+            highlights: [
+                '地圖找餐廳左側列表現在與首頁共用同一套照片 fallback。',
+                '沒有店家實拍時，會先搜尋 Openverse／Wikimedia，找不到再依料理分類顯示參考餐點照片。',
+                '延續 v124 的地圖頁獨立隔離與拖曳後導覽切換修正。'
+            ]
+        },
         v124: {
             date: '2026-11-18',
             title: '🎉 地圖與店家照片更新啦',

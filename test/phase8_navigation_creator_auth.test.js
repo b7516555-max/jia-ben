@@ -6,6 +6,8 @@ const root = path.join(__dirname, '..');
 const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 const authConfig = fs.readFileSync(path.join(root, 'src', 'config', 'authConfig.js'), 'utf8');
 const freeImageSearch = fs.readFileSync(path.join(root, 'src', 'services', 'freeImageSearch.js'), 'utf8');
+const mapSource = fs.readFileSync(path.join(root, 'src', 'services', 'interactiveMap.js'), 'utf8');
+const releaseNotes = fs.readFileSync(path.join(root, 'src', 'config', 'releaseNotes.js'), 'utf8');
 const sw = fs.readFileSync(path.join(root, 'sw.js'), 'utf8');
 
 assert.ok(html.includes('id="tab-more"') && html.includes('id="mobile-more-menu"'), 'Mobile navigation uses the 4+1 layout');
@@ -21,13 +23,16 @@ assert.ok(!html.includes('AI 示意圖'), 'AI fallback label is absent from visi
 assert.ok(html.includes('Google 地圖最新資訊'), 'Restaurant detail offers a free Google Maps direct link');
 assert.ok(html.includes('window.signInWithLine') && html.includes('window.signInWithEmail'), 'LINE and Email login entry points exist');
 assert.ok(authConfig.includes('LINE_LIFF_ID'), 'LINE LIFF ID is centralized in auth config');
-assert.ok(sw.includes('together-eat-shell-v124'), 'Service Worker cache is v124');
+assert.ok(sw.includes('together-eat-shell-v125'), 'Service Worker cache is v125');
 assert.ok(html.includes('[id^="view-"].hidden') && html.includes('jia-map-view'), 'Map and view containers have an explicit hidden isolation rule');
 assert.ok(html.includes('JiaInteractiveMap?.close?.()'), 'Leaving the map closes its interaction layer');
 assert.ok(html.includes('normalizeRestaurantDisplayName'), 'Restaurant names normalize spaced time text');
 assert.ok(html.includes('releaseNotes.js') && html.includes('jia_ben_last_seen_version'), 'Release notes are centrally managed and shown once per version');
 assert.ok(html.includes('openReleaseNotesModal') && html.includes('✨ 改版資訊'), 'Release notes have a manual reopen button');
 assert.ok(html.includes('JiaFreeImageSearch') && freeImageSearch.includes('api.openverse.org') && freeImageSearch.includes('commons.wikimedia.org'), 'Free image search has Openverse/Wikimedia fallbacks');
+assert.ok(freeImageSearch.includes('cafe latte pastry') && freeImageSearch.includes('taiwanese street food'), 'Image search falls back to category queries');
+assert.ok(mapSource.includes('getReferenceFoodImageForPlace') && mapSource.includes('referenceImage'), 'Map list uses the shared category photo fallback');
+assert.ok(releaseNotes.includes('v125') && releaseNotes.includes('地圖找餐廳左側列表'), 'v125 release notes describe map list photo fallback');
 assert.ok(html.includes('detail-google-images-btn') && html.includes('detail-food-reviews-btn'), 'Detail view has free image and food review search links');
 
 console.log('✅ Phase 8 navigation, creator, image, map, and auth contracts passed');
