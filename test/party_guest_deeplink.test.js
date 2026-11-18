@@ -23,7 +23,7 @@ assert.ok(html.includes('getRedirectResult'), 'Google redirect result is handled
 assert.ok(html.includes('window.mergeGuestPartyRecords'), 'Guest party records are merged after account login');
 assert.ok(html.includes("provider === 'google' ? user.uid"), 'Google uid is synchronized to the existing profile structure');
 assert.ok(html.includes('custom-alert-google-btn'), 'Guest completion prompt offers Google login shortcut');
-assert.strictEqual((sw.match(/together-eat-shell-v133/g) || []).length, 1, 'Service Worker cache is v133');
+assert.strictEqual((sw.match(/together-eat-shell-v134/g) || []).length, 1, 'Service Worker cache is v134');
 assert.ok(html.includes('window.applyUrlPrefill'), 'LINE assistant prefill routing hook exists');
 assert.ok(html.includes("page === 'list' && params.get('addName')?.trim()"), 'List deep link accepts addName');
 assert.ok(html.includes("page === 'party' && params.get('quickTitle')?.trim()"), 'Party deep link accepts quickTitle');

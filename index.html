@@ -53,7 +53,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Color+Emoji&display=swap" rel="stylesheet">
     <!-- OpenStreetMap / Nominatim 地點搜尋相容層（無需付費金鑰） -->
     <script src="./osm-adapter.js?v=5"></script>
-    <script src="./src/utils/imageSafety.js?v=132"></script>
+    <script src="./src/utils/imageSafety.js?v=134"></script>
     <script src="./src/utils/googlePlacesGuard.js?v=1"></script>
     <script src="./src/utils/placeMatch.js?v=2"></script>
     <script src="./src/utils/taiwanAddressNormalizer.js?v=60"></script>
@@ -99,13 +99,13 @@
     <script src="./src/services/mapLibreProvider.js?v=1"></script>
     <script src="./src/services/mapRestaurantContract.js?v=1"></script>
     <script src="./src/services/interactiveMap.js?v=1"></script>
-    <script src="./src/components/restaurantCard.js?v=132"></script>
-    <script src="./src/config/appVersion.js?v=133"></script>
+    <script src="./src/components/restaurantCard.js?v=134"></script>
+    <script src="./src/config/appVersion.js?v=134"></script>
     <script src="./src/config/localPlaceEnrichment.js?v=126"></script>
     <script src="./src/config/authConfig.js?v=1"></script>
-    <script src="./src/config/releaseNotes.js?v=133"></script>
+    <script src="./src/config/releaseNotes.js?v=134"></script>
     <script src="./src/services/freeImageSearch.js?v=1"></script>
-    <script src="./src/services/jiaLionAssistant.js?v=132"></script>
+    <script src="./src/services/jiaLionAssistant.js?v=134"></script>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
@@ -12127,6 +12127,38 @@
             window.restaurantData = [{ id: '1', name: "詹記麻辣火鍋 (展示資料)", city: "台北市", group: "社發", creator: "黃政誥", status: "想去", mapLink:"#", photoUrl: "https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=400&q=80", rating: 4.7 }];
             if(!document.getElementById('view-list').classList.contains('hidden')) window.renderList(); if(!document.getElementById('view-party').classList.contains('hidden')) window.renderParties(); if(!document.getElementById('view-feed').classList.contains('hidden')) window.renderFeed();
         }
+    </script>
+    <!-- Defensive bootstrap: Firebase module failure must not blank the app shell. -->
+    <script>
+        (function () {
+            const fallbackPlaces = [{ jiaPlaceId: 'demo-hotpot', id: 'demo-hotpot', name: '呷奔展示火鍋', city: '高雄市', district: '苓雅區', category: '火鍋', categories: ['火鍋'], address: '高雄市苓雅區展示路 1 號', averageSpend: 420 }];
+            function escape(value) { return String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[char])); }
+            function renderFallbackHome() {
+                const container = document.getElementById('home-for-you-container');
+                if (!container || container.dataset.fallbackRendered === '1') return;
+                container.dataset.fallbackRendered = '1';
+                container.innerHTML = fallbackPlaces.map(place => `<article class="restaurant-card bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden p-4"><div class="font-black text-gray-800">${escape(place.name)}</div><div class="text-xs text-gray-500 mt-1">${escape(place.city)} · ${escape(place.category)}</div><button type="button" class="mt-3 text-xs text-orange-600 font-bold" onclick="window.openRestaurantDetailByName?.('${encodeURIComponent(place.name)}')">查看詳情</button></article>`).join('');
+            }
+            function fallbackSwitchTab(tabName) {
+                const valid = ['explore', 'map', 'nearby', 'history', 'party', 'feed', 'chat', 'list', 'creator', 'admin', 'guide'];
+                const tab = valid.includes(tabName) ? tabName : 'explore';
+                document.querySelectorAll('[id^="view-"]').forEach(view => view.classList.toggle('hidden', view.id !== `view-${tab}`));
+                document.querySelectorAll('.tab-btn').forEach(button => { const active = button.id === `tab-${tab}`; button.classList.toggle('active', active); button.setAttribute('aria-current', active ? 'page' : 'false'); });
+                if (tab === 'explore') renderFallbackHome();
+                window.scrollTo?.({ top: 0, behavior: 'auto' });
+            }
+            function installFallback() {
+                if (typeof window.switchTab !== 'function') window.switchTab = fallbackSwitchTab;
+                if (typeof window.renderHomeForYou !== 'function') window.renderHomeForYou = renderFallbackHome;
+                if (typeof window.quickDecidePlace !== 'function') window.quickDecidePlace = function () { window.switchTab('nearby', true); };
+                if (!Array.isArray(window.jiaPlacesData) || window.jiaPlacesData.length === 0) window.jiaPlacesData = fallbackPlaces;
+                if (!Array.isArray(window.restaurantData) || window.restaurantData.length === 0) window.restaurantData = fallbackPlaces;
+                if (typeof window.switchTab === 'function') window.switchTab('explore', true, { fromHistory: true });
+                window.__JIA_EMERGENCY_BOOTSTRAP = true;
+            }
+            // Module scripts execute deferred; wait one turn so a healthy Firebase module wins.
+            window.setTimeout(installFallback, 0);
+        })();
     </script>
     <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer" class="map-attribution fixed bottom-1 right-2 z-30 rounded bg-white/90 px-1.5 py-0.5 text-[9px] text-gray-600 shadow-sm backdrop-blur" title="OpenStreetMap 資料授權">© OpenStreetMap contributors</a>
 </body>

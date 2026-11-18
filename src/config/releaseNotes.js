@@ -1,6 +1,15 @@
 (function (root) {
     'use strict';
     root.JIA_BEN_RELEASE_NOTES = Object.freeze({
+        v134: {
+            date: '2026-11-18',
+            title: '🛟 系統啟動防護更新啦',
+            highlights: [
+                'Firebase 模組或網路暫時失敗時，入口仍會載入展示店家與基本分頁操作。',
+                '新增整頁初始化防護，避免單一外部模組錯誤讓所有按鈕與店家列表一起失效。',
+                '正常連線時仍優先使用 Firebase 店家資料與既有同步機制。'
+            ]
+        },
         v133: {
             date: '2026-11-18',
             title: '🚀 入口頁反應更快啦',
