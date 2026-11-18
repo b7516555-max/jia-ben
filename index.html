@@ -117,7 +117,9 @@
             if (creatorVersionEl && window.JIA_BEN_VERSION) creatorVersionEl.textContent = window.JIA_BEN_VERSION;
             [versionEl, producerVersionEl, creatorVersionEl].forEach((el) => el?.classList.add('admin-secret-version'));
             if (window.JIA_BEN_VERSION && localStorage.getItem('jia_ben_last_seen_version') !== window.JIA_BEN_VERSION) {
-                setTimeout(() => window.openReleaseNotesModal?.(), 700);
+                // Never place a full-screen announcement over the welcome CTA.
+                // Defer the first-run notice until the app shell is visible.
+                window.__JIA_PENDING_RELEASE_NOTES = true;
             }
             let adminTapCount = 0;
             let adminTapTimer = null;
@@ -3969,6 +3971,10 @@
                 window.setTimeout(() => intro.classList.add('hidden'), 400);
             }
             if (partyDeepLinkId && window.switchTab) window.switchTab('party', true);
+            if (window.__JIA_PENDING_RELEASE_NOTES) {
+                window.__JIA_PENDING_RELEASE_NOTES = false;
+                window.setTimeout(() => window.openReleaseNotesModal?.(), 500);
+            }
             return true;
         };
 
