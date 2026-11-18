@@ -9,7 +9,7 @@
   ];
   function isBlockedLegacyGoogleImage(url){return typeof url==='string'&&patterns.some(pattern=>pattern.test(url));}
   function filterSafeImages(values){return [...new Set((values||[]).filter(value=>typeof value==='string'&&value.trim()&&!isBlockedLegacyGoogleImage(value)))];}
-  const AI_FOOD_ASSETS = {
+  const REFERENCE_FOOD_ASSETS = {
     '滷肉飯': './assets/food/lu_rou_fan.jpg',
     '小吃': './assets/food/lu_rou_fan.jpg',
     '台灣小吃': './assets/food/lu_rou_fan.jpg',
@@ -30,7 +30,7 @@
     '甜點/飲料': './assets/food/cafe.jpg'
   };
 
-  const DEFAULT_AI_FOOD_LIST = [
+  const DEFAULT_REFERENCE_FOOD_LIST = [
     './assets/food/lu_rou_fan.jpg',
     './assets/food/ramen.jpg',
     './assets/food/yakiniku.jpg',
@@ -38,15 +38,15 @@
     './assets/food/cafe.jpg'
   ];
 
-  function getAiFoodImageForPlace(place) {
+  function getReferenceFoodImageForPlace(place) {
     const text = `${place?.name || ''} ${(place?.categories || []).join(' ')} ${place?.category || ''}`.toLowerCase();
-    for (const [key, path] of Object.entries(AI_FOOD_ASSETS)) {
+    for (const [key, path] of Object.entries(REFERENCE_FOOD_ASSETS)) {
       if (text.includes(key.toLowerCase())) return path;
     }
     const name = place?.name || '美食';
     let hash = 0;
     for (let i = 0; i < name.length; i++) hash += name.charCodeAt(i);
-    return DEFAULT_AI_FOOD_LIST[hash % DEFAULT_AI_FOOD_LIST.length];
+    return DEFAULT_REFERENCE_FOOD_LIST[hash % DEFAULT_REFERENCE_FOOD_LIST.length];
   }
 
   function selectImage(place, placeholderUrl = './assets/place-placeholder.svg') {
@@ -60,17 +60,17 @@
     ];
     const safeReal = filterSafeImages(realCandidates);
     if (safeReal.length > 0) {
-      return { url: safeReal[0], isPlaceholder: false, isAiFallback: false, label: '' };
+      return { url: safeReal[0], isPlaceholder: false, isReferenceFallback: false, isAiFallback: false, label: '' };
     }
 
-    // 2. 無真實照片時使用 AI 美食示意圖
-    const aiFoodImg = getAiFoodImageForPlace(place);
-    if (aiFoodImg) {
-      return { url: aiFoodImg, isPlaceholder: true, isAiFallback: true, label: 'AI 示意圖' };
+    // 2. 無真實照片時使用分類對應的免費參考餐點照片
+    const referenceFoodImg = getReferenceFoodImageForPlace(place);
+    if (referenceFoodImg) {
+      return { url: referenceFoodImg, isPlaceholder: true, isReferenceFallback: true, isAiFallback: true, label: '參考餐點照片' };
     }
 
     // 3. 通用 Placeholder
-    return { url: placeholderUrl, isPlaceholder: true, isAiFallback: false, label: '示意圖片' };
+    return { url: placeholderUrl, isPlaceholder: true, isReferenceFallback: false, isAiFallback: false, label: '參考餐點照片' };
   }
-  return { isBlockedLegacyGoogleImage, isBlocked: isBlockedLegacyGoogleImage, filterSafeImages, selectImage, getAiFoodImageForPlace, AI_FOOD_ASSETS };
+  return { isBlockedLegacyGoogleImage, isBlocked: isBlockedLegacyGoogleImage, filterSafeImages, selectImage, getReferenceFoodImageForPlace, getAiFoodImageForPlace: getReferenceFoodImageForPlace, REFERENCE_FOOD_ASSETS, AI_FOOD_ASSETS: REFERENCE_FOOD_ASSETS };
 });

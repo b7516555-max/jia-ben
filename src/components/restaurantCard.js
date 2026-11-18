@@ -98,7 +98,7 @@
             safeName: escapeForBtn(name),
             photoUrl: imageInfo.url || getFallbackImage(name),
             isPlaceholder: imageInfo.isPlaceholder,
-            isAiFallback: imageInfo.isAiFallback,
+            isReferenceFallback: imageInfo.isReferenceFallback,
             imageLabel: imageInfo.label || (imageInfo.isPlaceholder ? '示意圖片' : ''),
             distanceKm: distKm,
             distanceFormatted: formatDistance(distKm),
@@ -148,9 +148,9 @@
             ? `<div class="absolute top-2.5 left-2.5 bg-black/65 backdrop-blur-md text-white text-[10px] sm:text-xs px-2.5 py-0.5 rounded-full z-10 font-black tracking-wide border border-white/20 shadow-sm flex items-center gap-1"><i class="fa-solid fa-location-arrow text-orange-400"></i><span>${vm.distanceFormatted}</span></div>`
             : '';
 
-        // 示意圖 / AI 示意圖 Badge (清楚但低調標示，避免誤認真實照片)
+        // 參考餐點照片 Badge（清楚但低調標示，避免誤認為店家實拍）
         const placeholderBadgeHtml = vm.isPlaceholder
-            ? `<span class="absolute top-2.5 right-2.5 z-10 bg-black/55 backdrop-blur-xs text-white/90 text-[9px] font-bold px-2 py-0.5 rounded-full border border-white/20 shadow-2xs">${escapeHtml(vm.imageLabel || 'AI 示意圖')}</span>`
+            ? `<span class="absolute top-2.5 right-2.5 z-10 bg-black/55 backdrop-blur-xs text-white/90 text-[9px] font-bold px-2 py-0.5 rounded-full border border-white/20 shadow-2xs">${escapeHtml(vm.imageLabel || '參考餐點照片')}</span>`
             : '';
         const verifiedBadgeHtml = vm.isVerified
             ? '<span class="inline-flex items-center gap-1 bg-emerald-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full shadow-sm"><i class="fa-solid fa-check"></i>店家認證</span>'

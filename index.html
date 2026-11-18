@@ -31,7 +31,7 @@
         "@type": "Person",
         "name": "黃政誥",
         "email": "b7516555@gmail.com",
-        "url": "https://b7516555.netlify.app/"
+        "url": "https://b7516555-max.github.io/jia-ben/?page=creator"
       }
     }
     </script>
@@ -100,13 +100,30 @@
     <script src="./src/services/mapRestaurantContract.js?v=1"></script>
     <script src="./src/services/interactiveMap.js?v=1"></script>
     <script src="./src/components/restaurantCard.js?v=2"></script>
-    <script src="./src/config/appVersion.js?v=120"></script>
+    <script src="./src/config/appVersion.js?v=121"></script>
+    <script src="./src/config/authConfig.js?v=1"></script>
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const versionEl = document.getElementById('intro-version');
             if (versionEl && window.JIA_BEN_VERSION) versionEl.textContent = `版本 ${window.JIA_BEN_VERSION}`;
             const producerVersionEl = document.getElementById('producer-version');
             if (producerVersionEl && window.JIA_BEN_VERSION) producerVersionEl.textContent = window.JIA_BEN_VERSION;
+            const creatorVersionEl = document.getElementById('creator-version');
+            if (creatorVersionEl && window.JIA_BEN_VERSION) creatorVersionEl.textContent = window.JIA_BEN_VERSION;
+            [versionEl, producerVersionEl, creatorVersionEl].forEach((el) => el?.classList.add('admin-secret-version'));
+            let adminTapCount = 0;
+            let adminTapTimer = null;
+            document.addEventListener('click', function (event) {
+                if (!event.target.closest('.admin-secret-version')) return;
+                adminTapCount += 1;
+                clearTimeout(adminTapTimer);
+                adminTapTimer = setTimeout(() => { adminTapCount = 0; }, 1800);
+                if (adminTapCount >= 5) {
+                    adminTapCount = 0;
+                    window.attemptAdminAccess?.('admin');
+                }
+            });
         });
     </script>
     <script>
@@ -130,9 +147,15 @@
             if (m) m.classList.remove('hidden');
         };
         window.openProducerModal = function() {
-            var modal = document.getElementById('producer-modal');
-            if (modal) modal.classList.remove('hidden');
+            if (window.enterApp) window.enterApp();
+            setTimeout(() => window.switchTab?.('creator', true), 450);
         };
+        window.toggleMobileMoreMenu = function(force) {
+            const menu = document.getElementById('mobile-more-menu');
+            if (!menu) return;
+            menu.classList.toggle('hidden', typeof force === 'boolean' ? !force : !menu.classList.contains('hidden'));
+        };
+        window.openCreatorPage = window.openProducerModal;
         window.closeModal = function(id) {
             var m = document.getElementById(id);
             if (m) m.classList.add('hidden');
@@ -316,9 +339,10 @@
         .tab-btn.active { color: #f97316; }
         @media (max-width: 767px) {
             .tab-btn.active { border-bottom: 2px solid #f97316; background: transparent !important; box-shadow: none !important; }
-            nav { justify-content: flex-start !important; overflow-x: auto !important; overflow-y: hidden !important; scrollbar-width: none; }
-            nav::-webkit-scrollbar { display: none; }
-            nav .tab-btn { flex: 0 0 3.25rem !important; min-width: 3.25rem !important; }
+            nav { justify-content: space-around !important; overflow: hidden !important; }
+            nav .mobile-secondary-nav { display: none !important; }
+            nav .tab-btn { flex: 1 1 20% !important; min-width: 0 !important; max-width: 20% !important; }
+            nav #tab-more { display: flex !important; }
             /* 手機版完美防擠壓設定 */
             #main-app { border-radius: 0 !important; border: 0 !important; box-shadow: none !important; }
             nav { padding-bottom: max(0.5rem, env(safe-area-inset-bottom)) !important; shrink: 0 !important; }
@@ -362,6 +386,7 @@
             #home-for-you-container, #home-want-container, #explore-results-container,
             #party-container, #feed-container, #list-container { max-width: 80rem; margin-inline: auto; width: 100%; }
         }
+        @media (min-width: 768px) { nav #tab-more { display: none !important; } }
         @media (min-width: 768px) { .tab-btn.active { background-color: #fff7ed; border-radius: 1rem; } }
         @media (min-width: 768px) {
             /* 同一橫排以最高卡片為列高，所有欄位等高且不跨列。 */
@@ -741,7 +766,6 @@
         <div class="absolute bottom-4 sm:bottom-10 left-0 right-0 text-center animate-[fadeInSlow_2s_ease-out_forwards] px-4" style="animation-delay: 0.5s; opacity: 0;">
             <div class="flex items-center justify-center gap-2 flex-wrap">
                 <button type="button" onclick="window.openProducerModal()" class="producer-credit text-[10px] tracking-[0.25em] uppercase font-medium hover:text-orange-600 transition underline-offset-4 hover:underline">製作人 <span class="font-bold ml-1">黃政誥</span> <span class="ml-1 font-semibold opacity-80">since 2026</span></button>
-                <a href="https://b7516555.netlify.app/" target="_blank" rel="noopener noreferrer" class="text-[10px] font-semibold text-gray-500 hover:text-orange-600 underline underline-offset-2">個人網站</a>
             </div>
             <p class="mt-1 text-[10px] tracking-[0.12em] font-semibold text-gray-500" id="intro-version">版本</p>
         </div>
@@ -763,7 +787,6 @@
                     <div class="rounded-2xl bg-gray-50 border border-gray-100 p-3"><span class="block text-gray-400">更新日期</span><strong class="text-gray-700">2026-11-17</strong></div>
                 </div>
                 <p><strong class="text-gray-800">聯絡方式：</strong><a href="mailto:b7516555@gmail.com" class="text-orange-600 underline break-all">b7516555@gmail.com</a></p>
-                <p><strong class="text-gray-800">個人網站：</strong><a href="https://b7516555.netlify.app/" target="_blank" rel="noopener noreferrer" class="text-orange-600 underline break-all">b7516555.netlify.app</a></p>
                 <p class="text-xs text-gray-500">歡迎提供使用意見、功能建議或合作聯繫。</p>
             </div>
             <button type="button" onclick="window.closeModal('producer-modal')" class="w-full mt-5 py-3 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold transition">關閉</button>
@@ -866,6 +889,15 @@
                 使用 Google 帳號一鍵登入
             </button>
             <p id="google-login-hint" class="hidden text-[11px] text-amber-600 text-center mb-3"></p>
+            <button type="button" onclick="window.signInWithLine()" id="line-login-btn" class="w-full mb-3 py-3 rounded-xl bg-[#06C755] hover:bg-[#05ad4b] text-white font-bold text-sm shadow-sm transition flex items-center justify-center gap-2"><i class="fa-brands fa-line text-lg"></i> LINE 快速登入</button>
+            <p id="line-login-hint" class="hidden text-[11px] text-amber-600 text-center mb-3"></p>
+            <div class="border border-gray-100 rounded-2xl p-3 mb-4 bg-gray-50/70">
+                <p class="text-xs font-black text-gray-700 mb-2"><i class="fa-solid fa-envelope text-orange-500 mr-1"></i>使用 Email 登入／註冊</p>
+                <input id="email-auth-email" type="email" autocomplete="email" placeholder="Email" class="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-sm mb-2">
+                <input id="email-auth-password" type="password" autocomplete="current-password" placeholder="密碼（至少 6 碼）" class="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-sm mb-2">
+                <div class="grid grid-cols-2 gap-2"><button type="button" onclick="window.signInWithEmail(false)" class="py-2 rounded-xl bg-gray-800 text-white text-xs font-bold">Email 登入</button><button type="button" onclick="window.signInWithEmail(true)" class="py-2 rounded-xl bg-orange-500 text-white text-xs font-bold">Email 註冊</button></div>
+                <button type="button" onclick="window.resetEmailPassword()" class="w-full mt-2 text-[11px] font-bold text-gray-500 hover:text-orange-600">忘記 Email 密碼？寄送重設信</button>
+            </div>
             <div class="flex mb-4 bg-gray-100 rounded-xl p-1">
                 <button onclick="window.toggleIdTab('old')" id="tab-id-old" class="flex-1 py-2 bg-white shadow-sm rounded-lg text-sm font-bold text-orange-500 transition">我是老朋友</button>
                 <button onclick="window.toggleIdTab('new')" id="tab-id-new" class="flex-1 py-2 text-gray-500 rounded-lg text-sm font-bold transition hover:text-orange-400">我是新朋友</button>
@@ -1510,7 +1542,7 @@
                 <img id="detail-img" src="" class="w-full h-full object-cover">
                 <span id="detail-image-label" class="hidden absolute top-12 left-3.5 z-20 bg-black/65 text-amber-300 border border-amber-300/40 text-[10px] font-black px-2.5 py-0.5 rounded-full backdrop-blur-md shadow-sm flex items-center gap-1">
                     <i class="fa-solid fa-wand-magic-sparkles text-amber-400"></i>
-                    <span>目前為 AI 示意圖</span>
+                    <span>目前為參考餐點照片</span>
                 </span>
                 <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-black/20"></div>
                 
@@ -1540,7 +1572,7 @@
                             <i class="fa-solid fa-camera"></i>
                         </div>
                         <div>
-                            <p class="text-xs font-black text-gray-800">目前為 AI 示意圖</p>
+                            <p class="text-xs font-black text-gray-800">目前為參考餐點照片</p>
                             <p class="text-[11px] text-gray-500">吃過這間？分享這間店的真實照片！</p>
                         </div>
                     </div>
@@ -1669,7 +1701,8 @@
                 </section>
                 
                 <div class="grid grid-cols-2 gap-2.5 pt-1">
-                    <a id="detail-nav-btn" href="#" target="_blank" rel="noopener noreferrer" class="col-span-2 text-center bg-blue-500 text-white py-2.5 md:py-3 rounded-xl font-bold hover:bg-blue-600 transition shadow-sm tracking-wide flex items-center justify-center gap-2 text-sm"><i class="fa-solid fa-map-location-dot"></i> OpenStreetMap 地圖</a>
+                    <a id="detail-nav-btn" href="#" target="_blank" rel="noopener noreferrer" class="text-center bg-blue-500 text-white py-2.5 md:py-3 rounded-xl font-bold hover:bg-blue-600 transition tracking-wide flex items-center justify-center gap-2 text-sm"><i class="fa-solid fa-map-location-dot"></i> OpenStreetMap 地圖</a>
+                    <a id="detail-google-maps-btn" href="#" target="_blank" rel="noopener noreferrer" class="text-center bg-emerald-600 text-white py-2.5 md:py-3 rounded-xl font-bold hover:bg-emerald-700 transition tracking-wide flex items-center justify-center gap-2 text-sm"><i class="fa-solid fa-map"></i> Google 地圖最新資訊</a>
                     
                     <button id="detail-review-btn" class="bg-white text-gray-700 font-bold py-2.5 md:py-3 rounded-xl border border-gray-200 hover:bg-gray-50 transition shadow-sm flex items-center justify-center gap-2 text-xs sm:text-sm"><i class="fa-solid fa-comment-dots text-orange-400"></i> 寫評價</button>
                     
@@ -2231,14 +2264,27 @@
                 <i class="fa-solid fa-utensils drop-shadow-sm"></i>
             </div>
             <button onclick="window.switchTab('explore')" id="tab-explore" aria-current="page" class="tab-btn active flex-1 md:flex-none py-2 md:py-3 flex flex-col items-center gap-1 transition md:w-[84px] md:mx-auto"><i class="fa-solid fa-compass text-[18px] md:text-[20px] mb-0.5"></i><span>找餐廳</span></button>
-            <button onclick="window.switchTab('map')" id="tab-map" class="tab-btn flex-1 md:flex-none py-2 md:py-3 flex flex-col items-center gap-1 transition md:w-[84px] md:mx-auto" aria-label="地圖找餐廳"><i class="fa-solid fa-map-location-dot text-[18px] md:text-[20px] mb-0.5"></i><span>地圖</span></button>
+            <button onclick="window.switchTab('map')" id="tab-map" class="tab-btn mobile-secondary-nav flex-1 md:flex-none py-2 md:py-3 flex flex-col items-center gap-1 transition md:w-[84px] md:mx-auto" aria-label="地圖找餐廳"><i class="fa-solid fa-map-location-dot text-[18px] md:text-[20px] mb-0.5"></i><span>地圖</span></button>
             <button onclick="window.switchTab('nearby')" id="tab-nearby" class="tab-btn flex-1 md:flex-none py-2 md:py-3 flex flex-col items-center gap-1 transition md:w-[84px] md:mx-auto"><i class="fa-solid fa-dharmachakra text-[18px] md:text-[20px] mb-0.5"></i><span>輪盤</span></button>
-            <button onclick="window.switchTab('history')" id="tab-history" class="tab-btn flex-1 md:flex-none py-2 md:py-3 flex flex-col items-center gap-1 transition md:w-[84px] md:mx-auto"><i class="fa-solid fa-clock-rotate-left text-[18px] md:text-[20px] mb-0.5"></i><span>吃過</span></button>
+            <button onclick="window.switchTab('history')" id="tab-history" class="tab-btn mobile-secondary-nav flex-1 md:flex-none py-2 md:py-3 flex flex-col items-center gap-1 transition md:w-[84px] md:mx-auto"><i class="fa-solid fa-clock-rotate-left text-[18px] md:text-[20px] mb-0.5"></i><span>吃過</span></button>
             <button onclick="window.switchTab('party')" id="tab-party" class="tab-btn flex-1 md:flex-none py-2 md:py-3 flex flex-col items-center gap-1 transition md:w-[84px] md:mx-auto relative"><i class="fa-solid fa-fire text-[18px] md:text-[20px] mb-0.5"></i><span>揪團</span></button>
             <button onclick="window.switchTab('feed')" id="tab-feed" class="tab-btn flex-1 md:flex-none py-2 md:py-3 flex flex-col items-center gap-1 transition md:w-[84px] md:mx-auto"><i class="fa-solid fa-comments text-[18px] md:text-[20px] mb-0.5"></i><span>動態牆</span></button>
-            <button onclick="window.switchTab('chat')" id="tab-chat" class="tab-btn flex-1 md:flex-none py-2 md:py-3 flex flex-col items-center gap-1 transition md:w-[84px] md:mx-auto relative"><i class="fa-solid fa-message text-[18px] md:text-[20px] mb-0.5"></i><span>留言板</span></button>
-            <button onclick="window.switchTab('list')" id="tab-list" class="tab-btn flex-1 md:flex-none py-2 md:py-3 flex flex-col items-center gap-1 transition md:w-[84px] md:mx-auto"><i class="fa-solid fa-book-open text-[18px] md:text-[20px] mb-0.5"></i><span>口袋名單</span></button>
+            <button onclick="window.switchTab('chat')" id="tab-chat" class="tab-btn mobile-secondary-nav flex-1 md:flex-none py-2 md:py-3 flex flex-col items-center gap-1 transition md:w-[84px] md:mx-auto relative"><i class="fa-solid fa-message text-[18px] md:text-[20px] mb-0.5"></i><span>留言板</span></button>
+            <button onclick="window.switchTab('list')" id="tab-list" class="tab-btn mobile-secondary-nav flex-1 md:flex-none py-2 md:py-3 flex flex-col items-center gap-1 transition md:w-[84px] md:mx-auto"><i class="fa-solid fa-book-open text-[18px] md:text-[20px] mb-0.5"></i><span>口袋名單</span></button>
+            <button onclick="window.toggleMobileMoreMenu(true)" id="tab-more" class="tab-btn hidden flex-1 md:flex-none py-2 md:py-3 flex-col items-center gap-1 transition md:w-[84px] md:mx-auto" aria-label="更多功能"><i class="fa-solid fa-bars text-[18px] mb-0.5"></i><span>更多</span></button>
         </nav>
+
+        <div id="mobile-more-menu" class="hidden fixed inset-0 z-[80] bg-black/40 md:hidden" onclick="if(event.target === this) window.toggleMobileMoreMenu(false)">
+            <div class="absolute bottom-[calc(4.25rem+env(safe-area-inset-bottom))] left-3 right-3 bg-white rounded-3xl p-3 shadow-2xl border border-orange-100">
+                <div class="flex items-center justify-between px-2 pb-2"><h2 class="font-black text-gray-800">更多功能</h2><button type="button" onclick="window.toggleMobileMoreMenu(false)" class="w-8 h-8 rounded-full bg-gray-100 text-gray-500"><i class="fa-solid fa-xmark"></i></button></div>
+                <div class="grid grid-cols-2 gap-2">
+                    <button onclick="window.toggleMobileMoreMenu(false); window.switchTab('map')" class="py-3 rounded-2xl bg-blue-50 text-blue-700 font-bold text-sm"><i class="fa-solid fa-map-location-dot mr-1"></i>地圖</button>
+                    <button onclick="window.toggleMobileMoreMenu(false); window.switchTab('history')" class="py-3 rounded-2xl bg-amber-50 text-amber-700 font-bold text-sm"><i class="fa-solid fa-clock-rotate-left mr-1"></i>吃過</button>
+                    <button onclick="window.toggleMobileMoreMenu(false); window.switchTab('chat')" class="py-3 rounded-2xl bg-violet-50 text-violet-700 font-bold text-sm"><i class="fa-solid fa-message mr-1"></i>留言板</button>
+                    <button onclick="window.toggleMobileMoreMenu(false); window.switchTab('list')" class="py-3 rounded-2xl bg-rose-50 text-rose-700 font-bold text-sm"><i class="fa-solid fa-book-open mr-1"></i>口袋名單</button>
+                </div>
+            </div>
+        </div>
 
         <div class="flex-1 flex flex-col h-full overflow-hidden relative order-first md:order-last bg-[#fafafa]">
             <header class="bg-gradient-to-r from-orange-500 to-amber-400 text-white p-4 shadow-[0_8px_24px_rgba(249,115,22,0.15)] z-10 flex justify-between items-center relative">
@@ -2256,15 +2302,29 @@
                     <button id="header-avatar-btn" onclick="window.handleHeaderAvatarClick()" class="w-10 h-10 rounded-full border-2 border-white/80 shadow-xs flex items-center justify-center bg-white/20 hover:scale-105 transition overflow-hidden p-0.5" title="個人專屬後台與等級徽章">
                         <div id="header-avatar-icon" class="foodie-avatar foodie-avatar-host w-full h-full rounded-full"></div>
                     </button>
-                    <button onclick="window.attemptAdminAccess('admin')" class="w-10 h-10 flex items-center justify-center bg-white/20 backdrop-blur-sm rounded-full transition hover:bg-white/30" title="主揪後台">
-                        <i class="fa-solid fa-shield-halved text-lg"></i>
-                    </button>
                 </div>
             </header>
 
             <main class="flex-1 overflow-y-auto p-0 no-scrollbar relative w-full bg-[linear-gradient(180deg,#fffdfb_0%,#f8fafc_100%)]" id="main-content">
                 
                 <!-- 🌟 視圖 0: 個人化首頁 (Home / Explore) 5~10 秒極速決策 -->
+                <div id="view-creator" class="hidden fade-in h-full flex flex-col relative w-full overflow-y-auto no-scrollbar bg-[#faf7f2]">
+                    <div class="max-w-4xl w-full mx-auto p-4 sm:p-6 md:p-10 space-y-5">
+                        <button type="button" onclick="window.goBackFromCreator()" class="text-sm font-bold text-orange-600 hover:text-orange-700 flex items-center gap-2"><i class="fa-solid fa-arrow-left"></i>返回上一頁</button>
+                        <section class="bg-white rounded-[2rem] p-6 sm:p-8 border border-orange-100 shadow-sm">
+                            <div class="flex items-start gap-4">
+                                <div class="w-16 h-16 rounded-2xl bg-orange-100 text-orange-500 flex items-center justify-center shrink-0"><i class="fa-solid fa-utensils text-2xl"></i></div>
+                                <div><p class="text-xs uppercase tracking-[0.25em] text-orange-500 font-black">Creator & Jia-ben</p><h2 class="text-2xl sm:text-3xl font-black text-gray-800 mt-1">關於製作人與呷奔</h2><p class="text-sm text-gray-500 mt-2">把「今天吃什麼」變成一件輕鬆、好玩的事。</p></div>
+                            </div>
+                        </section>
+                        <section class="grid md:grid-cols-2 gap-4">
+                            <article class="bg-white rounded-3xl p-5 border border-gray-100 shadow-sm"><h3 class="font-black text-gray-800 mb-2"><i class="fa-solid fa-user-tie text-orange-500 mr-2"></i>製作人</h3><p class="text-sm leading-7 text-gray-600">黃政誥，現任駐局專案工程師／計畫專員，長期關注環境工程、計畫輔導與治理沙盒，也喜歡把日常需求整理成真正好用的工具。</p></article>
+                            <article class="bg-white rounded-3xl p-5 border border-gray-100 shadow-sm"><h3 class="font-black text-gray-800 mb-2"><i class="fa-solid fa-lightbulb text-amber-500 mr-2"></i>開發理念</h3><p class="text-sm leading-7 text-gray-600">呷奔 Jia-ben 以暖米白與橘色打造簡單入口，結合找餐廳、美食輪盤、聚餐揪團與社群投票，降低朋友一起吃飯的決策成本。</p></article>
+                        </section>
+                        <section class="bg-white rounded-3xl p-5 border border-gray-100 shadow-sm"><h3 class="font-black text-gray-800 mb-3"><i class="fa-solid fa-sparkles text-orange-500 mr-2"></i>核心功能</h3><div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs font-bold text-gray-600"><span class="bg-orange-50 rounded-xl p-3">找餐廳</span><span class="bg-amber-50 rounded-xl p-3">美食輪盤</span><span class="bg-rose-50 rounded-xl p-3">聚餐揪團</span><span class="bg-blue-50 rounded-xl p-3">社群評價</span></div></section>
+                        <section class="bg-white rounded-3xl p-5 border border-gray-100 shadow-sm text-sm text-gray-600 space-y-2"><p><strong class="text-gray-800">目前版本：</strong><span id="creator-version" class="admin-secret-version text-orange-600 font-black cursor-pointer">v121</span></p><p><strong class="text-gray-800">聯絡／合作：</strong><a href="mailto:b7516555@gmail.com" class="text-orange-600 underline break-all">b7516555@gmail.com</a></p><p class="text-xs text-gray-400">歡迎提供使用意見、功能建議與合作想法。</p></section>
+                    </div>
+                </div>
                 <div id="view-explore" class="fade-in h-full flex flex-col relative w-full overflow-y-auto no-scrollbar">
                     <!-- 1. Hero 快速決策區 (今天吃什麼？) -->
                     <div class="hero-panel p-4 sm:p-6 bg-gradient-to-br from-orange-500 via-amber-500 to-orange-600 text-white shadow-md relative overflow-hidden shrink-0">
@@ -2329,7 +2389,7 @@
                             </div>
 
                             <div class="flex items-center justify-between gap-2 pt-1 border-t border-gray-100 flex-wrap">
-                                <div class="flex items-center gap-1 overflow-x-auto no-scrollbar py-0.5">
+                                <div class="flex items-center gap-1 flex-wrap py-0.5 min-w-0">
                                     <button onclick="window.runQuickSearch('拉麵')" class="pill-chip shrink-0 rounded-full border border-orange-100 bg-orange-50/60 hover:bg-orange-100 px-2.5 py-0.5 text-[10px] font-bold text-orange-700 shadow-2xs">🍜 拉麵</button>
                                     <button onclick="window.runQuickSearch('火鍋')" class="pill-chip shrink-0 rounded-full border border-orange-100 bg-orange-50/60 hover:bg-orange-100 px-2.5 py-0.5 text-[10px] font-bold text-orange-700 shadow-2xs">🍲 火鍋</button>
                                     <button onclick="window.runQuickSearch('燒肉')" class="pill-chip shrink-0 rounded-full border border-orange-100 bg-orange-50/60 hover:bg-orange-100 px-2.5 py-0.5 text-[10px] font-bold text-orange-700 shadow-2xs">🥩 燒肉</button>
@@ -2990,7 +3050,7 @@
     <!-- Firebase & 核心邏輯 -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, GoogleAuthProvider, signInAnonymously, signInWithEmailAndPassword, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged, getIdTokenResult } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, GoogleAuthProvider, signInAnonymously, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged, getIdTokenResult } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp, doc, setDoc, getDoc, getDocs, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         let deferredPrompt;
@@ -3051,6 +3111,11 @@
                 }).catch((err) => console.warn('Service Worker 註冊失敗:', err));
             }
             if (typeof window.drawRadarWheel === 'function') window.drawRadarWheel([]);
+            const requestedPage = new URLSearchParams(window.location.search).get('page') || new URLSearchParams(window.location.search).get('tab');
+            if (requestedPage && requestedPage !== 'explore' && !partyDeepLinkId && ROUTABLE_PAGES?.has(requestedPage)) {
+                window.enterApp?.();
+                setTimeout(() => window.switchTab(requestedPage, true, { fromHistory: true }), 900);
+            }
         });
 
         window.openInstallGuide = function(mode) {
@@ -3270,8 +3335,8 @@
         
         window.getFallbackImage = function(name) {
             const place = name && typeof name === 'object' ? name : { name: name };
-            if (window.imageSafety?.getAiFoodImageForPlace) {
-                return window.imageSafety.getAiFoodImageForPlace(place);
+            if (window.imageSafety?.getReferenceFoodImageForPlace) {
+                return window.imageSafety.getReferenceFoodImageForPlace(place);
             }
             if (!place.name) return FOOD_IMAGES[0];
             let hash = 0;
@@ -3830,11 +3895,12 @@
             return mergedCount;
         };
 
-        window.syncGoogleUserProfile = async function(user) {
+        window.syncGoogleUserProfile = async function(user, provider = 'google', extra = {}) {
             if (!user || user.isAnonymous) return;
-            if (googleProfileSyncedUid === user.uid) return;
-            googleProfileSyncedUid = user.uid;
-            const displayName = user.displayName || user.email?.split('@')[0] || 'Google 使用者';
+            const syncKey = `${provider}:${user.uid}:${extra.lineUserId || ''}`;
+            if (googleProfileSyncedUid === syncKey) return;
+            googleProfileSyncedUid = syncKey;
+            const displayName = user.displayName || user.email?.split('@')[0] || (provider === 'line' ? 'LINE 使用者' : '使用者');
             const existing = window.myIdentity || {};
             window.myIdentity = {
                 ...existing,
@@ -3842,15 +3908,59 @@
                 group: existing.group || '好友',
                 avatarId: existing.avatarId || window.getDefaultAvatarId?.(displayName) || 'explorer',
                 customAvatarUrl: existing.customAvatarUrl || user.photoURL || '',
-                googleUid: user.uid,
-                authProvider: 'google'
+                googleUid: provider === 'google' ? user.uid : (existing.googleUid || ''),
+                lineUserId: extra.lineUserId || existing.lineUserId || '',
+                authProvider: provider
             };
             try { localStorage.setItem('together_eat_saved_identity', JSON.stringify(window.myIdentity)); } catch (error) {}
             await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'settings', 'profile'), window.myIdentity, { merge: true });
             window.updateHeaderAvatarBadge?.();
             await window.mergeGuestPartyRecords();
             window.closeModal('identity-modal');
-            window.showCustomMsg(`✅ Google 登入成功！歡迎回來，${window.myIdentity.name}！`);
+            const providerLabel = provider === 'line' ? 'LINE' : provider === 'email' ? 'Email' : 'Google';
+            window.showCustomMsg(`✅ ${providerLabel} 登入成功！歡迎回來，${window.myIdentity.name}！`);
+        };
+
+        window.signInWithEmail = async function(register = false) {
+            if (!auth) return window.showCustomMsg('Email 登入服務尚未準備完成，請稍後再試。');
+            const email = document.getElementById('email-auth-email')?.value.trim();
+            const password = document.getElementById('email-auth-password')?.value || '';
+            if (!email || password.length < 6) return window.showCustomMsg('請輸入有效 Email 與至少 6 碼密碼。');
+            try {
+                const credential = register
+                    ? await createUserWithEmailAndPassword(auth, email, password)
+                    : await signInWithEmailAndPassword(auth, email, password);
+                currentUser = credential.user;
+                await window.syncGoogleUserProfile(credential.user, 'email');
+            } catch (error) {
+                console.error('Email 登入失敗:', error);
+                window.showCustomMsg(register ? 'Email 註冊未完成，請確認格式或帳號是否已存在。' : 'Email 登入未完成，請確認帳號密碼。');
+            }
+        };
+
+        window.resetEmailPassword = async function() {
+            const email = document.getElementById('email-auth-email')?.value.trim();
+            if (!auth || !email) return window.showCustomMsg('請先輸入 Email，再寄送重設信。');
+            try { await sendPasswordResetEmail(auth, email); window.showCustomMsg('✅ 密碼重設信已寄出，請查看信箱。'); }
+            catch (error) { console.error('Email 重設失敗:', error); window.showCustomMsg('目前無法寄出重設信，請確認 Email 是否正確。'); }
+        };
+
+        window.signInWithLine = async function() {
+            const hint = document.getElementById('line-login-hint');
+            const liffId = window.JIA_BEN_AUTH_CONFIG?.LINE_LIFF_ID;
+            if (!liffId) { if (hint) { hint.textContent = '尚未設定 LINE_LIFF_ID，請先由管理者完成 LINE Developers 設定。'; hint.classList.remove('hidden'); } return; }
+            try {
+                if (!window.liff) throw new Error('LIFF SDK 尚未載入');
+                await window.liff.init({ liffId });
+                if (!window.liff.isLoggedIn()) return window.liff.login({ redirectUri: window.location.href });
+                const profile = await window.liff.getProfile();
+                if (!auth.currentUser) await signInAnonymously(auth);
+                currentUser = auth.currentUser;
+                await window.syncGoogleUserProfile({ uid: currentUser.uid, displayName: profile.displayName, photoURL: profile.pictureUrl, email: '' }, 'line', { lineUserId: profile.userId });
+            } catch (error) {
+                console.error('LINE 登入失敗:', error);
+                if (hint) { hint.textContent = 'LINE 登入尚未完成，請確認 LIFF ID、網域與 LINE Developers 設定。'; hint.classList.remove('hidden'); }
+            }
         };
 
         window.signInWithGoogle = async function() {
@@ -3894,7 +4004,10 @@
                         realtimeSyncUserId = user.uid;
                         startRealtimeSync();
                     }
-                    if (user && !user.isAnonymous) window.syncGoogleUserProfile(user).catch(error => console.warn('Google 使用者資料同步失敗:', error));
+                    if (user && !user.isAnonymous) {
+                        const provider = user.providerData?.[0]?.providerId === 'password' ? 'email' : 'google';
+                        window.syncGoogleUserProfile(user, provider).catch(error => console.warn('使用者資料同步失敗:', error));
+                    }
                 });
                 const redirectResult = await getRedirectResult(auth);
                 if (redirectResult?.user) {
@@ -4258,16 +4371,31 @@
             });
         };
 
-        window.switchTab = function(tabName, forceRefresh = false) {
+        const ROUTABLE_PAGES = new Set(['explore', 'map', 'nearby', 'history', 'party', 'feed', 'chat', 'list', 'creator', 'admin', 'guide']);
+        window.goBackFromCreator = function() {
+            if (window.history.length > 1) window.history.back();
+            else window.switchTab('explore');
+        };
+        window.addEventListener('popstate', () => {
+            const page = new URLSearchParams(window.location.search).get('page') || new URLSearchParams(window.location.search).get('tab') || 'explore';
+            window.enterApp?.();
+            setTimeout(() => window.switchTab(ROUTABLE_PAGES.has(page) ? page : 'explore', true, { fromHistory: true }), 450);
+        });
+
+        window.switchTab = function(tabName, forceRefresh = false, options = {}) {
             if (!forceRefresh && document.getElementById('tab-' + tabName) && document.getElementById('tab-' + tabName).classList.contains('active')) return;
-            ['explore', 'map', 'nearby', 'history', 'random', 'party', 'feed', 'chat', 'list', 'admin', 'guide'].forEach(name => {
+            ['explore', 'map', 'nearby', 'history', 'random', 'party', 'feed', 'chat', 'list', 'creator', 'admin', 'guide'].forEach(name => {
                 document.getElementById('view-' + name)?.classList.add('hidden'); 
             });
             document.getElementById('view-' + tabName)?.classList.remove('hidden'); 
             window.syncNavigationState(tabName);
-            const tabTitles = { explore: '找餐廳', map: '地圖找餐廳', nearby: '美食輪盤', history: '吃過紀錄', party: '揪團活動', feed: '美食動態牆', chat: '留言板', list: '口袋名單', admin: '主揪後台', guide: '使用指南' };
+            const tabTitles = { explore: '找餐廳', map: '地圖找餐廳', nearby: '美食輪盤', history: '吃過紀錄', party: '揪團活動', feed: '美食動態牆', chat: '留言板', list: '口袋名單', creator: '製作人介紹', admin: '主揪後台', guide: '使用指南' };
             const titleEl = document.getElementById('app-header-title');
             if (titleEl && tabTitles[tabName]) titleEl.textContent = `呷奔 • ${tabTitles[tabName]}`;
+            if (!options.fromHistory && ROUTABLE_PAGES.has(tabName)) {
+                const currentPage = new URLSearchParams(window.location.search).get('page');
+                if (currentPage !== tabName) window.history.pushState({ page: tabName }, '', `${window.location.pathname}?page=${tabName}`);
+            }
             document.body.classList.toggle('map-view-active', tabName === 'map');
             if(tabName !== 'admin' && tabName !== 'guide') previousTab = tabName;
             if(tabName === 'explore') window.renderHomeForYou();
@@ -4278,6 +4406,7 @@
             if(tabName === 'chat') window.renderChatMessages(true);
             if(tabName === 'nearby') window.previewWheelCandidates?.();
             if(tabName === 'admin') window.renderAdminDataList();
+            if(tabName === 'creator') document.getElementById('creator-version')?.classList.add('admin-secret-version');
             if(tabName === 'map') {
                 window.JiaInteractiveMap?.open(window.jiaPlacesData || window.restaurantData || []);
                 setTimeout(() => window.JiaInteractiveMap?.initialize({ places: window.jiaPlacesData || window.restaurantData || [] }), 0);
@@ -8621,7 +8750,7 @@
                 name: name,
                 img: selectedImgInfo.url,
                 imageIsPlaceholder: selectedImgInfo.isPlaceholder,
-                imageLabelText: selectedImgInfo.label || (selectedImgInfo.isPlaceholder ? 'AI 示意圖' : ''),
+                imageLabelText: selectedImgInfo.label || (selectedImgInfo.isPlaceholder ? '參考餐點照片' : ''),
                 city: jiaPlace?.city || restaurant.city || '',
                 mUrl: jiaPlace?.mapLink || mUrl,
                 placeId: restaurant.placeId || '',
@@ -8741,7 +8870,7 @@
                 <div class="restaurant-card bg-white rounded-2xl shadow-sm border ${isH ? 'border-orange-200' : 'border-gray-100'} overflow-hidden relative cursor-pointer group h-48 md:h-56 lg:h-64" onclick="window.openRestaurantDetailByName('${safeNameStr}')">
                     <img id="list-img-${safeNameStr}" src="${displayImg}" onerror="this.onerror=null; this.src='./assets/place-placeholder.svg';" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110">
                     <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent"></div>
-                    ${selectedImage.isPlaceholder ? `<span class="absolute top-2.5 right-2.5 z-20 bg-white/90 text-gray-700 text-[10px] px-2 py-1 rounded-full font-bold border border-gray-200">${selectedImage.label || 'AI 示意圖'}</span>` : ''}
+                    ${selectedImage.isPlaceholder ? `<span class="absolute top-2.5 right-2.5 z-20 bg-white/90 text-gray-700 text-[10px] px-2 py-1 rounded-full font-bold border border-gray-200">${selectedImage.label || '參考餐點照片'}</span>` : ''}
                     <div class="absolute top-2.5 left-2.5 z-10 flex items-center gap-1">
                         <span class="bg-black/50 backdrop-blur-md text-white text-[10px] px-2 py-0.5 rounded-full font-bold tracking-widest border border-white/20">${i.city || '未分類'}</span>
                         ${isH ? '<span class="bg-orange-500/90 backdrop-blur-sm text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full shadow-sm"><i class="fa-solid fa-crown text-[9px]"></i></span>' : ''}
@@ -8785,7 +8914,7 @@
             }
             const imageLabel = document.getElementById('detail-image-label');
             if (imageLabel) {
-                imageLabel.textContent = data.imageLabelText || 'AI 示意圖';
+                imageLabel.textContent = data.imageLabelText || '參考餐點照片';
                 imageLabel.classList.toggle('hidden', !data.imageIsPlaceholder);
             }
 
@@ -8814,6 +8943,11 @@
             
             const navBtn = document.getElementById('detail-nav-btn');
             if (navBtn) navBtn.href = data.mUrl || window.getOsmSearchUrl(data.name);
+            const googleMapsBtn = document.getElementById('detail-google-maps-btn');
+            if (googleMapsBtn) {
+                const query = [data.name, data.address || data.city || ''].filter(Boolean).join(' ');
+                googleMapsBtn.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+            }
 
             const reviewBtn = document.getElementById('detail-review-btn');
             if (reviewBtn) {

@@ -20,9 +20,9 @@ assert.ok(html.includes('GoogleAuthProvider'), 'Firebase Google provider is impo
 assert.ok(html.includes('signInWithPopup') && html.includes('signInWithRedirect'), 'Google login supports popup and redirect fallback');
 assert.ok(html.includes('getRedirectResult'), 'Google redirect result is handled on load');
 assert.ok(html.includes('window.mergeGuestPartyRecords'), 'Guest party records are merged after account login');
-assert.ok(html.includes('googleUid: user.uid'), 'Google uid is synchronized to the existing profile structure');
+assert.ok(html.includes("provider === 'google' ? user.uid"), 'Google uid is synchronized to the existing profile structure');
 assert.ok(html.includes('custom-alert-google-btn'), 'Guest completion prompt offers Google login shortcut');
-assert.strictEqual((sw.match(/together-eat-shell-v120/g) || []).length, 1, 'Service Worker cache is v120');
+assert.strictEqual((sw.match(/together-eat-shell-v121/g) || []).length, 1, 'Service Worker cache is v121');
 
 function applyGuestJoin(party, guest) {
   const joined = Array.isArray(party.joined) ? [...party.joined] : [];
