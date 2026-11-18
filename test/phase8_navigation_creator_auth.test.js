@@ -11,6 +11,10 @@ assert.ok(html.includes('id="tab-more"') && html.includes('id="mobile-more-menu"
 assert.ok(html.includes('flex-wrap'), 'Quick filters can wrap on narrow screens');
 assert.ok(html.includes("history.pushState") && html.includes("addEventListener('popstate'"), 'Independent page routing supports browser history');
 assert.ok(html.includes('id="view-creator"') && html.includes("'creator'"), 'Creator page has internal routing and entry points');
+assert.ok(html.includes('吃貨主揪檔案') && html.includes('選擇困難終結者'), 'Creator page uses the warm foodie profile voice');
+assert.ok(html.includes('./assets/creator/creator-avatar.png') && html.includes("this.src='./assets/avatars/host.png'"), 'Creator avatar has a local asset and fallback');
+assert.ok(html.includes('creator-place-count') && html.includes('updateCreatorStats'), 'Creator page renders live app statistics');
+assert.ok(html.includes('mailto:b7516555@gmail.com?subject=呷奔 Jia-ben 推薦與敲碗'), 'Creator page has a friendly recommendation CTA');
 assert.ok(!html.includes('b7516555.netlify.app'), 'External producer website is absent from site HTML');
 assert.ok(!html.includes('AI 示意圖'), 'AI fallback label is absent from visible UI');
 assert.ok(html.includes('Google 地圖最新資訊'), 'Restaurant detail offers a free Google Maps direct link');

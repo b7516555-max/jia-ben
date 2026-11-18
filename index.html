@@ -507,6 +507,7 @@
         .hero-glow { background: radial-gradient(circle, rgba(249, 115, 22, 0.18) 0%, rgba(249, 115, 22, 0) 70%); }
         .pill-chip { transition: all 0.2s ease; }
         .pill-chip:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(249, 115, 22, 0.12); }
+        .creator-pill { display:inline-flex; align-items:center; gap:.25rem; padding:.45rem .7rem; border-radius:9999px; background:rgba(255,255,255,.2); border:1px solid rgba(255,255,255,.35); color:#fff; font-size:.72rem; font-weight:800; line-height:1.2; }
         .search-surface { box-shadow: inset 0 1px 0 rgba(255,255,255,0.9); }
         .soft-card { box-shadow: 0 16px 30px rgba(15, 23, 42, 0.04); border: 1px solid rgba(229, 231, 235, 0.9); }
         .tab-btn { border-radius: 9999px; }
@@ -2308,21 +2309,65 @@
             <main class="flex-1 overflow-y-auto p-0 no-scrollbar relative w-full bg-[linear-gradient(180deg,#fffdfb_0%,#f8fafc_100%)]" id="main-content">
                 
                 <!-- 🌟 視圖 0: 個人化首頁 (Home / Explore) 5~10 秒極速決策 -->
-                <div id="view-creator" class="hidden fade-in h-full flex flex-col relative w-full overflow-y-auto no-scrollbar bg-[#faf7f2]">
-                    <div class="max-w-4xl w-full mx-auto p-4 sm:p-6 md:p-10 space-y-5">
-                        <button type="button" onclick="window.goBackFromCreator()" class="text-sm font-bold text-orange-600 hover:text-orange-700 flex items-center gap-2"><i class="fa-solid fa-arrow-left"></i>返回上一頁</button>
-                        <section class="bg-white rounded-[2rem] p-6 sm:p-8 border border-orange-100 shadow-sm">
-                            <div class="flex items-start gap-4">
-                                <div class="w-16 h-16 rounded-2xl bg-orange-100 text-orange-500 flex items-center justify-center shrink-0"><i class="fa-solid fa-utensils text-2xl"></i></div>
-                                <div><p class="text-xs uppercase tracking-[0.25em] text-orange-500 font-black">Creator & Jia-ben</p><h2 class="text-2xl sm:text-3xl font-black text-gray-800 mt-1">關於製作人與呷奔</h2><p class="text-sm text-gray-500 mt-2">把「今天吃什麼」變成一件輕鬆、好玩的事。</p></div>
+                <div id="view-creator" class="hidden fade-in h-full flex flex-col relative w-full overflow-y-auto no-scrollbar bg-[#fffaf4]">
+                    <div class="max-w-5xl w-full mx-auto p-4 sm:p-6 md:p-10 space-y-5 sm:space-y-7">
+                        <div class="flex items-center justify-between gap-3">
+                            <button type="button" onclick="window.goBackFromCreator()" class="inline-flex items-center gap-2 text-sm font-black text-orange-600 hover:text-orange-700"><i class="fa-solid fa-arrow-left"></i>回到剛剛那頁</button>
+                            <span class="text-[10px] sm:text-xs font-black text-orange-400 bg-orange-50 border border-orange-100 rounded-full px-3 py-1">JIA-BEN CREW CARD</span>
+                        </div>
+
+                        <section class="relative overflow-hidden rounded-[2rem] sm:rounded-[2.5rem] bg-gradient-to-br from-orange-500 via-amber-500 to-rose-500 text-white p-5 sm:p-8 md:p-10 shadow-xl shadow-orange-200/60">
+                            <div class="absolute -right-16 -top-20 w-64 h-64 rounded-full bg-white/15 blur-2xl pointer-events-none"></div>
+                            <div class="absolute -left-16 -bottom-24 w-72 h-72 rounded-full bg-rose-700/20 blur-3xl pointer-events-none"></div>
+                            <div class="relative z-10 grid md:grid-cols-[1fr_auto] gap-7 items-center">
+                                <div class="order-2 md:order-1">
+                                    <p class="text-xs sm:text-sm font-black tracking-[0.18em] text-white/75 mb-3">吃貨主揪檔案 · NO. 001</p>
+                                    <h2 class="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight leading-tight">嗨，我是政誥！<br><span class="text-amber-100">今天吃哪間，我來想。</span></h2>
+                                    <p class="mt-4 max-w-xl text-sm sm:text-base leading-7 text-white/90">從屏東九如出發，平常在高雄、屏東巷弄裡亂晃找靈感；看到朋友又陷入「都可以、你決定」時，就順手寫了呷奔 Jia-ben。</p>
+                                    <div class="flex flex-wrap gap-2 mt-5"><span class="creator-pill">🍚 選擇困難終結者</span><span class="creator-pill">📍 高屏巷弄探險家</span><span class="creator-pill">🎡 聚餐輪盤開發者</span></div>
+                                </div>
+                                <div class="order-1 md:order-2 mx-auto md:mx-0 relative">
+                                    <div class="absolute -inset-3 rounded-full border-2 border-dashed border-amber-100/70 rotate-6"></div>
+                                    <div class="w-36 h-36 sm:w-48 sm:h-48 rounded-full border-[7px] border-white/90 bg-orange-200 overflow-hidden shadow-2xl rotate-3">
+                                        <img src="./assets/creator/creator-avatar.png" alt="呷奔製作人黃政誥頭像" class="w-full h-full object-cover" loading="eager" onerror="this.onerror=null;this.src='./assets/avatars/host.png';">
+                                    </div>
+                                    <span class="absolute -bottom-2 -right-4 bg-white text-orange-600 text-xs font-black px-3 py-1.5 rounded-full shadow-lg -rotate-6">主揪在線中 ✨</span>
+                                </div>
                             </div>
                         </section>
-                        <section class="grid md:grid-cols-2 gap-4">
-                            <article class="bg-white rounded-3xl p-5 border border-gray-100 shadow-sm"><h3 class="font-black text-gray-800 mb-2"><i class="fa-solid fa-user-tie text-orange-500 mr-2"></i>製作人</h3><p class="text-sm leading-7 text-gray-600">黃政誥，現任駐局專案工程師／計畫專員，長期關注環境工程、計畫輔導與治理沙盒，也喜歡把日常需求整理成真正好用的工具。</p></article>
-                            <article class="bg-white rounded-3xl p-5 border border-gray-100 shadow-sm"><h3 class="font-black text-gray-800 mb-2"><i class="fa-solid fa-lightbulb text-amber-500 mr-2"></i>開發理念</h3><p class="text-sm leading-7 text-gray-600">呷奔 Jia-ben 以暖米白與橘色打造簡單入口，結合找餐廳、美食輪盤、聚餐揪團與社群投票，降低朋友一起吃飯的決策成本。</p></article>
+
+                        <section class="grid lg:grid-cols-[1.15fr_.85fr] gap-5 items-start">
+                            <article class="relative bg-[#fff1a8] rounded-2xl p-5 sm:p-7 shadow-md rotate-[-1deg] border border-amber-200/70">
+                                <span class="absolute -top-3 left-8 text-2xl">📌</span>
+                                <p class="text-xs font-black text-amber-700 tracking-widest mb-3">主揪的小紙條</p>
+                                <h3 class="text-2xl font-black text-amber-950 mb-3">為什麼想做呷奔？</h3>
+                                <p class="text-base sm:text-lg leading-8 font-bold text-amber-950/80">因為每次約吃飯，群組都會先演一齣：</p>
+                                <p class="text-lg sm:text-xl leading-9 font-black text-amber-950">「吃什麼？」<br>「都可以。」<br>「那火鍋？」<br>「不要。」🥲</p>
+                                <p class="text-sm sm:text-base leading-7 text-amber-950/75 mt-3">所以我想把找店、轉輪盤、揪團投票，通通放進一個不用研究說明書的小工具。讓大家少一點選擇障礙，多一點準時開吃。</p>
+                            </article>
+                            <article class="bg-white rounded-3xl p-5 sm:p-7 border border-orange-100 shadow-sm">
+                                <p class="text-xs font-black text-orange-500 tracking-widest mb-3">巷口觀察日記</p>
+                                <h3 class="text-xl sm:text-2xl font-black text-gray-800 mb-3">高屏，是我的大冰箱 🍜</h3>
+                                <p class="text-sm sm:text-base leading-7 text-gray-600">九如的熟悉、高雄的熱鬧、屏東的慢步調，都是我挖店和做工具時的靈感來源。白天把複雜的事情整理好，晚上再用一碗麵測試今天的快樂值。</p>
+                                <div class="mt-5 flex flex-wrap gap-2 text-xs font-black"><span class="bg-rose-50 text-rose-600 rounded-full px-3 py-2">九如出身</span><span class="bg-blue-50 text-blue-600 rounded-full px-3 py-2">高雄出沒</span><span class="bg-emerald-50 text-emerald-600 rounded-full px-3 py-2">屏東覓食</span></div>
+                            </article>
                         </section>
-                        <section class="bg-white rounded-3xl p-5 border border-gray-100 shadow-sm"><h3 class="font-black text-gray-800 mb-3"><i class="fa-solid fa-sparkles text-orange-500 mr-2"></i>核心功能</h3><div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs font-bold text-gray-600"><span class="bg-orange-50 rounded-xl p-3">找餐廳</span><span class="bg-amber-50 rounded-xl p-3">美食輪盤</span><span class="bg-rose-50 rounded-xl p-3">聚餐揪團</span><span class="bg-blue-50 rounded-xl p-3">社群評價</span></div></section>
-                        <section class="bg-white rounded-3xl p-5 border border-gray-100 shadow-sm text-sm text-gray-600 space-y-2"><p><strong class="text-gray-800">目前版本：</strong><span id="creator-version" class="admin-secret-version text-orange-600 font-black cursor-pointer">v121</span></p><p><strong class="text-gray-800">聯絡／合作：</strong><a href="mailto:b7516555@gmail.com" class="text-orange-600 underline break-all">b7516555@gmail.com</a></p><p class="text-xs text-gray-400">歡迎提供使用意見、功能建議與合作想法。</p></section>
+
+                        <section>
+                            <div class="flex items-end justify-between gap-3 mb-3"><div><p class="text-xs font-black text-orange-500 tracking-widest">吃貨檔案</p><h3 class="text-2xl sm:text-3xl font-black text-gray-800">主揪目前的即時數據</h3></div><span class="text-2xl">📊</span></div>
+                            <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                                <div class="rounded-3xl bg-blue-500 text-white p-4 sm:p-5 shadow-lg shadow-blue-100"><i class="fa-solid fa-location-dot text-xl text-blue-100"></i><p class="text-[11px] font-bold text-blue-100 mt-4">常出沒戰區</p><p class="text-lg sm:text-xl font-black mt-1">高雄／屏東</p></div>
+                                <div class="rounded-3xl bg-orange-500 text-white p-4 sm:p-5 shadow-lg shadow-orange-100"><i class="fa-solid fa-store text-xl text-orange-100"></i><p class="text-[11px] font-bold text-orange-100 mt-4">站上收錄店家</p><p id="creator-place-count" class="text-2xl sm:text-3xl font-black mt-1">—</p></div>
+                                <div class="rounded-3xl bg-rose-500 text-white p-4 sm:p-5 shadow-lg shadow-rose-100"><i class="fa-solid fa-fire text-xl text-rose-100"></i><p class="text-[11px] font-bold text-rose-100 mt-4">揪團活動</p><p id="creator-party-count" class="text-2xl sm:text-3xl font-black mt-1">—</p></div>
+                                <div class="rounded-3xl bg-emerald-500 text-white p-4 sm:p-5 shadow-lg shadow-emerald-100"><i class="fa-solid fa-comments text-xl text-emerald-100"></i><p class="text-[11px] font-bold text-emerald-100 mt-4">動態互動</p><p id="creator-feed-count" class="text-2xl sm:text-3xl font-black mt-1">—</p></div>
+                            </div>
+                        </section>
+
+                        <section class="rounded-[2rem] bg-white border border-orange-100 p-5 sm:p-7 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                            <div><p class="text-xs font-black text-orange-500 tracking-widest mb-1">一起把呷奔變更好</p><h3 class="text-xl sm:text-2xl font-black text-gray-800">有口袋名單？來敲碗！</h3><p class="text-sm text-gray-500 mt-1">推薦隱藏好店、回報小 bug，或只是想跟主揪打個招呼都可以。</p></div>
+                            <a href="mailto:b7516555@gmail.com?subject=呷奔 Jia-ben 推薦與敲碗" class="shrink-0 inline-flex items-center justify-center gap-2 rounded-2xl bg-orange-500 hover:bg-orange-600 text-white font-black px-5 py-3 shadow-lg shadow-orange-200 transition"><i class="fa-solid fa-envelope-open-text"></i>推薦愛店／敲碗</a>
+                        </section>
+                        <div class="text-center pb-5"><span id="creator-version" class="admin-secret-version inline-block text-[11px] font-bold tracking-widest text-gray-400 cursor-pointer">版本 v122</span><p class="text-[10px] text-gray-400 mt-2">呷奔 Jia-ben · 今天也要好好吃飯</p></div>
                     </div>
                 </div>
                 <div id="view-explore" class="fade-in h-full flex flex-col relative w-full overflow-y-auto no-scrollbar">
@@ -4374,6 +4419,13 @@
         };
 
         const ROUTABLE_PAGES = new Set(['explore', 'map', 'nearby', 'history', 'party', 'feed', 'chat', 'list', 'creator', 'admin', 'guide']);
+        window.updateCreatorStats = function() {
+            const places = window.jiaPlacesData?.length ? window.jiaPlacesData : (window.restaurantData || []);
+            const setText = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = Number.isFinite(value) ? value.toLocaleString('zh-TW') : '—'; };
+            setText('creator-place-count', places.length);
+            setText('creator-party-count', (window.partyData || []).length);
+            setText('creator-feed-count', (window.feedData || []).length);
+        };
         window.goBackFromCreator = function() {
             if (window.history.length > 1) window.history.back();
             else window.switchTab('explore');
@@ -4410,7 +4462,7 @@
             if(tabName === 'chat') window.renderChatMessages(true);
             if(tabName === 'nearby') window.previewWheelCandidates?.();
             if(tabName === 'admin') window.renderAdminDataList();
-            if(tabName === 'creator') document.getElementById('creator-version')?.classList.add('admin-secret-version');
+            if(tabName === 'creator') { document.getElementById('creator-version')?.classList.add('admin-secret-version'); window.updateCreatorStats?.(); }
             if(tabName === 'map') {
                 window.JiaInteractiveMap?.open(window.jiaPlacesData || window.restaurantData || []);
                 setTimeout(() => window.JiaInteractiveMap?.initialize({ places: window.jiaPlacesData || window.restaurantData || [] }), 0);
