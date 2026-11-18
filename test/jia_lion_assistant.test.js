@@ -25,6 +25,6 @@ assert.ok(html.includes('id="jia-lion"') && html.includes('4.75rem + env(safe-ar
 assert.ok(html.includes('modal-backdrop') && html.includes('is-compact'), 'Lion UI has modal/map avoidance hooks');
 assert.ok(auth.includes("LINE_ASSISTANT_URL: 'https://line.me/R/ti/p/@030xdxlb'"), 'LINE assistant URL is configured centrally');
 assert.ok(lion.includes("target = '_blank'") && lion.includes("rel = 'noopener noreferrer'"), 'LINE assistant opens safely in a new tab');
-assert.ok(sw.includes('together-eat-shell-v129') && sw.includes('jiaLionAssistant.js?v=129'), 'Service Worker includes v129 Lion assets');
+assert.ok(sw.includes('together-eat-shell-v130') && sw.includes('jiaLionAssistant.js?v=130'), 'Service Worker includes v130 Lion assets');
 assert.ok(Lion.getGrowthState().title === '貪吃小獅', 'Default Lion growth title is stable');
 console.log('✅ Jia Lion keyword, growth, LINE guard, and responsive contract tests passed');

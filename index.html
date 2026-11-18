@@ -100,12 +100,12 @@
     <script src="./src/services/mapRestaurantContract.js?v=1"></script>
     <script src="./src/services/interactiveMap.js?v=1"></script>
     <script src="./src/components/restaurantCard.js?v=2"></script>
-    <script src="./src/config/appVersion.js?v=129"></script>
+    <script src="./src/config/appVersion.js?v=130"></script>
     <script src="./src/config/localPlaceEnrichment.js?v=126"></script>
     <script src="./src/config/authConfig.js?v=1"></script>
-    <script src="./src/config/releaseNotes.js?v=129"></script>
+    <script src="./src/config/releaseNotes.js?v=130"></script>
     <script src="./src/services/freeImageSearch.js?v=1"></script>
-    <script src="./src/services/jiaLionAssistant.js?v=129"></script>
+    <script src="./src/services/jiaLionAssistant.js?v=130"></script>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
@@ -399,6 +399,9 @@
             #list-container { grid-template-columns: 1fr !important; gap: 0.75rem !important; }
             #list-container .restaurant-card { height: auto !important; min-height: 9.5rem !important; }
             #explore-results-container, #nearby-container { grid-template-columns: 1fr !important; gap: 1rem !important; }
+            #view-nearby { overflow-y: auto !important; overflow-x: hidden !important; padding-bottom: 7rem !important; }
+            #view-nearby #nearby-container { flex: 0 0 auto !important; overflow: visible !important; justify-content: flex-start !important; gap: 1rem !important; padding-bottom: 1rem !important; }
+            #view-nearby #wheel-result-container { padding-bottom: 1rem; }
         }
         @media (min-width: 768px) and (max-width: 1023px) {
             #nearby-container { flex-direction: column !important; justify-content: flex-start !important; gap: 1rem !important; overflow-y: auto !important; padding-block: 1rem !important; }
@@ -3242,6 +3245,7 @@
                 window.history.replaceState({ page: 'explore' }, '', `${window.location.pathname}?page=explore`);
                 window.switchTab?.('explore', true, { fromHistory: true });
             }
+            if (requestedPage && !partyDeepLinkId) setTimeout(() => window.applyUrlPrefill?.(), 1150);
         });
 
         window.openInstallGuide = function(mode) {
@@ -4521,6 +4525,7 @@
             const page = new URLSearchParams(window.location.search).get('page') || 'explore';
             window.enterApp?.();
             window.switchTab(ROUTABLE_PAGES.has(page) ? page : 'explore', true, { fromHistory: true });
+            setTimeout(() => window.applyUrlPrefill?.(), 80);
         });
 
         window.switchTab = function(tabName, forceRefresh = false, options = {}) {
@@ -4557,6 +4562,29 @@
                 setTimeout(() => window.JiaInteractiveMap?.initialize({ places: window.jiaPlacesData || window.restaurantData || [] }), 0);
             }
             setTimeout(() => window.JiaFreeImageSearch?.hydrateImages?.(), 0);
+        };
+
+        // LINE／萊恩深度連結：只在網址明確帶有預填參數時開啟對應表單。
+        window.applyUrlPrefill = function() {
+            const params = new URLSearchParams(window.location.search);
+            const page = params.get('page') || '';
+            if (page === 'list' && params.get('addName')?.trim()) {
+                window.openAddModal?.({
+                    name: params.get('addName').trim(),
+                    city: params.get('addCity')?.trim() || '',
+                    category: params.get('addCategory')?.trim() || ''
+                });
+            }
+            if (page === 'party' && params.get('quickTitle')?.trim()) {
+                const rawTime = params.get('quickTime')?.trim() || '';
+                const timeMatch = rawTime.match(/(?:T|\s)?(\d{2}:\d{2})/);
+                const dateMatch = rawTime.match(/(\d{4}-\d{2}-\d{2})/);
+                window.initCreateParty?.({
+                    title: params.get('quickTitle').trim(),
+                    date: dateMatch?.[1] || '',
+                    time: timeMatch?.[1] || ''
+                });
+            }
         };
 
         window.switchAdminSubTab = function(tab) {
@@ -5704,8 +5732,13 @@
             });
         };
 
-        window.initCreateParty = function() { 
+        window.initCreateParty = function(prefillData) {
             document.getElementById('create-party-modal')?.classList.remove('hidden'); 
+            const data = prefillData || {};
+            if (data.title) document.getElementById('party-title').value = data.title;
+            if (data.date) document.getElementById('party-date').value = data.date;
+            if (data.time) document.getElementById('party-time').value = data.time;
+            setTimeout(() => document.getElementById(data.title ? 'party-title' : 'party-date')?.focus(), 80);
         };
         
         window.submitParty = async function(e) { 
@@ -6365,6 +6398,7 @@
                     ${window.JiaRestaurantCard ? window.JiaRestaurantCard.renderWheelWinner(winner, { distanceKm: distKm }) : generateWheelPlaceCardHtml(winner)}
                 </div>`;
                 resultEl.classList.remove('hidden');
+                requestAnimationFrame(() => resultEl.scrollIntoView({ behavior: 'smooth', block: 'center' }));
             };
 
             if (navigator.geolocation) {
@@ -6659,6 +6693,7 @@
                 const cardMarkup = window.JiaRestaurantCard ? window.JiaRestaurantCard.renderWheelWinner(winner, { distanceKm: distKm }) : generateWheelPlaceCardHtml(winner);
                 resultEl.innerHTML = `<div class="flex items-center justify-between mb-1 px-1"><span class="text-[11px] font-extrabold text-orange-600"><i class="fa-solid fa-crown text-amber-500 mr-1"></i>今天就吃「${window.escapeHtml(winner.name)}」</span><span class="text-[10px] text-gray-400">命運推薦</span></div>${cardMarkup}`;
                 resultEl.classList.remove('hidden');
+                requestAnimationFrame(() => resultEl.scrollIntoView({ behavior: 'smooth', block: 'center' }));
                 if (btn) { btn.disabled = false; btn.classList.remove('opacity-60'); btn.innerHTML = '<i class="fa-solid fa-rotate mr-1"></i>再轉一次'; }
                 if (centerBtn) {
                     centerBtn.disabled = false;
@@ -10145,6 +10180,10 @@
                     if (pData.city) {
                         const cityInput = document.getElementById('input-city');
                         if (cityInput) cityInput.value = pData.city;
+                    }
+                    if (pData.category) {
+                        const categoryInput = document.getElementById('input-category');
+                        if (categoryInput && Array.from(categoryInput.options).some(opt => opt.value === pData.category)) categoryInput.value = pData.category;
                     }
                     if (pData.country) {
                         const countryInput = document.getElementById('input-country');

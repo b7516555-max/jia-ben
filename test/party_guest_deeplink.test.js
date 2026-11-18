@@ -4,6 +4,7 @@ const path = require('path');
 
 const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
 const sw = fs.readFileSync(path.join(__dirname, '..', 'sw.js'), 'utf8');
+const mapCss = fs.readFileSync(path.join(__dirname, '..', 'src', 'styles', 'interactive-map.css'), 'utf8');
 
 assert.ok(html.includes("new URLSearchParams(window.location.search).get('party')"), 'Party deep link parses the party query parameter');
 assert.ok(html.includes("window.switchTab('party', true)"), 'Party deep link enters the party tab');
@@ -22,7 +23,14 @@ assert.ok(html.includes('getRedirectResult'), 'Google redirect result is handled
 assert.ok(html.includes('window.mergeGuestPartyRecords'), 'Guest party records are merged after account login');
 assert.ok(html.includes("provider === 'google' ? user.uid"), 'Google uid is synchronized to the existing profile structure');
 assert.ok(html.includes('custom-alert-google-btn'), 'Guest completion prompt offers Google login shortcut');
-assert.strictEqual((sw.match(/together-eat-shell-v129/g) || []).length, 1, 'Service Worker cache is v129');
+assert.strictEqual((sw.match(/together-eat-shell-v130/g) || []).length, 1, 'Service Worker cache is v130');
+assert.ok(html.includes('window.applyUrlPrefill'), 'LINE assistant prefill routing hook exists');
+assert.ok(html.includes("page === 'list' && params.get('addName')?.trim()"), 'List deep link accepts addName');
+assert.ok(html.includes("page === 'party' && params.get('quickTitle')?.trim()"), 'Party deep link accepts quickTitle');
+assert.ok(html.includes("resultEl.scrollIntoView({ behavior: 'smooth', block: 'center' })"), 'Wheel result scrolls into view after drawing');
+assert.ok(html.includes('padding-bottom: 7rem') && html.includes('overflow: visible !important'), 'Mobile wheel view reserves bottom safe space');
+assert.ok(html.includes("setTimeout(() => window.applyUrlPrefill?.(), 80)"), 'Popstate reapplies only explicit URL prefill parameters');
+assert.ok(mapCss.includes('padding-bottom: 0') && mapCss.includes('min-height: 0') && mapCss.includes('overflow-y: auto'), 'Mobile map drawer removes the extra bottom gap and keeps the list scrollable');
 assert.ok(html.includes("window.addEventListener('popstate'"), 'Browser back/forward listens for popstate');
 assert.ok(html.includes("get('page') || 'explore'"), 'Popstate defaults to explore at the root route');
 assert.ok(html.includes("window.switchTab(ROUTABLE_PAGES.has(page) ? page : 'explore', true, { fromHistory: true })"), 'Popstate switches the visible page without pushing history again');
