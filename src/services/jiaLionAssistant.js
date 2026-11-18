@@ -98,9 +98,11 @@
         const shell = root.document?.getElementById('jia-lion');
         if (!shell) return;
         const modalOpen = [...root.document.querySelectorAll('.modal-backdrop')].some(modal => !modal.classList.contains('hidden'));
-        const mapOpen = !root.document.getElementById('jia-map-view')?.classList.contains('hidden') || new URLSearchParams(root.location?.search || '').get('page') === 'map';
-        shell.classList.toggle('is-compact', mapOpen);
-        shell.classList.toggle('is-hidden', modalOpen);
+        const mapOpen = !root.document.getElementById('jia-map-view')?.classList.contains('hidden') || new URLSearchParams(root.location?.search || '').get('page') === 'map' || root.document.body?.classList.contains('map-view-active');
+        const shouldHide = modalOpen || mapOpen;
+        shell.classList.toggle('is-compact', !mapOpen);
+        shell.classList.toggle('is-hidden', shouldHide);
+        if (shouldHide) shell.classList.remove('is-open');
     }
     function showNudge(message) {
         const bubble = root.document?.getElementById('jia-lion-nudge');

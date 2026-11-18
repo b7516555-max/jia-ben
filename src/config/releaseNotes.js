@@ -1,6 +1,14 @@
 (function (root) {
     'use strict';
     root.JIA_BEN_RELEASE_NOTES = Object.freeze({
+        v131: {
+            date: '2026-11-18',
+            title: '🗺️ 地圖頁讓出操作空間啦',
+            highlights: [
+                '進入地圖分頁時，萊恩會暫時隱藏，不再遮住縮小按鈕與餐廳列表。',
+                '離開地圖頁後，萊恩會自動恢復顯示；其他頁面與彈窗避讓邏輯維持不變。'
+            ]
+        },
         v130: {
             date: '2026-11-18',
             title: '📱 手機版地圖、輪盤與深度連結更新啦',
