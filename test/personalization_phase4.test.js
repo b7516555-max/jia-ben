@@ -106,13 +106,13 @@ global.imageSafety = imageSafety;
 
   // Test 6: AI Food Photography & Safety Fallback
   const aiLuRou = imageSafety.getAiFoodImageForPlace({ name: '金峰滷肉飯', categories: ['台式料理'] });
-  assert(aiLuRou.includes('lu_rou_fan.jpg'), 'Mapped to lu_rou_fan AI image');
+  assert(aiLuRou.includes('ai-street-food.png'), 'Mapped to local street-food AI image');
 
   const aiRamen = imageSafety.getAiFoodImageForPlace({ name: '一蘭拉麵', categories: ['日式拉麵'] });
-  assert(aiRamen.includes('ramen.jpg'), 'Mapped to ramen AI image');
+  assert(aiRamen.includes('ai-noodles.png'), 'Mapped to local noodle AI image');
 
   const aiYakiniku = imageSafety.getAiFoodImageForPlace({ name: '乾杯燒肉居酒屋', categories: ['燒肉'] });
-  assert(aiYakiniku.includes('yakiniku.jpg'), 'Mapped to yakiniku AI image');
+  assert(aiYakiniku.includes('ai-yakiniku.png'), 'Mapped to local yakiniku AI image');
   console.log('✅ Test 6 Passed: AI Food photo fallbacks correctly map dish keywords.');
 
   // Test 7: RestaurantCard 2.0 with Recommendation Reason Pill
@@ -147,7 +147,7 @@ global.imageSafety = imageSafety;
     categories: ['火鍋']
   };
   const imgAi = imageSafety.selectImage(placeNoPhoto);
-  assert(imgAi.url.includes('hotpot.jpg'), 'Uses AI food fallback when no real photo');
+  assert(imgAi.url.includes('ai-hotpot.png'), 'Uses local AI food fallback when no real photo');
   assert.strictEqual(imgAi.isPlaceholder, true, 'AI fallback is flagged as placeholder');
   assert.strictEqual(imgAi.isAiFallback, true, 'AI fallback is marked isAiFallback');
 

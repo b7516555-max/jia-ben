@@ -3,9 +3,10 @@
 .jia-map-panel { min-width: 0; background: #f8fafc; }
 #jia-map-canvas { min-height: 420px; background: #dbeafe; z-index: 1; }
 .jia-map-results { scrollbar-width: thin; }
-.jia-map-preview { display: flex; gap: .75rem; padding: .75rem; margin: .5rem; border: 1px solid #e5e7eb; border-radius: 1rem; background: #fff; cursor: pointer; transition: border-color .2s, box-shadow .2s, transform .2s; min-width: 0; }
+.jia-map-preview { position: relative; display: flex; gap: .75rem; padding: .75rem; margin: .5rem; border: 1px solid #e5e7eb; border-radius: 1rem; background: #fff; cursor: pointer; transition: border-color .2s, box-shadow .2s, transform .2s; min-width: 0; }
 .jia-map-preview:hover, .jia-map-preview:focus-visible, .jia-map-preview.is-selected { border-color: #fb923c; box-shadow: 0 8px 18px rgba(249,115,22,.12); outline: none; }
 .jia-map-preview img { width: 76px; height: 76px; border-radius: .8rem; object-fit: cover; flex: 0 0 auto; background: #f1f5f9; }
+.jia-map-image-badge { position: absolute; top: .55rem; left: .55rem; max-width: 76px; padding: .18rem .35rem; border-radius: .45rem; background: rgba(17,24,39,.72); color: #fff; font-size: .58rem; line-height: 1.15; font-weight: 800; text-align: center; pointer-events: none; }
 .jia-map-preview-body { min-width: 0; flex: 1; }
 .jia-map-preview-body h3 { font-weight: 900; color: #111827; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .jia-map-preview-body p { margin-top: .2rem; color: #6b7280; font-size: .72rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

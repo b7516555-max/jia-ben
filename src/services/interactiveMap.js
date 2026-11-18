@@ -77,10 +77,18 @@
     if (!list.length) { container.innerHTML = '<div class="jia-map-empty"><i class="fa-solid fa-map-location-dot"></i><p>此區域目前沒有餐廳資料。</p><button type="button" data-map-action="reset">拉遠地圖</button></div>'; return; }
     container.innerHTML = list.map(item => {
       const rating = item.rating && item.reviewCount ? `<span class="numeric-value"><i class="fa-solid fa-star text-amber-400"></i> ${Number(item.rating).toFixed(1)} (${item.reviewCount})</span>` : '<span>暫無 Jia-ben 評分</span>';
-      const referenceImage = !item.primaryPhoto ? (window.imageSafety?.getReferenceFoodImageForPlace?.(item) || './assets/food/lu_rou_fan.jpg') : '';
-      const image = item.primaryPhoto || referenceImage || item.photoFallback || './assets/place-placeholder.svg';
+      const imageInfo = window.imageSafety?.selectImage?.(getPlace(item.restaurantId) || item, './assets/place-placeholder.svg') || {
+        url: item.primaryPhoto || item.photoFallback || './assets/place-placeholder.svg',
+        isPlaceholder: !item.primaryPhoto,
+        isReferenceFallback: false,
+        label: '參考餐點照片'
+      };
+      const image = imageInfo.url;
+      const imageLabel = imageInfo.isPlaceholder ? `<span class="jia-map-image-badge">${String(imageInfo.label || '參考餐點照片').replace(/[<>&]/g, character => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[character]))}</span>` : '';
+      const shouldSearchExternal = imageInfo.isPlaceholder && !imageInfo.isReferenceFallback;
       return `<article class="jia-map-preview${item.id === state.selectedRestaurantId ? ' is-selected' : ''}" data-map-restaurant-id="${String(item.id).replace(/"/g, '&quot;')}" tabindex="0" role="button" aria-label="選取 ${String(item.name).replace(/"/g, '&quot;')}">
-        <img src="${image}" data-jia-free-image="${item.primaryPhoto ? '0' : '1'}" data-jia-image-name="${String(item.name).replace(/"/g, '&quot;')}" data-jia-image-city="${String(item.city || '').replace(/"/g, '&quot;')}" data-jia-image-category="${String(item.category || '').replace(/"/g, '&quot;')}" alt="${String(item.name).replace(/"/g, '&quot;')}" onerror="this.onerror=null;this.src='${referenceImage || './assets/place-placeholder.svg'}'">
+        <img src="${image}" data-jia-free-image="${shouldSearchExternal ? '1' : '0'}" data-jia-image-name="${String(item.name).replace(/"/g, '&quot;')}" data-jia-image-city="${String(item.city || '').replace(/"/g, '&quot;')}" data-jia-image-category="${String(item.category || '').replace(/"/g, '&quot;')}" alt="${String(item.name).replace(/"/g, '&quot;')}" onerror="this.onerror=null;this.src='./assets/place-placeholder.svg'">
+        ${imageLabel}
         <div class="jia-map-preview-body"><h3>${String(item.name).replace(/[<>&]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]))}</h3><p>${String(item.category || item.address || '餐廳')}</p><p class="jia-map-meta">${rating}${item.openStatus ? ` · ${item.openStatus}` : ''}</p><button type="button" data-map-detail="${String(item.id).replace(/"/g, '&quot;')}">查看詳情</button></div>
       </article>`;
     }).join('');

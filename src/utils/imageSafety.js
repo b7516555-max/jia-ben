@@ -38,6 +38,39 @@
     './assets/food/cafe.jpg'
   ];
 
+  // 本地靜態 AI 餐點示意圖：只在沒有真實／認證照片時使用，避免首頁啟動時大量外連搜圖。
+  const STATIC_AI_FOOD_ASSETS = {
+    noodles: './assets/places/ai-noodles.png',
+    yakiniku: './assets/places/ai-yakiniku.png',
+    sushi: './assets/places/ai-sushi.png',
+    hotpot: './assets/places/ai-hotpot.png',
+    cafe: './assets/places/ai-cafe.png',
+    streetFood: './assets/places/ai-street-food.png'
+  };
+  const PLACE_AI_IMAGE_OVERRIDES = {
+    '幼虎烘焙': STATIC_AI_FOOD_ASSETS.cafe,
+    '野田壽司': STATIC_AI_FOOD_ASSETS.sushi,
+    '老二腿庫飯': STATIC_AI_FOOD_ASSETS.streetFood,
+    '老二腿庫飯屏東店': STATIC_AI_FOOD_ASSETS.streetFood,
+    '米半 鐵板料理': STATIC_AI_FOOD_ASSETS.yakiniku,
+    '靖海 日式手作食堂': STATIC_AI_FOOD_ASSETS.sushi,
+    '麥料食堂': STATIC_AI_FOOD_ASSETS.streetFood,
+    '正良麵店': STATIC_AI_FOOD_ASSETS.noodles
+  };
+
+  function getStaticAiFoodImageForPlace(place) {
+    const name = String(place?.name || '');
+    const text = `${name} ${(place?.categories || []).join(' ')} ${place?.category || ''}`;
+    const override = Object.entries(PLACE_AI_IMAGE_OVERRIDES).find(([key]) => name.includes(key));
+    if (override) return override[1];
+    if (/壽司|生魚|刺身|日料|日式料理/.test(text)) return STATIC_AI_FOOD_ASSETS.sushi;
+    if (/燒肉|烤肉|炭烤|鐵板/.test(text)) return STATIC_AI_FOOD_ASSETS.yakiniku;
+    if (/火鍋|鍋物|麻辣鍋/.test(text)) return STATIC_AI_FOOD_ASSETS.hotpot;
+    if (/咖啡|甜點|飲料|下午茶|烘焙|麵包|可頌/.test(text)) return STATIC_AI_FOOD_ASSETS.cafe;
+    if (/拉麵|麵店|麵食|湯麵|餛飩|意麵/.test(text)) return STATIC_AI_FOOD_ASSETS.noodles;
+    return STATIC_AI_FOOD_ASSETS.streetFood;
+  }
+
   function getReferenceFoodImageForPlace(place) {
     const text = `${place?.name || ''} ${(place?.categories || []).join(' ')} ${place?.category || ''}`.toLowerCase();
     for (const [key, path] of Object.entries(REFERENCE_FOOD_ASSETS)) {
@@ -63,14 +96,20 @@
       return { url: safeReal[0], isPlaceholder: false, isReferenceFallback: false, isAiFallback: false, label: '' };
     }
 
-    // 2. 無真實照片時使用分類對應的免費參考餐點照片
+    // 2. 無真實照片時優先使用本地專屬料理 AI 示意圖，不啟動外部搜圖。
+    const staticAiFoodImg = getStaticAiFoodImageForPlace(place);
+    if (staticAiFoodImg) {
+      return { url: staticAiFoodImg, isPlaceholder: true, isReferenceFallback: true, isAiFallback: true, label: 'AI 餐點示意' };
+    }
+
+    // 3. 最後才使用分類參考餐點照片
     const referenceFoodImg = getReferenceFoodImageForPlace(place);
     if (referenceFoodImg) {
       return { url: referenceFoodImg, isPlaceholder: true, isReferenceFallback: true, isAiFallback: true, label: '參考餐點照片' };
     }
 
-    // 3. 通用 Placeholder
+    // 4. 通用 Placeholder
     return { url: placeholderUrl, isPlaceholder: true, isReferenceFallback: false, isAiFallback: false, label: '參考餐點照片' };
   }
-  return { isBlockedLegacyGoogleImage, isBlocked: isBlockedLegacyGoogleImage, filterSafeImages, selectImage, getReferenceFoodImageForPlace, getAiFoodImageForPlace: getReferenceFoodImageForPlace, REFERENCE_FOOD_ASSETS, AI_FOOD_ASSETS: REFERENCE_FOOD_ASSETS };
+  return { isBlockedLegacyGoogleImage, isBlocked: isBlockedLegacyGoogleImage, filterSafeImages, selectImage, getReferenceFoodImageForPlace, getStaticAiFoodImageForPlace, getAiFoodImageForPlace: getStaticAiFoodImageForPlace, REFERENCE_FOOD_ASSETS, STATIC_AI_FOOD_ASSETS, PLACE_AI_IMAGE_OVERRIDES, AI_FOOD_ASSETS: STATIC_AI_FOOD_ASSETS };
 });
