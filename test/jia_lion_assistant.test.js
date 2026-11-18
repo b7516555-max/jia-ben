@@ -23,6 +23,6 @@ const sw = fs.readFileSync('sw.js', 'utf8');
 assert.ok(html.includes('id="jia-lion"') && html.includes('4.75rem + env(safe-area-inset-bottom)'), 'Lion UI clears the mobile bottom navigation');
 assert.ok(html.includes('modal-backdrop') && html.includes('is-compact'), 'Lion UI has modal/map avoidance hooks');
 assert.ok(auth.includes('LINE_ASSISTANT_URL: \'\''), 'LINE assistant URL is safely disabled by default');
-assert.ok(sw.includes('together-eat-shell-v127') && sw.includes('jiaLionAssistant.js?v=127'), 'Service Worker includes v127 Lion assets');
+assert.ok(sw.includes('together-eat-shell-v128') && sw.includes('jiaLionAssistant.js?v=128'), 'Service Worker includes v128 Lion assets');
 assert.ok(Lion.getGrowthState().title === '貪吃小獅', 'Default Lion growth title is stable');
 console.log('✅ Jia Lion keyword, growth, LINE guard, and responsive contract tests passed');

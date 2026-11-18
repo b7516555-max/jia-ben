@@ -79,6 +79,9 @@
         const isVerified = Boolean(place.isVerified || place.verifiedOwner);
         const isFoodTruck = Boolean(place.isFoodTruck || categories.some(category => /餐車|攤車|行動攤販/.test(String(category))));
         const truckStatus = place.truckStatus || (isFoodTruck ? '休息' : '');
+        const placeState = (typeof window !== 'undefined' && typeof window.getUserPlaceState === 'function')
+            ? window.getUserPlaceState(normalized.id || place.jiaPlaceId || place.id || name)
+            : { wantToEat: Boolean(place.wantToEat || place.wishlist) };
 
         // Phase 2A: Resolve primary contribution CTA (Context-aware, single CTA)
         let ctaInfo = null;
@@ -115,6 +118,7 @@
             recommenders,
             city: place.city || '',
             ctaInfo
+            ,wantToEat: Boolean(placeState.wantToEat)
             ,isVerified
             ,ownerAnnouncement: place.ownerAnnouncement || ''
             ,isFoodTruck
@@ -237,8 +241,8 @@
                         <button type="button" onclick="window.toggleUserPlaceState ? window.toggleUserPlaceState('${vm.id}', 'ate', '${vm.safeName}') : null;" class="h-7 px-2 rounded-lg bg-gray-50 hover:bg-emerald-50 text-gray-500 hover:text-emerald-600 border border-gray-200 text-[10px] font-bold flex items-center gap-1 transition shadow-2xs" title="標記我吃過這家">
                             <i class="fa-solid fa-circle-check text-[10px]"></i><span>吃過</span>
                         </button>
-                        <button type="button" onclick="window.toggleUserPlaceState ? window.toggleUserPlaceState('${vm.id}', 'wantToEat', '${vm.safeName}') : (window.openAddModal ? window.openAddModal({ name: '${vm.safeName}' }) : null);" class="w-7 h-7 rounded-lg bg-orange-50 hover:bg-orange-500 text-orange-500 hover:text-white flex items-center justify-center text-xs transition shadow-2xs" title="想吃 / 存入口袋名單">
-                            <i class="fa-regular fa-heart"></i>
+                        <button type="button" onclick="window.toggleUserPlaceState ? window.toggleUserPlaceState('${vm.id}', 'wantToEat', '${vm.safeName}') : (window.openAddModal ? window.openAddModal({ name: '${vm.safeName}' }) : null);" class="w-7 h-7 rounded-lg ${vm.wantToEat ? 'bg-rose-500 text-white border border-rose-600 hover:bg-rose-600' : 'bg-white text-gray-600 border border-gray-300 hover:bg-rose-50 hover:text-rose-500 hover:border-rose-300'} flex items-center justify-center text-xs transition shadow-2xs" title="想吃 / 存入口袋名單">
+                            <i class="fa-${vm.wantToEat ? 'solid' : 'regular'} fa-heart ${vm.wantToEat ? 'text-white' : 'text-gray-600'}"></i>
                         </button>
                     </div>
                 </div>
