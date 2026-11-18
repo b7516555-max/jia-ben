@@ -100,10 +100,10 @@
     <script src="./src/services/mapRestaurantContract.js?v=1"></script>
     <script src="./src/services/interactiveMap.js?v=1"></script>
     <script src="./src/components/restaurantCard.js?v=132"></script>
-    <script src="./src/config/appVersion.js?v=131"></script>
+    <script src="./src/config/appVersion.js?v=133"></script>
     <script src="./src/config/localPlaceEnrichment.js?v=126"></script>
     <script src="./src/config/authConfig.js?v=1"></script>
-    <script src="./src/config/releaseNotes.js?v=131"></script>
+    <script src="./src/config/releaseNotes.js?v=133"></script>
     <script src="./src/services/freeImageSearch.js?v=1"></script>
     <script src="./src/services/jiaLionAssistant.js?v=132"></script>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
@@ -3959,15 +3959,27 @@
 
         window.enterApp = function() {
             const intro = document.getElementById('intro-screen');
-            intro.classList.add('intro-exit');
-            setTimeout(() => {
-                intro.classList.add('hidden');
-                document.getElementById('main-app').classList.remove('hidden');
-                if (partyDeepLinkId && window.switchTab) window.switchTab('party', true);
-            }, 800);
+            const mainApp = document.getElementById('main-app');
+            if (!mainApp) return false;
+            // Reveal the app immediately. The welcome fade is decorative and must never
+            // keep the whole site behind an intercepting overlay after a click.
+            mainApp.classList.remove('hidden');
+            if (intro) {
+                intro.classList.add('intro-exit', 'pointer-events-none');
+                window.setTimeout(() => intro.classList.add('hidden'), 400);
+            }
+            if (partyDeepLinkId && window.switchTab) window.switchTab('party', true);
+            return true;
         };
 
-        window.closeModal = function(id) { document.getElementById(id).classList.add('hidden'); }
+        window.closeModal = function(id) {
+            const modal = document.getElementById(id);
+            if (!modal) return;
+            modal.classList.add('hidden');
+            if (id === 'release-notes-modal') {
+                try { localStorage.setItem('jia_ben_last_seen_version', window.JIA_BEN_VERSION || 'v133'); } catch (_) {}
+            }
+        };
         window.showCustomMsg = function(msg) { 
             document.getElementById('custom-alert-message').textContent = msg;
             document.getElementById('custom-alert-google-btn')?.classList.add('hidden');
