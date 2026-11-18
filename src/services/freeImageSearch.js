@@ -31,5 +31,16 @@
         } catch (_) {}
         return '';
     }
-    root.JiaFreeImageSearch = Object.freeze({ findReferenceImage, cacheKey });
+    function hydrateImages(rootElement) {
+        if (typeof document === 'undefined') return;
+        const scope = rootElement || document;
+        scope.querySelectorAll?.('img[data-jia-free-image="1"]:not([data-jia-image-hydrated])').forEach((image) => {
+            image.dataset.jiaImageHydrated = '1';
+            const place = { name: image.dataset.jiaImageName, city: image.dataset.jiaImageCity, category: image.dataset.jiaImageCategory };
+            findReferenceImage(place).then(url => {
+                if (url && image.isConnected) image.src = url;
+            }).catch(() => {});
+        });
+    }
+    root.JiaFreeImageSearch = Object.freeze({ findReferenceImage, hydrateImages, cacheKey });
 })(typeof window !== 'undefined' ? window : globalThis);

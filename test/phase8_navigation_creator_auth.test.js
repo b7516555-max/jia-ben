@@ -21,7 +21,10 @@ assert.ok(!html.includes('AI 示意圖'), 'AI fallback label is absent from visi
 assert.ok(html.includes('Google 地圖最新資訊'), 'Restaurant detail offers a free Google Maps direct link');
 assert.ok(html.includes('window.signInWithLine') && html.includes('window.signInWithEmail'), 'LINE and Email login entry points exist');
 assert.ok(authConfig.includes('LINE_LIFF_ID'), 'LINE LIFF ID is centralized in auth config');
-assert.ok(sw.includes('together-eat-shell-v123'), 'Service Worker cache is v123');
+assert.ok(sw.includes('together-eat-shell-v124'), 'Service Worker cache is v124');
+assert.ok(html.includes('[id^="view-"].hidden') && html.includes('jia-map-view'), 'Map and view containers have an explicit hidden isolation rule');
+assert.ok(html.includes('JiaInteractiveMap?.close?.()'), 'Leaving the map closes its interaction layer');
+assert.ok(html.includes('normalizeRestaurantDisplayName'), 'Restaurant names normalize spaced time text');
 assert.ok(html.includes('releaseNotes.js') && html.includes('jia_ben_last_seen_version'), 'Release notes are centrally managed and shown once per version');
 assert.ok(html.includes('openReleaseNotesModal') && html.includes('✨ 改版資訊'), 'Release notes have a manual reopen button');
 assert.ok(html.includes('JiaFreeImageSearch') && freeImageSearch.includes('api.openverse.org') && freeImageSearch.includes('commons.wikimedia.org'), 'Free image search has Openverse/Wikimedia fallbacks');

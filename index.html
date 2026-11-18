@@ -100,9 +100,9 @@
     <script src="./src/services/mapRestaurantContract.js?v=1"></script>
     <script src="./src/services/interactiveMap.js?v=1"></script>
     <script src="./src/components/restaurantCard.js?v=2"></script>
-    <script src="./src/config/appVersion.js?v=123"></script>
+    <script src="./src/config/appVersion.js?v=124"></script>
     <script src="./src/config/authConfig.js?v=1"></script>
-    <script src="./src/config/releaseNotes.js?v=123"></script>
+    <script src="./src/config/releaseNotes.js?v=124"></script>
     <script src="./src/services/freeImageSearch.js?v=1"></script>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script>
@@ -455,6 +455,9 @@
         #explore-results-feedback { min-height: 1.25rem; }
         .map-attribution { display: none; }
         body.map-view-active .map-attribution { display: block; }
+        [id^="view-"].hidden, #jia-map-view.hidden { display: none !important; }
+        #jia-map-view { position: relative; z-index: 0; pointer-events: auto; }
+        #main-app > nav { position: relative; z-index: 50; pointer-events: auto; }
         .producer-credit { color: #92400e !important; }
         .party-ended-badge { background: #e5e7eb; color: #374151; }
         .party-deep-link-highlight { animation: partyDeepLinkPulse 1.8s ease-out; box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.35), 0 18px 36px rgba(249, 115, 22, 0.18) !important; }
@@ -3427,6 +3430,13 @@
             return FOOD_IMAGES[hash % FOOD_IMAGES.length];
         };
 
+        window.normalizeRestaurantDisplayName = function(value) {
+            return String(value || '').normalize('NFKC').replace(/\s+/g, ' ').trim()
+                .replace(/(\d)\s+(\d)(?=\s*:)/g, '$1$2')
+                .replace(/(\d{1,2})\s*:\s*(\d)\s*(\d)/g, '$1:$2$3')
+                .replace(/[（(]\s+/g, '(').replace(/\s+[）)]/g, ')');
+        };
+
         // 顯示層正規化：不改寫 Firestore 原始資料，只修正畫面上的 provider 汙染與地名格式。
         window.normalizeJiaPlaceForDisplay = function(place = {}) {
             const next = { ...place };
@@ -3444,7 +3454,8 @@
             next.address = next.address.replace(/(基隆市|台北市|新北市|桃園市|新竹市|新竹縣|苗栗縣|台中市|彰化縣|南投縣|雲林縣|嘉義市|嘉義縣|台南市|高雄市|屏東縣|宜蘭縣|花蓮縣|台東縣|澎湖縣|金門縣|連江縣|[\u4e00-\u9fff]{1,4}[市區鄉鎮])\s+\1/g, '$1').trim();
             if (next.name) {
                 const suffix = city ? new RegExp(`\\s*[•·|,-]?\\s*(台灣\\s*[•·|,-]?\\s*)?${city}\\s*$`, 'i') : null;
-                next.name = suffix ? String(next.name).replace(suffix, '').trim() : String(next.name).trim();
+                next.name = window.normalizeRestaurantDisplayName(suffix ? String(next.name).replace(suffix, '').trim() : String(next.name).trim());
+                next.normalizedName = next.name.normalize('NFKC').toLowerCase().replace(/\s+/g, '');
             }
             const categories = Array.isArray(next.categories) ? next.categories.map(String) : (next.category ? [String(next.category)] : []);
             const categoryText = `${next.name || ''} ${categories.join(' ')}`;
@@ -4478,6 +4489,8 @@
             ['explore', 'map', 'nearby', 'history', 'random', 'party', 'feed', 'chat', 'list', 'creator', 'admin', 'guide'].forEach(name => {
                 document.getElementById('view-' + name)?.classList.add('hidden'); 
             });
+            document.getElementById('jia-map-view')?.classList.add('hidden');
+            if (tabName !== 'map') window.JiaInteractiveMap?.close?.();
             document.getElementById('view-' + tabName)?.classList.remove('hidden'); 
             window.syncNavigationState(tabName);
             window.scrollTo?.({ top: 0, behavior: 'auto' });
@@ -4503,6 +4516,7 @@
                 window.JiaInteractiveMap?.open(window.jiaPlacesData || window.restaurantData || []);
                 setTimeout(() => window.JiaInteractiveMap?.initialize({ places: window.jiaPlacesData || window.restaurantData || [] }), 0);
             }
+            setTimeout(() => window.JiaFreeImageSearch?.hydrateImages?.(), 0);
         };
 
         window.switchAdminSubTab = function(tab) {

@@ -195,7 +195,7 @@
         return `
         <div class="restaurant-card group min-w-0 w-full bg-white rounded-2xl md:rounded-3xl shadow-xs hover:shadow-lg border border-gray-100 hover:border-orange-200 overflow-hidden cursor-pointer transition-all duration-300 flex flex-col h-full active:scale-[0.98]" data-restaurant-id="${escapeHtml(vm.id)}" role="button" tabindex="0" aria-label="查看 ${escapeHtml(vm.name)} 詳情" onclick="window.openRestaurantDetailByName('${vm.safeName}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault(); window.openRestaurantDetailByName('${vm.safeName}');}">
             <div class="relative aspect-[16/10] sm:aspect-[16/9] w-full overflow-hidden bg-gray-100 shrink-0">
-                <img src="${vm.photoUrl}" onerror="this.onerror=null; this.src=window.getFallbackImage ? window.getFallbackImage('${vm.safeName}') : './assets/place-placeholder.svg';" alt="${escapeHtml(vm.name)}" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy">
+                <img src="${vm.photoUrl}" data-jia-free-image="${vm.isPlaceholder ? '1' : '0'}" data-jia-image-name="${escapeHtml(vm.name)}" data-jia-image-city="${escapeHtml(vm.city)}" data-jia-image-category="${escapeHtml(vm.primaryCategory)}" onerror="this.onerror=null; this.src=window.getFallbackImage ? window.getFallbackImage('${vm.safeName}') : './assets/place-placeholder.svg';" alt="${escapeHtml(vm.name)}" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy">
                 <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
                 ${distBadgeHtml}
                 ${placeholderBadgeHtml}

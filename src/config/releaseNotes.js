@@ -1,6 +1,15 @@
 (function (root) {
     'use strict';
     root.JIA_BEN_RELEASE_NOTES = Object.freeze({
+        v124: {
+            date: '2026-11-18',
+            title: '🎉 地圖與店家照片更新啦',
+            highlights: [
+                '地圖頁與找餐廳現在完全隔離，拖曳地圖後也能正常切換功能。',
+                '店家卡片會優先尋找免費網路美食照片，找不到時改用料理分類照片。',
+                '店名內的時間數字空白已統一整理，閱讀更緊湊。'
+            ]
+        },
         v123: {
             date: '2026-11-18',
             title: '🎉 呷奔更新啦',
