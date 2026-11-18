@@ -132,7 +132,18 @@
             bumpInteraction(); refresh();
         }));
         shell.addEventListener('click', event => { const card = event.target.closest('[data-lion-place-id]'); if (!card) return; const place = places().find(item => String(item.jiaPlaceId || item.id || '') === card.dataset.lionPlaceId); if (place) { setOpen(false); root.openRestaurantDetailById?.(place.jiaPlaceId || place.id); if (!root.openRestaurantDetailById) root.openRestaurantDetailByName?.(encodeURIComponent(place.name)); } });
-        shell.querySelector('[data-lion-line]')?.addEventListener('click', () => { const url = root.JIA_BEN_AUTH_CONFIG?.LINE_ASSISTANT_URL || ''; if (url) root.open(url, '_blank', 'noopener,noreferrer'); else root.showCustomMsg?.('萊恩本尊的 LINE 連結尚未設定，請在 src/config/authConfig.js 填入 LINE_ASSISTANT_URL。'); });
+        shell.querySelector('[data-lion-line]')?.addEventListener('click', () => {
+            const url = root.JIA_BEN_AUTH_CONFIG?.LINE_ASSISTANT_URL || '';
+            if (!url) {
+                root.showCustomMsg?.('萊恩本尊的 LINE 連結尚未設定，請在 src/config/authConfig.js 填入 LINE_ASSISTANT_URL。');
+                return;
+            }
+            const link = document.createElement('a');
+            link.href = url;
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+            link.click();
+        });
         const observer = new MutationObserver(updateAvoidance); observer.observe(root.document.body, { subtree: true, attributes: true, attributeFilter: ['class'] });
         root.addEventListener('popstate', updateAvoidance); setInterval(updateAvoidance, 800); updateAvoidance(); refresh();
     }

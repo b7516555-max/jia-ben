@@ -18,11 +18,13 @@ assert.strictEqual(Lion.filterPlaces('屏東 拉麵', places)[0].jiaPlaceId, 'b'
 assert.strictEqual(Lion.filterPlaces('行動餐車', places)[0].jiaPlaceId, 'd');
 
 const html = fs.readFileSync('index.html', 'utf8');
+const lion = fs.readFileSync('src/services/jiaLionAssistant.js', 'utf8');
 const auth = fs.readFileSync('src/config/authConfig.js', 'utf8');
 const sw = fs.readFileSync('sw.js', 'utf8');
 assert.ok(html.includes('id="jia-lion"') && html.includes('4.75rem + env(safe-area-inset-bottom)'), 'Lion UI clears the mobile bottom navigation');
 assert.ok(html.includes('modal-backdrop') && html.includes('is-compact'), 'Lion UI has modal/map avoidance hooks');
-assert.ok(auth.includes('LINE_ASSISTANT_URL: \'\''), 'LINE assistant URL is safely disabled by default');
-assert.ok(sw.includes('together-eat-shell-v128') && sw.includes('jiaLionAssistant.js?v=128'), 'Service Worker includes v128 Lion assets');
+assert.ok(auth.includes("LINE_ASSISTANT_URL: 'https://line.me/R/ti/p/@030xdxlb'"), 'LINE assistant URL is configured centrally');
+assert.ok(lion.includes("target = '_blank'") && lion.includes("rel = 'noopener noreferrer'"), 'LINE assistant opens safely in a new tab');
+assert.ok(sw.includes('together-eat-shell-v129') && sw.includes('jiaLionAssistant.js?v=129'), 'Service Worker includes v129 Lion assets');
 assert.ok(Lion.getGrowthState().title === '貪吃小獅', 'Default Lion growth title is stable');
 console.log('✅ Jia Lion keyword, growth, LINE guard, and responsive contract tests passed');

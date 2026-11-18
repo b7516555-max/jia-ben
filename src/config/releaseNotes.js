@@ -1,6 +1,14 @@
 (function (root) {
     'use strict';
     root.JIA_BEN_RELEASE_NOTES = Object.freeze({
+        v129: {
+            date: '2026-11-18',
+            title: '💬 萊恩本尊上線啦',
+            highlights: [
+                '萊恩現在可以一鍵前往官方 LINE 帳號，使用新分頁安全開啟加好友／對話連結。',
+                'LINE 助理網址集中管理於 authConfig.js，後續更換連結只需更新單一設定。'
+            ]
+        },
         v128: {
             date: '2026-11-18',
             title: '🦁 萊恩與吃貨介面更新啦',
