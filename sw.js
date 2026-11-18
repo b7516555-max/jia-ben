@@ -1,5 +1,5 @@
 // Keep this value synchronized with src/config/appVersion.js when releasing a new version.
-const CACHE_NAME = 'together-eat-shell-v134';
+const CACHE_NAME = 'together-eat-shell-v135';
 const APP_SHELL = [
   './', 
   './index.html', 
@@ -38,11 +38,12 @@ const APP_SHELL = [
   './src/services/smartSearch.js?v=2',
   './src/services/smartWheel.js?v=2',
   './src/components/restaurantCard.js?v=134',
-  './src/services/jiaLionAssistant.js?v=134',
-  './src/config/appVersion.js?v=134',
+  './src/services/jiaLionAssistant.js?v=135',
+  './src/core/uiShell.js?v=135',
+  './src/config/appVersion.js?v=135',
   './src/config/localPlaceEnrichment.js?v=126',
   './src/config/authConfig.js?v=1',
-  './src/config/releaseNotes.js?v=134',
+  './src/config/releaseNotes.js?v=135',
   './src/services/freeImageSearch.js?v=1',
   './assets/place-placeholder.svg',
   './assets/food/lu_rou_fan.jpg',

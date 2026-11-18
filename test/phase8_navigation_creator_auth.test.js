@@ -13,7 +13,8 @@ const creatorAvatar = fs.statSync(path.join(root, 'assets', 'creator', 'creator-
 
 assert.ok(html.includes('id="tab-more"') && html.includes('id="mobile-more-menu"'), 'Mobile navigation uses the 4+1 layout');
 assert.ok(html.includes('flex-wrap'), 'Quick filters can wrap on narrow screens');
-assert.ok(html.includes("history.pushState") && html.includes("addEventListener('popstate'"), 'Independent page routing supports browser history');
+const uiShell = fs.readFileSync(path.join(__dirname, '..', 'src', 'core', 'uiShell.js'), 'utf8');
+assert.ok(uiShell.includes('history.pushState') && uiShell.includes("addEventListener('popstate'"), 'Independent page routing supports browser history');
 assert.ok(html.includes('id="view-creator"') && html.includes("'creator'"), 'Creator page has internal routing and entry points');
 assert.ok(html.includes('吃貨主揪檔案') && html.includes('選擇困難終結者'), 'Creator page uses the warm foodie profile voice');
 assert.ok(html.includes('./assets/creator/creator-avatar.png') && html.includes("this.src='./assets/avatars/host.png'"), 'Creator avatar has a local asset and fallback');
@@ -27,9 +28,9 @@ assert.ok(!html.includes('AI 示意圖'), 'AI fallback label is absent from visi
 assert.ok(html.includes('Google 地圖最新資訊'), 'Restaurant detail offers a free Google Maps direct link');
 assert.ok(html.includes('window.signInWithLine') && html.includes('window.signInWithEmail'), 'LINE and Email login entry points exist');
 assert.ok(authConfig.includes('LINE_LIFF_ID'), 'LINE LIFF ID is centralized in auth config');
-assert.ok(sw.includes('together-eat-shell-v134'), 'Service Worker cache is v134');
+assert.ok(sw.includes('together-eat-shell-v135'), 'Service Worker cache is v135');
 assert.ok(html.includes('[id^="view-"].hidden') && html.includes('jia-map-view'), 'Map and view containers have an explicit hidden isolation rule');
-assert.ok(html.includes('JiaInteractiveMap?.close?.()'), 'Leaving the map closes its interaction layer');
+assert.ok(uiShell.includes('JiaInteractiveMap?.close?.()'), 'Leaving the map closes its interaction layer');
 assert.ok(html.includes('normalizeRestaurantDisplayName'), 'Restaurant names normalize spaced time text');
 assert.ok(html.includes('releaseNotes.js') && html.includes('jia_ben_last_seen_version'), 'Release notes are centrally managed and shown once per version');
 assert.ok(html.includes('openReleaseNotesModal') && html.includes('✨ 改版資訊'), 'Release notes have a manual reopen button');

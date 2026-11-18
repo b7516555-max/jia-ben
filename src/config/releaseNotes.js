@@ -1,6 +1,15 @@
 (function (root) {
     'use strict';
     root.JIA_BEN_RELEASE_NOTES = Object.freeze({
+        v135: {
+            date: '2026-11-18',
+            title: '🧭 核心介面獨立啟動啦',
+            highlights: [
+                '入口、改版公告、分頁切換與展示店家渲染改由本地核心腳本負責。',
+                '移除萊恩的全站 MutationObserver 與背景輪詢，改為操作時主動更新避讓狀態。',
+                'Firebase 連線失敗或載入較慢時，基本介面仍可立即操作。'
+            ]
+        },
         v134: {
             date: '2026-11-18',
             title: '🛟 系統啟動防護更新啦',

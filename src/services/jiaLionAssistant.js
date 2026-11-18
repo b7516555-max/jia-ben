@@ -146,8 +146,8 @@
             link.rel = 'noopener noreferrer';
             link.click();
         });
-        const observer = new MutationObserver(updateAvoidance); observer.observe(root.document.body, { subtree: true, attributes: true, attributeFilter: ['class'] });
-        root.addEventListener('popstate', updateAvoidance); setInterval(updateAvoidance, 800); updateAvoidance(); refresh();
+        updateAvoidance();
+        refresh();
     }
     const api = Object.freeze({ parseQuery, filterPlaces, getGrowthState, refresh, init, setOpen, showNudge, updateAvoidance });
     root.JiaLionAssistant = api;

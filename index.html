@@ -100,12 +100,13 @@
     <script src="./src/services/mapRestaurantContract.js?v=1"></script>
     <script src="./src/services/interactiveMap.js?v=1"></script>
     <script src="./src/components/restaurantCard.js?v=134"></script>
-    <script src="./src/config/appVersion.js?v=134"></script>
+    <script src="./src/config/appVersion.js?v=135"></script>
     <script src="./src/config/localPlaceEnrichment.js?v=126"></script>
     <script src="./src/config/authConfig.js?v=1"></script>
-    <script src="./src/config/releaseNotes.js?v=134"></script>
+    <script src="./src/config/releaseNotes.js?v=135"></script>
     <script src="./src/services/freeImageSearch.js?v=1"></script>
-    <script src="./src/services/jiaLionAssistant.js?v=134"></script>
+    <script src="./src/services/jiaLionAssistant.js?v=135"></script>
+    <script src="./src/core/uiShell.js?v=135"></script>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
@@ -138,62 +139,14 @@
     <script>
         window.JiaGooglePlacesGuard?.install();
         window.NO_GOOGLE_PLACES_RUNTIME = true;
-        window.enterApp = function() {
-            var intro = document.getElementById('intro-screen');
-            var mainApp = document.getElementById('main-app');
-            if (intro) {
-                intro.classList.add('intro-exit');
-                setTimeout(function() {
-                    intro.classList.add('hidden');
-                    if (mainApp) mainApp.classList.remove('hidden');
-                }, 400);
-            } else if (mainApp) {
-                mainApp.classList.remove('hidden');
-            }
-        };
         window.openAddModal = function() {
             var m = document.getElementById('add-restaurant-modal');
             if (m) m.classList.remove('hidden');
-        };
-        window.openProducerModal = function() {
-            if (window.enterApp) window.enterApp();
-            setTimeout(() => window.switchTab?.('creator', true), 450);
         };
         window.toggleMobileMoreMenu = function(force) {
             const menu = document.getElementById('mobile-more-menu');
             if (!menu) return;
             menu.classList.toggle('hidden', typeof force === 'boolean' ? !force : !menu.classList.contains('hidden'));
-        };
-        window.openCreatorPage = window.openProducerModal;
-        window.openReleaseNotesModal = function() {
-            const modal = document.getElementById('release-notes-modal');
-            if (!modal) return;
-            const version = window.JIA_BEN_VERSION || 'v123';
-            const note = window.JIA_BEN_RELEASE_NOTES?.[version] || window.JIA_BEN_RELEASE_NOTES?.v123;
-            const title = document.getElementById('release-notes-title');
-            const date = document.getElementById('release-notes-date');
-            const list = document.getElementById('release-notes-list');
-            if (title) title.textContent = `${note?.title || '🎉 呷奔更新啦'}（${version}）`;
-            if (date) date.textContent = note?.date || '';
-            if (list) list.innerHTML = (note?.highlights || []).map(item => `<li class="flex gap-2"><span class="text-orange-500">✦</span><span>${window.escapeHtml ? window.escapeHtml(item) : item}</span></li>`).join('');
-            modal.classList.remove('hidden');
-        };
-        window.closeModal = function(id) {
-            var m = document.getElementById(id);
-            if (m) m.classList.add('hidden');
-            if (id === 'release-notes-modal') {
-                try { localStorage.setItem('jia_ben_last_seen_version', window.JIA_BEN_VERSION || 'v123'); } catch (_) {}
-            }
-            if (id === 'detail-lightbox') { m?.classList.remove('flex'); }
-            if (id === 'card-detail-modal' && window.__JIA_DETAIL_RETURN_CONTEXT) {
-                const context = window.__JIA_DETAIL_RETURN_CONTEXT;
-                window.__JIA_DETAIL_RETURN_CONTEXT = null;
-                if (context.activeTab === 'map' && window.switchTab) {
-                    window.switchTab('map', true);
-                    if (context.restaurantId) window.JiaInteractiveMap?.selectRestaurant(context.restaurantId, { pan: false });
-                }
-                context.focus?.focus?.();
-            }
         };
         document.addEventListener('DOMContentLoaded', function() {
             var searchArea = document.getElementById('jia-map-search-area');
@@ -3959,33 +3912,6 @@
             } catch(e) {}
         };
 
-        window.enterApp = function() {
-            const intro = document.getElementById('intro-screen');
-            const mainApp = document.getElementById('main-app');
-            if (!mainApp) return false;
-            // Reveal the app immediately. The welcome fade is decorative and must never
-            // keep the whole site behind an intercepting overlay after a click.
-            mainApp.classList.remove('hidden');
-            if (intro) {
-                intro.classList.add('intro-exit', 'pointer-events-none');
-                window.setTimeout(() => intro.classList.add('hidden'), 400);
-            }
-            if (partyDeepLinkId && window.switchTab) window.switchTab('party', true);
-            if (window.__JIA_PENDING_RELEASE_NOTES) {
-                window.__JIA_PENDING_RELEASE_NOTES = false;
-                window.setTimeout(() => window.openReleaseNotesModal?.(), 500);
-            }
-            return true;
-        };
-
-        window.closeModal = function(id) {
-            const modal = document.getElementById(id);
-            if (!modal) return;
-            modal.classList.add('hidden');
-            if (id === 'release-notes-modal') {
-                try { localStorage.setItem('jia_ben_last_seen_version', window.JIA_BEN_VERSION || 'v133'); } catch (_) {}
-            }
-        };
         window.showCustomMsg = function(msg) { 
             document.getElementById('custom-alert-message').textContent = msg;
             document.getElementById('custom-alert-google-btn')?.classList.add('hidden');
@@ -4515,18 +4441,6 @@
             if(document.getElementById('system-url')) document.getElementById('system-url').value = window.appConfig.appUrl || '';
         }
 
-        window.syncNavigationState = function(tabName) {
-            const activeId = `tab-${tabName}`;
-            document.querySelectorAll('nav .tab-btn').forEach(button => {
-                const navButton = button;
-                const isActive = button.id === activeId;
-                button.classList.toggle('active', isActive);
-                if (isActive) button.setAttribute('aria-current', 'page');
-                else button.removeAttribute('aria-current');
-                navButton.blur();
-            });
-        };
-
         const ROUTABLE_PAGES = new Set(['explore', 'map', 'nearby', 'history', 'party', 'feed', 'chat', 'list', 'creator', 'admin', 'guide']);
         window.updateCreatorStats = function() {
             const places = window.jiaPlacesData?.length ? window.jiaPlacesData : (window.restaurantData || []);
@@ -4539,49 +4453,6 @@
             if (window.history.length > 1) window.history.back();
             else window.switchTab('explore');
         };
-        window.addEventListener('popstate', () => {
-            const page = new URLSearchParams(window.location.search).get('page') || 'explore';
-            window.enterApp?.();
-            window.switchTab(ROUTABLE_PAGES.has(page) ? page : 'explore', true, { fromHistory: true });
-            setTimeout(() => window.applyUrlPrefill?.(), 80);
-        });
-
-        window.switchTab = function(tabName, forceRefresh = false, options = {}) {
-            const currentPage = new URLSearchParams(window.location.search).get('page');
-            if (!forceRefresh && currentPage === tabName && document.getElementById('tab-' + tabName) && document.getElementById('tab-' + tabName).classList.contains('active')) return;
-            ['explore', 'map', 'nearby', 'history', 'random', 'party', 'feed', 'chat', 'list', 'creator', 'admin', 'guide'].forEach(name => {
-                document.getElementById('view-' + name)?.classList.add('hidden'); 
-            });
-            document.getElementById('jia-map-view')?.classList.add('hidden');
-            if (tabName !== 'map') window.JiaInteractiveMap?.close?.();
-            document.getElementById('view-' + tabName)?.classList.remove('hidden'); 
-            window.syncNavigationState(tabName);
-            window.scrollTo?.({ top: 0, behavior: 'auto' });
-            document.getElementById('main-content')?.scrollTo?.({ top: 0, behavior: 'auto' });
-            const tabTitles = { explore: '找餐廳', map: '地圖找餐廳', nearby: '美食輪盤', history: '吃過紀錄', party: '揪團活動', feed: '美食動態牆', chat: '留言板', list: '口袋名單', creator: '製作人介紹', admin: '主揪後台', guide: '使用指南' };
-            const titleEl = document.getElementById('app-header-title');
-            if (titleEl && tabTitles[tabName]) titleEl.textContent = `呷奔 • ${tabTitles[tabName]}`;
-            if (!options.fromHistory && ROUTABLE_PAGES.has(tabName)) {
-                if (currentPage !== tabName) window.history.pushState({ page: tabName }, '', `${window.location.pathname}?page=${tabName}`);
-            }
-            document.body.classList.toggle('map-view-active', tabName === 'map');
-            if(tabName !== 'admin' && tabName !== 'guide') previousTab = tabName;
-            if(tabName === 'explore') window.renderHomeForYou();
-            if(tabName === 'history') window.renderHistoryView();
-            if(tabName === 'list') window.renderList(); 
-            if(tabName === 'feed') window.renderFeed(); 
-            if(tabName === 'party') window.renderParties();
-            if(tabName === 'chat') window.renderChatMessages(true);
-            if(tabName === 'nearby') window.previewWheelCandidates?.();
-            if(tabName === 'admin') window.renderAdminDataList();
-            if(tabName === 'creator') { document.getElementById('creator-version')?.classList.add('admin-secret-version'); window.updateCreatorStats?.(); }
-            if(tabName === 'map') {
-                window.JiaInteractiveMap?.open(window.jiaPlacesData || window.restaurantData || []);
-                setTimeout(() => window.JiaInteractiveMap?.initialize({ places: window.jiaPlacesData || window.restaurantData || [] }), 0);
-            }
-            setTimeout(() => window.JiaFreeImageSearch?.hydrateImages?.(), 0);
-        };
-
         // LINE／萊恩深度連結：只在網址明確帶有預填參數時開啟對應表單。
         window.applyUrlPrefill = function() {
             const params = new URLSearchParams(window.location.search);
@@ -11318,7 +11189,7 @@
         };
 
         // 🌟 Part B & D: 個人化推薦首頁渲染 (For You & Want to Eat & Nearby)
-        window.renderHomeForYou = function(shuffle = false) {
+        window.renderHomeForYouRemote = function(shuffle = false) {
             const forYouContainer = document.getElementById('home-for-you-container');
             const wantContainer = document.getElementById('home-want-container');
             const greetingBadge = document.getElementById('home-greeting-badge');
@@ -12127,38 +11998,6 @@
             window.restaurantData = [{ id: '1', name: "詹記麻辣火鍋 (展示資料)", city: "台北市", group: "社發", creator: "黃政誥", status: "想去", mapLink:"#", photoUrl: "https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=400&q=80", rating: 4.7 }];
             if(!document.getElementById('view-list').classList.contains('hidden')) window.renderList(); if(!document.getElementById('view-party').classList.contains('hidden')) window.renderParties(); if(!document.getElementById('view-feed').classList.contains('hidden')) window.renderFeed();
         }
-    </script>
-    <!-- Defensive bootstrap: Firebase module failure must not blank the app shell. -->
-    <script>
-        (function () {
-            const fallbackPlaces = [{ jiaPlaceId: 'demo-hotpot', id: 'demo-hotpot', name: '呷奔展示火鍋', city: '高雄市', district: '苓雅區', category: '火鍋', categories: ['火鍋'], address: '高雄市苓雅區展示路 1 號', averageSpend: 420 }];
-            function escape(value) { return String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[char])); }
-            function renderFallbackHome() {
-                const container = document.getElementById('home-for-you-container');
-                if (!container || container.dataset.fallbackRendered === '1') return;
-                container.dataset.fallbackRendered = '1';
-                container.innerHTML = fallbackPlaces.map(place => `<article class="restaurant-card bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden p-4"><div class="font-black text-gray-800">${escape(place.name)}</div><div class="text-xs text-gray-500 mt-1">${escape(place.city)} · ${escape(place.category)}</div><button type="button" class="mt-3 text-xs text-orange-600 font-bold" onclick="window.openRestaurantDetailByName?.('${encodeURIComponent(place.name)}')">查看詳情</button></article>`).join('');
-            }
-            function fallbackSwitchTab(tabName) {
-                const valid = ['explore', 'map', 'nearby', 'history', 'party', 'feed', 'chat', 'list', 'creator', 'admin', 'guide'];
-                const tab = valid.includes(tabName) ? tabName : 'explore';
-                document.querySelectorAll('[id^="view-"]').forEach(view => view.classList.toggle('hidden', view.id !== `view-${tab}`));
-                document.querySelectorAll('.tab-btn').forEach(button => { const active = button.id === `tab-${tab}`; button.classList.toggle('active', active); button.setAttribute('aria-current', active ? 'page' : 'false'); });
-                if (tab === 'explore') renderFallbackHome();
-                window.scrollTo?.({ top: 0, behavior: 'auto' });
-            }
-            function installFallback() {
-                if (typeof window.switchTab !== 'function') window.switchTab = fallbackSwitchTab;
-                if (typeof window.renderHomeForYou !== 'function') window.renderHomeForYou = renderFallbackHome;
-                if (typeof window.quickDecidePlace !== 'function') window.quickDecidePlace = function () { window.switchTab('nearby', true); };
-                if (!Array.isArray(window.jiaPlacesData) || window.jiaPlacesData.length === 0) window.jiaPlacesData = fallbackPlaces;
-                if (!Array.isArray(window.restaurantData) || window.restaurantData.length === 0) window.restaurantData = fallbackPlaces;
-                if (typeof window.switchTab === 'function') window.switchTab('explore', true, { fromHistory: true });
-                window.__JIA_EMERGENCY_BOOTSTRAP = true;
-            }
-            // Module scripts execute deferred; wait one turn so a healthy Firebase module wins.
-            window.setTimeout(installFallback, 0);
-        })();
     </script>
     <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer" class="map-attribution fixed bottom-1 right-2 z-30 rounded bg-white/90 px-1.5 py-0.5 text-[9px] text-gray-600 shadow-sm backdrop-blur" title="OpenStreetMap 資料授權">© OpenStreetMap contributors</a>
 </body>
