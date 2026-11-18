@@ -16,13 +16,19 @@
   let map = null, mapLayer = null, userLayer = null, leafletPromise = null;
   let models = [], mapModels = [], suppressMove = false, moveOrigin = null;
   const listeners = new Set();
+  function escapeHtml(value) { return String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[c])); }
 
   function emit() { listeners.forEach(fn => { try { fn(getState()); } catch (_) {} }); }
   function subscribe(fn) { if (typeof fn === 'function') listeners.add(fn); return () => listeners.delete(fn); }
   function getState() { return JSON.parse(JSON.stringify(state)); }
   function validCoordinate(lat, lng) { return viewModel?.validCoordinate ? viewModel.validCoordinate(lat, lng) : Number.isFinite(Number(lat)) && Number.isFinite(Number(lng)); }
   function normalizePlaces(places) {
-    models = (Array.isArray(places) ? places : []).map(p => viewModel?.normalize(p) || p);
+    models = (Array.isArray(places) ? places : []).map(p => {
+      const raw = p || {};
+      const normalized = viewModel?.normalize(raw) || raw;
+      // Keep normalized fields while retaining every photo source for map views.
+      return { ...raw, ...normalized, raw };
+    });
     mapModels = (mapContract?.normalizeMany ? mapContract.normalizeMany(places) : models.map(p => validCoordinate(p.latitude, p.longitude) ? ({ restaurantId: p.id, lat: p.latitude, lng: p.longitude, name: p.name }) : null)).filter(Boolean);
     state.visibleRestaurantIds = mapModels.map(p => p.restaurantId).filter(Boolean);
     state.filteredRestaurantIds = state.visibleRestaurantIds.slice();
@@ -63,6 +69,12 @@
         const markerElement = marker.getElement?.();
         if (markerElement) { markerElement.dataset.jiaRestaurantId = item.restaurantId; markerElement.setAttribute('aria-label', `選取 ${item.name}`); markerElement.addEventListener('click', () => selectRestaurant(item.restaurantId, { pan: false }), { once: true }); }
         marker.bindTooltip(item.name, { direction: 'top', opacity: 0.95 });
+        const place = getPlace(item.restaurantId);
+        const imageInfo = window.imageSafety?.selectImage?.(place || item, './assets/place-placeholder.svg');
+        if (imageInfo?.url) {
+          marker.bindPopup(`<div class="jia-map-marker-popup"><img src="${escapeHtml(imageInfo.url)}" alt="${escapeHtml(item.name)}" class="jia-map-marker-popup-image"><strong>${escapeHtml(item.name)}</strong><button type="button" data-map-popup-detail="${escapeHtml(item.restaurantId)}">查看詳情</button></div>`);
+          marker.on('popupopen', event => event.popup.getElement()?.querySelector('[data-map-popup-detail]')?.addEventListener('click', () => window.openRestaurantDetailById?.(item.restaurantId)));
+        }
         marker.on('click', () => selectRestaurant(item.restaurantId, { pan: false }));
         marker.on('keypress', event => { if (event.originalEvent?.key === 'Enter' || event.originalEvent?.key === ' ') selectRestaurant(item.restaurantId, { pan: false }); });
       }

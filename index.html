@@ -53,7 +53,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Color+Emoji&display=swap" rel="stylesheet">
     <!-- OpenStreetMap / Nominatim 地點搜尋相容層（無需付費金鑰） -->
     <script src="./osm-adapter.js?v=5"></script>
-    <script src="./src/utils/imageSafety.js?v=134"></script>
+    <script src="./src/utils/imageSafety.js?v=136"></script>
     <script src="./src/utils/googlePlacesGuard.js?v=1"></script>
     <script src="./src/utils/placeMatch.js?v=2"></script>
     <script src="./src/utils/taiwanAddressNormalizer.js?v=60"></script>
@@ -98,12 +98,12 @@
     <script src="./src/services/mapProvider.js?v=1"></script>
     <script src="./src/services/mapLibreProvider.js?v=1"></script>
     <script src="./src/services/mapRestaurantContract.js?v=1"></script>
-    <script src="./src/services/interactiveMap.js?v=1"></script>
-    <script src="./src/components/restaurantCard.js?v=134"></script>
-    <script src="./src/config/appVersion.js?v=135"></script>
+    <script src="./src/services/interactiveMap.js?v=136"></script>
+    <script src="./src/components/restaurantCard.js?v=136"></script>
+    <script src="./src/config/appVersion.js?v=136"></script>
     <script src="./src/config/localPlaceEnrichment.js?v=126"></script>
     <script src="./src/config/authConfig.js?v=1"></script>
-    <script src="./src/config/releaseNotes.js?v=135"></script>
+    <script src="./src/config/releaseNotes.js?v=136"></script>
     <script src="./src/services/freeImageSearch.js?v=1"></script>
     <script src="./src/services/jiaLionAssistant.js?v=135"></script>
     <script src="./src/core/uiShell.js?v=135"></script>
@@ -778,7 +778,7 @@
         </div>
     </div>
 
-    <div id="release-notes-modal" class="hidden fixed inset-0 z-[130] flex items-center justify-center bg-black/55 modal-backdrop fade-in p-4">
+    <div id="release-notes-modal" class="hidden fixed inset-0 z-[200] flex items-center justify-center bg-black/55 modal-backdrop fade-in p-4">
         <div class="w-full max-w-md max-h-[90dvh] overflow-y-auto rounded-[2rem] bg-white shadow-2xl border border-orange-100 p-6 relative">
             <button type="button" onclick="window.closeModal('release-notes-modal')" class="absolute top-4 right-4 w-9 h-9 rounded-full bg-orange-50 text-orange-500 hover:bg-orange-100" aria-label="關閉改版公告"><i class="fa-solid fa-xmark"></i></button>
             <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-400 to-rose-400 text-white flex items-center justify-center text-2xl shadow-lg shadow-orange-200 mb-4">✨</div>

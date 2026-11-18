@@ -8,7 +8,17 @@
     /googleapis\.com\/maps\/api\/(?:place|streetview|staticmap)/i
   ];
   function isBlockedLegacyGoogleImage(url){return typeof url==='string'&&patterns.some(pattern=>pattern.test(url));}
-  function filterSafeImages(values){return [...new Set((values||[]).filter(value=>typeof value==='string'&&value.trim()&&!isBlockedLegacyGoogleImage(value)))];}
+  function isKnownPlaceholder(value){
+    const url=String(value||'');
+    return /place-placeholder\.svg|\/assets\/(?:places\/ai-|food\/)/i.test(url);
+  }
+  function imageUrlFromValue(value){
+    if(typeof value==='string') return value.trim();
+    if(!value||typeof value!=='object'||value.isAiFallback||value.isPlaceholder||value.isReferenceFallback) return '';
+    if(typeof value.getUrl==='function'){try{return String(value.getUrl({maxWidth:1200})||'').trim();}catch(_){return '';}}
+    return String(value.url||value.imageUrl||value.photoUrl||value.src||value.downloadURL||value.fileUrl||value.href||'').trim();
+  }
+  function filterSafeImages(values){return [...new Set((values||[]).map(imageUrlFromValue).filter(value=>value&&!isKnownPlaceholder(value)&&!isBlockedLegacyGoogleImage(value)))];}
   const REFERENCE_FOOD_ASSETS = {
     '滷肉飯': './assets/food/lu_rou_fan.jpg',
     '小吃': './assets/food/lu_rou_fan.jpg',
@@ -86,10 +96,17 @@
     // 1. 真實照片優先級：coverPhoto > communityPhotos > legacyRestaurantPhotos / safe photos
     const realCandidates = [
       place?.coverPhoto,
+      place?.cover,
+      place?.imageUrl,
+      place?.image,
+      place?.photoUrl,
+      ...(place?.realPhotos || []),
       ...(place?.communityPhotos || []),
       ...(place?.photos || []),
       ...(place?.legacyRestaurantPhotos || []),
-      ...(place?.externalPhotos || [])
+      ...(place?.externalPhotos || []),
+      ...(place?.linkedFeedPhotos || []),
+      ...(place?.feedPhotos || [])
     ];
     const safeReal = filterSafeImages(realCandidates);
     if (safeReal.length > 0) {
