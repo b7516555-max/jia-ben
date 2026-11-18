@@ -100,9 +100,10 @@
     <script src="./src/services/mapRestaurantContract.js?v=1"></script>
     <script src="./src/services/interactiveMap.js?v=1"></script>
     <script src="./src/components/restaurantCard.js?v=2"></script>
-    <script src="./src/config/appVersion.js?v=124"></script>
+    <script src="./src/config/appVersion.js?v=126"></script>
+    <script src="./src/config/localPlaceEnrichment.js?v=126"></script>
     <script src="./src/config/authConfig.js?v=1"></script>
-    <script src="./src/config/releaseNotes.js?v=124"></script>
+    <script src="./src/config/releaseNotes.js?v=126"></script>
     <script src="./src/services/freeImageSearch.js?v=1"></script>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script>
@@ -4160,7 +4161,7 @@
             const response = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
             if (!response.ok) throw new Error(`Firebase REST ${response.status}`);
             const payload = await response.json();
-            window.jiaPlacesData = (payload.documents || []).map(item => window.normalizeJiaPlaceForDisplay({ jiaPlaceId: item.name.split('/').pop(), ...Object.fromEntries(Object.entries(item.fields || {}).map(([key, value]) => [key, decodeJiaFirestoreValue(value)])) }));
+            window.jiaPlacesData = (payload.documents || []).map(item => window.applyLocalPlaceEnrichment?.(window.normalizeJiaPlaceForDisplay({ jiaPlaceId: item.name.split('/').pop(), ...Object.fromEntries(Object.entries(item.fields || {}).map(([key, value]) => [key, decodeJiaFirestoreValue(value)])) })) || window.normalizeJiaPlaceForDisplay({ jiaPlaceId: item.name.split('/').pop(), ...Object.fromEntries(Object.entries(item.fields || {}).map(([key, value]) => [key, decodeJiaFirestoreValue(value)])) }));
             return window.jiaPlacesData;
         }
         async function saveExternalJiaPlace(place) {
@@ -4178,7 +4179,7 @@
             }).catch(error => console.error('jiaPlaces REST 讀取失敗:', error));
             onSnapshot(collection(db,'artifacts',appId,'public','data','jiaPlaces'), snap => { 
                 if(!snap.empty) {
-                    window.jiaPlacesData=snap.docs.map(item=>window.normalizeJiaPlaceForDisplay({jiaPlaceId:item.id,...item.data()}));
+                    window.jiaPlacesData=snap.docs.map(item=>window.applyLocalPlaceEnrichment?.(window.normalizeJiaPlaceForDisplay({jiaPlaceId:item.id,...item.data()})) || window.normalizeJiaPlaceForDisplay({jiaPlaceId:item.id,...item.data()}));
                     if (typeof window.renderHomeForYou === 'function') window.renderHomeForYou();
                 }
             }, error => console.error('jiaPlaces 同步失敗:',error));
@@ -5995,15 +5996,15 @@
                 const response = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
                 if (!response.ok) throw new Error(`Firebase REST ${response.status}`);
                 const payload = await response.json();
-                window.jiaPlacesData = (payload.documents || []).map(item => ({ jiaPlaceId: item.name.split('/').pop(), ...Object.fromEntries(Object.entries(item.fields || {}).map(([key, value]) => [key, decodeFirestoreValue(value)])) }));
+                window.jiaPlacesData = (payload.documents || []).map(item => window.applyLocalPlaceEnrichment?.({ jiaPlaceId: item.name.split('/').pop(), ...Object.fromEntries(Object.entries(item.fields || {}).map(([key, value]) => [key, decodeFirestoreValue(value)])) }) || ({ jiaPlaceId: item.name.split('/').pop(), ...Object.fromEntries(Object.entries(item.fields || {}).map(([key, value]) => [key, decodeFirestoreValue(value)])) }));
                 return window.jiaPlacesData;
             };
             hydrateJiaPlaces().catch(error => console.error('jiaPlaces REST 讀取失敗:', error));
             getDocs(jiaPlacesRef).then(snap => {
-                if (!snap.empty) window.jiaPlacesData = snap.docs.map(item => ({ jiaPlaceId: item.id, ...item.data() }));
+                if (!snap.empty) window.jiaPlacesData = snap.docs.map(item => window.applyLocalPlaceEnrichment?.({ jiaPlaceId: item.id, ...item.data() }) || ({ jiaPlaceId: item.id, ...item.data() }));
             }).catch(error => console.error('jiaPlaces 首次讀取失敗:', error));
             onSnapshot(jiaPlacesRef, (snap) => {
-                if (!snap.empty) window.jiaPlacesData = snap.docs.map(item => ({ jiaPlaceId: item.id, ...item.data() }));
+                if (!snap.empty) window.jiaPlacesData = snap.docs.map(item => window.applyLocalPlaceEnrichment?.({ jiaPlaceId: item.id, ...item.data() }) || ({ jiaPlaceId: item.id, ...item.data() }));
             }, error => console.error('jiaPlaces 即時同步失敗:', error));
             if (window.JiaPlaces) window.JiaPlaces.configureFirebase({
                 load: async () => window.jiaPlacesData?.length ? window.jiaPlacesData : hydrateJiaPlaces(),

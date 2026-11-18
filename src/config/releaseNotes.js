@@ -1,6 +1,15 @@
 (function (root) {
     'use strict';
     root.JIA_BEN_RELEASE_NOTES = Object.freeze({
+        v126: {
+            date: '2026-11-18',
+            title: '📍 店家地址資料補齊啦',
+            highlights: [
+                '以商工登記開放資料補上 6 家店家的缺漏地址。',
+                '新增本地 enrichment overlay，首頁、地圖與口袋名單會同步顯示完整地區。',
+                'Overpass 改為多節點備援與批次查詢，電話與營業時間只採用可安全比對的 OSM 資料。'
+            ]
+        },
         v125: {
             date: '2026-11-18',
             title: '🎉 地圖列表照片補齊啦',

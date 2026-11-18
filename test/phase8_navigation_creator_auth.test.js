@@ -23,7 +23,7 @@ assert.ok(!html.includes('AI 示意圖'), 'AI fallback label is absent from visi
 assert.ok(html.includes('Google 地圖最新資訊'), 'Restaurant detail offers a free Google Maps direct link');
 assert.ok(html.includes('window.signInWithLine') && html.includes('window.signInWithEmail'), 'LINE and Email login entry points exist');
 assert.ok(authConfig.includes('LINE_LIFF_ID'), 'LINE LIFF ID is centralized in auth config');
-assert.ok(sw.includes('together-eat-shell-v125'), 'Service Worker cache is v125');
+assert.ok(sw.includes('together-eat-shell-v126'), 'Service Worker cache is v126');
 assert.ok(html.includes('[id^="view-"].hidden') && html.includes('jia-map-view'), 'Map and view containers have an explicit hidden isolation rule');
 assert.ok(html.includes('JiaInteractiveMap?.close?.()'), 'Leaving the map closes its interaction layer');
 assert.ok(html.includes('normalizeRestaurantDisplayName'), 'Restaurant names normalize spaced time text');
@@ -32,7 +32,8 @@ assert.ok(html.includes('openReleaseNotesModal') && html.includes('✨ 改版資
 assert.ok(html.includes('JiaFreeImageSearch') && freeImageSearch.includes('api.openverse.org') && freeImageSearch.includes('commons.wikimedia.org'), 'Free image search has Openverse/Wikimedia fallbacks');
 assert.ok(freeImageSearch.includes('cafe latte pastry') && freeImageSearch.includes('taiwanese street food'), 'Image search falls back to category queries');
 assert.ok(mapSource.includes('getReferenceFoodImageForPlace') && mapSource.includes('referenceImage'), 'Map list uses the shared category photo fallback');
-assert.ok(releaseNotes.includes('v125') && releaseNotes.includes('地圖找餐廳左側列表'), 'v125 release notes describe map list photo fallback');
+assert.ok(releaseNotes.includes('v126') && releaseNotes.includes('店家地址資料補齊'), 'v126 release notes describe local place enrichment');
+assert.ok(html.includes('localPlaceEnrichment.js') && html.includes('applyLocalPlaceEnrichment'), 'Local enrichment overlay is loaded and applied');
 assert.ok(html.includes('detail-google-images-btn') && html.includes('detail-food-reviews-btn'), 'Detail view has free image and food review search links');
 
 console.log('✅ Phase 8 navigation, creator, image, map, and auth contracts passed');
