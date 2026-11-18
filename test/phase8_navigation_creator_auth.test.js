@@ -16,6 +16,6 @@ assert.ok(!html.includes('AI 示意圖'), 'AI fallback label is absent from visi
 assert.ok(html.includes('Google 地圖最新資訊'), 'Restaurant detail offers a free Google Maps direct link');
 assert.ok(html.includes('window.signInWithLine') && html.includes('window.signInWithEmail'), 'LINE and Email login entry points exist');
 assert.ok(authConfig.includes('LINE_LIFF_ID'), 'LINE LIFF ID is centralized in auth config');
-assert.ok(sw.includes('together-eat-shell-v121'), 'Service Worker cache is v121');
+assert.ok(sw.includes('together-eat-shell-v122'), 'Service Worker cache is v122');
 
 console.log('✅ Phase 8 navigation, creator, image, map, and auth contracts passed');

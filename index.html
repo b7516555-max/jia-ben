@@ -100,7 +100,7 @@
     <script src="./src/services/mapRestaurantContract.js?v=1"></script>
     <script src="./src/services/interactiveMap.js?v=1"></script>
     <script src="./src/components/restaurantCard.js?v=2"></script>
-    <script src="./src/config/appVersion.js?v=121"></script>
+    <script src="./src/config/appVersion.js?v=122"></script>
     <script src="./src/config/authConfig.js?v=1"></script>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script>
@@ -3115,6 +3115,8 @@
             if (requestedPage && requestedPage !== 'explore' && !partyDeepLinkId && ROUTABLE_PAGES?.has(requestedPage)) {
                 window.enterApp?.();
                 setTimeout(() => window.switchTab(requestedPage, true, { fromHistory: true }), 900);
+            } else if (!requestedPage && !partyDeepLinkId) {
+                window.switchTab?.('explore', true);
             }
         });
 
@@ -4383,17 +4385,19 @@
         });
 
         window.switchTab = function(tabName, forceRefresh = false, options = {}) {
-            if (!forceRefresh && document.getElementById('tab-' + tabName) && document.getElementById('tab-' + tabName).classList.contains('active')) return;
+            const currentPage = new URLSearchParams(window.location.search).get('page');
+            if (!forceRefresh && currentPage === tabName && document.getElementById('tab-' + tabName) && document.getElementById('tab-' + tabName).classList.contains('active')) return;
             ['explore', 'map', 'nearby', 'history', 'random', 'party', 'feed', 'chat', 'list', 'creator', 'admin', 'guide'].forEach(name => {
                 document.getElementById('view-' + name)?.classList.add('hidden'); 
             });
             document.getElementById('view-' + tabName)?.classList.remove('hidden'); 
             window.syncNavigationState(tabName);
+            window.scrollTo?.({ top: 0, behavior: 'auto' });
+            document.getElementById('main-content')?.scrollTo?.({ top: 0, behavior: 'auto' });
             const tabTitles = { explore: '找餐廳', map: '地圖找餐廳', nearby: '美食輪盤', history: '吃過紀錄', party: '揪團活動', feed: '美食動態牆', chat: '留言板', list: '口袋名單', creator: '製作人介紹', admin: '主揪後台', guide: '使用指南' };
             const titleEl = document.getElementById('app-header-title');
             if (titleEl && tabTitles[tabName]) titleEl.textContent = `呷奔 • ${tabTitles[tabName]}`;
             if (!options.fromHistory && ROUTABLE_PAGES.has(tabName)) {
-                const currentPage = new URLSearchParams(window.location.search).get('page');
                 if (currentPage !== tabName) window.history.pushState({ page: tabName }, '', `${window.location.pathname}?page=${tabName}`);
             }
             document.body.classList.toggle('map-view-active', tabName === 'map');
