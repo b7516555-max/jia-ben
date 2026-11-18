@@ -1,6 +1,15 @@
 (function (root) {
     'use strict';
     root.JIA_BEN_RELEASE_NOTES = Object.freeze({
+        v127: {
+            date: '2026-11-18',
+            title: '🦁 萊恩小助理上線啦',
+            highlights: [
+                '右下角新增萊恩美食小寵物，會依目前頁面給你貼心吃飯小建議。',
+                '支援縣市、料理分類與預算關鍵字推薦，完全使用站內資料，不需要付費 AI API。',
+                '萊恩會記住吃過與互動紀錄，逐步從貪吃小獅成長為巷弄探險獅。'
+            ]
+        },
         v126: {
             date: '2026-11-18',
             title: '📍 店家地址資料補齊啦',
