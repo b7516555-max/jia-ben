@@ -100,8 +100,10 @@
     <script src="./src/services/mapRestaurantContract.js?v=1"></script>
     <script src="./src/services/interactiveMap.js?v=1"></script>
     <script src="./src/components/restaurantCard.js?v=2"></script>
-    <script src="./src/config/appVersion.js?v=122"></script>
+    <script src="./src/config/appVersion.js?v=123"></script>
     <script src="./src/config/authConfig.js?v=1"></script>
+    <script src="./src/config/releaseNotes.js?v=123"></script>
+    <script src="./src/services/freeImageSearch.js?v=1"></script>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
@@ -112,6 +114,9 @@
             const creatorVersionEl = document.getElementById('creator-version');
             if (creatorVersionEl && window.JIA_BEN_VERSION) creatorVersionEl.textContent = window.JIA_BEN_VERSION;
             [versionEl, producerVersionEl, creatorVersionEl].forEach((el) => el?.classList.add('admin-secret-version'));
+            if (window.JIA_BEN_VERSION && localStorage.getItem('jia_ben_last_seen_version') !== window.JIA_BEN_VERSION) {
+                setTimeout(() => window.openReleaseNotesModal?.(), 700);
+            }
             let adminTapCount = 0;
             let adminTapTimer = null;
             document.addEventListener('click', function (event) {
@@ -156,9 +161,25 @@
             menu.classList.toggle('hidden', typeof force === 'boolean' ? !force : !menu.classList.contains('hidden'));
         };
         window.openCreatorPage = window.openProducerModal;
+        window.openReleaseNotesModal = function() {
+            const modal = document.getElementById('release-notes-modal');
+            if (!modal) return;
+            const version = window.JIA_BEN_VERSION || 'v123';
+            const note = window.JIA_BEN_RELEASE_NOTES?.[version] || window.JIA_BEN_RELEASE_NOTES?.v123;
+            const title = document.getElementById('release-notes-title');
+            const date = document.getElementById('release-notes-date');
+            const list = document.getElementById('release-notes-list');
+            if (title) title.textContent = `${note?.title || '🎉 呷奔更新啦'}（${version}）`;
+            if (date) date.textContent = note?.date || '';
+            if (list) list.innerHTML = (note?.highlights || []).map(item => `<li class="flex gap-2"><span class="text-orange-500">✦</span><span>${window.escapeHtml ? window.escapeHtml(item) : item}</span></li>`).join('');
+            modal.classList.remove('hidden');
+        };
         window.closeModal = function(id) {
             var m = document.getElementById(id);
             if (m) m.classList.add('hidden');
+            if (id === 'release-notes-modal') {
+                try { localStorage.setItem('jia_ben_last_seen_version', window.JIA_BEN_VERSION || 'v123'); } catch (_) {}
+            }
             if (id === 'detail-lightbox') { m?.classList.remove('flex'); }
             if (id === 'card-detail-modal' && window.__JIA_DETAIL_RETURN_CONTEXT) {
                 const context = window.__JIA_DETAIL_RETURN_CONTEXT;
@@ -768,7 +789,19 @@
             <div class="flex items-center justify-center gap-2 flex-wrap">
                 <button type="button" onclick="window.openProducerModal()" class="producer-credit text-[10px] tracking-[0.25em] uppercase font-medium hover:text-orange-600 transition underline-offset-4 hover:underline">製作人 <span class="font-bold ml-1">黃政誥</span> <span class="ml-1 font-semibold opacity-80">since 2026</span></button>
             </div>
-            <p class="mt-1 text-[10px] tracking-[0.12em] font-semibold text-gray-500" id="intro-version">版本</p>
+            <div class="mt-1 flex items-center justify-center gap-2"><span class="text-[10px] tracking-[0.12em] font-semibold text-gray-500 admin-secret-version cursor-pointer" id="intro-version">版本</span><button type="button" onclick="window.openReleaseNotesModal()" class="text-[10px] font-bold text-orange-500 hover:text-orange-600">✨ 改版資訊</button></div>
+        </div>
+    </div>
+
+    <div id="release-notes-modal" class="hidden fixed inset-0 z-[130] flex items-center justify-center bg-black/55 modal-backdrop fade-in p-4">
+        <div class="w-full max-w-md max-h-[90dvh] overflow-y-auto rounded-[2rem] bg-white shadow-2xl border border-orange-100 p-6 relative">
+            <button type="button" onclick="window.closeModal('release-notes-modal')" class="absolute top-4 right-4 w-9 h-9 rounded-full bg-orange-50 text-orange-500 hover:bg-orange-100" aria-label="關閉改版公告"><i class="fa-solid fa-xmark"></i></button>
+            <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-400 to-rose-400 text-white flex items-center justify-center text-2xl shadow-lg shadow-orange-200 mb-4">✨</div>
+            <p class="text-xs font-black tracking-[0.18em] text-orange-500">WHAT'S NEW</p>
+            <h2 id="release-notes-title" class="text-2xl font-black text-gray-800 mt-1">🎉 呷奔更新啦（v123）</h2>
+            <p id="release-notes-date" class="text-xs text-gray-400 mt-2"></p>
+            <ul id="release-notes-list" class="mt-5 space-y-3 text-sm leading-6 text-gray-600"></ul>
+            <button type="button" onclick="window.closeModal('release-notes-modal')" class="w-full mt-6 py-3 rounded-2xl bg-orange-500 hover:bg-orange-600 text-white font-black transition">收到，開吃！</button>
         </div>
     </div>
 
@@ -1704,6 +1737,8 @@
                 <div class="grid grid-cols-2 gap-2.5 pt-1">
                     <a id="detail-nav-btn" href="#" target="_blank" rel="noopener noreferrer" class="text-center bg-blue-500 text-white py-2.5 md:py-3 rounded-xl font-bold hover:bg-blue-600 transition tracking-wide flex items-center justify-center gap-2 text-sm"><i class="fa-solid fa-map-location-dot"></i> OpenStreetMap 地圖</a>
                     <a id="detail-google-maps-btn" href="#" target="_blank" rel="noopener noreferrer" class="text-center bg-emerald-600 text-white py-2.5 md:py-3 rounded-xl font-bold hover:bg-emerald-700 transition tracking-wide flex items-center justify-center gap-2 text-sm"><i class="fa-solid fa-map"></i> Google 地圖最新資訊</a>
+                    <a id="detail-google-images-btn" href="#" target="_blank" rel="noopener noreferrer" class="text-center bg-rose-500 text-white py-2.5 md:py-3 rounded-xl font-bold hover:bg-rose-600 transition tracking-wide flex items-center justify-center gap-2 text-sm"><i class="fa-solid fa-camera-retro"></i> 搜尋店家實拍圖</a>
+                    <a id="detail-food-reviews-btn" href="#" target="_blank" rel="noopener noreferrer" class="text-center bg-amber-500 text-white py-2.5 md:py-3 rounded-xl font-bold hover:bg-amber-600 transition tracking-wide flex items-center justify-center gap-2 text-sm"><i class="fa-solid fa-utensils"></i> 搜尋網路食記</a>
                     
                     <button id="detail-review-btn" class="bg-white text-gray-700 font-bold py-2.5 md:py-3 rounded-xl border border-gray-200 hover:bg-gray-50 transition shadow-sm flex items-center justify-center gap-2 text-xs sm:text-sm"><i class="fa-solid fa-comment-dots text-orange-400"></i> 寫評價</button>
                     
@@ -2367,7 +2402,7 @@
                             <div><p class="text-xs font-black text-orange-500 tracking-widest mb-1">一起把呷奔變更好</p><h3 class="text-xl sm:text-2xl font-black text-gray-800">有口袋名單？來敲碗！</h3><p class="text-sm text-gray-500 mt-1">推薦隱藏好店、回報小 bug，或只是想跟主揪打個招呼都可以。</p></div>
                             <a href="mailto:b7516555@gmail.com?subject=呷奔 Jia-ben 推薦與敲碗" class="shrink-0 inline-flex items-center justify-center gap-2 rounded-2xl bg-orange-500 hover:bg-orange-600 text-white font-black px-5 py-3 shadow-lg shadow-orange-200 transition"><i class="fa-solid fa-envelope-open-text"></i>推薦愛店／敲碗</a>
                         </section>
-                        <div class="text-center pb-5"><span id="creator-version" class="admin-secret-version inline-block text-[11px] font-bold tracking-widest text-gray-400 cursor-pointer">版本 v122</span><p class="text-[10px] text-gray-400 mt-2">呷奔 Jia-ben · 今天也要好好吃飯</p></div>
+                        <div class="text-center pb-5"><div class="flex items-center justify-center gap-2"><span id="creator-version" class="admin-secret-version inline-block text-[11px] font-bold tracking-widest text-gray-400 cursor-pointer">版本 v123</span><button type="button" onclick="window.openReleaseNotesModal()" class="text-[11px] font-black text-orange-500 hover:text-orange-600">✨ 改版資訊</button></div><p class="text-[10px] text-gray-400 mt-2">呷奔 Jia-ben · 今天也要好好吃飯</p></div>
                     </div>
                 </div>
                 <div id="view-explore" class="fade-in h-full flex flex-col relative w-full overflow-y-auto no-scrollbar">
@@ -3161,7 +3196,8 @@
                 window.enterApp?.();
                 setTimeout(() => window.switchTab(requestedPage, true, { fromHistory: true }), 900);
             } else if (!requestedPage && !partyDeepLinkId) {
-                window.switchTab?.('explore', true);
+                window.history.replaceState({ page: 'explore' }, '', `${window.location.pathname}?page=explore`);
+                window.switchTab?.('explore', true, { fromHistory: true });
             }
         });
 
@@ -4431,9 +4467,9 @@
             else window.switchTab('explore');
         };
         window.addEventListener('popstate', () => {
-            const page = new URLSearchParams(window.location.search).get('page') || new URLSearchParams(window.location.search).get('tab') || 'explore';
+            const page = new URLSearchParams(window.location.search).get('page') || 'explore';
             window.enterApp?.();
-            setTimeout(() => window.switchTab(ROUTABLE_PAGES.has(page) ? page : 'explore', true, { fromHistory: true }), 450);
+            window.switchTab(ROUTABLE_PAGES.has(page) ? page : 'explore', true, { fromHistory: true });
         });
 
         window.switchTab = function(tabName, forceRefresh = false, options = {}) {
@@ -8967,6 +9003,14 @@
             if (detailImgEl) {
                 detailImgEl.src = data.img || window.getFallbackImage(data);
                 detailImgEl.onerror = function() { this.onerror = null; this.src = window.getFallbackImage(data); };
+                if (data.imageIsPlaceholder && window.JiaFreeImageSearch?.findReferenceImage) {
+                    window.JiaFreeImageSearch.findReferenceImage(data.jiaPlace || data).then((url) => {
+                        if (!url || window.currentDetailPlace?.name !== data.name) return;
+                        detailImgEl.src = url;
+                        const asyncLabel = document.getElementById('detail-image-label');
+                        if (asyncLabel) asyncLabel.textContent = '免費網路參考照片';
+                    }).catch(() => {});
+                }
             }
             const imageLabel = document.getElementById('detail-image-label');
             if (imageLabel) {
@@ -9003,6 +9047,10 @@
             if (googleMapsBtn) {
                 const query = [data.name, data.address || data.city || ''].filter(Boolean).join(' ');
                 googleMapsBtn.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+                const imageSearchBtn = document.getElementById('detail-google-images-btn');
+                if (imageSearchBtn) imageSearchBtn.href = `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(query)}`;
+                const foodReviewsBtn = document.getElementById('detail-food-reviews-btn');
+                if (foodReviewsBtn) foodReviewsBtn.href = `https://www.google.com/search?q=${encodeURIComponent(`${query} 食記 評論`)}`;
             }
 
             const reviewBtn = document.getElementById('detail-review-btn');

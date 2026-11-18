@@ -22,10 +22,11 @@ assert.ok(html.includes('getRedirectResult'), 'Google redirect result is handled
 assert.ok(html.includes('window.mergeGuestPartyRecords'), 'Guest party records are merged after account login');
 assert.ok(html.includes("provider === 'google' ? user.uid"), 'Google uid is synchronized to the existing profile structure');
 assert.ok(html.includes('custom-alert-google-btn'), 'Guest completion prompt offers Google login shortcut');
-assert.strictEqual((sw.match(/together-eat-shell-v122/g) || []).length, 1, 'Service Worker cache is v122');
+assert.strictEqual((sw.match(/together-eat-shell-v123/g) || []).length, 1, 'Service Worker cache is v123');
 assert.ok(html.includes("window.addEventListener('popstate'"), 'Browser back/forward listens for popstate');
-assert.ok(html.includes("get('page') || new URLSearchParams(window.location.search).get('tab') || 'explore'"), 'Popstate defaults to explore at the root route');
+assert.ok(html.includes("get('page') || 'explore'"), 'Popstate defaults to explore at the root route');
 assert.ok(html.includes("window.switchTab(ROUTABLE_PAGES.has(page) ? page : 'explore', true, { fromHistory: true })"), 'Popstate switches the visible page without pushing history again');
+assert.ok(html.includes("window.history.replaceState({ page: 'explore' }"), 'Initial root route uses replaceState for explore');
 
 function applyGuestJoin(party, guest) {
   const joined = Array.isArray(party.joined) ? [...party.joined] : [];
