@@ -1,6 +1,14 @@
 (function (root) {
     'use strict';
     root.JIA_BEN_RELEASE_NOTES = Object.freeze({
+        v143: {
+            date: '2026-11-19',
+            title: '🧋 支持卡片顯示修正',
+            highlights: [
+                '未設定支持網址時，製作人頁會完整隱藏小額支持卡片。',
+                '有效 HTTPS 支持網址才會顯示支持按鈕與文字。'
+            ]
+        },
         v142: {
             date: '2026-11-19',
             title: '🧋 支持主揪與隱私說明更新',

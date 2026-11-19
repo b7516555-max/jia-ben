@@ -24,7 +24,9 @@
 
         const href = normalizeHttpsUrl(config.SUPPORT_URL);
         card.hidden = true;
+        card.classList?.add?.('hidden');
         link.removeAttribute?.('href');
+        link.textContent = '';
         if (!href) return false;
 
         link.href = href;
@@ -32,6 +34,7 @@
         link.target = '_blank';
         link.rel = 'noopener noreferrer';
         card.hidden = false;
+        card.classList?.remove?.('hidden');
         return true;
     }
 

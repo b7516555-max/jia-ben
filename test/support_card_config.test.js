@@ -17,7 +17,7 @@ function makeDocument() {
     };
     return {
         attributes,
-        card: { hidden: false },
+        card: { hidden: false, classList: { values: new Set(), add(name) { this.values.add(name); }, remove(name) { this.values.delete(name); }, contains(name) { return this.values.has(name); } } },
         link,
         getElementById(id) {
             if (id === 'creator-support-card') return this.card;
@@ -37,11 +37,13 @@ assert.ok(html.includes('任何自願性小額支持皆導向外部第三方金�
 const disabled = makeDocument();
 assert.strictEqual(supportCard.configureSupportCard(disabled, { SUPPORT_URL: '', SUPPORT_LABEL: '支援' }), false);
 assert.strictEqual(disabled.card.hidden, true, 'Empty support URL keeps card hidden');
+assert.strictEqual(disabled.card.classList.contains('hidden'), true, 'Empty support URL adds hidden class to the outer card');
 assert.strictEqual(disabled.link.href, '', 'Empty support URL leaves no active href');
 
 const enabled = makeDocument();
 assert.strictEqual(supportCard.configureSupportCard(enabled, { SUPPORT_URL: 'https://ko-fi.com/jia-ben', SUPPORT_LABEL: '🧋 支持呷奔' }), true);
 assert.strictEqual(enabled.card.hidden, false, 'Valid HTTPS enables the card');
+assert.strictEqual(enabled.card.classList.contains('hidden'), false, 'Valid HTTPS removes hidden class from the outer card');
 assert.strictEqual(enabled.link.href, 'https://ko-fi.com/jia-ben', 'Valid HTTPS is rendered as the link');
 assert.strictEqual(enabled.link.textContent, '🧋 支持呷奔', 'Configured label is rendered as text');
 assert.strictEqual(enabled.link.target, '_blank', 'Link opens in a new tab');

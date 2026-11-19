@@ -1,11 +1,11 @@
 // Keep this value synchronized with src/config/appVersion.js when releasing a new version.
-const CACHE_NAME = 'together-eat-shell-v142';
+const CACHE_NAME = 'together-eat-shell-v143';
 const APP_SHELL = [
   './', 
   './index.html', 
   './osm-adapter.js?v=5',
   './src/utils/imageSafety.js?v=137',
-  './src/utils/publicPrivacy.js?v=141',
+  './src/utils/publicPrivacy.js?v=143',
   './src/utils/placeMatch.js?v=2',
   './src/utils/taiwanAddressNormalizer.js?v=60',
   './src/utils/taiwanPhoneNormalizer.js?v=60',
@@ -41,12 +41,12 @@ const APP_SHELL = [
   './src/components/restaurantCard.js?v=137',
   './src/services/interactiveMap.js?v=137',
   './src/services/jiaLionAssistant.js?v=135',
-  './src/utils/supportCard.js?v=142',
-  './src/core/uiShell.js?v=142',
-  './src/config/appVersion.js?v=142',
+  './src/utils/supportCard.js?v=143',
+  './src/core/uiShell.js?v=143',
+  './src/config/appVersion.js?v=143',
   './src/config/localPlaceEnrichment.js?v=126',
-  './src/config/authConfig.js?v=142',
-  './src/config/releaseNotes.js?v=142',
+  './src/config/authConfig.js?v=143',
+  './src/config/releaseNotes.js?v=143',
   './src/services/freeImageSearch.js?v=1',
   './assets/place-placeholder.svg',
   './assets/food/lu_rou_fan.jpg',
