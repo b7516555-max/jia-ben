@@ -1,6 +1,15 @@
 (function (root) {
     'use strict';
     root.JIA_BEN_RELEASE_NOTES = Object.freeze({
+        v145: {
+            date: '2026-11-19',
+            title: '🍜 更懂你的吃貨體驗',
+            highlights: [
+                '新增離我最近、評分最高與現在營業中的探索方式。',
+                '搜尋建議、骨架屏與站內通知，讓找店流程更順手。',
+                '詳情頁可產生呷奔分享圖卡，外部圖片失敗也能穩定下載。'
+            ]
+        },
         v144: {
             date: '2026-11-19',
             title: '🔎 全站文字可讀性升級',

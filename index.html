@@ -45,7 +45,7 @@
 
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="./src/styles/design-tokens.css?v=144">
+    <link rel="stylesheet" href="./src/styles/design-tokens.css?v=145">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <link rel="stylesheet" href="./src/styles/interactive-map.css?v=1">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -101,17 +101,29 @@
     <script src="./src/services/interactiveMap.js?v=137"></script>
     <script src="./src/components/restaurantCard.js?v=137"></script>
     <script src="./src/utils/publicPrivacy.js?v=143"></script>
-    <script src="./src/config/appVersion.js?v=144"></script>
+    <script src="./src/config/appVersion.js?v=145"></script>
     <script src="./src/config/localPlaceEnrichment.js?v=126"></script>
     <script src="./src/config/authConfig.js?v=143"></script>
-    <script src="./src/config/releaseNotes.js?v=144"></script>
+    <script src="./src/config/releaseNotes.js?v=145"></script>
     <script src="./src/services/freeImageSearch.js?v=1"></script>
     <script src="./src/services/jiaLionAssistant.js?v=135"></script>
+    <script src="./src/services/foodieEnhancements.js?v=145"></script>
     <script src="./src/utils/supportCard.js?v=143"></script>
     <script src="./src/core/uiShell.js?v=143"></script>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            window.JiaFoodieEnhancements?.init();
+            window.requestJiaBenLocation = function () {
+                if (!navigator.geolocation) return window.showCustomMsg?.('此裝置暫不支援定位，仍可使用綜合推薦。');
+                navigator.geolocation.getCurrentPosition(position => {
+                    window.jiaUserLocation = { lat: position.coords.latitude, lng: position.coords.longitude };
+                    window.showCustomMsg?.('📍 已取得位置，重新整理離你最近的好店。');
+                    if (typeof window.searchGooglePlaces === 'function') window.searchGooglePlaces('explore');
+                    else window.renderHomeForYou?.();
+                }, () => window.showCustomMsg?.('目前無法取得位置，請檢查瀏覽器定位權限。'), { enableHighAccuracy: false, timeout: 5000 });
+            };
+            document.getElementById('explore-sort')?.addEventListener('change', () => window.searchGooglePlaces?.('explore'));
             const versionEl = document.getElementById('intro-version');
             if (versionEl && window.JIA_BEN_VERSION) versionEl.textContent = `版本 ${window.JIA_BEN_VERSION}`;
             const producerVersionEl = document.getElementById('producer-version');
@@ -1597,7 +1609,7 @@
                     <span>/</span>
                     <span id="detail-breadcrumb-name" class="truncate"></span>
                 </div>
-                <button type="button" id="detail-direct-share-btn" class="shrink-0 rounded-full bg-orange-50 border border-orange-200 text-orange-700 px-2.5 py-1 font-black hover:bg-orange-100"><i class="fa-solid fa-link mr-1"></i>分享這間店</button>
+                <div class="flex items-center gap-1.5 shrink-0"><button type="button" id="detail-direct-share-btn" class="rounded-full bg-orange-50 border border-orange-200 text-orange-700 px-2.5 py-1 font-black hover:bg-orange-100"><i class="fa-solid fa-link mr-1"></i>分享這間店</button><button type="button" id="detail-share-card-btn" class="rounded-full bg-amber-50 border border-amber-200 text-amber-700 px-2.5 py-1 font-black hover:bg-amber-100"><i class="fa-solid fa-image mr-1"></i>生成圖卡</button></div>
             </div>
             
             <div class="p-4 md:p-5 overflow-y-auto no-scrollbar flex-1 bg-gray-50 space-y-3">
@@ -1664,7 +1676,7 @@
                         <!-- 動態填入：地址、電話、營業時間、推薦料理等狀態 -->
                     </div>
                     <div id="detail-completeness-cta-wrap" class="pt-1 border-t border-orange-200/60 flex items-center justify-between">
-                        <span id="detail-completeness-hint" class="text-[11px] text-gray-600 font-medium">知道缺少的資訊嗎？幫大家補上</span>
+                        <span id="detail-completeness-hint" class="text-[11px] text-gray-600 font-medium">📷 搶先補充資訊，和大家一起解鎖好店</span>
                         <button type="button" id="detail-completeness-primary-btn" onclick="window.openContributeModal()" class="px-2.5 py-1 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-xs font-bold transition flex items-center gap-1 shadow-2xs">
                             <i class="fa-solid fa-hand-holding-heart text-[10px]"></i><span>幫忙補資料</span>
                         </button>
@@ -2351,6 +2363,7 @@
                     <h1 id="app-header-title" class="text-[16px] font-bold tracking-widest leading-none mt-1">呷奔 • 找餐廳</h1>
                 </div>
                 <div class="flex items-center gap-1.5">
+                     <button id="notification-bell" type="button" class="relative w-9 h-9 flex items-center justify-center bg-white/20 backdrop-blur-sm rounded-full transition hover:bg-white/30" title="站內通知" aria-label="站內通知"><span aria-hidden="true">🔔</span><span id="notification-unread-dot" class="hidden absolute top-1 right-1 w-2.5 h-2.5 rounded-full bg-rose-500 border border-white"></span></button>
                      <button onclick="window.openProducerModal()" class="w-9 h-9 flex items-center justify-center bg-white/20 backdrop-blur-sm rounded-full transition hover:bg-white/30" title="關於製作人與呷奔" aria-label="關於製作人與呷奔">
                          <i class="fa-solid fa-circle-info text-base"></i>
                      </button>
@@ -2502,6 +2515,7 @@
                                 <div class="relative flex-1 min-w-0">
                                     <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-gray-400 text-xs"></i>
                                     <input type="text" id="explore-keyword" placeholder="搜尋美食、餐廳或特定料理（如：燒肉、拉麵）" class="w-full pl-8 pr-2 py-1.5 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm font-medium text-gray-800 focus:outline-none focus:border-orange-400" onkeypress="if(event.key === 'Enter') window.searchGooglePlaces('explore')">
+                                    <div id="explore-search-suggestions" class="hidden absolute z-30 top-full left-0 right-0 mt-2 rounded-2xl border border-orange-100 bg-white p-3 shadow-xl text-sm text-gray-700"></div>
                                 </div>
                                 <button onclick="window.searchGooglePlaces('explore')" class="bg-orange-500 text-white px-4 py-1.5 rounded-xl shadow-2xs font-bold text-xs sm:text-sm hover:bg-orange-600 transition whitespace-nowrap shrink-0">搜尋</button>
                             </div>
@@ -2514,6 +2528,7 @@
                                     <button onclick="window.runQuickSearch('小吃')" class="pill-chip shrink-0 rounded-full border border-orange-100 bg-orange-50/60 hover:bg-orange-100 px-2.5 py-0.5 text-[10px] font-bold text-orange-700 shadow-2xs">🥢 台灣小吃</button>
                                     <button onclick="window.runQuickSearch('甜點')" class="pill-chip shrink-0 rounded-full border border-orange-100 bg-orange-50/60 hover:bg-orange-100 px-2.5 py-0.5 text-[10px] font-bold text-orange-700 shadow-2xs">☕ 咖啡/甜點</button>
                                     <button onclick="window.filterFoodTrucks()" class="pill-chip shrink-0 rounded-full border border-sky-100 bg-sky-50/70 hover:bg-sky-100 px-2.5 py-0.5 text-[10px] font-bold text-sky-700 shadow-2xs">🚚 行動餐車</button>
+                                    <button id="explore-open-now" onclick="window.runQuickSearch('營業中')" class="pill-chip shrink-0 rounded-full border border-emerald-100 bg-emerald-50/70 hover:bg-emerald-100 px-2.5 py-0.5 text-[10px] font-bold text-emerald-700 shadow-2xs">🟢 現在營業中</button>
                                 </div>
                                 <div class="flex items-center gap-1 text-xs text-gray-500 shrink-0">
                                     <span class="font-bold text-[11px]"><i class="fa-solid fa-coins text-amber-500 mr-0.5"></i>預算</span>
@@ -2522,6 +2537,7 @@
                                     <input type="number" id="explore-price-max" placeholder="最高" min="0" step="50" class="w-14 bg-gray-50 border border-gray-200 rounded-lg px-1.5 py-0.5 text-xs text-gray-800 font-bold focus:outline-none">
                                 </div>
                             </div>
+                            <div class="flex items-center justify-end gap-2"><label for="explore-sort" class="text-sm font-bold text-gray-500">排序</label><select id="explore-sort" class="rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-base font-bold text-gray-700"><option value="recommended">✨ 綜合推薦</option><option value="distance">📍 離我最近</option><option value="rating">⭐ 評分最高</option></select><button type="button" onclick="window.requestJiaBenLocation?.()" class="rounded-xl border border-orange-200 bg-orange-50 px-3 py-1.5 text-sm font-bold text-orange-700">📍 使用我的位置</button></div>
                         </div>
 
                         <section id="explore-discovery-panel" class="space-y-4">
@@ -6218,7 +6234,12 @@
 
                     const executeLocalSmartSearch = (userLoc) => {
                         searchOpts.userLocation = userLoc;
-                        const results = window.JiaSmartSearch.search(window.jiaPlacesData, searchOpts);
+                        const sortMode = document.getElementById('explore-sort')?.value || 'recommended';
+                        let results = window.JiaSmartSearch.search(window.jiaPlacesData, searchOpts);
+                        results = results.map(result => ({ ...result, place: window.JiaFoodieEnhancements?.decoratePlace(result.place, userLoc) || result.place }));
+                        if (rawK) window.JiaFoodieEnhancements?.rememberSearch(rawK);
+                        if (rawK.includes('營業中')) results = results.filter(result => result.place.openStatus === '🟢 營業中');
+                        if (sortMode !== 'recommended') results = window.JiaFoodieEnhancements.sortPlaces(results.map(result => result.place), sortMode, userLoc).map(place => ({ place, distanceKm: place.distanceKm }));
                         const feedback = document.getElementById('explore-results-feedback');
                         if (feedback) feedback.textContent = results.length ? `找到 ${results.length} 筆符合結果` : '沒有符合條件的餐廳，請調整關鍵字或篩選條件。';
                         if (results.length > 0) {
@@ -9234,6 +9255,14 @@
                     window.showCustomMsg?.('✅ 已複製分享連結');
                 } catch (_) { window.showCustomMsg?.(`請複製這個連結：\n${shareUrl.toString()}`); }
             };
+            const shareCardBtn = document.getElementById('detail-share-card-btn');
+            if (shareCardBtn) shareCardBtn.onclick = async () => {
+                try {
+                    const canvas = await window.JiaFoodieEnhancements?.drawShareCard(detailPlace, { documentRef: document, imageUrl: data.img });
+                    if (canvas) window.JiaFoodieEnhancements.downloadShareCard(canvas, `${String(data.name).replace(/[^\w\u4e00-\u9fff-]+/g, '-')}-jia-ben.png`);
+                    window.showCustomMsg?.('🖼️ 分享圖卡已準備好，可以下載囉！');
+                } catch (_) { window.showCustomMsg?.('目前無法產生圖卡，請稍後再試。'); }
+            };
             const moreBtn = document.getElementById('detail-explore-more-btn');
             if (moreBtn) {
                 moreBtn.textContent = detailCity ? `🔍 查看更多${detailCity}好店` : `🔍 查看更多${detailPlace.category || detailPlace.categories?.[0] || '餐廳'}好店`;
@@ -12225,5 +12254,9 @@
         }
     </script>
     <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer" class="map-attribution fixed bottom-1 right-2 z-30 rounded bg-white/90 px-1.5 py-0.5 text-[9px] text-gray-600 shadow-sm backdrop-blur" title="OpenStreetMap 資料授權">© OpenStreetMap contributors</a>
+<aside id="notification-drawer" class="hidden fixed right-4 top-20 z-[180] w-[min(360px,calc(100vw-2rem))] rounded-2xl border border-orange-100 bg-white shadow-2xl overflow-hidden" aria-label="站內通知">
+    <div class="flex items-center justify-between bg-orange-50 px-4 py-3"><strong class="text-base text-gray-800">🔔 站內通知</strong><button type="button" onclick="document.getElementById('notification-drawer')?.classList.add('hidden')" class="text-sm text-gray-500">關閉</button></div>
+    <div id="notification-list" class="max-h-[60vh] overflow-y-auto"><p class="p-4 text-sm text-gray-500">目前沒有新通知。</p></div>
+</aside>
 </body>
 </html>

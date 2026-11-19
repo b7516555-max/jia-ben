@@ -1,0 +1,30 @@
+const assert = require('assert');
+const fs = require('fs');
+const path = require('path');
+const api = require('../src/services/foodieEnhancements.js');
+
+const root = path.join(__dirname, '..');
+const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+const sw = fs.readFileSync(path.join(root, 'sw.js'), 'utf8');
+const version = fs.readFileSync(path.join(root, 'src/config/appVersion.js'), 'utf8');
+
+assert.strictEqual(Math.round(api.haversineKm({ lat: 22.6273, lng: 120.3014 }, { lat: 22.633, lng: 120.3014 }) * 1000), 634);
+assert.strictEqual(api.parseOpeningHours('09:00-23:00', new Date('2026-11-19T12:00:00')), '🟢 營業中');
+assert.strictEqual(api.parseOpeningHours('09:00-11:00', new Date('2026-11-19T12:00:00')), '⚫ 已打烊');
+assert.strictEqual(api.parseOpeningHours('', new Date()), '');
+const storage = new Map();
+const fakeStorage = { getItem: key => storage.get(key) || null, setItem: (key, value) => storage.set(key, value), removeItem: key => storage.delete(key) };
+api.rememberSearch('高雄 燒肉', fakeStorage);
+assert.deepStrictEqual(api.readRecent(fakeStorage), ['高雄 燒肉']);
+api.clearRecentSearches(fakeStorage);
+assert.deepStrictEqual(api.readRecent(fakeStorage), []);
+const notification = api.buildNotifications({ releaseVersion: 'v145', storage: fakeStorage, now: Date.now() });
+assert.strictEqual(notification.unreadCount, 1);
+api.markNotificationsRead(fakeStorage, Date.now() + 1);
+assert.strictEqual(api.buildNotifications({ releaseVersion: 'v145', storage: fakeStorage, now: Date.now() }).unreadCount, 0);
+assert.ok(html.includes('foodieEnhancements.js?v=145') && html.includes('notification-bell') && html.includes('detail-share-card-btn'));
+assert.ok(html.includes('explore-search-suggestions') && html.includes('explore-sort') && html.includes('現在營業中'));
+assert.ok(sw.includes('together-eat-shell-v145') && sw.includes('foodieEnhancements.js?v=145'));
+assert.ok(version.includes("JIA_BEN_VERSION = 'v145'"));
+assert.ok(!html.includes('MutationObserver') && !html.includes('setInterval(updateAvoidance'));
+console.log('foodie_enhancements.test.js passed');

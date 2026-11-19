@@ -18,6 +18,12 @@ label, .form-hint { font-size: var(--jia-text-secondary); line-height: 1.5; }
 .text-\[9px\], .text-\[10px\], .text-\[11px\] { font-size: var(--jia-text-meta) !important; line-height: 1.45 !important; }
 .text-xs { font-size: var(--jia-text-secondary) !important; line-height: 1.5 !important; }
 .text-\[9px\] i, .text-\[10px\] i, .text-\[11px\] i { font-size: inherit; }
+
+.jia-skeleton-card { min-height: 220px; padding: .75rem; border: 1px solid #f3f4f6; border-radius: 1rem; background: #fff; overflow: hidden; }
+.jia-skeleton-media, .jia-skeleton-line { background: linear-gradient(90deg, #f3f4f6 25%, #fff7ed 50%, #f3f4f6 75%); background-size: 200% 100%; animation: jia-skeleton-pulse 1.4s ease-in-out infinite; border-radius: .75rem; }
+.jia-skeleton-media { height: 130px; margin-bottom: .75rem; }
+.jia-skeleton-line { height: 14px; margin: .55rem 0; }
+@keyframes jia-skeleton-pulse { 0%, 100% { background-position: 200% 0; } 50% { background-position: -200% 0; } }
 .tab-btn { font-size: 13px; white-space: nowrap; }
 .restaurant-card h3 { font-size: clamp(1rem, 2.4vw, 1.125rem); line-height: 1.35; }
 .restaurant-card .address-value, .restaurant-card .time-value, .restaurant-card .numeric-value { font-size: var(--jia-text-secondary); line-height: 1.5; }
