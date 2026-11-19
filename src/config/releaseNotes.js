@@ -1,6 +1,14 @@
 (function (root) {
     'use strict';
     root.JIA_BEN_RELEASE_NOTES = Object.freeze({
+        v148: {
+            date: '2026-11-19',
+            title: '📌 手動選位置與卡片操作修正',
+            highlights: [
+                '手動生活圈選擇器改為獨立高層級彈窗，選取後立即同步全站定位狀態。',
+                '餐廳卡片的 G 地圖按鈕固定單行顯示，手機操作更清楚。'
+            ]
+        },
         v147: {
             date: '2026-11-19',
             title: '🎯 高精度定位與 Google Maps 直達',

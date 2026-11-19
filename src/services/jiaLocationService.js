@@ -20,9 +20,24 @@
         });
     }
     function setManual(label) { const value = MANUAL[label]; return value ? save(value, 'manual') : null; }
+    function openManualPicker(documentRef = root.document) {
+        if (!documentRef?.body) return null;
+        let modal = documentRef.getElementById('jia-manual-location-modal');
+        if (!modal) {
+            modal = documentRef.createElement('div'); modal.id = 'jia-manual-location-modal'; modal.className = 'fixed inset-0 z-[200] flex items-center justify-center bg-black/50 p-4'; modal.setAttribute('role', 'dialog'); modal.setAttribute('aria-modal', 'true');
+            modal.innerHTML = '<div class="w-full max-w-md rounded-3xl bg-white p-5 shadow-2xl"><div class="flex items-center justify-between gap-3"><h2 class="text-lg font-black text-gray-800">📌 選擇目前生活圈</h2><button type="button" data-manual-close class="text-gray-500 text-xl" aria-label="關閉">×</button></div><p class="mt-1 text-sm text-gray-500">選好後會同步找餐廳、輪盤與距離排序。</p><div data-manual-options class="mt-4 grid grid-cols-2 gap-2"></div></div>';
+            documentRef.body.appendChild(modal);
+            modal.querySelector('[data-manual-close]').addEventListener('click', () => modal.remove());
+        }
+        const options = modal.querySelector('[data-manual-options]');
+        options.innerHTML = Object.keys(MANUAL).map(label => `<button type="button" data-manual-location="${label}" class="rounded-2xl border border-orange-200 bg-orange-50 px-3 py-3 text-sm font-black text-orange-700 hover:bg-orange-100">${label}</button>`).join('');
+        options.querySelectorAll('[data-manual-location]').forEach(button => button.addEventListener('click', () => { const value = setManual(button.dataset.manualLocation); modal.remove(); documentRef.dispatchEvent(new CustomEvent('jia:location-changed', { detail: value })); }));
+        modal.classList.remove('hidden');
+        return modal;
+    }
     function chooseManual() { const labels = Object.keys(MANUAL); const selected = root.prompt?.(`選擇目前生活圈：\n${labels.map((item, i) => `${i + 1}. ${item}`).join('\n')}\n請輸入編號`); const index = Number(selected) - 1; const result = labels[index] ? setManual(labels[index]) : null; if (!result && selected != null) root.showCustomMsg?.('沒有找到這個生活圈，請重新選擇。'); return result; }
     function mapsUrl(place = {}) { const name = String(place.name || '').trim(); const address = String(place.address || '').trim(); const area = [place.city, place.district].filter(Boolean).join(''); const query = [name, address || area].filter(Boolean).join(' '); const fallback = valid(place.location) ? `${place.location.lat},${place.location.lng}` : (valid({ lat: place.lat, lng: place.lng }) ? `${place.lat},${place.lng}` : name || '餐廳'); return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query || fallback)}`; }
     function label(value = readSaved()) { if (!value) return '📍 尚未取得定位'; return value.source === 'manual' ? `📍 手動位置${value.accuracy ? ` (±${Math.round(value.accuracy)}m)` : ''}` : `📍 已定位${value.accuracy ? ` (±${Math.round(value.accuracy)}m)` : ''}`; }
-    const api = { STORAGE_KEY, MANUAL, readSaved, save, request, setManual, chooseManual, mapsUrl, label };
+    const api = { STORAGE_KEY, MANUAL, readSaved, save, request, setManual, chooseManual, openManualPicker, mapsUrl, label };
     if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.JiaLocation = api;
 })(typeof window !== 'undefined' ? window : globalThis);
