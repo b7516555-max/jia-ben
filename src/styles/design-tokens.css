@@ -2,7 +2,7 @@
   --jia-space-1: 4px; --jia-space-2: 8px; --jia-space-3: 12px; --jia-space-4: 16px;
   --jia-space-5: 20px; --jia-space-6: 24px; --jia-space-8: 32px;
   --jia-radius-sm: 8px; --jia-radius-md: 12px; --jia-radius-lg: 20px; --jia-radius-pill: 9999px;
-  --jia-text-title: 1.5rem; --jia-text-name: 1rem; --jia-text-body: .875rem; --jia-text-secondary: .75rem; --jia-text-meta: .6875rem;
+  --jia-text-title: 1.625rem; --jia-text-name: 1.125rem; --jia-text-body: 1rem; --jia-text-secondary: .875rem; --jia-text-meta: .8125rem;
   --jia-elevation-card: 0 8px 24px rgba(15,23,42,.08); --jia-elevation-floating: 0 12px 28px rgba(15,23,42,.12);
   --jia-elevation-modal: 0 24px 64px rgba(15,23,42,.2);
   --jia-focus-ring: 0 0 0 3px rgba(249,115,22,.3);
@@ -10,3 +10,18 @@
 .restaurant-card:focus-visible, .restaurant-card button:focus-visible, button:focus-visible, a:focus-visible { outline: 0; box-shadow: var(--jia-focus-ring); }
 .restaurant-card { min-width: 0; }
 .restaurant-card img { display: block; max-width: 100%; }
+
+/* v144 readability floor: keep compact layouts readable on phones and iOS inputs. */
+body { font-size: var(--jia-text-body); }
+input, select, textarea { font-size: 16px !important; line-height: 1.45; }
+label, .form-hint { font-size: var(--jia-text-secondary); line-height: 1.5; }
+.text-\[9px\], .text-\[10px\], .text-\[11px\] { font-size: var(--jia-text-meta) !important; line-height: 1.45 !important; }
+.text-xs { font-size: var(--jia-text-secondary) !important; line-height: 1.5 !important; }
+.text-\[9px\] i, .text-\[10px\] i, .text-\[11px\] i { font-size: inherit; }
+.tab-btn { font-size: 13px; white-space: nowrap; }
+.restaurant-card h3 { font-size: clamp(1rem, 2.4vw, 1.125rem); line-height: 1.35; }
+.restaurant-card .address-value, .restaurant-card .time-value, .restaurant-card .numeric-value { font-size: var(--jia-text-secondary); line-height: 1.5; }
+@media (max-width: 767px) {
+  nav .tab-btn { min-height: 56px; padding-inline: 4px; font-size: 12px; }
+  .modal-dialog, [role="dialog"] { max-width: calc(100vw - 24px); }
+}

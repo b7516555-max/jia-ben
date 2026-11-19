@@ -33,5 +33,5 @@ assert.ok(html.includes('firebasejs/11.6.1/firebase-firestore.js'), 'Firebase Fi
 
 const sw = fs.readFileSync(path.join(root, 'sw.js'), 'utf8');
 assert.ok(sw.includes('self.skipWaiting()') && sw.includes('self.clients.claim()'), 'Service Worker activates the newest shell');
-assert.ok(sw.includes('together-eat-shell-v143'), 'Service Worker cache is v143');
+assert.ok(sw.includes('together-eat-shell-v144'), 'Service Worker cache is v144');
 console.log('✅ Full-page script, module, fallback, and Service Worker bootstrap audit passed');

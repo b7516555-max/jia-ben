@@ -1,6 +1,15 @@
 (function (root) {
     'use strict';
     root.JIA_BEN_RELEASE_NOTES = Object.freeze({
+        v144: {
+            date: '2026-11-19',
+            title: '🔎 全站文字可讀性升級',
+            highlights: [
+                '提升全站標題、內文、標籤與操作按鈕的最低字級。',
+                '表單輸入統一至少 16px，手機閱讀與 iOS 輸入體驗更穩定。',
+                '保留手機卡片與導覽列的彈性排版，降低文字裁切與水平溢出。'
+            ]
+        },
         v143: {
             date: '2026-11-19',
             title: '🧋 支持卡片顯示修正',

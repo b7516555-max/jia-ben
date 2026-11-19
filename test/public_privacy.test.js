@@ -18,5 +18,5 @@ assert.ok(html.includes('全部公開精選') && html.includes('我的口袋名�
 assert.ok(html.includes('p.joined.map(name => window.JiaPublicPrivacy'), 'Party attendees use public nickname conversion');
 assert.ok(html.includes('publicOwnerName') && html.includes('publicCreator'), 'Detail labels and referrals use public display values');
 assert.ok(html.includes('引薦人，選填'), 'New-friend inviter is optional');
-assert.ok(version.includes("JIA_BEN_VERSION = 'v143'"), 'App version is v143');
+assert.ok(version.includes("JIA_BEN_VERSION = 'v144'"), 'App version is v144');
 console.log('✅ Public nickname and private-group privacy contracts passed');
