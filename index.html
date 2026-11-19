@@ -101,10 +101,10 @@
     <script src="./src/services/interactiveMap.js?v=137"></script>
     <script src="./src/components/restaurantCard.js?v=137"></script>
     <script src="./src/utils/publicPrivacy.js?v=143"></script>
-    <script src="./src/config/appVersion.js?v=145"></script>
+    <script src="./src/config/appVersion.js?v=146"></script>
     <script src="./src/config/localPlaceEnrichment.js?v=126"></script>
     <script src="./src/config/authConfig.js?v=143"></script>
-    <script src="./src/config/releaseNotes.js?v=145"></script>
+    <script src="./src/config/releaseNotes.js?v=146"></script>
     <script src="./src/services/freeImageSearch.js?v=1"></script>
     <script src="./src/services/jiaLionAssistant.js?v=135"></script>
     <script src="./src/services/foodieEnhancements.js?v=145"></script>
@@ -1668,7 +1668,7 @@
                 <div class="bg-gradient-to-r from-orange-50/70 to-amber-50/70 p-3.5 rounded-2xl border border-orange-200/80 shadow-2xs space-y-2.5">
                     <div class="flex items-center justify-between">
                         <span class="text-xs font-black text-gray-800 flex items-center gap-1.5">
-                            <i class="fa-solid fa-list-check text-orange-500"></i>店家資訊完整度
+                            <i class="fa-solid fa-list-check text-orange-500"></i>✨ 吃貨情報解鎖
                         </span>
                         <span id="detail-completeness-score-badge" class="text-[10px] font-black px-2 py-0.5 rounded-full bg-white text-orange-700 border border-orange-200 shadow-2xs">檢查中...</span>
                     </div>
@@ -9540,14 +9540,14 @@
                         </span>
                         ${it.ok
                             ? '<span class="text-[10px] font-black text-emerald-600 flex items-center gap-0.5"><i class="fa-solid fa-check"></i>已完整</span>'
-                            : `<button type="button" onclick="window.openContributeModal(null, '${it.field}')" class="text-[10px] font-black text-orange-600 hover:underline">缺漏，點此補上</button>`
+                            : `<button type="button" onclick="window.openContributeModal(null, '${it.field}')" class="text-[10px] font-black text-orange-600 hover:underline">✨ 待解鎖，點此補充</button>`
                         }
                     </div>
                 `).join('');
 
                 const completeCount = items.filter(it => it.ok).length;
                 if (completenessScoreBadge) {
-                    completenessScoreBadge.textContent = `${completeCount} / ${items.length} 項完整`;
+                    completenessScoreBadge.textContent = `${completeCount} / ${items.length} 項已解鎖`;
                 }
 
                 if (primaryCtaBtn && window.JiaCommunityContributionUX?.getPrimaryContributionCTA) {

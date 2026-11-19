@@ -1,6 +1,14 @@
 (function (root) {
     'use strict';
     root.JIA_BEN_RELEASE_NOTES = Object.freeze({
+        v146: {
+            date: '2026-11-19',
+            title: '✨ 吃貨情報解鎖文案優化',
+            highlights: [
+                '店家資訊完整度改為吃貨情報解鎖進度，閱讀更直覺。',
+                '待補欄位改用正向補充引導，原有補資料流程維持不變。'
+            ]
+        },
         v145: {
             date: '2026-11-19',
             title: '🍜 更懂你的吃貨體驗',
