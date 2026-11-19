@@ -13,5 +13,5 @@ assert.ok(html.includes('profile-food-map-btn') && html.includes('showUserFoodMa
 assert.ok(html.includes('id="view-privacy"') && html.includes('隱私權與資料說明'), 'Privacy page and Traditional Chinese content exist');
 assert.ok(shell.includes("'privacy'") && shell.includes('PAGE_TITLES'), 'Privacy is included in the independent page router');
 assert.ok(html.includes('window.switchTab(\'privacy\')'), 'Welcome and login surfaces link to privacy');
-assert.ok(notes.includes('v138'), 'Release notes include v138');
+assert.ok(notes.includes('v139'), 'Release notes include v139');
 console.log('✅ Hot list, foodie leaderboard, profile map, and privacy contracts passed');

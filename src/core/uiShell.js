@@ -131,7 +131,7 @@
         root.syncNavigationState(tab);
         root.scrollTo?.({ top: 0, behavior: 'auto' });
         root.document.getElementById('main-content')?.scrollTo?.({ top: 0, behavior: 'auto' });
-        const titles = { explore: '找餐廳', map: '地圖找餐廳', nearby: '美食輪盤', history: '吃過紀錄', party: '揪團活動', feed: '美食動態牆', chat: '留言板', list: '口袋名單', creator: '製作人介紹', admin: '主揪後台', guide: '使用指南' };
+        const titles = { explore: '找餐廳', map: '地圖找餐廳', nearby: '美食輪盤', history: '吃過紀錄', party: '揪團活動', feed: '美食動態牆', chat: '留言板', list: '口袋名單', creator: '製作人介紹', admin: '主揪後台', guide: '使用指南', privacy: '隱私權與資料說明' };
         const title = root.document.getElementById('app-header-title');
         if (title) title.textContent = `呷奔 • ${titles[tab]}`;
         root.restoreDocumentTitle?.(tab);

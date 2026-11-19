@@ -1,6 +1,14 @@
 (function (root) {
     'use strict';
     root.JIA_BEN_RELEASE_NOTES = Object.freeze({
+        v139: {
+            date: '2026-11-19',
+            title: '🗺️ 名片與隱私頁小修正',
+            highlights: [
+                '隱私權與資料說明頁現在會正確顯示頂部標題。',
+                '群友名片的「看他的美食地圖」會切換到該吃貨的推薦清單並提供回饋。'
+            ]
+        },
         v138: {
             date: '2026-11-19',
             title: '🏆 熱榜與活躍吃貨榜上線啦',

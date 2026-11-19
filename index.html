@@ -100,10 +100,10 @@
     <script src="./src/services/mapRestaurantContract.js?v=1"></script>
     <script src="./src/services/interactiveMap.js?v=137"></script>
     <script src="./src/components/restaurantCard.js?v=137"></script>
-    <script src="./src/config/appVersion.js?v=138"></script>
+    <script src="./src/config/appVersion.js?v=139"></script>
     <script src="./src/config/localPlaceEnrichment.js?v=126"></script>
     <script src="./src/config/authConfig.js?v=1"></script>
-    <script src="./src/config/releaseNotes.js?v=138"></script>
+    <script src="./src/config/releaseNotes.js?v=139"></script>
     <script src="./src/services/freeImageSearch.js?v=1"></script>
     <script src="./src/services/jiaLionAssistant.js?v=135"></script>
     <script src="./src/core/uiShell.js?v=135"></script>
@@ -783,7 +783,7 @@
             <button type="button" onclick="window.closeModal('release-notes-modal')" class="absolute top-4 right-4 w-9 h-9 rounded-full bg-orange-50 text-orange-500 hover:bg-orange-100" aria-label="關閉改版公告"><i class="fa-solid fa-xmark"></i></button>
             <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-400 to-rose-400 text-white flex items-center justify-center text-2xl shadow-lg shadow-orange-200 mb-4">✨</div>
             <p class="text-xs font-black tracking-[0.18em] text-orange-500">WHAT'S NEW</p>
-            <h2 id="release-notes-title" class="text-2xl font-black text-gray-800 mt-1">🎉 呷奔更新啦（v138）</h2>
+            <h2 id="release-notes-title" class="text-2xl font-black text-gray-800 mt-1">🎉 呷奔更新啦（v139）</h2>
             <p id="release-notes-date" class="text-xs text-gray-400 mt-2"></p>
             <ul id="release-notes-list" class="mt-5 space-y-3 text-sm leading-6 text-gray-600"></ul>
             <button type="button" onclick="window.closeModal('release-notes-modal')" class="w-full mt-6 py-3 rounded-2xl bg-orange-500 hover:bg-orange-600 text-white font-black transition">收到，開吃！</button>
@@ -1149,7 +1149,7 @@
                 <p class="text-[10px] font-bold text-orange-600 mb-0.5"><i class="fa-solid fa-quote-left mr-1 opacity-60"></i>美食宣言</p>
                 <p id="profile-bio" class="text-xs text-gray-700 font-medium italic">「熱愛到處尋找隱藏版美食！」</p>
             </div>
-            <button type="button" id="profile-food-map-btn" class="w-full mb-3 bg-blue-50 text-blue-700 hover:bg-blue-100 font-black py-2.5 rounded-xl border border-blue-200 transition text-xs"><i class="fa-solid fa-map-location-dot mr-1"></i>看他的美食地圖</button>
+            <button type="button" id="profile-food-map-btn" onclick="window.showUserFoodMap(window.currentProfileUser?.name)" class="w-full mb-3 bg-blue-50 text-blue-700 hover:bg-blue-100 font-black py-2.5 rounded-xl border border-blue-200 transition text-xs"><i class="fa-solid fa-map-location-dot mr-1"></i>看他的美食地圖</button>
 
             <div class="space-y-2 mb-3">
                 <div id="profile-line-box" class="bg-emerald-50 p-3 rounded-2xl border border-emerald-100 flex items-center justify-between gap-2">
@@ -6969,8 +6969,19 @@
 
         window.showUserFoodMap = function(userName) {
             const list = document.getElementById('profile-rec-list');
+            const targetName = String(userName || window.currentProfileUser?.name || '').trim();
+            if (!targetName) return window.showCustomMsg?.('目前找不到這位吃貨的名稱。');
+            window.closeModal('user-profile-modal');
+            window.switchTab?.('list', true);
+            const personSelect = document.getElementById('list-person');
+            if (personSelect) {
+                if (![...personSelect.options].some(option => option.value === targetName)) personSelect.add(new Option(targetName, targetName));
+                personSelect.value = targetName;
+                window.renderList?.();
+            }
+            window.showCustomMsg?.(`🗺️ 已切換到「${targetName}」的推薦美食清單。`);
             if (!list) return;
-            const recs = (window.restaurantData || []).filter(item => item.creator === userName);
+            const recs = (window.restaurantData || []).filter(item => item.creator === targetName);
             list.innerHTML = recs.length ? recs.map(place => `<button type="button" class="w-full text-left flex items-center justify-between gap-2 p-2 bg-white rounded-xl border border-blue-100 hover:border-orange-200 transition" onclick="window.closeModal('user-profile-modal'); window.openRestaurantDetailByName('${window.escapeForBtn(place.name)}')"><span class="min-w-0"><strong class="block text-xs font-bold text-gray-800 truncate">${window.escapeHtml(place.name)}</strong><span class="block text-[10px] text-gray-400 truncate">${window.escapeHtml(place.city || '美食好店')} · ${place.rating ? `⭐ ${place.rating}` : '推薦'}</span></span><i class="fa-solid fa-arrow-right text-orange-500 text-xs shrink-0"></i></button>`).join('') : '<div class="text-center text-gray-400 py-4 text-xs">這位吃貨還沒有可展示的推薦店家。</div>';
         };
 
