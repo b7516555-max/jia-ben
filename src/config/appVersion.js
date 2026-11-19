@@ -2,5 +2,5 @@
     'use strict';
 
     // Keep this value synchronized with CACHE_NAME in sw.js when releasing a new version.
-    root.JIA_BEN_VERSION = 'v146';
+    root.JIA_BEN_VERSION = 'v147';
 })(typeof window !== 'undefined' ? window : globalThis);

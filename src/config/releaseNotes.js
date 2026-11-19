@@ -1,6 +1,15 @@
 (function (root) {
     'use strict';
     root.JIA_BEN_RELEASE_NOTES = Object.freeze({
+        v147: {
+            date: '2026-11-19',
+            title: '🎯 高精度定位與 Google Maps 直達',
+            highlights: [
+                '統一高精度 GPS 校準，找餐廳、輪盤、地圖與餐車更新共用最新位置。',
+                '定位失敗不再套用假座標，新增重新定位與手動生活圈選擇。',
+                '店家卡片、輪盤、地圖列表與詳情頁都提供顯眼的 Google Maps 直達按鈕。'
+            ]
+        },
         v146: {
             date: '2026-11-19',
             title: '✨ 吃貨情報解鎖文案優化',

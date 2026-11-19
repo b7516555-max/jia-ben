@@ -9,5 +9,5 @@ assert.ok(html.includes('✨ 吃貨情報解鎖'), 'Detail completeness title us
 assert.ok(html.includes('✨ 待解鎖，點此補充'), 'Missing fields use positive contribution copy');
 assert.ok(html.includes('項已解鎖'), 'Completeness score uses unlocked wording');
 assert.ok(!html.includes('缺漏，點此補上'), 'Legacy negative detail copy is removed');
-assert.ok(version.includes("JIA_BEN_VERSION = 'v146'") && notes.includes('v146'), 'v146 is configured');
-console.log('✅ v146 completeness copy contract passed');
+assert.ok(version.includes("JIA_BEN_VERSION = 'v147'") && notes.includes('v147'), 'v147 is configured');
+console.log('✅ v147 location and maps contract baseline passed');

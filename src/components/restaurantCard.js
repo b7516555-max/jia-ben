@@ -26,6 +26,12 @@
         return './assets/place-placeholder.svg';
     }
 
+    function getGoogleMapsUrl(place) {
+        if (typeof window !== 'undefined' && window.JiaLocation?.mapsUrl) return window.JiaLocation.mapsUrl(place);
+        const query = [place?.name, place?.address || place?.city || place?.district].filter(Boolean).join(' ') || '餐廳';
+        return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+    }
+
     /**
      * Unified Place Photo Selector (遵循 Priority: coverPhoto > communityPhotos > linkedFeedPhoto > safePhoto > placeholder)
      */
@@ -228,6 +234,7 @@
                         <span class="text-[11px] font-bold text-orange-600 group-hover:text-orange-700 flex items-center gap-1 transition shrink-0">
                             查看詳情 <i class="fa-solid fa-chevron-right text-[9px] transition-transform group-hover:translate-x-0.5"></i>
                         </span>
+                        <a href="${getGoogleMapsUrl(place)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" class="h-7 px-2 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-[10px] font-black inline-flex items-center gap-1" title="在 Google Maps 查看"><span>G</span><span>地圖</span></a>
                         ${vm.ctaInfo && !vm.ctaInfo.disabled ? `
                         <button type="button" onclick="event.stopPropagation(); if (window.openContributeModal) { window.openContributeModal({ name: '${vm.safeName}', jiaPlaceId: '${vm.id}' }, '${vm.ctaInfo.field}'); }" class="contribution-context-cta h-6 px-2 rounded-md bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200/80 text-[10px] font-black flex items-center gap-1 transition shadow-2xs truncate max-w-[130px]" title="${escapeHtml(vm.ctaInfo.tooltip || vm.ctaInfo.label)}">
                             <i class="fa-solid ${escapeHtml(vm.ctaInfo.icon)} text-amber-600 text-[9px]"></i><span class="truncate">${escapeHtml(vm.ctaInfo.label)}</span>
@@ -278,9 +285,9 @@
                 </div>
                 <div class="flex items-center justify-between gap-2 pt-3 mt-2 border-t border-gray-100">
                     <span class="text-xs text-gray-400">點擊查看詳情與導航</span>
-                    <span class="text-xs font-bold text-white bg-orange-500 px-3.5 py-1.5 rounded-xl shadow-xs group-hover:bg-orange-600 transition flex items-center gap-1">
+                    <div class="flex items-center gap-1.5"><a href="${getGoogleMapsUrl(place)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" class="text-xs font-black text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1.5 rounded-xl" title="在 Google Maps 查看"><span>G</span> 地圖</a><span class="text-xs font-bold text-white bg-orange-500 px-3.5 py-1.5 rounded-xl shadow-xs group-hover:bg-orange-600 transition flex items-center gap-1">
                         查看店家 <i class="fa-solid fa-chevron-right text-[9px]"></i>
-                    </span>
+                    </span></div>
                 </div>
             </div>
         </div>`;
