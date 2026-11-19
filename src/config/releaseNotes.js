@@ -1,6 +1,14 @@
 (function (root) {
     'use strict';
     root.JIA_BEN_RELEASE_NOTES = Object.freeze({
+        v142: {
+            date: '2026-11-19',
+            title: '🧋 支持主揪與隱私說明更新',
+            highlights: [
+                '製作人頁新增可選擇啟用的小額支持卡片，預設不顯示。',
+                '隱私權頁補充第三方金流說明，支持連結只接受 HTTPS。'
+            ]
+        },
         v141: {
             date: '2026-11-19',
             title: '🕶️ 公開視角隱私細節補強',

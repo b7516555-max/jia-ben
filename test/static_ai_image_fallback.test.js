@@ -30,5 +30,5 @@ const sw = fs.readFileSync(path.join(root, 'sw.js'), 'utf8');
 assert.ok(card.includes('vm.isPlaceholder && !vm.isReferenceFallback'), 'Restaurant cards do not externally search for local fallbacks');
 assert.ok(map.includes('window.imageSafety?.selectImage?.'), 'Map cards share the image safety selector');
 assert.ok(map.includes('data-jia-free-image="${shouldSearchExternal ? \'1\' : \'0\'}"'), 'Map cards skip external search for local assets');
-assert.ok(sw.includes('together-eat-shell-v141'), 'Service Worker cache is v141');
+assert.ok(sw.includes('together-eat-shell-v142'), 'Service Worker cache is v142');
 console.log('✅ Static AI food priority and local-image performance contracts passed');

@@ -101,13 +101,14 @@
     <script src="./src/services/interactiveMap.js?v=137"></script>
     <script src="./src/components/restaurantCard.js?v=137"></script>
     <script src="./src/utils/publicPrivacy.js?v=141"></script>
-    <script src="./src/config/appVersion.js?v=141"></script>
+    <script src="./src/config/appVersion.js?v=142"></script>
     <script src="./src/config/localPlaceEnrichment.js?v=126"></script>
-    <script src="./src/config/authConfig.js?v=1"></script>
-    <script src="./src/config/releaseNotes.js?v=141"></script>
+    <script src="./src/config/authConfig.js?v=142"></script>
+    <script src="./src/config/releaseNotes.js?v=142"></script>
     <script src="./src/services/freeImageSearch.js?v=1"></script>
     <script src="./src/services/jiaLionAssistant.js?v=135"></script>
-    <script src="./src/core/uiShell.js?v=135"></script>
+    <script src="./src/utils/supportCard.js?v=142"></script>
+    <script src="./src/core/uiShell.js?v=142"></script>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
@@ -2420,6 +2421,10 @@
                             <div><p class="text-xs font-black text-orange-500 tracking-widest mb-1">一起把呷奔變更好</p><h3 class="text-xl sm:text-2xl font-black text-gray-800">有口袋名單？來敲碗！</h3><p class="text-sm text-gray-500 mt-1">推薦隱藏好店、回報小 bug，或只是想跟主揪打個招呼都可以。</p></div>
                             <a href="mailto:b7516555@gmail.com?subject=呷奔 Jia-ben 推薦與敲碗" class="shrink-0 inline-flex items-center justify-center gap-2 rounded-2xl bg-orange-500 hover:bg-orange-600 text-white font-black px-5 py-3 shadow-lg shadow-orange-200 transition"><i class="fa-solid fa-envelope-open-text"></i>推薦愛店／敲碗</a>
                         </section>
+                        <section id="creator-support-card" hidden class="rounded-[2rem] bg-gradient-to-r from-rose-50 via-orange-50 to-amber-50 border border-orange-200 p-5 sm:p-7 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                            <div><p class="text-xs font-black text-rose-500 tracking-widest mb-1">🧋 小額支持</p><h3 class="text-xl sm:text-2xl font-black text-gray-800">🧋 支持主揪與伺服器營運</h3><p class="text-sm text-gray-600 mt-1">喜歡轉輪盤和揪團嗎？歡迎請主揪喝杯珍奶，讓呷奔跟萊恩繼續跑下去！</p></div>
+                            <a id="creator-support-link" class="shrink-0 inline-flex items-center justify-center gap-2 rounded-2xl bg-rose-500 hover:bg-rose-600 text-white font-black px-5 py-3 shadow-lg shadow-rose-200 transition" target="_blank" rel="noopener noreferrer" aria-label="以新分頁開啟第三方支持平台"></a>
+                        </section>
                         <div class="text-center pb-5"><div class="flex items-center justify-center gap-2 flex-wrap"><span id="creator-version" class="admin-secret-version inline-block text-[11px] font-bold tracking-widest text-gray-400 cursor-pointer">版本 v138</span><button type="button" onclick="window.openReleaseNotesModal()" class="text-[11px] font-black text-orange-500 hover:text-orange-600">✨ 改版資訊</button><button type="button" onclick="window.switchTab('privacy')" class="text-[11px] font-black text-gray-400 hover:text-orange-600">隱私權與資料說明</button></div><p class="text-[10px] text-gray-400 mt-2">呷奔 Jia-ben · 今天也要好好吃飯</p></div>
                     </div>
                 </div>
@@ -2431,6 +2436,7 @@
                             <div class="space-y-4 text-sm leading-7 text-gray-700">
                                 <article class="rounded-2xl bg-orange-50/70 border border-orange-100 p-4"><h3 class="font-black text-orange-800"><i class="fa-solid fa-user-shield mr-2"></i>帳號與資料使用</h3><p class="mt-1">Google、LINE、Email 與匿名訪客登入，只用來同步吃過紀錄、口袋名單、揪團投票與動態互動，不作商業販售。</p></article>
                                 <article class="rounded-2xl bg-amber-50/70 border border-amber-100 p-4"><h3 class="font-black text-amber-800"><i class="fa-solid fa-camera mr-2"></i>資料來源與 AI 圖片說明</h3><p class="mt-1">店家基礎資訊來自政府開放資料、OpenStreetMap 與使用者回報。尚未有實拍照片時，會暫以「AI 餐點示意」呈現；收到實拍後會優先替換。</p></article>
+                                <article class="rounded-2xl bg-rose-50/70 border border-rose-100 p-4"><h3 class="font-black text-rose-800"><i class="fa-solid fa-mug-hot mr-2"></i>自願小額支持</h3><p class="mt-1">任何自願性小額支持皆導向外部第三方金流平台（例如綠界、Portaly 或 Ko-fi）。本網站不經手、不蒐集也不儲存任何信用卡或銀行帳戶資料；實際付款由第三方平台處理，請另參閱該平台的隱私權說明。</p></article>
                                 <article class="rounded-2xl bg-blue-50/70 border border-blue-100 p-4"><h3 class="font-black text-blue-800"><i class="fa-solid fa-envelope mr-2"></i>聯絡與刪除請求</h3><p class="mt-1">如需資料移除、隱私諮詢或帳號協助，請寄信至 <a class="font-black text-blue-700 underline break-all" href="mailto:b7516555@gmail.com">b7516555@gmail.com</a>。</p></article>
                             </div>
                             <p class="text-[11px] text-gray-400 border-t border-gray-100 pt-4">呷奔 Jia-ben · <span id="privacy-version">版本</span> · <a class="underline hover:text-orange-600" href="?page=privacy">https://b7516555-max.github.io/jia-ben/?page=privacy</a></p>

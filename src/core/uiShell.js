@@ -146,7 +146,10 @@
         if (tab === 'chat') root.renderChatMessages?.(true);
         if (tab === 'nearby') root.previewWheelCandidates?.();
         if (tab === 'admin') root.renderAdminDataList?.();
-        if (tab === 'creator') root.updateCreatorStats?.();
+        if (tab === 'creator') {
+            root.configureJiaBenSupportCard?.();
+            root.updateCreatorStats?.();
+        }
         if (tab === 'map') root.JiaInteractiveMap?.open(root.jiaPlacesData || root.restaurantData || FALLBACK_PLACES);
         root.setTimeout(() => root.JiaFreeImageSearch?.hydrateImages?.(), 0);
         updateLion();

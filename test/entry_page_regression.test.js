@@ -14,8 +14,8 @@ assert.ok(uiShell.includes('if (!mainApp) return false;'), 'Entry action is guar
 assert.ok(uiShell.includes('if (!modal) return;'), 'Release note close action is null-safe');
 assert.ok(html.includes('window.__JIA_PENDING_RELEASE_NOTES = true;'), 'First-run release notes are deferred from the welcome overlay');
 assert.ok(uiShell.includes('if (root.__JIA_PENDING_RELEASE_NOTES)'), 'Deferred release notes open after entering the app');
-assert.ok(html.includes('appVersion.js?v=141') && html.includes('releaseNotes.js?v=141'), 'HTML loads the v141 configuration files');
-assert.ok(appVersion.includes("JIA_BEN_VERSION = 'v141'"), 'App version is v141');
+assert.ok(html.includes('appVersion.js?v=142') && html.includes('releaseNotes.js?v=142'), 'HTML loads the v142 configuration files');
+assert.ok(appVersion.includes("JIA_BEN_VERSION = 'v142'"), 'App version is v142');
 assert.ok(releaseNotes.includes('v141'), 'Release notes include v141');
-assert.ok(sw.includes('together-eat-shell-v141') && sw.includes('appVersion.js?v=141') && sw.includes('releaseNotes.js?v=141'), 'Service Worker is v141');
+assert.ok(sw.includes('together-eat-shell-v142') && sw.includes('appVersion.js?v=142') && sw.includes('releaseNotes.js?v=142'), 'Service Worker is v142');
 console.log('✅ Entry page immediate-response regression contract passed');
