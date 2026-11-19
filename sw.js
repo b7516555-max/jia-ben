@@ -1,11 +1,11 @@
 // Keep this value synchronized with src/config/appVersion.js when releasing a new version.
-const CACHE_NAME = 'together-eat-shell-v140';
+const CACHE_NAME = 'together-eat-shell-v141';
 const APP_SHELL = [
   './', 
   './index.html', 
   './osm-adapter.js?v=5',
   './src/utils/imageSafety.js?v=137',
-  './src/utils/publicPrivacy.js?v=140',
+  './src/utils/publicPrivacy.js?v=141',
   './src/utils/placeMatch.js?v=2',
   './src/utils/taiwanAddressNormalizer.js?v=60',
   './src/utils/taiwanPhoneNormalizer.js?v=60',
@@ -42,10 +42,10 @@ const APP_SHELL = [
   './src/services/interactiveMap.js?v=137',
   './src/services/jiaLionAssistant.js?v=135',
   './src/core/uiShell.js?v=137',
-  './src/config/appVersion.js?v=140',
+  './src/config/appVersion.js?v=141',
   './src/config/localPlaceEnrichment.js?v=126',
   './src/config/authConfig.js?v=1',
-  './src/config/releaseNotes.js?v=140',
+  './src/config/releaseNotes.js?v=141',
   './src/services/freeImageSearch.js?v=1',
   './assets/place-placeholder.svg',
   './assets/food/lu_rou_fan.jpg',

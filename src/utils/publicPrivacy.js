@@ -4,7 +4,7 @@
 })(typeof window !== 'undefined' ? window : globalThis, function (root) {
     'use strict';
 
-    const PRIVATE_GROUP_PATTERNS = /(玉泉|老服|社發|工作|公司|單位|機關|社區|住戶|同事|家族|部門|學校|班級|內部|私人)/i;
+    const PRIVATE_GROUP_PATTERNS = /(環保局|玉泉|老服|社發|工作|公司|單位|機關|社區|住戶|同事|家族|部門|學校|班級|內部|私人)/i;
     const PUBLIC_GROUPS = Object.freeze({
         '屏東': '📍 屏東吃貨圈',
         '高雄': '📍 高雄美食圈',

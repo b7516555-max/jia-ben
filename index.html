@@ -100,11 +100,11 @@
     <script src="./src/services/mapRestaurantContract.js?v=1"></script>
     <script src="./src/services/interactiveMap.js?v=137"></script>
     <script src="./src/components/restaurantCard.js?v=137"></script>
-    <script src="./src/utils/publicPrivacy.js?v=140"></script>
-    <script src="./src/config/appVersion.js?v=140"></script>
+    <script src="./src/utils/publicPrivacy.js?v=141"></script>
+    <script src="./src/config/appVersion.js?v=141"></script>
     <script src="./src/config/localPlaceEnrichment.js?v=126"></script>
     <script src="./src/config/authConfig.js?v=1"></script>
-    <script src="./src/config/releaseNotes.js?v=140"></script>
+    <script src="./src/config/releaseNotes.js?v=141"></script>
     <script src="./src/services/freeImageSearch.js?v=1"></script>
     <script src="./src/services/jiaLionAssistant.js?v=135"></script>
     <script src="./src/core/uiShell.js?v=135"></script>
@@ -956,7 +956,7 @@
                         </p>
                     </div>
                 </div>
-                <div><label class="block text-xs font-bold text-gray-500 mb-1">是誰帶你來的？(引薦人) *</label><select id="new-id-inviter" class="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none text-sm"></select></div>
+                <div><label class="block text-xs font-bold text-gray-500 mb-1">是誰帶你來的？（引薦人，選填）</label><select id="new-id-inviter" class="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none text-sm"></select></div>
                 <div>
                     <label class="block text-xs font-bold text-gray-700 mb-1"><i class="fa-solid fa-lock text-orange-500 mr-1"></i>設定你的專屬登入密碼 *</label>
                     <input type="password" id="new-id-password" placeholder="請設定 3 位以上密碼 (不可與他人重複)" class="w-full px-3 py-2.5 bg-orange-50/40 border border-orange-200 rounded-xl focus:outline-none focus:border-orange-400 text-sm font-bold tracking-wider">
@@ -4496,7 +4496,7 @@
             const allCreatorsSet = new Set();
             Object.values(window.appConfig.membersMap).forEach(list => list.forEach(c => allCreatorsSet.add(c)));
             const allCreators = Array.from(allCreatorsSet);
-            const cHtml = allCreators.length > 0 ? allCreators.map(c => `<option value="${c}">${c}</option>`).join('') : '<option value="(無成員)">(無成員)</option>';
+            const cHtml = '<option value="">不指定（選填）</option>' + (allCreators.length > 0 ? allCreators.map(c => `<option value="${window.escapeHtml(c)}">${window.escapeHtml(window.JiaPublicPrivacy?.publicNickname({ name: c, publicNickname: window.appConfig?.memberAvatars?.[c]?.publicNickname }) || c)}</option>`).join('') : '<option value="(無成員)">(無成員)</option>');
             ['new-id-inviter'].forEach(id => { 
                 const el = document.getElementById(id); if(el) el.innerHTML = cHtml; 
             });
@@ -5918,7 +5918,7 @@
                     <div class="flex flex-col gap-2 mt-auto pt-4 border-t border-gray-100">
                         <div class="flex items-center justify-between gap-2">
                             <button onclick="window.shareToLine('${window.escapeForBtn(lineText)}')" class="w-10 h-10 bg-[#00B900] text-white rounded-xl flex items-center justify-center hover:bg-[#009900] transition shadow-sm flex-shrink-0" title="LINE 分享邀請"><i class="fa-brands fa-line text-2xl"></i></button>
-                            <div class="flex-1 px-2 border-l border-gray-100"><p class="text-[10px] font-bold text-gray-400 mb-0.5"><i class="fa-solid fa-users mr-1"></i>已參加 (${joinCount})</p><p class="text-xs font-bold text-gray-700 line-clamp-1 leading-relaxed">${joinCount > 0 ? p.joined.join('、') : '還沒有人報名喔'}</p></div>
+                            <div class="flex-1 px-2 border-l border-gray-100"><p class="text-[10px] font-bold text-gray-400 mb-0.5"><i class="fa-solid fa-users mr-1"></i>已參加 (${joinCount})</p><p class="text-xs font-bold text-gray-700 line-clamp-1 leading-relaxed">${joinCount > 0 ? p.joined.map(name => window.JiaPublicPrivacy?.publicNickname({ name, publicNickname: window.appConfig?.memberAvatars?.[name]?.publicNickname }) || name).join('、') : '還沒有人報名喔'}</p></div>
                             <button onclick="window.toggleJoinParty('${p.id}')" class="px-5 py-2.5 rounded-xl font-bold text-sm shadow-sm transition whitespace-nowrap flex-shrink-0 ${isJoined ? 'bg-gray-100 text-gray-600 border border-gray-200 hover:bg-red-50 hover:text-red-500' : 'bg-orange-500 text-white hover:bg-orange-600'}">${isJoined ? '取消參加' : '算我一個！'}</button>
                         </div>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -8434,7 +8434,7 @@
                                     <p class="text-xs sm:text-sm text-gray-800 font-bold leading-snug">
                                         歡迎 <span class="text-blue-600 font-extrabold">${publicCreator}</span> 加入 <span class="text-blue-600 font-extrabold">${window.JiaPublicPrivacy?.publicGroupLabel(item.group, { currentGroup: window.myIdentity?.group }) || item.group}</span>${!window.isGroupVerified(item.group) ? ' <span class="bg-rose-500 text-white text-[8px] px-1 py-0.2 rounded font-black ml-1">未認證</span>' : ''}！
                                     </p>
-                                    <p class="text-[11px] text-gray-500 mt-0.5">(由 ${item.inviter} 引薦進來 🙌)</p>
+                                    <p class="text-[11px] text-gray-500 mt-0.5">${item.inviter ? `(由 ${window.JiaPublicPrivacy?.publicNickname({ name: item.inviter, publicNickname: window.appConfig?.memberAvatars?.[item.inviter]?.publicNickname }) || '呷奔主揪'} 引薦進來 🙌)` : '(由 呷奔主揪 引薦進來 🙌)'}</p>
                                 </div>
                             </div>
                             <button onclick="window.deleteFeedItemWithAuth('${item.id}')" class="${window.canManageFeedItem(item) ? '' : 'hidden'} w-7 h-7 rounded-lg bg-white/80 hover:bg-white border border-blue-200 text-gray-400 hover:text-red-500 flex items-center justify-center text-xs shadow-2xs transition shrink-0" title="刪除此公告">
@@ -8505,7 +8505,7 @@
 
                 // 3. 🌟 聚會結束照片廣播卡片 (Party Recap)
                 if (item.type === 'party_recap') {
-                    const joinedStr = Array.isArray(item.joined) && item.joined.length > 0 ? item.joined.join('、') : item.creator;
+                    const joinedStr = Array.isArray(item.joined) && item.joined.length > 0 ? item.joined.map(name => window.JiaPublicPrivacy?.publicNickname({ name, publicNickname: window.appConfig?.memberAvatars?.[name]?.publicNickname }) || name).join('、') : publicCreator;
                     return `
                     <div class="rounded-3xl p-5 shadow-sm bg-gradient-to-br from-amber-50/90 via-orange-50/50 to-white border-2 border-amber-300 flex flex-col gap-3 transition hover:shadow-md relative overflow-hidden">
                         <div class="flex items-center justify-between gap-2 border-b border-amber-200/60 pb-3">
@@ -9280,11 +9280,13 @@
                 if (existingRes) {
                     const ownerGroup = existingRes.group || '其他';
                     const ownerName = existingRes.creator || '成員';
-                    addBtn.innerHTML = `<i class="fa-solid fa-circle-check mr-1 text-emerald-500"></i>已在【${ownerGroup}】${ownerName} 名單`;
+                    const publicOwnerName = window.JiaPublicPrivacy?.publicNickname({ name: ownerName, publicNickname: window.appConfig?.memberAvatars?.[ownerName]?.publicNickname }) || '呷奔主揪';
+                    const publicOwnerGroup = ownerGroup === '主揪' ? '主揪' : (window.JiaPublicPrivacy?.publicGroupLabel(ownerGroup, { currentGroup: window.myIdentity?.group }) || '呷奔吃貨團');
+                    addBtn.innerHTML = `<i class="fa-solid fa-circle-check mr-1 text-emerald-500"></i>已在【${publicOwnerGroup}】${publicOwnerName} 名單`;
                     addBtn.className = "text-[11px] text-emerald-800 font-bold px-2.5 py-1 transition flex items-center bg-white/90 rounded-full border border-emerald-300 shadow-sm backdrop-blur-md cursor-pointer hover:bg-white";
-                    addBtn.title = `這家店已經由【${ownerGroup}】${ownerName} 加入口袋名單`;
+                    addBtn.title = `這家店已經由【${publicOwnerGroup}】${publicOwnerName} 加入口袋名單`;
                     addBtn.onclick = function() {
-                        window.showCustomMsg(`📌 「${existingRes.name}」已經在口袋名單中囉！\n\n推薦者：【${ownerGroup} 團】${ownerName}\n\n如需撰寫心得或上傳照片，可直接點擊「寫評價」即可分享！`);
+                        window.showCustomMsg(`📌 「${existingRes.name}」已經在口袋名單中囉！\n\n推薦者：【${publicOwnerGroup}】${publicOwnerName}\n\n如需撰寫心得或上傳照片，可直接點擊「寫評價」即可分享！`);
                     };
                 } else {
                     addBtn.innerHTML = `<i class="fa-solid fa-plus-circle mr-1"></i>新增店家`;
