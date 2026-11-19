@@ -1,6 +1,15 @@
 (function (root) {
     'use strict';
     root.JIA_BEN_RELEASE_NOTES = Object.freeze({
+        v137: {
+            date: '2026-11-19',
+            title: '🔗 分享一間店，直接吃這間',
+            highlights: [
+                '支援 ?place= 單店直達連結，開啟分享網址就能直接看到店家詳情。',
+                '詳情頁新增動態標題、首頁／縣市麵包屑與一鍵複製分享連結。',
+                '可以從單店延伸探索同縣市或同分類的更多好店。'
+            ]
+        },
         v136: {
             date: '2026-11-18',
             title: '📷 地圖也會優先顯示真實照片啦',

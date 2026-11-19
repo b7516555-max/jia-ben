@@ -10,6 +10,11 @@
     }];
     const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[char]));
     const updateLion = () => root.JiaLionAssistant?.updateAvoidance?.();
+    const PAGE_TITLES = { explore: '找餐廳', map: '地圖找餐廳', nearby: '美食輪盤', history: '吃過紀錄', party: '揪團活動', feed: '美食動態牆', chat: '留言板', list: '口袋名單', creator: '製作人介紹', admin: '主揪後台', guide: '使用指南' };
+    root.restoreDocumentTitle = function (tabName) {
+        const tab = tabName || new URLSearchParams(root.location.search).get('page') || 'explore';
+        root.document.title = tab === 'explore' ? '呷奔 Jia-ben｜找餐廳、美食輪盤與聚餐揪團' : `呷奔 Jia-ben｜${PAGE_TITLES[tab] || PAGE_TITLES.explore}`;
+    };
 
     function renderFallbackHome() {
         const container = root.document.getElementById('home-for-you-container');
@@ -82,6 +87,7 @@
     };
 
     root.closeModal = function (id) {
+        const options = arguments[1] || {};
         const modal = root.document.getElementById(id);
         if (!modal) return;
         modal.classList.add('hidden');
@@ -97,6 +103,14 @@
                 if (context.restaurantId) root.JiaInteractiveMap?.selectRestaurant(context.restaurantId, { pan: false });
             }
             context.focus?.focus?.();
+        }
+        if (id === 'card-detail-modal') {
+            const url = new URL(root.location.href);
+            if (url.searchParams.has('place')) {
+                url.searchParams.delete('place');
+                if (!options.fromHistory) root.history.pushState({ page: url.searchParams.get('page') || 'explore' }, '', url.pathname + (url.search ? url.search : ''));
+            }
+            root.restoreDocumentTitle?.();
         }
         updateLion();
     };
@@ -115,6 +129,7 @@
         const titles = { explore: '找餐廳', map: '地圖找餐廳', nearby: '美食輪盤', history: '吃過紀錄', party: '揪團活動', feed: '美食動態牆', chat: '留言板', list: '口袋名單', creator: '製作人介紹', admin: '主揪後台', guide: '使用指南' };
         const title = root.document.getElementById('app-header-title');
         if (title) title.textContent = `呷奔 • ${titles[tab]}`;
+        root.restoreDocumentTitle?.(tab);
         if (!options.fromHistory && currentPage !== tab) root.history.pushState({ page: tab }, '', `${root.location.pathname}?page=${tab}`);
         root.document.body.classList.toggle('map-view-active', tab === 'map');
         if (tab === 'explore') root.renderHomeForYou();
@@ -137,8 +152,11 @@
     root.JIA_ROUTABLE_PAGES = ROUTABLE_PAGES;
     root.addEventListener('popstate', () => {
         const page = new URLSearchParams(root.location.search).get('page') || 'explore';
+        const placeId = new URLSearchParams(root.location.search).get('place');
         root.enterApp();
         root.switchTab(page, true, { fromHistory: true });
+        if (!placeId && !root.document.getElementById('card-detail-modal')?.classList.contains('hidden')) root.closeModal('card-detail-modal', { fromHistory: true });
+        if (placeId) root.setTimeout(() => root.openPlaceDeepLink?.(placeId), 80);
         root.setTimeout(() => root.applyUrlPrefill?.(), 80);
     });
 })(typeof window !== 'undefined' ? window : globalThis);

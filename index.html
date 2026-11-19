@@ -53,7 +53,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Color+Emoji&display=swap" rel="stylesheet">
     <!-- OpenStreetMap / Nominatim 地點搜尋相容層（無需付費金鑰） -->
     <script src="./osm-adapter.js?v=5"></script>
-    <script src="./src/utils/imageSafety.js?v=136"></script>
+    <script src="./src/utils/imageSafety.js?v=137"></script>
     <script src="./src/utils/googlePlacesGuard.js?v=1"></script>
     <script src="./src/utils/placeMatch.js?v=2"></script>
     <script src="./src/utils/taiwanAddressNormalizer.js?v=60"></script>
@@ -98,12 +98,12 @@
     <script src="./src/services/mapProvider.js?v=1"></script>
     <script src="./src/services/mapLibreProvider.js?v=1"></script>
     <script src="./src/services/mapRestaurantContract.js?v=1"></script>
-    <script src="./src/services/interactiveMap.js?v=136"></script>
-    <script src="./src/components/restaurantCard.js?v=136"></script>
-    <script src="./src/config/appVersion.js?v=136"></script>
+    <script src="./src/services/interactiveMap.js?v=137"></script>
+    <script src="./src/components/restaurantCard.js?v=137"></script>
+    <script src="./src/config/appVersion.js?v=137"></script>
     <script src="./src/config/localPlaceEnrichment.js?v=126"></script>
     <script src="./src/config/authConfig.js?v=1"></script>
-    <script src="./src/config/releaseNotes.js?v=136"></script>
+    <script src="./src/config/releaseNotes.js?v=137"></script>
     <script src="./src/services/freeImageSearch.js?v=1"></script>
     <script src="./src/services/jiaLionAssistant.js?v=135"></script>
     <script src="./src/core/uiShell.js?v=135"></script>
@@ -783,7 +783,7 @@
             <button type="button" onclick="window.closeModal('release-notes-modal')" class="absolute top-4 right-4 w-9 h-9 rounded-full bg-orange-50 text-orange-500 hover:bg-orange-100" aria-label="關閉改版公告"><i class="fa-solid fa-xmark"></i></button>
             <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-400 to-rose-400 text-white flex items-center justify-center text-2xl shadow-lg shadow-orange-200 mb-4">✨</div>
             <p class="text-xs font-black tracking-[0.18em] text-orange-500">WHAT'S NEW</p>
-            <h2 id="release-notes-title" class="text-2xl font-black text-gray-800 mt-1">🎉 呷奔更新啦（v123）</h2>
+            <h2 id="release-notes-title" class="text-2xl font-black text-gray-800 mt-1">🎉 呷奔更新啦（v137）</h2>
             <p id="release-notes-date" class="text-xs text-gray-400 mt-2"></p>
             <ul id="release-notes-list" class="mt-5 space-y-3 text-sm leading-6 text-gray-600"></ul>
             <button type="button" onclick="window.closeModal('release-notes-modal')" class="w-full mt-6 py-3 rounded-2xl bg-orange-500 hover:bg-orange-600 text-white font-black transition">收到，開吃！</button>
@@ -1582,6 +1582,17 @@
                     <h2 id="detail-name" class="text-lg md:text-xl font-black text-white leading-snug drop-shadow-md break-words line-clamp-3"></h2>
                 </div>
             </div>
+
+            <div id="detail-breadcrumb" class="px-4 md:px-5 pt-3 flex items-center justify-between gap-2 text-[11px] text-gray-500 bg-gray-50">
+                <div class="flex items-center gap-1 min-w-0 truncate">
+                    <button type="button" id="detail-breadcrumb-home" class="font-bold text-orange-600 hover:underline">首頁</button>
+                    <span>/</span>
+                    <button type="button" id="detail-breadcrumb-city" class="font-bold text-orange-600 hover:underline truncate"></button>
+                    <span>/</span>
+                    <span id="detail-breadcrumb-name" class="truncate"></span>
+                </div>
+                <button type="button" id="detail-direct-share-btn" class="shrink-0 rounded-full bg-orange-50 border border-orange-200 text-orange-700 px-2.5 py-1 font-black hover:bg-orange-100"><i class="fa-solid fa-link mr-1"></i>分享這間店</button>
+            </div>
             
             <div class="p-4 md:p-5 overflow-y-auto no-scrollbar flex-1 bg-gray-50 space-y-3">
                 <!-- 店家無真實照片時的社群激勵區塊 (Photo Community CTA) -->
@@ -1728,6 +1739,7 @@
                     <button id="detail-review-btn" class="bg-white text-gray-700 font-bold py-2.5 md:py-3 rounded-xl border border-gray-200 hover:bg-gray-50 transition shadow-sm flex items-center justify-center gap-2 text-xs sm:text-sm"><i class="fa-solid fa-comment-dots text-orange-400"></i> 寫評價</button>
                     
                     <button id="detail-share-btn" class="bg-[#00B900] text-white font-bold py-2.5 md:py-3 rounded-xl hover:bg-[#009900] transition shadow-sm flex items-center justify-center gap-2 text-xs sm:text-sm"><i class="fa-brands fa-line text-base"></i> 分享給好友</button>
+                    <button id="detail-explore-more-btn" type="button" class="col-span-2 bg-orange-50 text-orange-700 font-black py-2.5 rounded-xl border border-orange-200 hover:bg-orange-100 transition text-xs sm:text-sm"><i class="fa-solid fa-magnifying-glass mr-1"></i>查看更多同縣市好店</button>
                     <button id="detail-claim-btn" class="col-span-2 bg-amber-50 text-amber-800 font-bold py-2.5 rounded-xl border border-amber-200 hover:bg-amber-100 transition text-xs sm:text-sm"><i class="fa-solid fa-store mr-1"></i>我是老闆，免費認領／更新資料</button>
                 </div>
             </div>
@@ -3193,14 +3205,21 @@
             }
             if (typeof window.drawRadarWheel === 'function') window.drawRadarWheel([]);
             const requestedPage = new URLSearchParams(window.location.search).get('page') || new URLSearchParams(window.location.search).get('tab');
+            const requestedPlaceId = new URLSearchParams(window.location.search).get('place')?.trim() || '';
             if (requestedPage && requestedPage !== 'explore' && !partyDeepLinkId && ROUTABLE_PAGES?.has(requestedPage)) {
                 window.enterApp?.();
                 setTimeout(() => window.switchTab(requestedPage, true, { fromHistory: true }), 900);
             } else if (!requestedPage && !partyDeepLinkId) {
-                window.history.replaceState({ page: 'explore' }, '', `${window.location.pathname}?page=explore`);
+                const rootUrl = new URL(window.location.href);
+                rootUrl.searchParams.set('page', 'explore');
+                window.history.replaceState({ page: 'explore', place: requestedPlaceId || null }, '', `${rootUrl.pathname}${rootUrl.search}`);
                 window.switchTab?.('explore', true, { fromHistory: true });
             }
             if (requestedPage && !partyDeepLinkId) setTimeout(() => window.applyUrlPrefill?.(), 1150);
+            if (requestedPlaceId && !partyDeepLinkId) {
+                window.enterApp?.();
+                setTimeout(() => window.openPlaceDeepLink?.(requestedPlaceId), requestedPage && requestedPage !== 'explore' ? 1200 : 700);
+            }
         });
 
         window.openInstallGuide = function(mode) {
@@ -8770,6 +8789,48 @@
             });
         };
 
+        window.syncPlaceDeepLink = function(placeId) {
+            const url = new URL(window.location.href);
+            url.searchParams.set('page', url.searchParams.get('page') || 'explore');
+            url.searchParams.set('place', String(placeId || ''));
+            if (new URL(window.location.href).searchParams.get('place') === String(placeId || '')) return;
+            window.history.pushState({ page: url.searchParams.get('page'), place: String(placeId || '') }, '', `${url.pathname}${url.search}`);
+        };
+        window.restoreDetailDocumentTitle = function() {
+            window.restoreDocumentTitle?.();
+        };
+        window.openPlaceDeepLink = function(placeId, attempt = 0) {
+            const id = String(placeId || '').trim();
+            if (!id) return false;
+            const place = (window.jiaPlacesData || []).find(item => String(item.jiaPlaceId || item.id || '') === id)
+                || (window.restaurantData || []).find(item => String(item.jiaPlaceId || item.id || '') === id);
+            if (!place && attempt < 12 && (!window.jiaPlacesData?.length || !window.__JIA_FIREBASE_MODULE_READY)) {
+                return window.setTimeout(() => window.openPlaceDeepLink(id, attempt + 1), 350);
+            }
+            if (!place) {
+                window.showCustomMsg?.('找不到這間店，可能已下架或分享連結已失效。');
+                return false;
+            }
+            window.enterApp?.();
+            window.openRestaurantDetailById(id);
+            return true;
+        };
+        window.exploreFromPlace = function(place, mode = 'city') {
+            const item = place || window.currentDetailPlace || {};
+            const city = String(item.city || '').trim();
+            const category = String(item.category || item.categories?.[0] || '餐廳').trim();
+            window.closeModal('card-detail-modal');
+            window.switchTab?.('explore', true);
+            const cityEl = document.getElementById('explore-city');
+            const keywordEl = document.getElementById('explore-keyword');
+            if (mode === 'city' && city && cityEl) {
+                const option = [...cityEl.options].find(entry => entry.value === city || entry.textContent.trim() === city);
+                if (option) cityEl.value = option.value;
+            } else if (keywordEl) {
+                keywordEl.value = category;
+            }
+            window.searchGooglePlaces?.('explore');
+        };
         window.openRestaurantDetailById = function(restaurantId) {
             const id = String(restaurantId || '');
             const place = (window.jiaPlacesData || []).find(item => String(item.jiaPlaceId || item.id || '') === id)
@@ -8797,6 +8858,7 @@
             let jiaPlace = options.jiaPlace || (window.jiaPlacesData || []).find(item => item.jiaPlaceId === restaurant.jiaPlaceId)
                 || (window.jiaPlacesData || []).find(item => String(item.normalizedName || '').toLowerCase() === String(name).normalize('NFKC').toLowerCase().replace(/\s+/g,''));
             const canonicalId = options.canonicalId || jiaPlace?.jiaPlaceId || restaurant.jiaPlaceId || '';
+            if (canonicalId) window.syncPlaceDeepLink(canonicalId);
             const mapState = window.JiaInteractiveMap?.getState?.();
             const mapView = document.getElementById('jia-map-view');
             window.__JIA_DETAIL_RETURN_CONTEXT = { activeTab: mapState && mapView && !mapView.classList.contains('hidden') ? 'map' : null, restaurantId: canonicalId, mapState, focus: document.activeElement };
@@ -9016,6 +9078,34 @@
             if (detailTagsEl) detailTagsEl.innerHTML = data.tags || '<span class="text-gray-400 text-xs">口袋好店</span>';
 
             window.currentDetailPlace = data.jiaPlace || (window.jiaPlacesData || []).find(p => p.name === data.name) || { name: data.name, jiaPlaceId: data.jiaPlaceId || data.placeId || '' };
+            const detailPlace = window.currentDetailPlace;
+            const detailCity = String(detailPlace.city || data.city || '').trim();
+            const detailDistrict = String(detailPlace.district || data.district || '').trim();
+            const detailArea = [detailCity, detailDistrict].filter(Boolean).join('');
+            document.title = `${data.name}｜${detailArea || detailCity || '美食'}推薦 - 呷奔 Jia-ben`;
+            const breadcrumbName = document.getElementById('detail-breadcrumb-name');
+            const breadcrumbCity = document.getElementById('detail-breadcrumb-city');
+            if (breadcrumbName) breadcrumbName.textContent = data.name;
+            if (breadcrumbCity) { breadcrumbCity.textContent = detailCity || '附近'; breadcrumbCity.disabled = !detailCity; }
+            document.getElementById('detail-breadcrumb-home')?.addEventListener('click', () => window.exploreFromPlace(detailPlace, 'all'), { once: true });
+            document.getElementById('detail-breadcrumb-city')?.addEventListener('click', () => window.exploreFromPlace(detailPlace, 'city'), { once: true });
+            const directShareBtn = document.getElementById('detail-direct-share-btn');
+            if (directShareBtn) directShareBtn.onclick = async () => {
+                const shareUrl = new URL(window.location.href);
+                shareUrl.searchParams.set('page', 'explore');
+                shareUrl.searchParams.set('place', String(detailPlace.jiaPlaceId || data.jiaPlaceId || ''));
+                const text = `${data.name}${detailCity ? `（${detailCity}）` : ''}\n${shareUrl.toString()}`;
+                try {
+                    if (navigator.clipboard?.writeText) await navigator.clipboard.writeText(text);
+                    else { const input = document.createElement('textarea'); input.value = text; document.body.appendChild(input); input.select(); document.execCommand('copy'); input.remove(); }
+                    window.showCustomMsg?.('✅ 已複製分享連結');
+                } catch (_) { window.showCustomMsg?.(`請複製這個連結：\n${shareUrl.toString()}`); }
+            };
+            const moreBtn = document.getElementById('detail-explore-more-btn');
+            if (moreBtn) {
+                moreBtn.textContent = detailCity ? `🔍 查看更多${detailCity}好店` : `🔍 查看更多${detailPlace.category || detailPlace.categories?.[0] || '餐廳'}好店`;
+                moreBtn.onclick = () => window.exploreFromPlace(detailPlace, detailCity ? 'city' : 'category');
+            }
             window.loadPlaceDetails(data);
             window.updateDetailStateUI(window.currentDetailPlace.jiaPlaceId || data.name);
             
