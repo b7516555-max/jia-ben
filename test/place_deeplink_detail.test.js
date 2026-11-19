@@ -17,6 +17,6 @@ assert.ok(html.includes('detail-breadcrumb-home') && html.includes('detail-bread
 assert.ok(html.includes('detail-explore-more-btn') && html.includes('exploreFromPlace'), 'Detail page provides same-city/category exploration');
 assert.ok(html.includes('document.title = `${data.name}'), 'Detail page updates document.title dynamically');
 assert.ok(html.includes('release-notes-modal" class="hidden fixed inset-0 z-[200]'), 'Release notes modal is a body-level high-z modal');
-assert.ok(appVersion.includes("JIA_BEN_VERSION = 'v139'"), 'App version is v139');
-assert.ok(notes.includes('v139') && sw.includes('together-eat-shell-v139'), 'Release notes and Service Worker are v139');
+assert.ok(appVersion.includes("JIA_BEN_VERSION = 'v140'"), 'App version is v140');
+assert.ok(notes.includes('v140') && sw.includes('together-eat-shell-v140'), 'Release notes and Service Worker are v140');
 console.log('✅ Place deep-link, detail navigation, and breadcrumb contracts passed');

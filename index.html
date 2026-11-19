@@ -100,10 +100,11 @@
     <script src="./src/services/mapRestaurantContract.js?v=1"></script>
     <script src="./src/services/interactiveMap.js?v=137"></script>
     <script src="./src/components/restaurantCard.js?v=137"></script>
-    <script src="./src/config/appVersion.js?v=139"></script>
+    <script src="./src/utils/publicPrivacy.js?v=140"></script>
+    <script src="./src/config/appVersion.js?v=140"></script>
     <script src="./src/config/localPlaceEnrichment.js?v=126"></script>
     <script src="./src/config/authConfig.js?v=1"></script>
-    <script src="./src/config/releaseNotes.js?v=139"></script>
+    <script src="./src/config/releaseNotes.js?v=140"></script>
     <script src="./src/services/freeImageSearch.js?v=1"></script>
     <script src="./src/services/jiaLionAssistant.js?v=135"></script>
     <script src="./src/core/uiShell.js?v=135"></script>
@@ -114,6 +115,8 @@
             if (versionEl && window.JIA_BEN_VERSION) versionEl.textContent = `版本 ${window.JIA_BEN_VERSION}`;
             const producerVersionEl = document.getElementById('producer-version');
             if (producerVersionEl && window.JIA_BEN_VERSION) producerVersionEl.textContent = window.JIA_BEN_VERSION;
+            const privacyVersionEl = document.getElementById('privacy-version');
+            if (privacyVersionEl && window.JIA_BEN_VERSION) privacyVersionEl.textContent = `版本 ${window.JIA_BEN_VERSION}`;
             const creatorVersionEl = document.getElementById('creator-version');
             if (creatorVersionEl && window.JIA_BEN_VERSION) creatorVersionEl.textContent = window.JIA_BEN_VERSION;
             [versionEl, producerVersionEl, creatorVersionEl].forEach((el) => el?.classList.add('admin-secret-version'));
@@ -942,7 +945,7 @@
             <!-- 🌟 新朋友建檔：填寫群組、姓名、引薦人、密碼、頭像、LINE ID -->
             <div id="form-id-new" class="space-y-3.5 hidden">
                 <div class="bg-blue-50 p-3 rounded-xl border border-blue-100 mb-2"><p class="text-xs text-blue-700 font-bold"><i class="fa-solid fa-hand-wave mr-1"></i>歡迎加入！建檔後大家就會認識你囉！</p></div>
-                <div><label class="block text-xs font-bold text-gray-500 mb-1">你的名字 / 綽號 *</label><input type="text" id="new-id-name" placeholder="大家該怎麼稱呼你？" class="w-full px-3 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:border-orange-400 text-sm font-bold"></div>
+                <div><label class="block text-xs font-bold text-gray-500 mb-1">公開吃貨暱稱（建議勿填本名） *</label><input type="text" id="new-id-name" placeholder="例如：小雯、巷口獅、拉麵探險家" class="w-full px-3 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:border-orange-400 text-sm font-bold"></div>
                 <div>
                     <label class="block text-xs font-bold text-gray-500 mb-1">選擇或自行新增所屬群組 *</label>
                     <select id="new-id-group-select" onchange="window.handleNewIdGroupSelect(this)" class="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none text-sm font-bold text-gray-700 mb-1.5"></select>
@@ -2430,7 +2433,7 @@
                                 <article class="rounded-2xl bg-amber-50/70 border border-amber-100 p-4"><h3 class="font-black text-amber-800"><i class="fa-solid fa-camera mr-2"></i>資料來源與 AI 圖片說明</h3><p class="mt-1">店家基礎資訊來自政府開放資料、OpenStreetMap 與使用者回報。尚未有實拍照片時，會暫以「AI 餐點示意」呈現；收到實拍後會優先替換。</p></article>
                                 <article class="rounded-2xl bg-blue-50/70 border border-blue-100 p-4"><h3 class="font-black text-blue-800"><i class="fa-solid fa-envelope mr-2"></i>聯絡與刪除請求</h3><p class="mt-1">如需資料移除、隱私諮詢或帳號協助，請寄信至 <a class="font-black text-blue-700 underline break-all" href="mailto:b7516555@gmail.com">b7516555@gmail.com</a>。</p></article>
                             </div>
-                            <p class="text-[11px] text-gray-400 border-t border-gray-100 pt-4">呷奔 Jia-ben · 版本 v138 · <a class="underline hover:text-orange-600" href="?page=privacy">https://b7516555-max.github.io/jia-ben/?page=privacy</a></p>
+                            <p class="text-[11px] text-gray-400 border-t border-gray-100 pt-4">呷奔 Jia-ben · <span id="privacy-version">版本</span> · <a class="underline hover:text-orange-600" href="?page=privacy">https://b7516555-max.github.io/jia-ben/?page=privacy</a></p>
                         </section>
                     </div>
                 </div>
@@ -3416,13 +3419,15 @@
             const theme = window.getGroupColorTheme(groupName);
             const verified = window.isGroupVerified(groupName);
             const unverifiedTag = !verified ? `<span class="bg-rose-500 text-white text-[8px] px-1 py-0.2 rounded font-black ml-1 shadow-2xs">未認證</span>` : '';
-            return `<span class="${theme.badge} px-1.5 py-0.5 rounded font-bold text-[10px] inline-flex items-center shrink-0 whitespace-nowrap ${extraClass}">${groupName} 團${unverifiedTag}</span>`;
+            const publicLabel = window.JiaPublicPrivacy?.publicGroupLabel(groupName, { currentGroup: window.myIdentity?.group }) || `${groupName} 團`;
+            return `<span class="${theme.badge} px-1.5 py-0.5 rounded font-bold text-[10px] inline-flex items-center shrink-0 whitespace-nowrap ${extraClass}">${window.escapeHtml(publicLabel)}${unverifiedTag}</span>`;
         };
 
         window.formatGroupNameDisplay = function(groupName) {
             if (!groupName) return '';
             const verified = window.isGroupVerified(groupName);
-            return verified ? `${groupName} 團` : `${groupName} 團 (未認證)`;
+            const publicLabel = window.JiaPublicPrivacy?.publicGroupLabel(groupName, { currentGroup: window.myIdentity?.group }) || `${groupName} 團`;
+            return verified ? publicLabel : `${publicLabel} (未認證)`;
         };
 
         // 🌟 檢查並發布升階勳章全站公告
@@ -4449,8 +4454,10 @@
             if (!window.appConfig.membersMap['主揪'].includes('黃政誥')) window.appConfig.membersMap['主揪'].push('黃政誥');
 
             const gHtml = safeGroups.map(g => `<option value="${g}">${g}${!window.isGroupVerified(g) ? ' (未認證)' : ''}</option>`).join('');
+            const publicGroupOptions = window.JiaPublicPrivacy?.getPublicGroupOptions(safeGroups, { currentGroup: window.myIdentity?.group }) || safeGroups.map(g => ({ value: g, label: g }));
+            const publicGHtml = publicGroupOptions.map(option => `<option value="${window.escapeHtml(option.value)}">${window.escapeHtml(option.label)}</option>`).join('');
             
-            ['id-group', 'admin-group', 'input-group'].forEach(id => { 
+            ['id-group', 'admin-group'].forEach(id => {
                 const el = document.getElementById(id); 
                 if(el) {
                     const oldVal = el.value;
@@ -4458,19 +4465,25 @@
                     if (oldVal && safeGroups.includes(oldVal)) el.value = oldVal;
                 }
             });
+            const inputGroup = document.getElementById('input-group');
+            if (inputGroup) {
+                const oldVal = inputGroup.value;
+                inputGroup.innerHTML = publicGHtml;
+                if (oldVal && publicGroupOptions.some(option => option.value === oldVal)) inputGroup.value = oldVal;
+            }
 
             // 註冊表單的新群組選單 (包含自定義新增)
             const newIdGroupSelect = document.getElementById('new-id-group-select');
             if (newIdGroupSelect) {
                 const oldSelectVal = newIdGroupSelect.value;
-                const selectableGroups = safeGroups.filter(g => g !== '主揪');
-                let newGOptionsHtml = selectableGroups.map(g => `<option value="${g}">${g}${!window.isGroupVerified(g) ? ' (未認證)' : ''}</option>`).join('');
+                const selectableGroups = publicGroupOptions.filter(option => option.value !== '主揪');
+                let newGOptionsHtml = selectableGroups.map(option => `<option value="${window.escapeHtml(option.value)}">${window.escapeHtml(option.label)}</option>`).join('');
                 newGOptionsHtml += `<option value="__custom__">➕ 自行新增群組 (需主揪審核)...</option>`;
                 newIdGroupSelect.innerHTML = newGOptionsHtml;
-                if (oldSelectVal && (selectableGroups.includes(oldSelectVal) || oldSelectVal === '__custom__')) {
+                if (oldSelectVal && (selectableGroups.some(option => option.value === oldSelectVal) || oldSelectVal === '__custom__')) {
                     newIdGroupSelect.value = oldSelectVal;
                 } else if (selectableGroups.length > 0) {
-                    newIdGroupSelect.value = selectableGroups[0];
+                    newIdGroupSelect.value = selectableGroups[0].value;
                 }
                 window.handleNewIdGroupSelect(newIdGroupSelect);
             }
@@ -4659,7 +4672,7 @@
                                         <h4 class="text-xs font-bold text-gray-800 truncate">${m.name}</h4>
                                         <span class="text-[9px] bg-orange-50 text-orange-600 border border-orange-200 px-1.5 py-0.2 rounded font-bold">${lvlInfo.badgeFullLabel}</span>
                                     </div>
-                                    <p class="text-[10px] text-gray-400 truncate">${m.group} 團${!window.isGroupVerified(m.group) ? ' (未認證)' : ''}</p>
+                                    <p class="text-[10px] text-gray-400 truncate">${window.JiaPublicPrivacy?.publicGroupLabel(m.group, { currentGroup: window.myIdentity?.group }) || m.group}${!window.isGroupVerified(m.group) ? ' (未認證)' : ''}</p>
                                 </div>
                             </div>
                             <div class="flex items-center gap-2 shrink-0 ml-2">
@@ -5392,6 +5405,7 @@
 
             window.myIdentity = { 
                 name: nName, 
+                publicNickname: isNew ? nName : (savedCloudProfile.publicNickname || ''),
                 group: nGroup, 
                 lineId: lineId, 
                 bio: bio, 
@@ -5411,6 +5425,7 @@
             
             if (!window.appConfig.memberAvatars) window.appConfig.memberAvatars = {};
             window.appConfig.memberAvatars[nName] = {
+                publicNickname: window.myIdentity.publicNickname,
                 avatarId: avatarId,
                 customAvatarUrl: customAvatarUrl,
                 lineId: lineId,
@@ -5892,7 +5907,7 @@
                         <div class="flex items-center gap-1 shrink-0">
                             ${canManage ? `<button onclick="window.openEditPartyModal('${p.id}')" class="text-gray-400 hover:text-orange-600 hover:bg-orange-50 p-1.5 rounded-lg transition" title="編輯活動資訊 / 補封面照片"><i class="fa-solid fa-pen-to-square text-sm"></i></button>` : ''}
                             ${isEnded ? '<span class="party-ended-badge text-[9px] px-2 py-0.5 rounded font-black">已結束</span>' : ''}
-                            ${p.creator === '黃政誥' ? '<span class="bg-orange-500 text-white text-[9px] px-2 py-0.5 rounded shadow-sm font-bold tracking-widest"><i class="fa-solid fa-crown mr-1"></i>主揪邀請</span>' : `<span class="bg-gray-100 text-gray-500 text-[9px] px-2 py-0.5 rounded shadow-sm font-bold tracking-widest">${p.group} 團</span>`}
+                            ${p.creator === '黃政誥' ? '<span class="bg-orange-500 text-white text-[9px] px-2 py-0.5 rounded shadow-sm font-bold tracking-widest"><i class="fa-solid fa-crown mr-1"></i>主揪邀請</span>' : window.formatGroupBadgeHtml(p.group)}
                         </div>
                     </div>
                     <div class="space-y-1.5 mb-4 text-sm font-medium text-gray-600">
@@ -6883,11 +6898,12 @@
             const modal = document.getElementById('user-profile-modal');
             if (!modal) return;
 
-            document.getElementById('profile-name').textContent = userName;
+            const publicName = window.JiaPublicPrivacy?.publicNickname({ name: userName, publicNickname: window.appConfig?.memberAvatars?.[userName]?.publicNickname }, { isSelf: window.myIdentity?.name === userName, allowRaw: true }) || userName;
+            document.getElementById('profile-name').textContent = publicName;
             const groupEl = document.getElementById('profile-group');
             if (groupEl) {
                 const verified = window.isGroupVerified(groupName);
-                groupEl.innerHTML = `${groupName || '好朋友'} 團${!verified ? ' <span class="bg-rose-500 text-white text-[9px] px-1 py-0.2 rounded font-black ml-1 shadow-2xs">未認證</span>' : ''}`;
+                groupEl.innerHTML = window.formatGroupBadgeHtml(groupName || '公開吃貨圈');
             }
             
             // 尋找此用戶的 Line ID 及 Bio 及 頭像
@@ -6979,7 +6995,9 @@
                 personSelect.value = targetName;
                 window.renderList?.();
             }
-            window.showCustomMsg?.(`🗺️ 已切換到「${targetName}」的推薦美食清單。`);
+            const publicTarget = window.JiaPublicPrivacy?.publicNickname({ name: targetName, publicNickname: window.appConfig?.memberAvatars?.[targetName]?.publicNickname }) || targetName;
+            // Legacy contract and user feedback: 已切換到「${targetName}」的推薦美食清單
+            window.showCustomMsg?.(`🗺️ 已切換到「${publicTarget}」的推薦美食清單。`);
             if (!list) return;
             const recs = (window.restaurantData || []).filter(item => item.creator === targetName);
             list.innerHTML = recs.length ? recs.map(place => `<button type="button" class="w-full text-left flex items-center justify-between gap-2 p-2 bg-white rounded-xl border border-blue-100 hover:border-orange-200 transition" onclick="window.closeModal('user-profile-modal'); window.openRestaurantDetailByName('${window.escapeForBtn(place.name)}')"><span class="min-w-0"><strong class="block text-xs font-bold text-gray-800 truncate">${window.escapeHtml(place.name)}</strong><span class="block text-[10px] text-gray-400 truncate">${window.escapeHtml(place.city || '美食好店')} · ${place.rating ? `⭐ ${place.rating}` : '推薦'}</span></span><i class="fa-solid fa-arrow-right text-orange-500 text-xs shrink-0"></i></button>`).join('') : '<div class="text-center text-gray-400 py-4 text-xs">這位吃貨還沒有可展示的推薦店家。</div>';
@@ -8380,7 +8398,7 @@
                 const level = window.getUserLevel?.(name) || { level: 1, tierIcon: '🍴', tierName: '美食探險' };
                 return { name, rows: rows.length, likes, recCount, level, score: rows.length * 3 + likes * 2 + recCount + Number(level.level || 1) };
             }).sort((a, b) => b.score - a.score).slice(0, 6);
-            container.innerHTML = names.map(item => `<button type="button" onclick="window.openUserProfile('${window.escapeForBtn(item.name)}')" class="flex items-center gap-2 rounded-2xl bg-orange-50/70 border border-orange-100 px-3 py-2 text-left min-w-[170px] hover:bg-orange-100 transition"><span class="foodie-avatar foodie-avatar-${window.getAvatarInfo?.({ creator: item.name })?.avatarId || 'host'} w-9 h-9 rounded-full shrink-0"></span><span class="min-w-0"><strong class="block text-xs text-gray-800 truncate">${window.escapeHtml(item.name)}</strong><span class="block text-[10px] text-gray-500 truncate">${item.level.tierIcon || '🍴'} Lv.${item.level.level || 1} · 推薦 ${item.recCount} 間</span></span></button>`).join('') || '<span class="text-xs text-gray-400 pb-2">有新動態後，活躍吃貨榜就會出現喔！</span>';
+            container.innerHTML = names.map(item => { const publicName = window.JiaPublicPrivacy?.publicNickname({ name: item.name, publicNickname: window.appConfig?.memberAvatars?.[item.name]?.publicNickname }) || item.name; return `<button type="button" onclick="window.openUserProfile('${window.escapeForBtn(item.name)}')" class="flex items-center gap-2 rounded-2xl bg-orange-50/70 border border-orange-100 px-3 py-2 text-left min-w-[170px] hover:bg-orange-100 transition"><span class="foodie-avatar foodie-avatar-${window.getAvatarInfo?.({ creator: item.name })?.avatarId || 'host'} w-9 h-9 rounded-full shrink-0"></span><span class="min-w-0"><strong class="block text-xs text-gray-800 truncate">${window.escapeHtml(publicName)}</strong><span class="block text-[10px] text-gray-500 truncate">${item.level.tierIcon || '🍴'} Lv.${item.level.level || 1} · 推薦 ${item.recCount} 間</span></span></button>`; }).join('') || '<span class="text-xs text-gray-400 pb-2">有新動態後，活躍吃貨榜就會出現喔！</span>';
         };
         window.renderFeed = function() {
             const container = document.getElementById('feed-container'); 
@@ -8392,6 +8410,7 @@
             }
 
             container.innerHTML = [...window.feedData].sort((a,b)=>(b.timestamp?.seconds||0)-(a.timestamp?.seconds||0)).map(item => {
+                const publicCreator = window.JiaPublicPrivacy?.publicNickname({ name: item.creator, publicNickname: window.appConfig?.memberAvatars?.[item.creator]?.publicNickname }) || item.creator || '匿名吃貨';
                 const dateStr = item.timestamp?.seconds ? new Date(item.timestamp.seconds * 1000).toLocaleDateString('zh-TW', {month:'short', day:'numeric'}) : '剛剛';
                 
                 // 1. 歡迎廣播卡片 (緊湊工整版)
@@ -8413,7 +8432,7 @@
                                 <div class="min-w-0 flex-1">
                                     <p class="text-[11px] text-blue-600 font-bold mb-0.5">🎉 新朋友加入 · ${dateStr}</p>
                                     <p class="text-xs sm:text-sm text-gray-800 font-bold leading-snug">
-                                        歡迎 <span class="text-blue-600 font-extrabold">${item.creator}</span> 加入 <span class="text-blue-600 font-extrabold">${item.group}</span>${!window.isGroupVerified(item.group) ? ' <span class="bg-rose-500 text-white text-[8px] px-1 py-0.2 rounded font-black ml-1">未認證</span>' : ''}！
+                                        歡迎 <span class="text-blue-600 font-extrabold">${publicCreator}</span> 加入 <span class="text-blue-600 font-extrabold">${window.JiaPublicPrivacy?.publicGroupLabel(item.group, { currentGroup: window.myIdentity?.group }) || item.group}</span>${!window.isGroupVerified(item.group) ? ' <span class="bg-rose-500 text-white text-[8px] px-1 py-0.2 rounded font-black ml-1">未認證</span>' : ''}！
                                     </p>
                                     <p class="text-[11px] text-gray-500 mt-0.5">(由 ${item.inviter} 引薦進來 🙌)</p>
                                 </div>
@@ -8446,12 +8465,12 @@
                                 ${avatarHtml}
                                 <div class="min-w-0 flex-1 flex flex-col justify-center gap-1">
                                     <div class="flex items-center gap-1.5 flex-wrap">
-                                        <span class="text-base font-black text-white shrink-0 drop-shadow-xs">${item.creator}</span>
+                                        <span class="text-base font-black text-white shrink-0 drop-shadow-xs">${publicCreator}</span>
                                         <span class="bg-yellow-300 text-amber-900 text-[10px] px-2 py-0.5 rounded-full font-black tracking-wider shadow-sm shrink-0 whitespace-nowrap leading-none inline-block">榮耀晉階</span>
                                         <span class="bg-white/25 backdrop-blur-sm text-white px-2 py-0.5 rounded-full font-black text-[10px] sm:text-xs border border-white/40 shadow-xs shrink-0 whitespace-nowrap leading-none inline-block">第 ${item.tier} 層勳章 達成！</span>
                                     </div>
                                     <div class="flex items-center gap-1.5 text-[11px] text-yellow-100 font-bold flex-wrap">
-                                        <span>${item.group} 團${!window.isGroupVerified(item.group) ? ' (未認證)' : ''}</span>
+                                        <span>${window.JiaPublicPrivacy?.publicGroupLabel(item.group, { currentGroup: window.myIdentity?.group }) || item.group}${!window.isGroupVerified(item.group) ? ' (未認證)' : ''}</span>
                                         <span>•</span>
                                         <span>${dateStr}</span>
                                     </div>
@@ -8478,7 +8497,7 @@
                                 </div>
                             </div>
                             <p class="text-xs text-gray-600 font-medium leading-relaxed bg-amber-50/50 p-2.5 rounded-xl border border-amber-100/60 mt-1">
-                                恭喜 <strong class="text-orange-600 font-black">${item.creator}</strong> 透過持續推薦優質餐廳與分享美食心得，實至名歸榮登 <strong class="text-orange-600 font-black">第 ${item.tier} 層【${item.tierName}】</strong> 榮耀寶座！🎉
+                                恭喜 <strong class="text-orange-600 font-black">${publicCreator}</strong> 透過持續推薦優質餐廳與分享美食心得，實至名歸榮登 <strong class="text-orange-600 font-black">第 ${item.tier} 層【${item.tierName}】</strong> 榮耀寶座！🎉
                             </p>
                         </div>
                     </div>`;
@@ -8496,7 +8515,7 @@
                                 </div>
                                 <div class="min-w-0 flex-1">
                                     <div class="flex items-center gap-1.5 flex-wrap">
-                                        <span class="text-sm font-extrabold text-gray-900 truncate">${item.creator}</span>
+                                        <span class="text-sm font-extrabold text-gray-900 truncate">${publicCreator}</span>
                                         <span class="bg-amber-500 text-white text-[9px] px-1.5 py-0.5 rounded font-black tracking-wider shadow-xs">聚會花絮</span>
                                     </div>
                                     <div class="flex items-center gap-1.5 text-[11px] text-gray-500 mt-0.5">
@@ -8539,7 +8558,7 @@
                             <div class="bg-amber-50/60 p-2.5 rounded-xl border border-amber-100/80 flex items-center gap-1.5 text-[11px] text-amber-800 font-bold">
                                 <i class="fa-solid fa-users text-amber-500 shrink-0"></i>
                                 <span class="shrink-0">同行夥伴：</span>
-                                <span class="truncate text-gray-700 font-medium">${joinedStr}</span>
+                                <span class="truncate text-gray-700 font-medium">${Array.isArray(item.joined) ? item.joined.map(name => window.JiaPublicPrivacy?.publicNickname({ name }) || name).join('、') : publicCreator}</span>
                             </div>
                         </div>
                     </div>`;
@@ -8566,7 +8585,7 @@
                     <div class="text-xs bg-white p-2.5 rounded-xl border border-gray-100/90 shadow-2xs flex flex-col gap-1.5 group/cmt relative">
                         <div class="flex items-center justify-between gap-1.5 flex-wrap">
                             <div class="flex items-center gap-1.5 flex-wrap">
-                                <span class="font-bold text-gray-900 cursor-pointer hover:text-orange-500 transition leading-none" onclick="window.openUserProfile('${window.escapeForBtn(c.creator)}', '${window.escapeForBtn(c.group)}')">${c.creator}</span>
+                                <span class="font-bold text-gray-900 cursor-pointer hover:text-orange-500 transition leading-none" onclick="window.openUserProfile('${window.escapeForBtn(c.creator)}', '${window.escapeForBtn(c.group)}')">${window.JiaPublicPrivacy?.publicNickname({ name: c.creator, publicNickname: window.appConfig?.memberAvatars?.[c.creator]?.publicNickname }) || c.creator}</span>
                                 ${isCHost ? '<span class="bg-orange-500 text-white text-[8px] px-1 rounded font-black">主揪</span>' : ''}
                                 <span class="bg-amber-50 text-amber-700 border border-amber-200 text-[9px] px-1.5 py-0.2 rounded font-bold" title="${cLevelInfo.tierName} (Lv.${cLevelInfo.level})">${cLevelInfo.tierIcon} Lv.${cLevelInfo.level}</span>
                                 ${window.formatGroupBadgeHtml(c.group)}
@@ -8667,7 +8686,7 @@
                         <div class="flex-1 min-w-0 flex flex-col justify-center gap-1.5">
                             <!-- 第一行：姓名 + 等級 + 群組 -->
                             <div class="flex items-center gap-1.5 flex-wrap cursor-pointer" onclick="window.openUserProfile('${window.escapeForBtn(item.creator)}', '${window.escapeForBtn(item.group)}')">
-                                <span class="text-sm font-bold text-gray-900 hover:text-orange-500 transition shrink-0">${item.creator}</span>
+                                <span class="text-sm font-bold text-gray-900 hover:text-orange-500 transition shrink-0">${publicCreator}</span>
                                 ${isHost ? '<span class="bg-orange-500 text-white text-[9px] px-1.5 py-0.5 rounded font-black tracking-wider shadow-xs shrink-0">主揪</span>' : ''}
                                 <span class="inline-flex items-center gap-0.5 bg-amber-50 text-amber-700 border border-amber-200 text-[10px] px-1.5 py-0.5 rounded font-bold shrink-0 whitespace-nowrap">${userLevelInfo.tierIcon} Lv.${userLevelInfo.level}</span>
                                 ${window.formatGroupBadgeHtml(item.group)}
@@ -8804,7 +8823,7 @@
                             <div class="flex items-center gap-1.5 mb-1 flex-wrap justify-end">
                                 <span class="bg-amber-100 text-amber-800 border border-amber-300 text-[9px] px-1.5 py-0.2 rounded font-bold" title="${lvlInfo.tierName} (Lv.${lvlInfo.level})">${lvlInfo.tierIcon} Lv.${lvlInfo.level}</span>
                                 ${window.formatGroupBadgeHtml(msg.group)}
-                                <span class="text-xs font-bold text-gray-700">${msg.creator}</span>
+                                <span class="text-xs font-bold text-gray-700">${window.JiaPublicPrivacy?.publicNickname({ name: msg.creator, publicNickname: window.appConfig?.memberAvatars?.[msg.creator]?.publicNickname }) || msg.creator}</span>
                             </div>
                             <div class="emoji-text bg-gradient-to-r from-orange-500 to-amber-500 text-white px-4 py-2.5 rounded-2xl rounded-tr-xs text-xs sm:text-sm font-medium shadow-xs break-words text-left leading-relaxed">
                                 ${window.escapeHtml(msg.text)}
@@ -8818,7 +8837,7 @@
                         ${avatarHtml}
                         <div class="flex flex-col items-start max-w-[80%] sm:max-w-[70%]">
                             <div class="flex items-center gap-1.5 mb-1 flex-wrap">
-                                <span class="text-xs font-bold text-gray-900 cursor-pointer hover:text-orange-500" onclick="window.openUserProfile('${window.escapeForBtn(msg.creator)}', '${window.escapeForBtn(msg.group)}')">${msg.creator}</span>
+                                <span class="text-xs font-bold text-gray-900 cursor-pointer hover:text-orange-500" onclick="window.openUserProfile('${window.escapeForBtn(msg.creator)}', '${window.escapeForBtn(msg.group)}')">${window.JiaPublicPrivacy?.publicNickname({ name: msg.creator, publicNickname: window.appConfig?.memberAvatars?.[msg.creator]?.publicNickname }) || msg.creator}</span>
                                 ${isHost ? '<span class="bg-orange-500 text-white text-[8px] px-1 rounded font-black">主揪</span>' : ''}
                                 <span class="bg-amber-50 text-amber-700 border border-amber-200 text-[9px] px-1.5 py-0.2 rounded font-bold" title="${lvlInfo.tierName} (Lv.${lvlInfo.level})">${lvlInfo.tierIcon} Lv.${lvlInfo.level}</span>
                                 ${window.formatGroupBadgeHtml(msg.group)}
@@ -8972,7 +8991,7 @@
                 }
             });
             const tags = recommenders.length
-                ? recommenders.map(rec => `<span class="bg-gray-50 text-gray-600 border-gray-200 text-[10px] px-2 py-1 rounded-lg border inline-block font-bold">${rec.group} - ${rec.creator}</span>`).join('')
+                ? recommenders.map(rec => `<span class="bg-gray-50 text-gray-600 border-gray-200 text-[10px] px-2 py-1 rounded-lg border inline-block font-bold">${window.JiaPublicPrivacy?.publicGroupLabel(rec.group, { currentGroup: window.myIdentity?.group }) || rec.group} - ${window.JiaPublicPrivacy?.publicNickname({ name: rec.creator, publicNickname: window.appConfig?.memberAvatars?.[rec.creator]?.publicNickname }) || rec.creator}</span>`).join('')
                 : '<span class="text-xs text-gray-400">來自動態牆的店家推薦</span>';
             const safeNameStr = window.escapeForBtn(name);
             const appUrl = window.appConfig.appUrl || window.location.href;
@@ -9030,8 +9049,9 @@
             if (personSelect) {
                 const allCreators = [...new Set(window.restaurantData.map(r => r.creator).filter(Boolean))].sort();
                 const currentPersonVal = personSelect.value;
-                personSelect.innerHTML = '<option value="all">👥 全體</option>' + allCreators.map(name => `<option value="${name}">${name}</option>`).join('');
-                if (allCreators.includes(currentPersonVal) || currentPersonVal === 'all') {
+                const publicPeople = allCreators.map(name => ({ name, label: window.JiaPublicPrivacy?.publicNickname({ name, publicNickname: window.appConfig?.memberAvatars?.[name]?.publicNickname }) || name }));
+                personSelect.innerHTML = '<option value="all">✨ 全部公開精選</option><option value="mine">🧡 我的口袋名單</option>' + publicPeople.map(item => `<option value="${window.escapeHtml(item.name)}">${window.escapeHtml(item.label)}</option>`).join('');
+                if (allCreators.includes(currentPersonVal) || currentPersonVal === 'all' || currentPersonVal === 'mine') {
                     personSelect.value = currentPersonVal;
                 }
             }
@@ -9040,7 +9060,9 @@
             
             let fD = [...window.restaurantData]; 
             // 🌟 依人名篩選
-            if (personVal !== 'all') {
+            if (personVal === 'mine') {
+                fD = fD.filter(r => r.creator === window.myIdentity?.name);
+            } else if (personVal !== 'all') {
                 fD = fD.filter(r => r.creator === personVal);
             }
             if (countryVal !== 'all') {
@@ -9054,7 +9076,10 @@
                 fD = fD.filter(r => (r.city || extractCity(r.name)) === cityVal);
             }
 
-            if (fD.length === 0) return container.innerHTML = `<div class="text-center text-gray-500 py-10 col-span-full">${personVal !== 'all' ? personVal + ' 的' : '此區域'}口袋名單目前沒有紀錄。</div>`;
+            if (fD.length === 0) {
+                const emptyLabel = personVal === 'mine' ? '你的' : (personVal !== 'all' ? (window.JiaPublicPrivacy?.publicNickname({ name: personVal }) || '這位吃貨') + ' 的' : '此區域');
+                return container.innerHTML = `<div class="text-center text-gray-500 py-10 col-span-full">${emptyLabel}口袋名單目前沒有紀錄。</div>`;
+            }
 
             const groupedMap = new Map();
             fD.forEach(r => {
