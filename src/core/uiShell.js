@@ -2,7 +2,7 @@
     'use strict';
     if (!root || !root.document) return;
 
-    const ROUTABLE_PAGES = new Set(['explore', 'map', 'nearby', 'history', 'party', 'feed', 'chat', 'list', 'creator', 'admin', 'guide']);
+    const ROUTABLE_PAGES = new Set(['explore', 'map', 'nearby', 'history', 'party', 'feed', 'chat', 'list', 'creator', 'admin', 'guide', 'privacy']);
     const FALLBACK_PLACES = [{
         jiaPlaceId: 'demo-hotpot', id: 'demo-hotpot', name: '呷奔展示火鍋',
         city: '高雄市', district: '苓雅區', category: '火鍋', categories: ['火鍋'],
@@ -10,7 +10,7 @@
     }];
     const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[char]));
     const updateLion = () => root.JiaLionAssistant?.updateAvoidance?.();
-    const PAGE_TITLES = { explore: '找餐廳', map: '地圖找餐廳', nearby: '美食輪盤', history: '吃過紀錄', party: '揪團活動', feed: '美食動態牆', chat: '留言板', list: '口袋名單', creator: '製作人介紹', admin: '主揪後台', guide: '使用指南' };
+    const PAGE_TITLES = { explore: '找餐廳', map: '地圖找餐廳', nearby: '美食輪盤', history: '吃過紀錄', party: '揪團活動', feed: '美食動態牆', chat: '留言板', list: '口袋名單', creator: '製作人介紹', admin: '主揪後台', guide: '使用指南', privacy: '隱私權與資料說明' };
     root.restoreDocumentTitle = function (tabName) {
         const tab = tabName || new URLSearchParams(root.location.search).get('page') || 'explore';
         root.document.title = tab === 'explore' ? '呷奔 Jia-ben｜找餐廳、美食輪盤與聚餐揪團' : `呷奔 Jia-ben｜${PAGE_TITLES[tab] || PAGE_TITLES.explore}`;
@@ -26,8 +26,13 @@
     }
 
     root.renderHomeForYou = function (shuffle = false) {
-        if (typeof root.renderHomeForYouRemote === 'function') return root.renderHomeForYouRemote(shuffle);
+        if (typeof root.renderHomeForYouRemote === 'function') {
+            const result = root.renderHomeForYouRemote(shuffle);
+            root.renderExploreDiscovery?.();
+            return result;
+        }
         renderFallbackHome();
+        root.renderExploreDiscovery?.();
     };
 
     root.syncNavigationState = function (tabName) {
@@ -119,7 +124,7 @@
         const tab = ROUTABLE_PAGES.has(tabName) ? tabName : 'explore';
         const currentPage = new URLSearchParams(root.location.search).get('page');
         if (!forceRefresh && currentPage === tab && root.document.getElementById(`tab-${tab}`)?.classList.contains('active')) return;
-        ['explore', 'map', 'nearby', 'history', 'random', 'party', 'feed', 'chat', 'list', 'creator', 'admin', 'guide'].forEach(name => root.document.getElementById(`view-${name}`)?.classList.add('hidden'));
+        ['explore', 'map', 'nearby', 'history', 'random', 'party', 'feed', 'chat', 'list', 'creator', 'admin', 'guide', 'privacy'].forEach(name => root.document.getElementById(`view-${name}`)?.classList.add('hidden'));
         root.document.getElementById('jia-map-view')?.classList.add('hidden');
         if (tab !== 'map') root.JiaInteractiveMap?.close?.();
         root.document.getElementById(`view-${tab}`)?.classList.remove('hidden');
@@ -133,6 +138,7 @@
         if (!options.fromHistory && currentPage !== tab) root.history.pushState({ page: tab }, '', `${root.location.pathname}?page=${tab}`);
         root.document.body.classList.toggle('map-view-active', tab === 'map');
         if (tab === 'explore') root.renderHomeForYou();
+        if (tab === 'explore') root.renderExploreDiscovery?.();
         if (tab === 'history') root.renderHistoryView?.();
         if (tab === 'list') root.renderList?.();
         if (tab === 'feed') root.renderFeed?.();

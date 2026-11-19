@@ -1,6 +1,15 @@
 (function (root) {
     'use strict';
     root.JIA_BEN_RELEASE_NOTES = Object.freeze({
+        v138: {
+            date: '2026-11-19',
+            title: '🏆 熱榜與活躍吃貨榜上線啦',
+            highlights: [
+                '找餐廳新增縣市間數、聚餐情境標籤與本週呷奔熱榜 Top 5。',
+                '動態牆新增活躍吃貨榜，可以從名片查看朋友的推薦店家。',
+                '新增隱私權與 AI 圖片說明獨立頁面，資料使用方式更透明。'
+            ]
+        },
         v137: {
             date: '2026-11-19',
             title: '🔗 分享一間店，直接吃這間',
