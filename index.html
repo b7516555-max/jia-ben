@@ -101,21 +101,21 @@
     <script src="./src/services/interactiveMap.js?v=137"></script>
     <script src="./src/components/restaurantCard.js?v=137"></script>
     <script src="./src/utils/publicPrivacy.js?v=143"></script>
-    <script src="./src/config/appVersion.js?v=148"></script>
+    <script src="./src/config/appVersion.js?v=149"></script>
     <script src="./src/config/localPlaceEnrichment.js?v=126"></script>
     <script src="./src/config/authConfig.js?v=143"></script>
-    <script src="./src/config/releaseNotes.js?v=148"></script>
+    <script src="./src/config/releaseNotes.js?v=149"></script>
     <script src="./src/services/freeImageSearch.js?v=1"></script>
     <script src="./src/services/jiaLionAssistant.js?v=135"></script>
     <script src="./src/services/foodieEnhancements.js?v=145"></script>
-    <script src="./src/services/jiaLocationService.js?v=147"></script>
+    <script src="./src/services/jiaLocationService.js?v=149"></script>
     <script src="./src/utils/supportCard.js?v=143"></script>
     <script src="./src/core/uiShell.js?v=143"></script>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             window.JiaFoodieEnhancements?.init();
-            window.requestJiaBenLocation = function () { return window.JiaLocation?.request().then(value => { window.jiaUserLocation = value; document.querySelectorAll('[data-location-status]').forEach(el => { el.textContent = window.JiaLocation.label(value); }); window.showCustomMsg?.('📍 已取得高精度位置，重新整理離你最近的好店。'); if (typeof window.searchGooglePlaces === 'function') window.searchGooglePlaces('explore'); return value; }).catch(() => { const saved = window.JiaLocation?.readSaved(); window.showCustomMsg?.(saved ? '定位暫時失敗，沿用上次保存的位置。' : '尚未取得定位，請點擊重新定位或手動選擇目前位置。'); return saved; }); };
+            window.requestJiaBenLocation = function () { return window.JiaLocation?.request().then(value => { window.jiaUserLocation = value; document.querySelectorAll('[data-location-status]').forEach(el => { el.textContent = window.JiaLocation.label(value); }); window.showCustomMsg?.('📍 已取得高精度位置，重新整理離你最近的好店。'); if (typeof window.searchGooglePlaces === 'function') window.searchGooglePlaces('explore'); return value; }).catch(error => { const saved = window.JiaLocation?.readSaved(); const drift = error?.rejectedAccuracy ? `目前網路定位誤差較大（約 ±${(error.rejectedAccuracy / 1000).toFixed(1)} 公里，易飄移至外縣市），請改用「📌 手動選位置」選擇目前生活圈。` : (saved ? '定位暫時失敗，沿用上次保存的位置。' : '尚未取得定位，請點擊重新定位或手動選擇目前位置。'); window.showCustomMsg?.(drift); return saved; }); };
             window.openManualLocationPicker = function () { window.JiaLocation?.openManualPicker?.(); };
             document.addEventListener('jia:location-changed', event => { const value = event.detail; if (!value) return; window.jiaUserLocation = value; document.querySelectorAll('[data-location-status]').forEach(el => { el.textContent = window.JiaLocation.label(value).replace('手動位置', '手動'); }); window.showCustomMsg?.('📌 已套用手動生活圈位置。'); window.renderHomeForYou?.(); if (typeof window.searchGooglePlaces === 'function') window.searchGooglePlaces('explore'); }, { passive: true });
             const savedLocation = window.JiaLocation?.readSaved(); if (savedLocation) document.querySelectorAll('[data-location-status]').forEach(el => { el.textContent = window.JiaLocation.label(savedLocation); });
