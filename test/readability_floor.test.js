@@ -17,7 +17,7 @@ assert.ok(tokens.includes('input, select, textarea { font-size: 16px'), 'Form co
 assert.ok(tokens.includes('.text-\\[9px\\], .text-\\[10px\\], .text-\\[11px\\]'), 'Legacy compact utility classes receive a readable floor');
 assert.ok(html.includes('design-tokens.css?v=145'), 'Readability stylesheet remains cache-busted');
 assert.ok(card.includes('restaurant-card h3') || tokens.includes('.restaurant-card h3'), 'Restaurant names have a readable size rule');
-assert.ok(appVersion.includes("JIA_BEN_VERSION = 'v150'"), 'App version is v150');
+assert.ok(appVersion.includes("JIA_BEN_VERSION = 'v151'"), 'App version is v151');
 assert.ok(notes.includes('v144') && notes.includes('可讀性'), 'Release notes retain the readability upgrade');
-assert.ok(sw.includes('together-eat-shell-v150') && sw.includes('design-tokens.css?v=145'), 'Service Worker caches the current readability assets');
-console.log('✅ Readability token, form-control, responsive floor, and v150 contracts passed');
+assert.ok(sw.includes('together-eat-shell-v151') && sw.includes('design-tokens.css?v=145'), 'Service Worker caches the current readability assets');
+console.log('✅ Readability token, form-control, responsive floor, and v151 contracts passed');

@@ -1,6 +1,14 @@
 (function (root) {
     'use strict';
     root.JIA_BEN_RELEASE_NOTES = Object.freeze({
+        v151: {
+            date: '2026-11-24',
+            title: '👋 公開吃貨新增店家更順手',
+            highlights: [
+                '未登入訪客新增好店時，推薦人會自動顯示並選中「公開吃貨」。',
+                '公開吃貨圈不再出現「(無成員)」造成的困惑，送出預設與畫面一致。'
+            ]
+        },
         v150: {
             date: '2026-11-24',
             title: '➕ 新增好店入口與訪客送出優化',

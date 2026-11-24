@@ -101,10 +101,10 @@
     <script src="./src/services/interactiveMap.js?v=137"></script>
     <script src="./src/components/restaurantCard.js?v=137"></script>
     <script src="./src/utils/publicPrivacy.js?v=143"></script>
-    <script src="./src/config/appVersion.js?v=150"></script>
+    <script src="./src/config/appVersion.js?v=151"></script>
     <script src="./src/config/localPlaceEnrichment.js?v=126"></script>
     <script src="./src/config/authConfig.js?v=143"></script>
-    <script src="./src/config/releaseNotes.js?v=150"></script>
+    <script src="./src/config/releaseNotes.js?v=151"></script>
     <script src="./src/services/freeImageSearch.js?v=1"></script>
     <script src="./src/services/jiaLionAssistant.js?v=135"></script>
     <script src="./src/services/foodieEnhancements.js?v=145"></script>
@@ -3852,7 +3852,11 @@
             if (selectedGroup === '主揪') { allowedCreators = ['黃政誥']; } 
             else { allowedCreators = allowedCreators.filter(c => c !== '黃政誥'); }
             
-            if (allowedCreators.length === 0) allowedCreators = ['(無成員)'];
+            if (allowedCreators.length === 0) {
+                const publicCreatorFallback = window.myIdentity?.name || currentUser?.displayName || '公開吃貨';
+                const isPublicAddGroup = prefix === 'input' && ['公開吃貨圈', '呷奔吃貨團'].includes(selectedGroup);
+                allowedCreators = isPublicAddGroup ? [publicCreatorFallback] : ['(無成員)'];
+            }
 
             const oldCreator = creatorEl.value;
             creatorEl.innerHTML = allowedCreators.map(c => `<option value="${c}">${c}</option>`).join('');
