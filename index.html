@@ -101,10 +101,10 @@
     <script src="./src/services/interactiveMap.js?v=137"></script>
     <script src="./src/components/restaurantCard.js?v=137"></script>
     <script src="./src/utils/publicPrivacy.js?v=143"></script>
-    <script src="./src/config/appVersion.js?v=149"></script>
+    <script src="./src/config/appVersion.js?v=150"></script>
     <script src="./src/config/localPlaceEnrichment.js?v=126"></script>
     <script src="./src/config/authConfig.js?v=143"></script>
-    <script src="./src/config/releaseNotes.js?v=149"></script>
+    <script src="./src/config/releaseNotes.js?v=150"></script>
     <script src="./src/services/freeImageSearch.js?v=1"></script>
     <script src="./src/services/jiaLionAssistant.js?v=135"></script>
     <script src="./src/services/foodieEnhancements.js?v=145"></script>
@@ -2551,8 +2551,8 @@
 
                         <!-- 2. 為你推薦 (For You) -->
                         <div class="space-y-3">
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center gap-2">
+                            <div class="flex items-center justify-between gap-2">
+                                <div class="flex items-center gap-2 min-w-0">
                                     <div class="w-7 h-7 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center text-xs font-black">
                                         <i class="fa-solid fa-utensils"></i>
                                     </div>
@@ -2601,6 +2601,7 @@
                                         <p class="text-[11px] text-gray-400 mt-0.5">全站收錄的高評價口碑美食</p>
                                     </div>
                                 </div>
+                                <button type="button" onclick="window.openAddModal?.()" class="shrink-0 inline-flex items-center gap-1.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white px-3 py-2 text-sm font-black shadow-sm transition" title="新增好店"><i class="fa-solid fa-plus"></i><span>新增好店</span></button>
                             </div>
                             <p id="explore-results-feedback" class="text-xs text-gray-400"></p>
                             <div id="explore-results-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-stretch content-start pb-8">
@@ -6643,8 +6644,12 @@
             }, window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 50 : 4850);
         };
         
-        function displayNoResults(vT) { 
-            const msg = `<div class="text-center text-gray-500 py-10 col-span-full">附近找不到相關餐廳喔！<br>換個關鍵字試試？</div>`; 
+        function displayNoResults(vT) {
+            const searchTerm = vT === 'explore' ? (document.getElementById('explore-keyword')?.value.trim() || '') : '';
+            const addAction = searchTerm
+                ? `<button type="button" class="mt-4 inline-flex items-center gap-2 rounded-xl bg-orange-500 px-4 py-2.5 text-sm font-black text-white shadow-sm hover:bg-orange-600" onclick="window.openAddModal({name: decodeURIComponent('${window.escapeForBtn(searchTerm)}')})"><i class="fa-solid fa-plus"></i>找不到這間店？點我新增「${window.escapeHtml(searchTerm)}」</button>`
+                : `<button type="button" class="mt-4 inline-flex items-center gap-2 rounded-xl bg-orange-500 px-4 py-2.5 text-sm font-black text-white shadow-sm hover:bg-orange-600" onclick="window.openAddModal?.()"><i class="fa-solid fa-plus"></i>新增好店</button>`;
+            const msg = `<div class="text-center text-gray-500 py-10 col-span-full">附近找不到相關餐廳喔！<br>換個關鍵字試試？<div>${addAction}</div></div>`;
             if(vT === 'explore') {
                 document.getElementById('explore-results-container').innerHTML = msg;
                 const feedback = document.getElementById('explore-results-feedback');
@@ -10305,9 +10310,10 @@
 
         window.submitForm = async function(e) {
             if (e && e.preventDefault) e.preventDefault();
-            if (!window.isMemberSignedIn()) {
-                window.requireIdentity(() => window.submitForm());
-                return;
+            // 新增餐廳允許訪客直接送出：優先使用 Firebase 匿名憑證，無法連線時保留本機降級資料。
+            if (!currentUser && auth) {
+                try { await signInAnonymously(auth); currentUser = auth.currentUser; }
+                catch (authError) { console.warn('訪客匿名憑證取得失敗，改用本機降級儲存:', authError); }
             }
 
             const btn = document.getElementById('submit-btn'); 
@@ -10350,8 +10356,8 @@
                 let cityVal = document.getElementById('input-city').value;
                 if (!cityVal) cityVal = "台北市";
 
-                const groupVal = window.myIdentity.group || '未分類';
-                const creatorVal = window.myIdentity.name;
+                const groupVal = window.myIdentity?.group || '公開吃貨圈';
+                const creatorVal = window.myIdentity?.name || currentUser?.displayName || '公開吃貨';
 
                 let mapLink = document.getElementById('input-map').value.trim();
                 if (!mapLink) {
@@ -10400,7 +10406,12 @@
                         }
                     }
                     const tempId = Date.now().toString();
-                    window.restaurantData.unshift({ id: tempId, ...newDoc, timestamp: { seconds: Date.now() / 1000 } });
+                    const localRestaurant = { id: tempId, ...newDoc, timestamp: { seconds: Date.now() / 1000 } };
+                    window.restaurantData.unshift(localRestaurant);
+                    const localPlace = window.normalizeJiaPlaceForDisplay
+                        ? window.normalizeJiaPlaceForDisplay({ ...newDoc, jiaPlaceId: `local-${tempId}`, id: tempId })
+                        : { ...newDoc, jiaPlaceId: `local-${tempId}`, id: tempId };
+                    window.jiaPlacesData = [localPlace, ...(window.jiaPlacesData || [])];
                 }
 
                 // 🌟 如果有展開「同步新增評價」
@@ -10425,6 +10436,9 @@
                     }
 
                     const primaryPhoto = finalReviewPhotos.length > 0 ? finalReviewPhotos[0] : '';
+                    const visitorAvatar = typeof window.getAvatarInfo === 'function'
+                        ? (window.getAvatarInfo(window.myIdentity || { name: creatorVal }) || {})
+                        : {};
                     const reviewItem = {
                         restaurantName: nameVal,
                         group: groupVal,
@@ -10439,8 +10453,8 @@
                         lng: lngVal,
                         photoUrl: primaryPhoto,
                         photos: finalReviewPhotos,
-                        avatarId: window.getAvatarInfo(window.myIdentity).avatarId || '',
-                        customAvatarUrl: window.getAvatarInfo(window.myIdentity).customUrl || ''
+                        avatarId: visitorAvatar.avatarId || '',
+                        customAvatarUrl: visitorAvatar.customUrl || ''
                     };
 
                     let savedReviewToCloud = false;
@@ -10474,6 +10488,7 @@
                 isAddReviewExpanded = false;
                 
                 window.renderList();
+                window.renderHomeForYou?.();
                 if (typeof window.renderAdminDataList === 'function') window.renderAdminDataList();
                 window.switchTab('list', true);
 
