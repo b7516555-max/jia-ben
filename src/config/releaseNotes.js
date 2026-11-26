@@ -1,6 +1,15 @@
 (function (root) {
     'use strict';
     root.JIA_BEN_RELEASE_NOTES = Object.freeze({
+        v152: {
+            date: '2026-11-26',
+            title: '🔐 Google 與 LINE 登入回跳修復',
+            highlights: [
+                'Google 登入失敗會顯示實際 Firebase 錯誤碼與對應處理方式。',
+                'LINE LIFF 會在頁面初始化時自動接住回跳並同步公開 Profile。',
+                'OAuth 回跳網址不再被 Service Worker 快取首頁攔截。'
+            ]
+        },
         v151: {
             date: '2026-11-24',
             title: '👋 公開吃貨新增店家更順手',

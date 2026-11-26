@@ -1,5 +1,5 @@
 // Keep this value synchronized with src/config/appVersion.js when releasing a new version.
-const CACHE_NAME = 'together-eat-shell-v151';
+const CACHE_NAME = 'together-eat-shell-v152';
 const APP_SHELL = [
   './', 
   './index.html', 
@@ -46,10 +46,10 @@ const APP_SHELL = [
   './src/services/jiaLocationService.js?v=149',
   './src/utils/supportCard.js?v=143',
   './src/core/uiShell.js?v=143',
-  './src/config/appVersion.js?v=151',
+  './src/config/appVersion.js?v=152',
   './src/config/localPlaceEnrichment.js?v=126',
   './src/config/authConfig.js?v=143',
-  './src/config/releaseNotes.js?v=151',
+  './src/config/releaseNotes.js?v=152',
   './src/services/freeImageSearch.js?v=1',
   './assets/place-placeholder.svg',
   './assets/food/lu_rou_fan.jpg',
@@ -81,6 +81,12 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET' || new URL(event.request.url).origin !== self.location.origin) return;
+  const requestUrl = new URL(event.request.url);
+  const isOAuthCallback = event.request.mode === 'navigate' && ['code', 'state', 'liff.state'].some(key => requestUrl.searchParams.has(key));
+  if (isOAuthCallback) {
+    event.respondWith(fetch(event.request));
+    return;
+  }
   
   // 對於 HTML 導覽請求使用 Network-first 策略，確保隨時取得最新網頁
   if (event.request.mode === 'navigate' || (event.request.headers.get('accept') && event.request.headers.get('accept').includes('text/html'))) {

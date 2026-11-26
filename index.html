@@ -101,10 +101,10 @@
     <script src="./src/services/interactiveMap.js?v=137"></script>
     <script src="./src/components/restaurantCard.js?v=137"></script>
     <script src="./src/utils/publicPrivacy.js?v=143"></script>
-    <script src="./src/config/appVersion.js?v=151"></script>
+    <script src="./src/config/appVersion.js?v=152"></script>
     <script src="./src/config/localPlaceEnrichment.js?v=126"></script>
     <script src="./src/config/authConfig.js?v=143"></script>
-    <script src="./src/config/releaseNotes.js?v=151"></script>
+    <script src="./src/config/releaseNotes.js?v=152"></script>
     <script src="./src/services/freeImageSearch.js?v=1"></script>
     <script src="./src/services/jiaLionAssistant.js?v=135"></script>
     <script src="./src/services/foodieEnhancements.js?v=145"></script>
@@ -4107,6 +4107,40 @@
             catch (error) { console.error('Email 重設失敗:', error); window.showCustomMsg('目前無法寄出重設信，請確認 Email 是否正確。'); }
         };
 
+        function describeAuthError(error, provider) {
+            const code = String(error?.code || 'auth/unknown');
+            const messages = {
+                'auth/operation-not-allowed': '請至 Firebase Console → Authentication → Sign-in method 開啟此登入方式。',
+                'auth/unauthorized-domain': '請至 Firebase Authentication 的 Authorized domains 加入目前網站網域。',
+                'auth/popup-blocked': '瀏覽器封鎖登入視窗，將改用頁面跳轉登入。',
+                'auth/popup-closed-by-user': '登入視窗已關閉，尚未完成登入。',
+                'auth/cancelled-popup-request': '已有另一個登入視窗進行中。',
+                'auth/network-request-failed': '網路連線失敗，請確認目前網路後重試。'
+            };
+            const providerName = provider === 'line' ? 'LINE' : 'Google';
+            return `${providerName} 登入未完成：${messages[code] || '請檢查登入設定或稍後重試。'}\n錯誤碼：${code}`;
+        }
+
+        function clearAuthCallbackParams() {
+            const url = new URL(window.location.href);
+            ['code', 'state', 'liff.state', 'access_token', 'error', 'error_description'].forEach(key => url.searchParams.delete(key));
+            window.history.replaceState(window.history.state, document.title, `${url.pathname}${url.search}${url.hash}`);
+        }
+
+        async function completeLineLiffLogin({ initialized = false } = {}) {
+            const liffId = window.JIA_BEN_AUTH_CONFIG?.LINE_LIFF_ID;
+            if (!liffId || !window.liff) return false;
+            if (!initialized) await window.liff.init({ liffId });
+            if (!window.liff.isLoggedIn()) return false;
+            const profile = await window.liff.getProfile();
+            if (!profile?.userId) throw Object.assign(new Error('LINE profile scope unavailable'), { code: 'line/profile-scope-required' });
+            if (!auth.currentUser) await signInAnonymously(auth);
+            currentUser = auth.currentUser;
+            await window.syncGoogleUserProfile({ uid: currentUser.uid, displayName: profile.displayName, photoURL: profile.pictureUrl, email: '' }, 'line', { lineUserId: profile.userId });
+            clearAuthCallbackParams();
+            return true;
+        }
+
         window.signInWithLine = async function() {
             const hint = document.getElementById('line-login-hint');
             const liffId = window.JIA_BEN_AUTH_CONFIG?.LINE_LIFF_ID;
@@ -4114,14 +4148,11 @@
             try {
                 if (!window.liff) throw new Error('LIFF SDK 尚未載入');
                 await window.liff.init({ liffId });
-                if (!window.liff.isLoggedIn()) return window.liff.login({ redirectUri: window.location.href });
-                const profile = await window.liff.getProfile();
-                if (!auth.currentUser) await signInAnonymously(auth);
-                currentUser = auth.currentUser;
-                await window.syncGoogleUserProfile({ uid: currentUser.uid, displayName: profile.displayName, photoURL: profile.pictureUrl, email: '' }, 'line', { lineUserId: profile.userId });
+                if (!window.liff.isLoggedIn()) return window.liff.login({ redirectUri: window.location.href, scope: ['openid', 'profile'] });
+                await completeLineLiffLogin({ initialized: true });
             } catch (error) {
                 console.error('LINE 登入失敗:', error);
-                if (hint) { hint.textContent = 'LINE 登入尚未完成，請確認 LIFF ID、網域與 LINE Developers 設定。'; hint.classList.remove('hidden'); }
+                if (hint) { hint.textContent = error?.code === 'line/profile-scope-required' ? 'LINE 缺少 profile 權限，請至 LINE Developers 勾選 openid、profile，並確認 Channel 已 Published。' : describeAuthError(error, 'line'); hint.classList.remove('hidden'); }
             }
         };
 
@@ -4141,7 +4172,7 @@
                     try { await signInWithRedirect(auth, googleProvider); return; } catch (redirectError) { error = redirectError; }
                 }
                 console.error('Google 登入失敗:', error);
-                if (hint) { hint.textContent = 'Google 登入未完成，請改用外部瀏覽器或下方既有登入方式。'; hint.classList.remove('hidden'); }
+                if (hint) { hint.textContent = describeAuthError(error, 'google'); hint.classList.remove('hidden'); }
             } finally {
                 if (button) { button.disabled = false; button.innerHTML = '<span class="w-6 h-6 rounded-full bg-white border border-gray-200 flex items-center justify-center font-black text-sm">G</span> 使用 Google 帳號一鍵登入'; }
             }
@@ -4178,10 +4209,19 @@
                 } else if (!auth.currentUser) {
                     await signInAnonymously(auth);
                 }
+                // LIFF 必須在頁面初始化時接住 code/state/liff.state 回跳，不能只等使用者再次點擊按鈕。
+                if (window.JIA_BEN_AUTH_CONFIG?.LINE_LIFF_ID && window.liff) {
+                    try { await completeLineLiffLogin(); }
+                    catch (lineError) {
+                        console.error('LIFF 初始化／回跳失敗:', lineError);
+                        const lineHint = document.getElementById('line-login-hint');
+                        if (lineHint) { lineHint.textContent = lineError?.code === 'line/profile-scope-required' ? 'LINE 回跳成功但缺少 profile 權限，請至 LINE Developers 勾選 openid、profile 並將 Channel 設為 Published。' : describeAuthError(lineError, 'line'); lineHint.classList.remove('hidden'); }
+                    }
+                }
             } catch (err) { 
                 if (err.code === 'auth/configuration-not-found' || err.code === 'auth/operation-not-allowed') {
                     window.showCustomMsg("⚠️ 資料庫連線失敗！\n\n主揪請注意：您尚未在 Firebase 開啟「匿名登入」權限。\n\n請到 Firebase 控制台 -> 點擊 Authentication (驗證) -> Sign-in method (登入方式) -> 啟用「匿名 (Anonymous)」，然後重新整理網頁！");
-                } else { window.showCustomMsg("⚠️ 系統連線發生異常，目前將暫時切換為展示模式。"); }
+                } else { window.showCustomMsg(describeAuthError(err, 'google')); }
                 setupMockData(); 
             }
         }

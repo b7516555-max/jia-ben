@@ -42,8 +42,8 @@ assert.ok(html.includes('isVerified: true'), 'Approval writes verified status');
 assert.ok(html.includes('detail-owner-announcement'), 'Detail view supports owner announcements');
 assert.ok(html.includes('detail-truck-nav'), 'Detail view supports truck navigation');
 assert.ok(html.includes('JiaLocation?.request'), 'Truck update uses the shared GPS location service');
-assert.strictEqual((sw.match(/together-eat-shell-v151/g) || []).length, 1, 'Service Worker cache is v151');
-assert.ok(appVersion.includes("JIA_BEN_VERSION = 'v151'"), 'App version config is v151');
+assert.strictEqual((sw.match(/together-eat-shell-v152/g) || []).length, 1, 'Service Worker cache is v152');
+assert.ok(appVersion.includes("JIA_BEN_VERSION = 'v152'"), 'App version config is v152');
 assert.ok(robots.includes('Sitemap: https://b7516555-max.github.io/jia-ben/sitemap.xml'), 'robots.txt points to sitemap');
 assert.ok(sitemap.includes('<loc>https://b7516555-max.github.io/jia-ben/</loc>'), 'sitemap contains the site URL');
 
