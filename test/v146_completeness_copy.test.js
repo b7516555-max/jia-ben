@@ -9,6 +9,7 @@ assert.ok(html.includes('✨ 吃貨情報解鎖'), 'Detail completeness title us
 assert.ok(html.includes('✨ 待解鎖，點此補充'), 'Missing fields use positive contribution copy');
 assert.ok(html.includes('項已解鎖'), 'Completeness score uses unlocked wording');
 assert.ok(!html.includes('缺漏，點此補上'), 'Legacy negative detail copy is removed');
-assert.ok(version.includes("JIA_BEN_VERSION = 'v152'") && notes.includes('v152'), 'v152 is configured');
+assert.ok(version.includes("JIA_BEN_VERSION = 'v153'") && notes.includes('v153'), 'v153 is configured');
 assert.ok(html.includes('jia-manual-location-modal') || html.includes('openManualLocationPicker'), 'Manual location picker is wired');
-console.log('✅ v152 location and maps contract baseline passed');
+console.log('✅ v153 location and maps contract baseline passed');
+

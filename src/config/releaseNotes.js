@@ -1,6 +1,15 @@
 (function (root) {
     'use strict';
     root.JIA_BEN_RELEASE_NOTES = Object.freeze({
+        v153: {
+            date: '2026-11-27',
+            title: '📸 照片上傳更穩定',
+            highlights: [
+                '手機高畫素照片會自動壓縮為 450KB 以下的 JPEG，降低 Firestore 文件超限風險。',
+                'Google Drive／外部上傳服務暫時不可用時，會自動改用壓縮後的本機照片保存，不再直接顯示失敗。',
+                '登入憑證與錯誤代碼提示補強，遇到權限或格式問題時更容易知道下一步。'
+            ]
+        },
         v152: {
             date: '2026-11-26',
             title: '🔐 Google 與 LINE 登入回跳修復',

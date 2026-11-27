@@ -15,4 +15,5 @@ assert.ok(html.includes('completeLineLiffLogin()') && html.includes('clearAuthCa
 assert.ok(html.includes('line/profile-scope-required') && html.includes('Channel 已 Published'), 'LINE profile scope and Published guidance is present');
 assert.ok(authConfig.includes('LINE_LIFF_ID'), 'LINE LIFF ID remains centralized');
 assert.ok(sw.includes("['code', 'state', 'liff.state']") && sw.includes('if (isOAuthCallback)') && sw.includes('event.respondWith(fetch(event.request))'), 'Service Worker sends OAuth callback navigations directly to network');
-console.log('✅ v152 Google popup/redirect, LINE LIFF callback, error-code, and Service Worker OAuth contracts passed');
+console.log('✅ v153 Google popup/redirect, LINE LIFF callback, error-code, and Service Worker OAuth contracts passed');
+

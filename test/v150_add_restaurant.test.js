@@ -15,7 +15,8 @@ assert.ok(html.includes('signInAnonymously(auth)') && html.includes("'公開吃�
 assert.ok(html.includes('window.jiaPlacesData = [localPlace') && html.includes('window.renderHomeForYou?.()'), 'new restaurant refreshes canonical in-memory list and home view');
 assert.ok(!html.includes("if (!window.isMemberSignedIn()) {\n                window.requireIdentity(() => window.submitForm())"), 'new restaurant submission is not blocked by member identity gate');
 assert.ok(/match \/restaurants\/\{resId\}[^]*allow create: if isSignedIn\(\);/.test(rules), 'Firestore restaurants create requires signed-in or anonymous auth');
-assert.ok(version.includes("JIA_BEN_VERSION = 'v152'"), 'app version is v152');
-assert.ok(notes.includes('v152') && sw.includes('together-eat-shell-v152'), 'release notes and Service Worker are v152');
+assert.ok(version.includes("JIA_BEN_VERSION = 'v153'"), 'app version is v153');
+assert.ok(notes.includes('v153') && sw.includes('together-eat-shell-v153'), 'release notes and Service Worker are v153');
 assert.ok(html.includes("publicCreatorFallback") && html.includes("['公開吃貨圈', '呷奔吃貨團']") && html.includes("allowedCreators = isPublicAddGroup ? [publicCreatorFallback]"), 'public guest creator defaults to 公開吃貨 without empty member option');
 console.log('✅ v151 add-restaurant creator fallback and v150 visitor submit contracts passed');
+

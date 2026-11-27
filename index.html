@@ -101,10 +101,10 @@
     <script src="./src/services/interactiveMap.js?v=137"></script>
     <script src="./src/components/restaurantCard.js?v=137"></script>
     <script src="./src/utils/publicPrivacy.js?v=143"></script>
-    <script src="./src/config/appVersion.js?v=152"></script>
+    <script src="./src/config/appVersion.js?v=153"></script>
     <script src="./src/config/localPlaceEnrichment.js?v=126"></script>
     <script src="./src/config/authConfig.js?v=143"></script>
-    <script src="./src/config/releaseNotes.js?v=152"></script>
+    <script src="./src/config/releaseNotes.js?v=153"></script>
     <script src="./src/services/freeImageSearch.js?v=1"></script>
     <script src="./src/services/jiaLionAssistant.js?v=135"></script>
     <script src="./src/services/foodieEnhancements.js?v=145"></script>
@@ -3319,6 +3319,18 @@
         };
 
         let db, auth, appId, currentUser = null, googleProvider = null, realtimeSyncUserId = '', googleProfileSyncedUid = '';
+        window.ensureFirebaseAuth = async function() {
+            if (currentUser) return currentUser;
+            if (!auth) return null;
+            try {
+                await signInAnonymously(auth);
+                currentUser = auth.currentUser;
+                return currentUser;
+            } catch (error) {
+                console.warn('Firebase Auth 憑證取得失敗:', error);
+                throw error;
+            }
+        };
         const GAS_API_URL = "https://script.google.com/macros/s/AKfycbwTg7lmireS-npCAzvDZVPVmI7u5jAFpslg7SNL59Ab3ulLOUr7cPB5wzIaTSyTUJpl/exec";
         window.JIA_ENRICHMENT_PROXY_URL = GAS_API_URL;
         window.restaurantData = []; window.feedData = []; window.partyData = []; window.chatData = []; window.restaurantClaims = [];
@@ -3640,17 +3652,27 @@
             return str;
         };
 
-        // 前端 Canvas 照片縮圖壓縮 (最長邊 1600px, quality 0.8)
-        window.compressImageFile = function(file, maxWidth = 1600, maxHeight = 1600, quality = 0.8) {
+        // 前端 Canvas 照片縮圖壓縮：所有社群照片統一控制在 450KB 以下。
+        window.compressImageFile = function(file, maxWidth = 1080, maxHeight = 1080, quality = 0.78) {
             return new Promise((resolve, reject) => {
-                if (!file || !file.type.startsWith('image/')) {
-                    return reject(new Error('請選取有效的圖片檔案'));
+                const fileType = String(file?.type || '').toLowerCase();
+                const fileName = String(file?.name || '').toLowerCase();
+                if (!file || (!fileType.startsWith('image/') && !/\.(jpg|jpeg|png|webp|gif|heic|heif)$/i.test(fileName))) {
+                    return reject(Object.assign(new Error('請選取有效的圖片檔案（支援 JPG、PNG、WebP；HEIC 需瀏覽器可解碼）'), { code: 'image/unsupported-format' }));
                 }
+                const MAX_BYTES = 450 * 1024;
+                maxWidth = Math.min(Math.max(Number(maxWidth) || 1080, 480), 1080);
+                maxHeight = Math.min(Math.max(Number(maxHeight) || 1080, 480), 1080);
+                quality = Math.min(Math.max(Number(quality) || 0.78, 0.45), 0.78);
+                const dataUrlBytes = (dataUrl) => {
+                    const base64 = String(dataUrl).split(',')[1] || '';
+                    return Math.ceil(base64.length * 3 / 4);
+                };
                 const reader = new FileReader();
-                reader.onerror = () => reject(new Error('讀取圖片失敗'));
+                reader.onerror = () => reject(Object.assign(new Error('讀取圖片失敗，檔案可能已損壞或瀏覽器不支援此格式'), { code: 'image/read-failed' }));
                 reader.onload = (e) => {
                     const img = new Image();
-                    img.onerror = () => reject(new Error('載入圖片失敗'));
+                    img.onerror = () => reject(Object.assign(new Error('載入圖片失敗，HEIC/HEIF 可能需要先轉成 JPG'), { code: 'image/decode-failed' }));
                     img.onload = () => {
                         let width = img.width;
                         let height = img.height;
@@ -3664,12 +3686,22 @@
                             }
                         }
                         const canvas = document.createElement('canvas');
-                        canvas.width = width;
-                        canvas.height = height;
                         const ctx = canvas.getContext('2d');
-                        ctx.drawImage(img, 0, 0, width, height);
-                        const compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
-                        resolve(compressedDataUrl);
+                        if (!ctx) return reject(Object.assign(new Error('瀏覽器無法建立圖片壓縮畫布'), { code: 'image/canvas-unavailable' }));
+                        let currentQuality = quality;
+                        let result = '';
+                        for (let attempt = 0; attempt < 14; attempt++) {
+                            canvas.width = width;
+                            canvas.height = height;
+                            ctx.clearRect(0, 0, width, height);
+                            ctx.drawImage(img, 0, 0, width, height);
+                            result = canvas.toDataURL('image/jpeg', currentQuality);
+                            if (dataUrlBytes(result) <= MAX_BYTES) return resolve(result);
+                            if (currentQuality > 0.48) currentQuality = Math.max(0.45, currentQuality - 0.06);
+                            else { width = Math.max(480, Math.round(width * 0.84)); height = Math.max(480, Math.round(height * 0.84)); }
+                        }
+                        if (dataUrlBytes(result) <= MAX_BYTES) return resolve(result);
+                        reject(Object.assign(new Error('圖片壓縮後仍超過 450KB，請改選較小照片'), { code: 'image/too-large-after-compression' }));
                     };
                     img.src = e.target.result;
                 };
@@ -3677,7 +3709,7 @@
             });
         };
 
-        // 上傳照片至 Google Drive 後端
+        // 上傳照片至 Google Drive 後端；外部服務失敗時回傳壓縮 Data URL，不讓整體貼文失敗。
         window.uploadImageToDrive = function(base64Data, filename = 'review_photo.jpg') {
             return new Promise((resolve, reject) => {
                 if (!base64Data || typeof base64Data !== 'string') {
@@ -3691,6 +3723,7 @@
                 let mimeType = 'image/jpeg';
                 if (base64Data.startsWith('data:image/png')) mimeType = 'image/png';
                 else if (base64Data.startsWith('data:image/webp')) mimeType = 'image/webp';
+                const useLocalFallback = (reason) => resolve({ status: 'local-fallback', imageUrl: base64Data, fileId: '', fallbackReason: String(reason?.message || reason || 'external-upload-failed') });
 
                 // 優先使用 Google Apps Script 原生 google.script.run
                 if (typeof google !== 'undefined' && google.script && google.script.run && typeof google.script.run.uploadReviewPhoto === 'function') {
@@ -3699,11 +3732,11 @@
                             if (res && res.status === 'success') {
                                 resolve(res);
                             } else {
-                                reject(new Error(res?.message || 'Google Drive 上傳失敗'));
+                                useLocalFallback(new Error(res?.message || 'Google Drive 上傳失敗'));
                             }
                         })
                         .withFailureHandler((err) => {
-                            reject(err);
+                            useLocalFallback(err);
                         })
                         .uploadReviewPhoto(base64Data, mimeType, filename);
                     return;
@@ -3727,11 +3760,11 @@
                             resolve(data);
                         } else {
                             const detail = data?.message || '伺服器上傳失敗';
-                            reject(new Error(detail));
+                            useLocalFallback(new Error(detail));
                         }
                     })
                     .catch(err => {
-                        reject(err);
+                        useLocalFallback(err);
                     });
                     return;
                 }
@@ -7256,6 +7289,7 @@
                             customAvatarUrl: window.myIdentity?.customAvatarUrl || ''
                         };
 
+                        try { await window.ensureFirebaseAuth?.(); } catch (authErr) { console.warn('評價同步前無法取得 Firebase 憑證:', authErr); }
                         if (reviewRestaurantId && db && currentUser) {
                             const stats=relatedJiaPlace?.communityStats||{},oldRatingCount=Number(stats.ratingCount||0),oldSpendCount=Number(stats.spendCount||0);
                             const communityPhotos=window.imageSafety.filterSafeImages([...(relatedJiaPlace.communityPhotos||[]),...finalPhotos]);
@@ -7410,6 +7444,8 @@
             if (btn) { btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> 照片上傳中...'; btn.disabled = true; }
 
             try {
+                let cloudWriteError = null;
+                try { await window.ensureFirebaseAuth?.(); } catch (authError) { cloudWriteError = authError; }
                 const partyId = document.getElementById('party-recap-id').value;
                 const partyTitle = document.getElementById('party-recap-title').value;
                 const partyLocation = document.getElementById('party-recap-location').value;
@@ -7430,7 +7466,7 @@
                     } catch (uploadErr) {
                         console.error("聚會照片上傳失敗:", uploadErr);
                         if (btn) { btn.innerHTML = originalText; btn.disabled = false; }
-                        return window.showCustomMsg("⚠️ 照片上傳失敗，請重新選擇照片或稍後再試。");
+                        return window.showCustomMsg(`⚠️ 照片處理失敗：${uploadErr?.code || uploadErr?.message || '格式不支援或檔案過大'}`);
                     }
                 }
 
@@ -7463,27 +7499,37 @@
                     photoUrl: feedItem.photoUrl
                 });
 
+                let savedToCloud = false;
                 if (db && currentUser) {
-                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'feed'), {
-                        ...feedItem,
-                        timestamp: serverTimestamp()
-                    });
-                    window.showCustomMsg("🎉 聚會紀錄已成功發布至美食動態牆！");
-                } else {
+                    try {
+                        await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'feed'), {
+                            ...feedItem,
+                            timestamp: serverTimestamp()
+                        });
+                        savedToCloud = true;
+                    } catch (cloudError) {
+                        cloudWriteError = cloudError;
+                        console.error('聚會花絮 Firestore 寫入失敗:', cloudError);
+                    }
+                }
+                if (!savedToCloud) {
                     window.feedData.unshift({
                         id: Date.now().toString(),
                         ...feedItem,
                         timestamp: { seconds: Date.now() / 1000 }
                     });
                     window.renderFeed();
-                    window.showCustomMsg("🎉 聚會紀錄已發布！");
+                    const code = cloudWriteError?.code ? `（雲端同步未完成：${cloudWriteError.code}，已先保留本機紀錄）` : '（已先保留本機紀錄）';
+                    window.showCustomMsg(`🎉 聚會紀錄已發布！${code}`);
+                } else {
+                    window.showCustomMsg("🎉 聚會紀錄已成功發布至美食動態牆！");
                 }
 
                 window.closeModal('party-recap-modal');
                 window.switchTab('feed');
             } catch (err) {
                 console.error("發布聚會花絮失敗:", err);
-                window.showCustomMsg("發布失敗，請確認網路連線。");
+                window.showCustomMsg(`發布失敗：${err?.code || err?.message || '請確認網路連線。'}`);
             } finally {
                 if (btn) { btn.innerHTML = originalText; btn.disabled = false; }
             }
@@ -7747,6 +7793,7 @@
             }
 
             try {
+                try { await window.ensureFirebaseAuth?.(); } catch (authErr) { console.warn('動態照片同步前無法取得 Firebase 憑證:', authErr); }
                 let finalPhotos = [];
                 for (let i = 0; i < currentFeedEditPhotos.length; i++) {
                     let photo = currentFeedEditPhotos[i];
@@ -7778,7 +7825,7 @@
                 window.showCustomMsg("✅ 照片已成功更新！");
             } catch (err) {
                 console.error("更新動態照片失敗:", err);
-                window.showCustomMsg("⚠️ 儲存照片失敗，請稍後再試。");
+                window.showCustomMsg(`⚠️ 儲存照片失敗：${err?.code || err?.message || '請稍後再試'}`);
             } finally {
                 if (saveBtn) {
                     saveBtn.disabled = false;
@@ -8257,6 +8304,7 @@
 
         window.toggleFeedLike = function(feedId) {
             window.requireIdentity(async () => {
+                try { await window.ensureFirebaseAuth?.(); } catch (authErr) { console.warn('留言同步前無法取得 Firebase 憑證:', authErr); }
                 const item = window.feedData.find(f => f.id === feedId);
                 if (!item) return;
                 if (!Array.isArray(item.likes)) item.likes = [];

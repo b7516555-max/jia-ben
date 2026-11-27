@@ -28,7 +28,7 @@ assert.ok(!html.includes('AI 示意圖'), 'AI fallback label is absent from visi
 assert.ok(html.includes('Google 地圖最新資訊'), 'Restaurant detail offers a free Google Maps direct link');
 assert.ok(html.includes('window.signInWithLine') && html.includes('window.signInWithEmail'), 'LINE and Email login entry points exist');
 assert.ok(authConfig.includes('LINE_LIFF_ID'), 'LINE LIFF ID is centralized in auth config');
-assert.ok(sw.includes('together-eat-shell-v152'), 'Service Worker cache is v152');
+assert.ok(sw.includes('together-eat-shell-v153'), 'Service Worker cache is v153');
 assert.ok(html.includes('supportCard.js?v=143') && sw.includes('supportCard.js?v=143'), 'Support card module is loaded and cached at v143');
 assert.ok(html.includes('[id^="view-"].hidden') && html.includes('jia-map-view'), 'Map and view containers have an explicit hidden isolation rule');
 assert.ok(uiShell.includes('JiaInteractiveMap?.close?.()'), 'Leaving the map closes its interaction layer');
@@ -43,3 +43,4 @@ assert.ok(html.includes('localPlaceEnrichment.js') && html.includes('applyLocalP
 assert.ok(html.includes('detail-google-images-btn') && html.includes('detail-food-reviews-btn'), 'Detail view has free image and food review search links');
 
 console.log('✅ Phase 8 navigation, creator, image, map, and auth contracts passed');
+
